@@ -8,6 +8,36 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800"
              PreviewKeyDown="UserControl_PreviewKeyDown">
+    <UserControl.Resources>
+        <ContextMenu x:Key="HeaderContextMenu">
+            <MenuItem Header="Copy Name"
+                      Command="{Binding PlacementTarget.Tag.CopyColumnNameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      CommandParameter="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <MenuItem Header="Hide Column"
+                      Command="{Binding PlacementTarget.Tag.HideColumnCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      CommandParameter="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <MenuItem Header="Best Fit"
+                      Command="{Binding PlacementTarget.Tag.BestFitCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      CommandParameter="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+        </ContextMenu>
+
+        <ContextMenu x:Key="RowContextMenu">
+            <MenuItem Header="Copy Row"
+                      Command="{Binding PlacementTarget.Tag.CopyRowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <MenuItem Header="Copy as SQL INSERT"
+                      Command="{Binding PlacementTarget.Tag.CopyInsertCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+        </ContextMenu>
+
+        <ContextMenu x:Key="CellContextMenu">
+            <MenuItem Header="Filter by Selection"
+                      Command="{Binding PlacementTarget.Tag.FilterBySelectionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <MenuItem Header="Copy with Headers"
+                      Command="{Binding PlacementTarget.Tag.CopyWithHeadersCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <MenuItem Header="Advanced Copy"
+                      Command="{Binding PlacementTarget.Tag.AdvancedCopyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+        </ContextMenu>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -50,42 +80,22 @@
 
             <DataGrid.ColumnHeaderStyle>
                 <Style TargetType="DataGridColumnHeader">
-                    <Setter Property="ContextMenu">
-                        <Setter.Value>
-                            <ContextMenu>
-                                <MenuItem Header="Copy Name" Click="CopyColumnName_Click" Tag="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                                <MenuItem Header="Hide Column" Click="HideColumn_Click" Tag="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                                <MenuItem Header="Best Fit" Click="BestFit_Click" Tag="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                            </ContextMenu>
-                        </Setter.Value>
-                    </Setter>
+                    <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource AncestorType=local:ResultsView}}"/>
+                    <Setter Property="ContextMenu" Value="{StaticResource HeaderContextMenu}"/>
                 </Style>
             </DataGrid.ColumnHeaderStyle>
 
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
-                    <Setter Property="ContextMenu">
-                        <Setter.Value>
-                            <ContextMenu>
-                                <MenuItem Header="Copy Row" Click="CopyRow_Click"/>
-                                <MenuItem Header="Copy as SQL INSERT" Click="CopyAsInsert_Click"/>
-                            </ContextMenu>
-                        </Setter.Value>
-                    </Setter>
+                    <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource AncestorType=local:ResultsView}}"/>
+                    <Setter Property="ContextMenu" Value="{StaticResource RowContextMenu}"/>
                 </Style>
             </DataGrid.RowStyle>
 
             <DataGrid.CellStyle>
                 <Style TargetType="DataGridCell">
-                    <Setter Property="ContextMenu">
-                        <Setter.Value>
-                            <ContextMenu>
-                                <MenuItem Header="Filter by Selection" Click="FilterBySelection_Click"/>
-                                <MenuItem Header="Copy with Headers" Click="CopyWithHeaders_Click"/>
-                                <MenuItem Header="Advanced Copy" Click="AdvancedCopy_Click"/>
-                            </ContextMenu>
-                        </Setter.Value>
-                    </Setter>
+                    <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource AncestorType=local:ResultsView}}"/>
+                    <Setter Property="ContextMenu" Value="{StaticResource CellContextMenu}"/>
                 </Style>
             </DataGrid.CellStyle>
 

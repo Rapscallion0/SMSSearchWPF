@@ -52,6 +52,8 @@ namespace SMS_Search.ViewModels
             ToggleHeaderDescriptionCommand = new RelayCommand(() => ShowDescriptionHeaders = !ShowDescriptionHeaders);
             CopyInsertCommand = new RelayCommand<System.Collections.IList>(CopyAsSqlInsert);
             ExportSelectedCsvCommand = new RelayCommand<System.Collections.IList>(_ => { });
+            FilterBySelectionCommand = new RelayCommand<string>(FilterBySelection);
+            CopyRowCommand = new RelayCommand<IList>(CopyRow);
         }
 
         [ObservableProperty]
@@ -92,6 +94,8 @@ namespace SMS_Search.ViewModels
         public IRelayCommand ToggleHeaderDescriptionCommand { get; }
         public IRelayCommand<System.Collections.IList> CopyInsertCommand { get; }
         public IRelayCommand<System.Collections.IList> ExportSelectedCsvCommand { get; }
+        public IRelayCommand<string> FilterBySelectionCommand { get; }
+        public IRelayCommand<IList> CopyRowCommand { get; }
 
         // Dictionary mapping Column Name -> Header Text (Description or Name)
         public Dictionary<string, string> ColumnHeaders { get; private set; } = new Dictionary<string, string>();
@@ -333,6 +337,42 @@ namespace SMS_Search.ViewModels
             {
                 IsBusy = false;
                 StatusText = $"Found {TotalRecords} records";
+            }
+        }
+
+        private void FilterBySelection(string? text)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+            FilterText = text;
+            ApplyFilterCommand.Execute(text);
+        }
+
+        private void CopyRow(IList? selectedItems)
+        {
+            if (selectedItems == null || selectedItems.Count == 0) return;
+
+            var firstItem = selectedItems[0];
+            if (firstItem == null) return;
+
+            var sb = new System.Text.StringBuilder();
+            var props = TypeDescriptor.GetProperties(firstItem);
+            foreach (var item in selectedItems)
+            {
+                var values = new List<string>();
+                foreach (PropertyDescriptor prop in props)
+                {
+                    values.Add(prop.GetValue(item)?.ToString() ?? "");
+                }
+                sb.AppendLine(string.Join("\t", values));
+            }
+            try
+            {
+                _clipboardService.SetText(sb.ToString());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Copy Row failed", ex);
+                _dialogService.ShowError("Failed to copy: " + ex.Message, "Copy Error");
             }
         }
 
