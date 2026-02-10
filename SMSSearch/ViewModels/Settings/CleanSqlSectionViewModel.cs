@@ -15,11 +15,21 @@ namespace SMS_Search.ViewModels.Settings
 {
     public partial class CleanSqlRuleViewModel : ObservableObject
     {
-        [ObservableProperty]
         private string _pattern = "";
 
-        [ObservableProperty]
+        public string Pattern
+        {
+            get => _pattern;
+            set => SetProperty(ref _pattern, value ?? "");
+        }
+
         private string _replacement = "";
+
+        public string Replacement
+        {
+            get => _replacement;
+            set => SetProperty(ref _replacement, value ?? "");
+        }
 
         [ObservableProperty]
         private bool _isSaved;
@@ -96,6 +106,7 @@ namespace SMS_Search.ViewModels.Settings
             {
                 foreach (CleanSqlRuleViewModel item in e.NewItems)
                 {
+                    if (item == null) continue;
                     item.PropertyChanged += OnRulePropertyChanged;
                     if (!_isLoading) _modifiedRules.Add(item); // Mark new items as modified
                 }
@@ -104,6 +115,7 @@ namespace SMS_Search.ViewModels.Settings
             {
                 foreach (CleanSqlRuleViewModel item in e.OldItems)
                 {
+                    if (item == null) continue;
                     item.PropertyChanged -= OnRulePropertyChanged;
                 }
             }
@@ -144,8 +156,11 @@ namespace SMS_Search.ViewModels.Settings
                 await _repository.SaveAsync("CLEAN_SQL", "Count", Rules.Count.ToString());
                 for (int i = 0; i < Rules.Count; i++)
                 {
-                    await _repository.SaveAsync("CLEAN_SQL", "Rule_" + i + "_Regex", Rules[i].Pattern);
-                    await _repository.SaveAsync("CLEAN_SQL", "Rule_" + i + "_Replace", Rules[i].Replacement);
+                    var rule = Rules[i];
+                    if (rule == null) continue;
+
+                    await _repository.SaveAsync("CLEAN_SQL", "Rule_" + i + "_Regex", rule.Pattern ?? "");
+                    await _repository.SaveAsync("CLEAN_SQL", "Rule_" + i + "_Replace", rule.Replacement ?? "");
                 }
 
                 if (token.IsCancellationRequested) return;
@@ -157,6 +172,7 @@ namespace SMS_Search.ViewModels.Settings
                 var rulesToFlash = _modifiedRules.ToList();
                 foreach (var rule in rulesToFlash)
                 {
+                    if (rule == null) continue;
                     rule.IsSaved = true;
                 }
                 _modifiedRules.Clear();
@@ -165,10 +181,17 @@ namespace SMS_Search.ViewModels.Settings
                 IsSaved = false;
                 foreach (var rule in rulesToFlash)
                 {
+                    if (rule == null) continue;
                     rule.IsSaved = false;
                 }
             }
             catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                // Prevent crash
+                IsSaving = false;
+                System.Diagnostics.Debug.WriteLine($"Error in Clean SQL DebounceSave: {ex}");
+            }
         }
 
         [RelayCommand]
