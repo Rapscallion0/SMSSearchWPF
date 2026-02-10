@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using SMS_Search.ViewModels;
 using SMS_Search.Data;
+using CommunityToolkit.Mvvm.Input;
 
 namespace SMS_Search.Views
 {
@@ -17,12 +18,30 @@ namespace SMS_Search.Views
     {
         private DispatcherTimer _debounceTimer;
 
+        public IRelayCommand<DataGridColumn> CopyColumnNameCommand { get; }
+        public IRelayCommand<DataGridColumn> HideColumnCommand { get; }
+        public IRelayCommand<DataGridColumn> BestFitCommand { get; }
+        public IRelayCommand FilterBySelectionCommand { get; }
+        public IRelayCommand CopyWithHeadersCommand { get; }
+        public IRelayCommand AdvancedCopyCommand { get; }
+        public IRelayCommand CopyRowCommand { get; }
+        public IRelayCommand CopyInsertCommand { get; }
+
         public ResultsView()
         {
             InitializeComponent();
             _debounceTimer = new DispatcherTimer();
             _debounceTimer.Interval = TimeSpan.FromMilliseconds(500);
             _debounceTimer.Tick += DebounceTimer_Tick;
+
+            CopyColumnNameCommand = new RelayCommand<DataGridColumn>(CopyColumnName);
+            HideColumnCommand = new RelayCommand<DataGridColumn>(HideColumn);
+            BestFitCommand = new RelayCommand<DataGridColumn>(BestFit);
+            FilterBySelectionCommand = new RelayCommand(FilterBySelection);
+            CopyWithHeadersCommand = new RelayCommand(CopyWithHeaders);
+            AdvancedCopyCommand = new RelayCommand(AdvancedCopy);
+            CopyRowCommand = new RelayCommand(CopyRow);
+            CopyInsertCommand = new RelayCommand(CopyInsert);
 
             this.DataContextChanged += ResultsView_DataContextChanged;
             resultsGrid.AutoGeneratingColumn += resultsGrid_AutoGeneratingColumn;
@@ -112,7 +131,7 @@ namespace SMS_Search.Views
             }
         }
 
-        private void FilterBySelection_Click(object sender, RoutedEventArgs e)
+        private void FilterBySelection()
         {
             if (resultsGrid.SelectedCells.Count > 0)
             {
@@ -125,12 +144,12 @@ namespace SMS_Search.Views
             }
         }
 
-        private void CopyWithHeaders_Click(object sender, RoutedEventArgs e)
+        private void CopyWithHeaders()
         {
             CopySelectedCells(true, true);
         }
 
-        private void AdvancedCopy_Click(object sender, RoutedEventArgs e)
+        private void AdvancedCopy()
         {
              if (resultsGrid.SelectedCells.Count == 0) return;
 
@@ -139,6 +158,22 @@ namespace SMS_Search.Views
              if (dlg.ShowDialog() == true)
              {
                  CopySelectedCells(false, dlg.PreserveLayout);
+             }
+        }
+
+        private void CopyRow()
+        {
+             if (DataContext is ResultsViewModel vm)
+             {
+                 vm.CopyRowCommand.Execute(resultsGrid.SelectedItems);
+             }
+        }
+
+        private void CopyInsert()
+        {
+             if (DataContext is ResultsViewModel vm)
+             {
+                 vm.CopyInsertCommand.Execute(resultsGrid.SelectedItems);
              }
         }
 
@@ -236,62 +271,29 @@ namespace SMS_Search.Views
             }
         }
 
-        // New Context Menu Command Handlers
-        private void CopyColumnName_Click(object sender, RoutedEventArgs e)
+        // Command Implementations
+        private void CopyColumnName(DataGridColumn? col)
         {
-            if (sender is MenuItem mi && mi.Tag is DataGridColumn col)
+            if (col != null)
             {
                 try { Clipboard.SetText(col.Header.ToString() ?? ""); } catch { }
             }
         }
 
-        private void HideColumn_Click(object sender, RoutedEventArgs e)
+        private void HideColumn(DataGridColumn? col)
         {
-            if (sender is MenuItem mi && mi.Tag is DataGridColumn col)
+            if (col != null)
             {
                 col.Visibility = Visibility.Collapsed;
             }
         }
 
-        private void BestFit_Click(object sender, RoutedEventArgs e)
+        private void BestFit(DataGridColumn? col)
         {
-            if (sender is MenuItem mi && mi.Tag is DataGridColumn col)
+            if (col != null)
             {
                 col.Width = new DataGridLength(1, DataGridLengthUnitType.Auto);
             }
-        }
-
-        private void CopyRow_Click(object sender, RoutedEventArgs e)
-        {
-            var selectedItems = resultsGrid.SelectedItems;
-            if (selectedItems.Count == 0) return;
-
-            var firstItem = selectedItems[0];
-            if (firstItem == null) return;
-
-            var sb = new StringBuilder();
-            if (selectedItems.Count > 0)
-            {
-                var props = TypeDescriptor.GetProperties(firstItem);
-                foreach (var item in selectedItems)
-                {
-                    var values = new List<string>();
-                    foreach (PropertyDescriptor prop in props)
-                    {
-                        values.Add(prop.GetValue(item)?.ToString() ?? "");
-                    }
-                    sb.AppendLine(string.Join("\t", values));
-                }
-            }
-            try { Clipboard.SetText(sb.ToString()); } catch { }
-        }
-
-        private void CopyAsInsert_Click(object sender, RoutedEventArgs e)
-        {
-             if (DataContext is ResultsViewModel vm)
-             {
-                 vm.CopyInsertCommand.Execute(resultsGrid.SelectedItems);
-             }
         }
     }
 }
