@@ -22,16 +22,16 @@ namespace SMS_Search.Views
             switch (type)
             {
                 case ToastType.Success:
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(57, 155, 53)); // Green
+                    BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(57, 155, 53)); // Green
                     break;
                 case ToastType.Info:
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(18, 136, 191)); // Blue
+                    BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(18, 136, 191)); // Blue
                     break;
                 case ToastType.Error:
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(227, 50, 45)); // Red
+                    BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(227, 50, 45)); // Red
                     break;
                 case ToastType.Warning:
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(245, 171, 35)); // Orange
+                    BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(245, 171, 35)); // Orange
                     break;
             }
 

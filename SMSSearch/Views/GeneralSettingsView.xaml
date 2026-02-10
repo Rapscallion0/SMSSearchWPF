@@ -16,6 +16,19 @@
         <CheckBox Content="Minimize to System Tray" IsChecked="{Binding ShowInTray}" Margin="0,0,0,10"/>
         <CheckBox Content="Check for Updates on Startup" IsChecked="{Binding CheckUpdate}" Margin="0,0,0,10"/>
 
+        <GroupBox Header="Application Startup" Margin="0,0,0,10">
+            <StackPanel Margin="5">
+                <TextBlock Text="Main Window Location:"/>
+                <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding MainStartupLocation}" Margin="0,5,0,10"/>
+
+                <TextBlock Text="Unarchive Target Location:"/>
+                <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding UnarchiveStartupLocation}" Margin="0,5,0,10"/>
+
+                <TextBlock Text="Default Search Tab:"/>
+                <ComboBox ItemsSource="{Binding SearchModes}" SelectedItem="{Binding DefaultSearchTab}" Margin="0,5,0,5"/>
+            </StackPanel>
+        </GroupBox>
+
         <GroupBox Header="Clipboard" Margin="0,0,0,10">
             <StackPanel Margin="5">
                 <TextBlock Text="Copy Delimiter:"/>

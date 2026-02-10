@@ -5,7 +5,7 @@ using SMS_Search.ViewModels;
 
 namespace SMS_Search.Views
 {
-    public partial class CleanSqlSettingsView : UserControl
+    public partial class CleanSqlSettingsView : System.Windows.Controls.UserControl
     {
         public CleanSqlSettingsView()
         {

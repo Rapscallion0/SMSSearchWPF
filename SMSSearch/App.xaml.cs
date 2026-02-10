@@ -12,9 +12,9 @@ using System.Windows.Interop;
 
 namespace SMS_Search
 {
-    public partial class App : Application
+    public partial class App : System.Windows.Application
     {
-        public new static App Current => (App)Application.Current;
+        public new static App Current => (App)System.Windows.Application.Current;
         public IServiceProvider Services { get; }
 
         public App()
@@ -83,7 +83,7 @@ namespace SMS_Search
                 if (info.IsNewer)
                 {
                     var msg = $"There is an update available for download.\n\nCurrent Version: {System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version}\nNew Version: {info.Version}\n\nWould you like to update now?";
-                    if (MessageBox.Show(msg, "SMS Search Update", MessageBoxButton.YesNo, MessageBoxImage.Asterisk) == MessageBoxResult.Yes)
+                    if (System.Windows.MessageBox.Show(msg, "SMS Search Update", MessageBoxButton.YesNo, MessageBoxImage.Asterisk) == MessageBoxResult.Yes)
                     {
                         await updateChecker.PerformUpdate(info);
                         return; // Should have shut down in PerformUpdate, but just in case

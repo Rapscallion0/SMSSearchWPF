@@ -103,7 +103,7 @@ namespace SMS_Search.Utils
                 }
                 else
                 {
-                    MessageBox.Show("No download URL found for the new version.", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show("No download URL found for the new version.", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 return;
             }
@@ -148,11 +148,11 @@ namespace SMS_Search.Utils
                 psi.UseShellExecute = false;
                 Process.Start(psi);
 
-                Application.Current.Shutdown();
+                System.Windows.Application.Current.Shutdown();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Update failed: " + ex.Message, "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show("Update failed: " + ex.Message, "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
