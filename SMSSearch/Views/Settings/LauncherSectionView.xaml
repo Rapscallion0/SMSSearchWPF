@@ -24,6 +24,7 @@
                  <TextBox Text="{Binding HotkeyDisplay, Mode=OneWay}"
                           IsReadOnly="True"
                           PreviewKeyDown="Hotkey_PreviewKeyDown"
+                          PreviewMouseWheel="OnPreviewMouseWheel"
                           ToolTip="Click and press keys to set hotkey" />
             </DockPanel>
         </ctrl:SettingControl>

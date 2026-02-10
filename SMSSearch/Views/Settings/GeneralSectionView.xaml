@@ -29,7 +29,7 @@
         </ctrl:SettingControl>
 
         <ctrl:SettingControl Header="Application startup location" IsSaved="{Binding MainStartupLocation.IsSaved}">
-            <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding MainStartupLocation.Value}">
+            <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding MainStartupLocation.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
@@ -39,7 +39,7 @@
         </ctrl:SettingControl>
 
         <ctrl:SettingControl Header="Target startup location" IsSaved="{Binding UnarchiveStartupLocation.IsSaved}">
-            <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding UnarchiveStartupLocation.Value}">
+            <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding UnarchiveStartupLocation.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
@@ -49,16 +49,16 @@
         </ctrl:SettingControl>
 
         <ctrl:SettingControl Header="Default Search Tab" IsSaved="{Binding DefaultSearchTab.IsSaved}">
-            <ComboBox ItemsSource="{Binding SearchModes}" SelectedItem="{Binding DefaultSearchTab.Value}" />
+            <ComboBox ItemsSource="{Binding SearchModes}" SelectedItem="{Binding DefaultSearchTab.Value}" PreviewMouseWheel="OnPreviewMouseWheel" />
         </ctrl:SettingControl>
 
         <ctrl:SettingControl Header="Copy Delimiter" IsSaved="{Binding CopyDelimiter.IsSaved}">
-            <ComboBox ItemsSource="{Binding Delimiters}" SelectedItem="{Binding CopyDelimiter.Value}" />
+            <ComboBox ItemsSource="{Binding Delimiters}" SelectedItem="{Binding CopyDelimiter.Value}" PreviewMouseWheel="OnPreviewMouseWheel" />
         </ctrl:SettingControl>
 
         <ctrl:SettingControl Header="Custom Delimiter" IsSaved="{Binding CustomDelimiter.IsSaved}"
                              Visibility="{Binding IsCustomDelimiterVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <TextBox Text="{Binding CustomDelimiter.Value, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Text="{Binding CustomDelimiter.Value, UpdateSourceTrigger=PropertyChanged}" PreviewMouseWheel="OnPreviewMouseWheel" />
         </ctrl:SettingControl>
 
         <Button Content="Reset EULA" Command="{Binding ResetEulaCommand}" HorizontalAlignment="Left" Margin="0,10,0,0" Padding="10,5"/>

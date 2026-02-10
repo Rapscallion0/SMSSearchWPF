@@ -50,5 +50,7 @@
                 </ToggleButton>
             </StatusBarItem>
         </StatusBar>
+
+        <Grid x:Name="MaskOverlay" Background="#AA000000" Visibility="Collapsed" Grid.RowSpan="3"/>
     </Grid>
 </Window>
