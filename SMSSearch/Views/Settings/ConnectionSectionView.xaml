@@ -15,20 +15,20 @@
     <StackPanel Margin="0,0,0,20">
 
         <ctrl:SettingControl Header="Server" IsSaved="{Binding Server.IsSaved}">
-            <TextBox Text="{Binding Server.Value, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Text="{Binding Server.Value, UpdateSourceTrigger=PropertyChanged}" PreviewMouseWheel="OnPreviewMouseWheel" />
         </ctrl:SettingControl>
 
         <ctrl:SettingControl Header="Database" IsSaved="{Binding Database.IsSaved}">
-            <TextBox Text="{Binding Database.Value, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Text="{Binding Database.Value, UpdateSourceTrigger=PropertyChanged}" PreviewMouseWheel="OnPreviewMouseWheel" />
         </ctrl:SettingControl>
 
         <ctrl:SettingControl Header="SQL User" IsSaved="{Binding User.IsSaved}">
-            <TextBox Text="{Binding User.Value, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Text="{Binding User.Value, UpdateSourceTrigger=PropertyChanged}" PreviewMouseWheel="OnPreviewMouseWheel" />
         </ctrl:SettingControl>
 
         <ctrl:SettingControl Header="SQL Password" IsSaved="{Binding IsPasswordSaved}">
             <StackPanel>
-                <PasswordBox PasswordChanged="SqlPasswordBox_PasswordChanged" />
+                <PasswordBox PasswordChanged="SqlPasswordBox_PasswordChanged" PreviewMouseWheel="OnPreviewMouseWheel" />
                 <TextBlock Text="Leave blank to keep existing password."
                            FontStyle="Italic" Foreground="Gray" Margin="0,5,0,0" FontSize="11"/>
             </StackPanel>

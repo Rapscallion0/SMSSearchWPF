@@ -84,9 +84,17 @@ namespace SMS_Search
 
         private void OnRequestOpenSettings()
         {
-            var win = App.Current.Services.GetRequiredService<ModernSettingsWindow>();
-            win.Owner = this;
-            win.ShowDialog();
+            MaskOverlay.Visibility = Visibility.Visible;
+            try
+            {
+                var win = App.Current.Services.GetRequiredService<ModernSettingsWindow>();
+                win.Owner = this;
+                win.ShowDialog();
+            }
+            finally
+            {
+                MaskOverlay.Visibility = Visibility.Collapsed;
+            }
         }
     }
 }

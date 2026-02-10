@@ -27,7 +27,7 @@
         </ctrl:SettingControl>
 
         <ctrl:SettingControl Header="Auto-Resize Row Limit" IsSaved="{Binding AutoResizeLimit.IsSaved}">
-             <TextBox Text="{Binding AutoResizeLimit.Value, UpdateSourceTrigger=PropertyChanged}" />
+             <TextBox Text="{Binding AutoResizeLimit.Value, UpdateSourceTrigger=PropertyChanged}" PreviewMouseWheel="OnPreviewMouseWheel" />
         </ctrl:SettingControl>
 
         <ctrl:SettingControl Header="Description Columns" IsSaved="{Binding DescriptionColumns.IsSaved}">
