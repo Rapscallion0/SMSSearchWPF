@@ -86,7 +86,11 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                          <Border Margin="0,0,0,40"> <!-- Spacing between sections -->
-                             <ContentPresenter Content="{Binding}" />
+                             <StackPanel>
+                                 <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Margin="0,0,0,5" />
+                                 <Separator Margin="0,0,0,15" />
+                                 <ContentPresenter Content="{Binding}" />
+                             </StackPanel>
                          </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

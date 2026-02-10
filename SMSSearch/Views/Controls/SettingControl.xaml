@@ -42,14 +42,16 @@
                             <DataTrigger Binding="{Binding IsSaved, RelativeSource={RelativeSource AncestorType=local:SettingControl}}" Value="True">
                                 <Setter Property="Visibility" Value="Visible"/>
                                 <DataTrigger.EnterActions>
-                                    <BeginStoryboard>
+                                    <StopStoryboard BeginStoryboardName="FadeOutStoryboard"/>
+                                    <BeginStoryboard Name="FadeInStoryboard">
                                         <Storyboard>
                                             <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2" />
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </DataTrigger.EnterActions>
                                 <DataTrigger.ExitActions>
-                                    <BeginStoryboard>
+                                    <StopStoryboard BeginStoryboardName="FadeInStoryboard"/>
+                                    <BeginStoryboard Name="FadeOutStoryboard">
                                         <Storyboard>
                                             <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.5" />
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Visibility" BeginTime="0:0:0.5">

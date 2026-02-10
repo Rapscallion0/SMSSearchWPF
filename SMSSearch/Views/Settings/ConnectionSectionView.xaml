@@ -13,7 +13,6 @@
     </UserControl.Resources>
 
     <StackPanel Margin="0,0,0,20">
-        <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Margin="0,0,0,15" />
 
         <ctrl:SettingControl Header="Server" IsSaved="{Binding Server.IsSaved}">
             <TextBox Text="{Binding Server.Value, UpdateSourceTrigger=PropertyChanged}" />
