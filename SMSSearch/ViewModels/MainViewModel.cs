@@ -21,6 +21,7 @@ namespace SMS_Search.ViewModels
         private readonly IQueryHistoryService _historyService; // Restore history service dependency
 
         public event Action? RequestOpenSettings;
+        public event Action<bool>? RequestToggleUnarchiveWindow;
 
         public MainViewModel(
             IConfigService config,
@@ -47,6 +48,14 @@ namespace SMS_Search.ViewModels
 
         [ObservableProperty]
         private DateTime? _gregorianDate;
+
+        [ObservableProperty]
+        private bool _isUnarchiveTargetVisible;
+
+        partial void OnIsUnarchiveTargetVisibleChanged(bool value)
+        {
+            RequestToggleUnarchiveWindow?.Invoke(value);
+        }
 
         private bool _isUpdatingDate;
 
@@ -94,6 +103,12 @@ namespace SMS_Search.ViewModels
              }
 
              await ResultsVm.ExecuteSearchAsync(criteria);
+        }
+
+        [RelayCommand]
+        private void OpenUnarchive()
+        {
+            IsUnarchiveTargetVisible = !IsUnarchiveTargetVisible;
         }
 
         [RelayCommand]

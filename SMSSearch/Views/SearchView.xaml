@@ -13,10 +13,11 @@
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
         <conv:BoolToVisibilityConverter x:Key="BoolToCollapsed" Invert="True"/>
+        <conv:EnumToIntConverter x:Key="EnumToIntConverter"/>
     </UserControl.Resources>
 
     <Grid>
-        <TabControl SelectedIndex="{Binding SelectedMode, Mode=TwoWay}">
+        <TabControl SelectedIndex="{Binding SelectedMode, Mode=TwoWay, Converter={StaticResource EnumToIntConverter}}">
             <TabItem Header="Function">
                 <StackPanel Margin="10">
                     <StackPanel.Resources>
