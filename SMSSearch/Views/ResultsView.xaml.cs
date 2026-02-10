@@ -295,5 +295,10 @@ namespace SMS_Search.Views
                 col.Width = new DataGridLength(1, DataGridLengthUnitType.Auto);
             }
         }
+
+        private void resultsGrid_LoadingRow(object sender, DataGridRowEventArgs e)
+        {
+            e.Row.Header = (e.Row.GetIndex() + 1).ToString();
+        }
     }
 }

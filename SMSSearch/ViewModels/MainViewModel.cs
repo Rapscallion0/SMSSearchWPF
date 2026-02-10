@@ -38,6 +38,38 @@ namespace SMS_Search.ViewModels
             _historyService = historyService;
             SearchVm = searchViewModel;
             ResultsVm = resultsViewModel;
+
+            GregorianDate = DateTime.Today;
+        }
+
+        [ObservableProperty]
+        private string _julianDateText = "";
+
+        [ObservableProperty]
+        private DateTime? _gregorianDate;
+
+        private bool _isUpdatingDate;
+
+        partial void OnJulianDateTextChanged(string value)
+        {
+            if (_isUpdatingDate) return;
+
+            var dt = DateUtils.FromJulian(value);
+            if (dt != null)
+            {
+                _isUpdatingDate = true;
+                GregorianDate = dt;
+                _isUpdatingDate = false;
+            }
+        }
+
+        partial void OnGregorianDateChanged(DateTime? value)
+        {
+            if (_isUpdatingDate) return;
+
+            _isUpdatingDate = true;
+            JulianDateText = DateUtils.ToJulian(value);
+            _isUpdatingDate = false;
         }
 
         public SearchViewModel SearchVm { get; }
