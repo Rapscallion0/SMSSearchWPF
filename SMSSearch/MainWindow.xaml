@@ -20,15 +20,15 @@
             <StackPanel>
                 <DockPanel LastChildFill="False">
                     <Button Content="Settings" Command="{Binding OpenSettingsCommand}" DockPanel.Dock="Left" Padding="10,5"/>
-                    <Button Content="Search" Command="{Binding ExecuteSearchCommand}"
+                    <Button Content="Search" Command="{Binding SearchCommand}"
                             DockPanel.Dock="Right" Padding="20,5"
                             IsDefault="True"/>
                 </DockPanel>
-                <views:SearchView DataContext="{Binding SearchViewModel}" Margin="0,5,0,0"/>
+                <views:SearchView DataContext="{Binding SearchVm}" Margin="0,5,0,0"/>
             </StackPanel>
         </GroupBox>
 
-        <views:ResultsView Grid.Row="1" DataContext="{Binding ResultsViewModel}" Margin="10,0,10,10"/>
+        <views:ResultsView Grid.Row="1" DataContext="{Binding ResultsVm}" Margin="10,0,10,10"/>
 
         <StatusBar Grid.Row="2">
             <StatusBarItem>
