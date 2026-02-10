@@ -37,7 +37,7 @@ namespace SMS_Search.ViewModels
             General = new GeneralSettingsViewModel(_config);
             Display = new DisplaySettingsViewModel(_config);
             CleanSql = new CleanSqlSettingsViewModel(_config);
-            Launcher = new LauncherSettingsViewModel(_config, _hotkeyService, _logger);
+            Launcher = new LauncherSettingsViewModel(_config, _hotkeyService, _logger, _dialogService);
         }
 
         [ObservableProperty]

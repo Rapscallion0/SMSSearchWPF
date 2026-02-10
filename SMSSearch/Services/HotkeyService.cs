@@ -61,7 +61,7 @@ namespace SMS_Search.Services
             }
         }
 
-        public void ProcessMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        public IntPtr ProcessMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             if (msg == WM_HOTKEY && wParam.ToInt32() == HOTKEY_ID)
             {
@@ -69,6 +69,25 @@ namespace SMS_Search.Services
                 _action?.Invoke();
                 handled = true;
             }
+            return IntPtr.Zero;
+        }
+
+        public bool CheckAvailability(Key key, ModifierKeys modifiers)
+        {
+            int vkey = KeyInterop.VirtualKeyFromKey(key);
+            uint fsModifiers = 0;
+            if ((modifiers & ModifierKeys.Alt) == ModifierKeys.Alt) fsModifiers |= 1;
+            if ((modifiers & ModifierKeys.Control) == ModifierKeys.Control) fsModifiers |= 2;
+            if ((modifiers & ModifierKeys.Shift) == ModifierKeys.Shift) fsModifiers |= 4;
+            if ((modifiers & ModifierKeys.Windows) == ModifierKeys.Windows) fsModifiers |= 8;
+
+            const int CHECK_ID = 9001;
+            if (RegisterHotKey(IntPtr.Zero, CHECK_ID, fsModifiers, (uint)vkey))
+            {
+                UnregisterHotKey(IntPtr.Zero, CHECK_ID);
+                return true;
+            }
+            return false;
         }
     }
 }
