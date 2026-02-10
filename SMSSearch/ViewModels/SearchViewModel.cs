@@ -80,11 +80,16 @@ namespace SMS_Search.ViewModels
         {
             try
             {
-                 var server = _configService.GetValue("CONNECTION", "SERVER");
-                 var database = _configService.GetValue("CONNECTION", "DATABASE");
-                 var user = _configService.GetValue("CONNECTION", "SQLUSER");
-                 var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
+                 string? server = _configService.GetValue("CONNECTION", "SERVER");
+                 string? database = _configService.GetValue("CONNECTION", "DATABASE");
+                 string? user = _configService.GetValue("CONNECTION", "SQLUSER");
+                 string? pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
                  string? decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+
+                 if (string.IsNullOrEmpty(server) || string.IsNullOrEmpty(database) || string.IsNullOrEmpty(user))
+                 {
+                     return;
+                 }
 
                  var tables = await _repository.GetTablesAsync(server, database, user, decryptedPass);
                  Tables.Clear();

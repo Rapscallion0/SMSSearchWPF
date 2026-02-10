@@ -160,7 +160,7 @@ namespace SMS_Search.Data
 
                     foreach (DataColumn col in dt.Columns)
                     {
-                        if (typeMap.TryGetValue(col.ColumnName, out string sqlType))
+                        if (typeMap.TryGetValue(col.ColumnName, out string? sqlType))
                         {
                             col.ExtendedProperties["SqlType"] = sqlType;
                         }
@@ -252,8 +252,8 @@ namespace SMS_Search.Data
                  var list = new List<string>();
                  foreach(var name in columnNames)
                  {
-                     if (dict.TryGetValue(name, out string desc))
-                         list.Add(desc);
+                     if (dict.TryGetValue(name, out string? desc))
+                         list.Add(desc ?? "");
                      else
                          list.Add("");
                  }

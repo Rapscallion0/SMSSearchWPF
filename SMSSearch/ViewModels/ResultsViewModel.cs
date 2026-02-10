@@ -26,9 +26,9 @@ namespace SMS_Search.ViewModels
             _dialogService = dialogService;
             _configService = configService;
 
-            string fctFields = _configService.GetValue("QUERY", "FUNCTION");
-            string tlzFields = _configService.GetValue("QUERY", "TOTALIZER");
-            _queryBuilder = new QueryBuilder(fctFields, tlzFields);
+            string? fctFields = _configService.GetValue("QUERY", "FUNCTION");
+            string? tlzFields = _configService.GetValue("QUERY", "TOTALIZER");
+            _queryBuilder = new QueryBuilder(fctFields ?? "", tlzFields ?? "");
 
             _gridContext.DataReady += OnDataReady;
             _gridContext.LoadError += OnLoadError;
@@ -85,13 +85,21 @@ namespace SMS_Search.ViewModels
             {
                 var queryResult = _queryBuilder.Build(criteria);
 
-                var server = _configService.GetValue("CONNECTION", "SERVER");
-                var database = _configService.GetValue("CONNECTION", "DATABASE");
-                var user = _configService.GetValue("CONNECTION", "SQLUSER");
-                var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
+                string? server = _configService.GetValue("CONNECTION", "SERVER");
+                string? database = _configService.GetValue("CONNECTION", "DATABASE");
+                string? user = _configService.GetValue("CONNECTION", "SQLUSER");
+                string? pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
                 string? decryptedPass = !string.IsNullOrEmpty(pass) ? SMS_Search.Utils.GeneralUtils.Decrypt(pass) : null;
 
+                if (string.IsNullOrEmpty(server) || string.IsNullOrEmpty(database) || string.IsNullOrEmpty(user))
+                {
+                    StatusText = "Error: Invalid Connection Settings";
+                    return;
+                }
+
                 _gridContext.SetConnection(server, database, user, decryptedPass);
+
+                if (queryResult.Sql == null) throw new InvalidOperationException("Invalid Query");
 
                 // Load initial count and cache schema
                 var schema = await _gridContext.GetSchemaAsync(queryResult.Sql, queryResult.Parameters);
@@ -117,21 +125,21 @@ namespace SMS_Search.ViewModels
 
         private async Task ExportCsvAsync()
         {
-            string filename = _dialogService.SaveFileDialog("CSV files (*.csv)|*.csv", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+            string? filename = _dialogService.SaveFileDialog("CSV files (*.csv)|*.csv", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
             if (string.IsNullOrEmpty(filename)) return;
             await PerformExportAsync(() => _gridContext.ExportToCsvAsync(filename));
         }
 
         private async Task ExportJsonAsync()
         {
-            string filename = _dialogService.SaveFileDialog("JSON files (*.json)|*.json", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.json");
+            string? filename = _dialogService.SaveFileDialog("JSON files (*.json)|*.json", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.json");
             if (string.IsNullOrEmpty(filename)) return;
             await PerformExportAsync(() => _gridContext.ExportToJsonAsync(filename));
         }
 
         private async Task ExportExcelAsync()
         {
-            string filename = _dialogService.SaveFileDialog("Excel XML (*.xml)|*.xml", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xml");
+            string? filename = _dialogService.SaveFileDialog("Excel XML (*.xml)|*.xml", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xml");
             if (string.IsNullOrEmpty(filename)) return;
             await PerformExportAsync(() => _gridContext.ExportToExcelXmlAsync(filename));
         }
