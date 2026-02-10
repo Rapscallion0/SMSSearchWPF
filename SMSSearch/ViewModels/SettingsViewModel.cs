@@ -11,7 +11,7 @@ namespace SMS_Search.ViewModels
         private readonly IConfigService _config;
         private readonly IDialogService _dialogService;
 
-        public event System.Action RequestClose;
+        public event System.Action? RequestClose;
 
         public SettingsViewModel(IConfigService config, IDialogService dialogService)
         {
@@ -24,22 +24,22 @@ namespace SMS_Search.ViewModels
         }
 
         [ObservableProperty]
-        private string _server;
+        private string? _server;
 
         [ObservableProperty]
-        private string _database;
+        private string? _database;
 
         [ObservableProperty]
-        private string _user;
+        private string? _user;
 
         [RelayCommand]
         private void Save(object parameter)
         {
-            PasswordBox passwordBox = parameter as PasswordBox;
+            PasswordBox? passwordBox = parameter as PasswordBox;
 
-            _config.SetValue("CONNECTION", "SERVER", Server);
-            _config.SetValue("CONNECTION", "DATABASE", Database);
-            _config.SetValue("CONNECTION", "SQLUSER", User);
+            _config.SetValue("CONNECTION", "SERVER", Server ?? "");
+            _config.SetValue("CONNECTION", "DATABASE", Database ?? "");
+            _config.SetValue("CONNECTION", "SQLUSER", User ?? "");
 
             if (passwordBox != null && !string.IsNullOrEmpty(passwordBox.Password))
             {

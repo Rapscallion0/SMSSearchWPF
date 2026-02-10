@@ -39,13 +39,13 @@ namespace SMS_Search.ViewModels
         }
 
         [ObservableProperty]
-        private IList _searchResults;
+        private IList? _searchResults;
 
         [ObservableProperty]
         private bool _isBusy;
 
         [ObservableProperty]
-        private string _statusText;
+        private string? _statusText;
 
         [ObservableProperty]
         private int _totalRecords;
@@ -54,7 +54,7 @@ namespace SMS_Search.ViewModels
         public IAsyncRelayCommand ExportJsonCommand { get; }
         public IAsyncRelayCommand ExportExcelCommand { get; }
 
-        private void OnDataReady(object sender, EventArgs e)
+        private void OnDataReady(object? sender, EventArgs e)
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
@@ -67,7 +67,7 @@ namespace SMS_Search.ViewModels
             });
         }
 
-        private void OnLoadError(object sender, string msg)
+        private void OnLoadError(object? sender, string msg)
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
@@ -89,7 +89,7 @@ namespace SMS_Search.ViewModels
                 var database = _configService.GetValue("CONNECTION", "DATABASE");
                 var user = _configService.GetValue("CONNECTION", "SQLUSER");
                 var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
-                string decryptedPass = !string.IsNullOrEmpty(pass) ? SMS_Search.Utils.GeneralUtils.Decrypt(pass) : null;
+                string? decryptedPass = !string.IsNullOrEmpty(pass) ? SMS_Search.Utils.GeneralUtils.Decrypt(pass) : null;
 
                 _gridContext.SetConnection(server, database, user, decryptedPass);
 
