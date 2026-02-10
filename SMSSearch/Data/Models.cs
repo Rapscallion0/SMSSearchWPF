@@ -4,7 +4,17 @@ namespace SMS_Search.Data
 {
     public enum SearchMode { Function, Totalizer, Field }
     public enum SearchType { Number, Description, CustomSql, Table }
-    public enum StartupLocationMode { Last, Primary, Active, Cursor }
+    public enum StartupLocationMode
+    {
+        [System.ComponentModel.Description("Last location")]
+        Last,
+        [System.ComponentModel.Description("Primary monitor")]
+        Primary,
+        [System.ComponentModel.Description("Active monitor")]
+        Active,
+        [System.ComponentModel.Description("Cursor location")]
+        Cursor
+    }
 
     public class SearchCriteria
     {
