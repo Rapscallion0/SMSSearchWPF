@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:SMS_Search"
         xmlns:views="clr-namespace:SMS_Search.Views"
         xmlns:vm="clr-namespace:SMS_Search.ViewModels"
+        xmlns:fa="http://schemas.fontawesome.io/icons/"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
         Title="SMS Search" Height="600" Width="800">
@@ -19,7 +20,10 @@
         <GroupBox Header="Search Criteria" Margin="10">
             <StackPanel>
                 <DockPanel LastChildFill="False">
-                    <Button Content="Settings" Command="{Binding OpenSettingsCommand}" DockPanel.Dock="Left" Padding="10,5"/>
+                    <Button Command="{Binding OpenSettingsCommand}" DockPanel.Dock="Left"
+                            Style="{StaticResource TransparentIconButtonStyle}" ToolTip="Settings">
+                        <fa:ImageAwesome Icon="Cog" Width="16" Height="16" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                    </Button>
                     <Button Content="Search" Command="{Binding SearchCommand}"
                             DockPanel.Dock="Right" Padding="20,5"
                             IsDefault="True"/>

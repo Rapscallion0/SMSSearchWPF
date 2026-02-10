@@ -6,6 +6,7 @@
              xmlns:local="clr-namespace:SMS_Search.Views"
              xmlns:vm="clr-namespace:SMS_Search.ViewModels"
              xmlns:conv="clr-namespace:SMS_Search.Converters"
+             xmlns:fa="http://schemas.fontawesome.io/icons/"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SearchViewModel}"
              d:DesignHeight="300" d:DesignWidth="400">
@@ -34,8 +35,10 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="25"/>
-                        <Button Content="H" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                Grid.Column="1" Width="25" Height="25" Margin="5,0,0,0" ToolTip="History"/>
+                        <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                                Grid.Column="1" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                            <fa:ImageAwesome Icon="History" Width="16" Height="16" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                        </Button>
                         <Button Content="Clean" Command="{Binding CleanSqlCommand}"
                                 Grid.Column="2" Height="25" Margin="5,0,0,0" ToolTip="Clean SQL"
                                 Visibility="{Binding IsCustomSqlMode, Converter={StaticResource BoolToVis}}"/>
@@ -62,8 +65,10 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="25"/>
-                        <Button Content="H" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                Grid.Column="1" Width="25" Height="25" Margin="5,0,0,0" ToolTip="History"/>
+                        <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                                Grid.Column="1" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                            <fa:ImageAwesome Icon="History" Width="16" Height="16" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                        </Button>
                         <Button Content="Clean" Command="{Binding CleanSqlCommand}"
                                 Grid.Column="2" Height="25" Margin="5,0,0,0" ToolTip="Clean SQL"
                                 Visibility="{Binding IsCustomSqlMode, Converter={StaticResource BoolToVis}}"/>
@@ -96,8 +101,10 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="25"/>
-                        <Button Content="H" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                Grid.Column="1" Width="25" Height="25" Margin="5,0,0,0" ToolTip="History"/>
+                        <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                                Grid.Column="1" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                            <fa:ImageAwesome Icon="History" Width="16" Height="16" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                        </Button>
                         <Button Content="Clean" Command="{Binding CleanSqlCommand}"
                                 Grid.Column="2" Height="25" Margin="5,0,0,0" ToolTip="Clean SQL"
                                 Visibility="{Binding IsCustomSqlMode, Converter={StaticResource BoolToVis}}"/>
