@@ -180,9 +180,11 @@ namespace SMS_Search.ViewModels.Settings
         }
 
         [RelayCommand]
-        private void RemoveRule(CleanSqlRuleViewModel? rule)
+        private void RemoveRule(object? parameter)
         {
-            if (rule == null) rule = SelectedRule;
+            var rule = parameter as CleanSqlRuleViewModel;
+            if (rule == null && parameter == null) rule = SelectedRule;
+
             if (rule != null)
             {
                 Rules.Remove(rule);

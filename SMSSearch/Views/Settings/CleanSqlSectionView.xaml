@@ -42,6 +42,9 @@
                                                 <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
                                                      <Setter Property="Visibility" Value="Visible"/>
                                                 </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsNewItem, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                     <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
                                            </Style.Triggers>
                                       </Style>
                                  </Button.Style>
