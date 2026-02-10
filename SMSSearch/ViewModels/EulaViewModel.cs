@@ -10,7 +10,7 @@ namespace SMS_Search.ViewModels
     {
         private readonly IConfigService _configService;
 
-        public event Action RequestClose;
+        public event Action? RequestClose;
 
         public EulaViewModel(IConfigService configService)
         {
@@ -19,7 +19,7 @@ namespace SMS_Search.ViewModels
         }
 
         [ObservableProperty]
-        private string _eulaText;
+        private string _eulaText = "";
 
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(AcceptCommand))]

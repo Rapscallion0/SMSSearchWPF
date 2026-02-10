@@ -5,16 +5,6 @@ using SMS_Search.Views;
 
 namespace SMS_Search.Services
 {
-    public interface IDialogService
-    {
-        void ShowMessage(string message, string title);
-        void ShowError(string message, string title);
-        bool ShowConfirmation(string message, string title);
-        string OpenFileDialog(string filter);
-        string SaveFileDialog(string filter, string defaultName = "");
-        void ShowToast(string message, string title, ToastType type = ToastType.Info);
-    }
-
     public class DialogService : IDialogService
     {
         public void ShowMessage(string message, string title)
@@ -32,14 +22,14 @@ namespace SMS_Search.Services
             return MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
         }
 
-        public string OpenFileDialog(string filter)
+        public string? OpenFileDialog(string filter)
         {
             var dlg = new OpenFileDialog { Filter = filter };
             if (dlg.ShowDialog() == true) return dlg.FileName;
             return null;
         }
 
-        public string SaveFileDialog(string filter, string defaultName = "")
+        public string? SaveFileDialog(string filter, string defaultName = "")
         {
             var dlg = new SaveFileDialog { Filter = filter, FileName = defaultName };
             if (dlg.ShowDialog() == true) return dlg.FileName;

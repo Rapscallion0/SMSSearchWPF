@@ -10,7 +10,7 @@ namespace SMS_Search.Services
     {
         private const int WM_HOTKEY = 0x0312;
         private const int HOTKEY_ID = 9000;
-        private Action _action;
+        private Action? _action;
         private bool _isRegistered;
         private IntPtr _hwnd;
         private readonly ILoggerService _logger;

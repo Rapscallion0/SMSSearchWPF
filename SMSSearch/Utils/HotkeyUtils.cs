@@ -5,7 +5,7 @@ namespace SMS_Search.Utils
 {
     public static class HotkeyUtils
     {
-        public static (Key Key, ModifierKeys Modifiers) Parse(string input)
+        public static (Key Key, ModifierKeys Modifiers) Parse(string? input)
         {
              if (string.IsNullOrWhiteSpace(input)) return (Key.None, ModifierKeys.None);
 

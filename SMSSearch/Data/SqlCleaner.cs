@@ -4,8 +4,8 @@ namespace SMS_Search.Data
 {
     public struct SqlCleaningRule
     {
-        public string Pattern;
-        public string Replacement;
+        public string? Pattern;
+        public string? Replacement;
     }
 
     public static class SqlCleaner

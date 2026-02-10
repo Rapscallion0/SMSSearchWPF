@@ -82,7 +82,7 @@ namespace SMS_Search
                 var info = await updateChecker.CheckForUpdatesAsync();
                 if (info.IsNewer)
                 {
-                    var msg = $"There is an update available for download.\n\nCurrent Version: {System.Reflection.Assembly.GetEntryAssembly().GetName().Version}\nNew Version: {info.Version}\n\nWould you like to update now?";
+                    var msg = $"There is an update available for download.\n\nCurrent Version: {System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version}\nNew Version: {info.Version}\n\nWould you like to update now?";
                     if (MessageBox.Show(msg, "SMS Search Update", MessageBoxButton.YesNo, MessageBoxImage.Asterisk) == MessageBoxResult.Yes)
                     {
                         await updateChecker.PerformUpdate(info);
@@ -118,7 +118,7 @@ namespace SMS_Search
                 var hotkeyService = Services.GetRequiredService<IHotkeyService>();
                 var config = Services.GetRequiredService<IConfigService>();
 
-                string hotkeyStr = config.GetValue("LAUNCHER", "HOTKEY");
+                string? hotkeyStr = config.GetValue("LAUNCHER", "HOTKEY");
                 if (!string.IsNullOrEmpty(hotkeyStr))
                 {
                     try
@@ -131,7 +131,11 @@ namespace SMS_Search
                             {
                                 try
                                 {
-                                    System.Diagnostics.Process.Start(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName);
+                                    string? fileName = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+                                    if (fileName != null)
+                                    {
+                                        System.Diagnostics.Process.Start(fileName);
+                                    }
                                 }
                                 catch (Exception ex)
                                 {

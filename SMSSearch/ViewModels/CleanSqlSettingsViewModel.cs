@@ -10,10 +10,10 @@ namespace SMS_Search.ViewModels
     public partial class CleanSqlRuleViewModel : ObservableObject
     {
         [ObservableProperty]
-        private string _pattern;
+        private string _pattern = "";
 
         [ObservableProperty]
-        private string _replacement;
+        private string _replacement = "";
     }
 
     public partial class CleanSqlSettingsViewModel : ObservableObject
@@ -30,21 +30,21 @@ namespace SMS_Search.ViewModels
         private ObservableCollection<CleanSqlRuleViewModel> _rules = new ObservableCollection<CleanSqlRuleViewModel>();
 
         [ObservableProperty]
-        private CleanSqlRuleViewModel _selectedRule;
+        private CleanSqlRuleViewModel? _selectedRule;
 
         public void Load()
         {
             Rules.Clear();
-            string countStr = _config.GetValue("CLEAN_SQL", "Count");
+            string? countStr = _config.GetValue("CLEAN_SQL", "Count");
             if (int.TryParse(countStr, out int count) && count > 0)
             {
                 for (int i = 0; i < count; i++)
                 {
-                    string pattern = _config.GetValue("CLEAN_SQL", "Rule_" + i + "_Regex");
-                    string replacement = _config.GetValue("CLEAN_SQL", "Rule_" + i + "_Replace");
+                    string? pattern = _config.GetValue("CLEAN_SQL", "Rule_" + i + "_Regex");
+                    string? replacement = _config.GetValue("CLEAN_SQL", "Rule_" + i + "_Replace");
                     if (!string.IsNullOrEmpty(pattern))
                     {
-                        Rules.Add(new CleanSqlRuleViewModel { Pattern = pattern, Replacement = replacement });
+                        Rules.Add(new CleanSqlRuleViewModel { Pattern = pattern!, Replacement = replacement ?? "" });
                     }
                 }
             }
@@ -53,7 +53,7 @@ namespace SMS_Search.ViewModels
                 // Default
                 foreach (var rule in SqlCleaner.DefaultRules)
                 {
-                    Rules.Add(new CleanSqlRuleViewModel { Pattern = rule.Pattern, Replacement = rule.Replacement });
+                    Rules.Add(new CleanSqlRuleViewModel { Pattern = rule.Pattern ?? "", Replacement = rule.Replacement ?? "" });
                 }
             }
         }
@@ -91,7 +91,7 @@ namespace SMS_Search.ViewModels
              Rules.Clear();
              foreach (var rule in SqlCleaner.DefaultRules)
              {
-                 Rules.Add(new CleanSqlRuleViewModel { Pattern = rule.Pattern, Replacement = rule.Replacement });
+                 Rules.Add(new CleanSqlRuleViewModel { Pattern = rule.Pattern ?? "", Replacement = rule.Replacement ?? "" });
              }
         }
     }
