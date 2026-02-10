@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -18,6 +20,9 @@ namespace SMS_Search.ViewModels.Settings
 
         [ObservableProperty]
         private string _replacement = "";
+
+        [ObservableProperty]
+        private bool _isSaved;
     }
 
     public partial class CleanSqlSectionViewModel : SettingsSectionViewModel
@@ -25,6 +30,7 @@ namespace SMS_Search.ViewModels.Settings
         private readonly ISettingsRepository _repository;
         private CancellationTokenSource? _saveCts;
         private bool _isLoading;
+        private readonly HashSet<CleanSqlRuleViewModel> _modifiedRules = new();
 
         public override string Title => "Clean SQL";
         public override string IconData => "M14,10H2V12H14M14,6H2V8H14M2,16H10V14H2M21.5,11.5L23,13L16,20L11.5,15.5L13,14L16,17L21.5,11.5Z"; // Check list or similar
@@ -91,6 +97,7 @@ namespace SMS_Search.ViewModels.Settings
                 foreach (CleanSqlRuleViewModel item in e.NewItems)
                 {
                     item.PropertyChanged += OnRulePropertyChanged;
+                    if (!_isLoading) _modifiedRules.Add(item); // Mark new items as modified
                 }
             }
             if (e.OldItems != null)
@@ -106,6 +113,16 @@ namespace SMS_Search.ViewModels.Settings
 
         private void OnRulePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+             if (e.PropertyName == nameof(CleanSqlRuleViewModel.IsSaved)) return;
+
+             if (sender is CleanSqlRuleViewModel rule)
+             {
+                 if (!_isLoading)
+                 {
+                     _modifiedRules.Add(rule);
+                     rule.IsSaved = false;
+                 }
+             }
              if (!_isLoading) DebounceSave();
         }
 
@@ -136,8 +153,20 @@ namespace SMS_Search.ViewModels.Settings
                 IsSaving = false;
                 IsSaved = true;
 
+                // Flash modified rules
+                var rulesToFlash = _modifiedRules.ToList();
+                foreach (var rule in rulesToFlash)
+                {
+                    rule.IsSaved = true;
+                }
+                _modifiedRules.Clear();
+
                 await Task.Delay(2000, token);
                 IsSaved = false;
+                foreach (var rule in rulesToFlash)
+                {
+                    rule.IsSaved = false;
+                }
             }
             catch (OperationCanceledException) { }
         }
@@ -145,17 +174,19 @@ namespace SMS_Search.ViewModels.Settings
         [RelayCommand]
         private void AddRule()
         {
-            var rule = new CleanSqlRuleViewModel { Pattern = "New Pattern", Replacement = "" };
+            var rule = new CleanSqlRuleViewModel { Pattern = "", Replacement = "" };
             Rules.Add(rule);
             SelectedRule = rule;
         }
 
         [RelayCommand]
-        private void RemoveRule()
+        private void RemoveRule(CleanSqlRuleViewModel? rule)
         {
-            if (SelectedRule != null)
+            if (rule == null) rule = SelectedRule;
+            if (rule != null)
             {
-                Rules.Remove(SelectedRule);
+                Rules.Remove(rule);
+                _modifiedRules.Remove(rule); // Ensure we don't try to access removed rule
             }
         }
 
@@ -168,10 +199,14 @@ namespace SMS_Search.ViewModels.Settings
                  // Remove listeners from current items
                  foreach(var rule in Rules) rule.PropertyChanged -= OnRulePropertyChanged;
                  Rules.Clear();
+                 _modifiedRules.Clear();
 
                  foreach (var rule in SqlCleaner.DefaultRules)
                  {
-                     Rules.Add(new CleanSqlRuleViewModel { Pattern = rule.Pattern ?? "", Replacement = rule.Replacement ?? "" });
+                     var vm = new CleanSqlRuleViewModel { Pattern = rule.Pattern ?? "", Replacement = rule.Replacement ?? "" };
+                     Rules.Add(vm);
+                     _modifiedRules.Add(vm); // Mark restored defaults as modified so they save? Or not?
+                     // If we restore, we probably want to save immediately.
                  }
              }
              finally

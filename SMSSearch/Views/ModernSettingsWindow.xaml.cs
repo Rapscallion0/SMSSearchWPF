@@ -32,8 +32,8 @@ namespace SMS_Search.Views
                         var transform = container.TransformToVisual(MainScrollViewer);
                         var position = transform.Transform(new System.Windows.Point(0, 0));
 
-                        // Scroll to position
-                        MainScrollViewer.ScrollToVerticalOffset(MainScrollViewer.VerticalOffset + position.Y);
+                        // Scroll to position with padding
+                        MainScrollViewer.ScrollToVerticalOffset(MainScrollViewer.VerticalOffset + position.Y - 20);
                     }
                 }
             }
