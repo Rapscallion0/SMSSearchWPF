@@ -1,0 +1,38 @@
+<UserControl x:Class="SMS_Search.Views.Settings.DisplaySectionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
+             xmlns:vm="clr-namespace:SMS_Search.ViewModels.Settings"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:DisplaySectionViewModel}"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </UserControl.Resources>
+
+    <StackPanel Margin="0,0,0,20">
+        <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Margin="0,0,0,15" />
+
+        <ctrl:SettingControl Header="Show Row Numbers" IsSaved="{Binding ShowRowNumbers.IsSaved}">
+            <CheckBox IsChecked="{Binding ShowRowNumbers.Value}" Content="Display row numbers in search results" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="Highlight Matches" IsSaved="{Binding HighlightMatches.IsSaved}">
+            <CheckBox IsChecked="{Binding HighlightMatches.Value}" Content="Highlight search terms in results" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="Resize Columns" IsSaved="{Binding ResizeColumns.IsSaved}">
+            <CheckBox IsChecked="{Binding ResizeColumns.Value}" Content="Automatically resize columns to fit content" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="Auto-Resize Row Limit" IsSaved="{Binding AutoResizeLimit.IsSaved}">
+             <TextBox Text="{Binding AutoResizeLimit.Value, UpdateSourceTrigger=PropertyChanged}" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="Description Columns" IsSaved="{Binding DescriptionColumns.IsSaved}">
+            <CheckBox IsChecked="{Binding DescriptionColumns.Value}" Content="Show description columns for codes" />
+        </ctrl:SettingControl>
+    </StackPanel>
+</UserControl>

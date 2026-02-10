@@ -1,0 +1,53 @@
+<UserControl x:Class="SMS_Search.Views.Settings.GeneralSectionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
+             xmlns:vm="clr-namespace:SMS_Search.ViewModels.Settings"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:GeneralSectionViewModel}"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </UserControl.Resources>
+
+    <StackPanel Margin="0,0,0,20">
+        <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Margin="0,0,0,15" />
+
+        <ctrl:SettingControl Header="Always On Top" IsSaved="{Binding AlwaysOnTop.IsSaved}">
+            <CheckBox IsChecked="{Binding AlwaysOnTop.Value}" Content="Keep application window on top" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="Minimize to Tray" IsSaved="{Binding ShowInTray.IsSaved}">
+            <CheckBox IsChecked="{Binding ShowInTray.Value}" Content="Minimize application to system tray" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="Check for Updates" IsSaved="{Binding CheckUpdate.IsSaved}">
+            <CheckBox IsChecked="{Binding CheckUpdate.Value}" Content="Automatically check for updates on startup" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="Main Window Startup Location" IsSaved="{Binding MainStartupLocation.IsSaved}">
+            <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding MainStartupLocation.Value}" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="Unarchive Window Startup Location" IsSaved="{Binding UnarchiveStartupLocation.IsSaved}">
+            <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding UnarchiveStartupLocation.Value}" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="Default Search Tab" IsSaved="{Binding DefaultSearchTab.IsSaved}">
+            <ComboBox ItemsSource="{Binding SearchModes}" SelectedItem="{Binding DefaultSearchTab.Value}" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="Copy Delimiter" IsSaved="{Binding CopyDelimiter.IsSaved}">
+            <ComboBox ItemsSource="{Binding Delimiters}" SelectedItem="{Binding CopyDelimiter.Value}" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="Custom Delimiter" IsSaved="{Binding CustomDelimiter.IsSaved}"
+                             Visibility="{Binding IsCustomDelimiterVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TextBox Text="{Binding CustomDelimiter.Value, UpdateSourceTrigger=PropertyChanged}" />
+        </ctrl:SettingControl>
+
+        <Button Content="Reset EULA" Command="{Binding ResetEulaCommand}" HorizontalAlignment="Left" Margin="0,10,0,0" Padding="10,5"/>
+    </StackPanel>
+</UserControl>

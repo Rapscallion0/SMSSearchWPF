@@ -1,0 +1,50 @@
+<UserControl x:Class="SMS_Search.Views.Settings.LauncherSectionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
+             xmlns:vm="clr-namespace:SMS_Search.ViewModels.Settings"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:LauncherSectionViewModel}"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </UserControl.Resources>
+
+    <StackPanel Margin="0,0,0,20">
+        <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Margin="0,0,0,15" />
+
+        <ctrl:SettingControl Header="Start with Windows" IsSaved="{Binding StartWithWindows.IsSaved}">
+            <CheckBox IsChecked="{Binding StartWithWindows.Value}" Content="Launch application on system startup" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="Global Hotkey" IsSaved="{Binding StoredHotkey.IsSaved}">
+            <DockPanel LastChildFill="True">
+                 <Button DockPanel.Dock="Right" Content="X" Width="30" Command="{Binding ResetPreviewCommand}" Margin="5,0,0,0" ToolTip="Reset Hotkey" />
+                 <TextBox Text="{Binding HotkeyDisplay, Mode=OneWay}"
+                          IsReadOnly="True"
+                          PreviewKeyDown="Hotkey_PreviewKeyDown"
+                          ToolTip="Click and press keys to set hotkey" />
+            </DockPanel>
+        </ctrl:SettingControl>
+
+        <TextBlock Text="Service Status" FontWeight="SemiBold" Margin="0,15,0,5" />
+        <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="10">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <Ellipse Width="12" Height="12" Fill="{Binding StatusColor}" Margin="0,0,10,0" />
+                    <TextBlock Text="{Binding ServiceStatusText}" FontWeight="Bold" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Start Service" Command="{Binding StartServiceCommand}" Width="100" Margin="0,0,10,0" />
+                    <Button Content="Stop Service" Command="{Binding StopServiceCommand}" Width="100" />
+                </StackPanel>
+
+                <TextBlock Text="Service is stopped. Hotkey will not work." Foreground="Red" Margin="0,10,0,0"
+                           Visibility="{Binding ServiceWarningVisibility}" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

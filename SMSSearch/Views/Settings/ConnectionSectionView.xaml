@@ -1,0 +1,41 @@
+<UserControl x:Class="SMS_Search.Views.Settings.ConnectionSectionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
+             xmlns:vm="clr-namespace:SMS_Search.ViewModels.Settings"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:ConnectionSectionViewModel}"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </UserControl.Resources>
+
+    <StackPanel Margin="0,0,0,20">
+        <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Margin="0,0,0,15" />
+
+        <ctrl:SettingControl Header="Server" IsSaved="{Binding Server.IsSaved}">
+            <TextBox Text="{Binding Server.Value, UpdateSourceTrigger=PropertyChanged}" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="Database" IsSaved="{Binding Database.IsSaved}">
+            <TextBox Text="{Binding Database.Value, UpdateSourceTrigger=PropertyChanged}" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="SQL User" IsSaved="{Binding User.IsSaved}">
+            <TextBox Text="{Binding User.Value, UpdateSourceTrigger=PropertyChanged}" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="SQL Password" IsSaved="{Binding IsPasswordSaved}">
+            <StackPanel>
+                <PasswordBox PasswordChanged="SqlPasswordBox_PasswordChanged" />
+                <TextBlock Text="Leave blank to keep existing password."
+                           FontStyle="Italic" Foreground="Gray" Margin="0,5,0,0" FontSize="11"/>
+            </StackPanel>
+        </ctrl:SettingControl>
+
+        <TextBlock Text="Saving Password..." Foreground="Blue" Margin="0,5,0,0"
+                   Visibility="{Binding IsPasswordSaving, Converter={StaticResource BooleanToVisibilityConverter}}" />
+    </StackPanel>
+</UserControl>
