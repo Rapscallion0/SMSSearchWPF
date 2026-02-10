@@ -84,7 +84,7 @@ namespace SMS_Search
 
         private void OnRequestOpenSettings()
         {
-            var win = App.Current.Services.GetRequiredService<SettingsWindow>();
+            var win = App.Current.Services.GetRequiredService<ModernSettingsWindow>();
             win.Owner = this;
             win.ShowDialog();
         }

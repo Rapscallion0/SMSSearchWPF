@@ -3,6 +3,7 @@ using SMS_Search.Data;
 using SMS_Search.Services;
 using SMS_Search.Utils;
 using SMS_Search.ViewModels;
+using SMS_Search.ViewModels.Settings;
 using SMS_Search.Views;
 using System;
 using System.IO;
@@ -29,6 +30,8 @@ namespace SMS_Search
             services.AddSingleton<IConfigService>(provider =>
                 new ConfigManager(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SMSSearch_settings.json")));
 
+            services.AddSingleton<ISettingsRepository, SettingsRepository>();
+
             services.AddSingleton<ILoggerService>(provider => new LoggerService("App"));
 
             services.AddSingleton<IDataRepository, DataRepository>();
@@ -44,12 +47,19 @@ namespace SMS_Search
             services.AddTransient<MainViewModel>();
             services.AddTransient<SearchViewModel>();
             services.AddTransient<ResultsViewModel>();
-            services.AddTransient<SettingsViewModel>();
             services.AddTransient<EulaViewModel>();
             services.AddTransient<UnarchiveViewModel>();
 
+            // New Settings ViewModels
+            services.AddTransient<GeneralSectionViewModel>();
+            services.AddTransient<ConnectionSectionViewModel>();
+            services.AddTransient<DisplaySectionViewModel>();
+            services.AddTransient<CleanSqlSectionViewModel>();
+            services.AddTransient<LauncherSectionViewModel>();
+            services.AddTransient<ModernSettingsViewModel>();
+
             services.AddTransient<MainWindow>();
-            services.AddTransient<SettingsWindow>();
+            services.AddTransient<ModernSettingsWindow>();
             services.AddTransient<EulaWindow>();
             services.AddTransient<UnarchiveWindow>();
 

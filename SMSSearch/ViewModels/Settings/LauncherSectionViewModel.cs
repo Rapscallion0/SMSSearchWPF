@@ -1,83 +1,91 @@
+using SMS_Search.Views;
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using SMS_Search.Services;
 using SMS_Search.Utils;
-using SMS_Search.Views;
 
-namespace SMS_Search.ViewModels
+namespace SMS_Search.ViewModels.Settings
 {
-    public partial class LauncherSettingsViewModel : ObservableObject
+    public partial class LauncherSectionViewModel : SettingsSectionViewModel, IDisposable
     {
-        private readonly IConfigService _config;
+        private readonly ISettingsRepository _repository;
         private readonly IHotkeyService _hotkeyService;
         private readonly ILoggerService _logger;
         private readonly IDialogService _dialogService;
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern IntPtr FindWindow(string? lpClassName, string lpWindowName);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-
         private bool _isMonitoring = true;
+        private Key _currentKey = Key.None;
+        private ModifierKeys _currentModifiers = ModifierKeys.None;
 
-        public LauncherSettingsViewModel(IConfigService config, IHotkeyService hotkeyService, ILoggerService logger, IDialogService dialogService)
+        public override string Title => "Launcher";
+        public override string IconData => "M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"; // Alert icon (placeholder). Or rocket: M13,2.03C13,2.03 13,2.03 13,2.03C16.45,2.45 19.34,4.76 20.61,7.91L13,2.03M12,20C12,20 12,20 12,20C8.55,19.58 5.66,17.27 4.39,14.12L12,20M12,2C12,2 12,2 12,2C12,2 11.96,2 11.93,2C11.94,2 11.96,2 11.97,2C7.38,2.71 3.5,6.43 2.29,11.23L10.12,18.53L12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2Z
+        // Rocket icon approximation or just Launch icon.
+
+        public LauncherSectionViewModel(
+            ISettingsRepository repository,
+            IHotkeyService hotkeyService,
+            ILoggerService logger,
+            IDialogService dialogService)
         {
-            _config = config;
+            _repository = repository;
             _hotkeyService = hotkeyService;
             _logger = logger;
             _dialogService = dialogService;
-            Load();
-            Task.Run(MonitorServiceStatus);
+
+            StartWithWindows = new ObservableSetting<bool>(
+                repository, "LAUNCHER", "START_WITH_WINDOWS",
+                repository.GetValue("LAUNCHER", "START_WITH_WINDOWS") == "1",
+                v => v ? "1" : "0");
+
+            StartWithWindows.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
+                {
+                    UpdateRegistry(StartWithWindows.Value);
+                }
+            };
+
+            // Load Hotkey
+            string? hotkeyStr = repository.GetValue("LAUNCHER", "HOTKEY");
+            StoredHotkey = new ObservableSetting<string>(
+                repository, "LAUNCHER", "HOTKEY",
+                hotkeyStr ?? "");
+
+            if (!string.IsNullOrEmpty(hotkeyStr))
+            {
+                var (k, m) = HotkeyUtils.Parse(hotkeyStr);
+                _currentKey = k;
+                _currentModifiers = m;
+                HotkeyDisplay = HotkeyUtils.GetFriendlyString(k, m);
+            }
+
+            MonitorServiceStatus();
         }
 
-        public void StopMonitoring()
-        {
-            _isMonitoring = false;
-        }
-
-        [ObservableProperty]
-        private bool _startWithWindows;
+        public ObservableSetting<bool> StartWithWindows { get; }
+        public ObservableSetting<string> StoredHotkey { get; } // Only used for storage
 
         [ObservableProperty]
         private string _hotkeyDisplay = "";
 
         [ObservableProperty]
-        private SolidColorBrush _statusColor = System.Windows.Media.Brushes.Red;
+        private string _serviceStatusText = "Checking...";
 
         [ObservableProperty]
-        private string _serviceStatusText = "Stopped";
+        private System.Windows.Media.Brush _statusColor = System.Windows.Media.Brushes.Gray;
 
         [ObservableProperty]
-        private Visibility _serviceWarningVisibility = Visibility.Collapsed;
+        private System.Windows.Visibility _serviceWarningVisibility = System.Windows.Visibility.Collapsed;
 
-        private Key _hotkey;
-        private ModifierKeys _modifiers;
-
-        public IRelayCommand StartServiceCommand => new RelayCommand(StartService);
-        public IRelayCommand StopServiceCommand => new RelayCommand(StopService);
-
-        private void Load()
+        public void Dispose()
         {
-            StartWithWindows = _config.GetValue("LAUNCHER", "START_WITH_WINDOWS") == "1";
-
-            string? hotkeyStr = _config.GetValue("LAUNCHER", "HOTKEY");
-            if (!string.IsNullOrEmpty(hotkeyStr))
-            {
-                var (k, m) = HotkeyUtils.Parse(hotkeyStr);
-                _hotkey = k;
-                _modifiers = m;
-                HotkeyDisplay = HotkeyUtils.GetFriendlyString(k, m);
-            }
+            _isMonitoring = false;
         }
 
         public void CaptureHotkey(Key key, ModifierKeys modifiers)
@@ -109,23 +117,27 @@ namespace SMS_Search.ViewModels
                 }
 
                 // Check availability (unless it's the same as already selected)
-                if ((key != _hotkey || modifiers != _modifiers) && !_hotkeyService.CheckAvailability(key, modifiers))
+                if ((key != _currentKey || modifiers != _currentModifiers) && !_hotkeyService.CheckAvailability(key, modifiers))
                 {
                      _dialogService.ShowToast("This hotkey is already in use.", "In Use", ToastType.Error);
                      return;
                 }
 
                 // If valid, commit
-                _hotkey = key;
-                _modifiers = modifiers;
+                _currentKey = key;
+                _currentModifiers = modifiers;
+
+                string val = $"{_currentModifiers}+{_currentKey}";
+                StoredHotkey.Value = val; // Trigger auto-save
             }
         }
 
+        [RelayCommand]
         public void ResetPreview()
         {
-            if (_hotkey != Key.None)
+            if (_currentKey != Key.None)
             {
-                HotkeyDisplay = HotkeyUtils.GetFriendlyString(_hotkey, _modifiers);
+                HotkeyDisplay = HotkeyUtils.GetFriendlyString(_currentKey, _currentModifiers);
             }
             else
             {
@@ -147,7 +159,37 @@ namespace SMS_Search.ViewModels
             return false;
         }
 
-        private async void StartService()
+        private void UpdateRegistry(bool enable)
+        {
+            try
+            {
+                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+                {
+                    if (key != null)
+                    {
+                        if (enable)
+                        {
+                            string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+                            if (exePath != null)
+                            {
+                                key.SetValue("SMS_Search_Launcher", $"\"{exePath}\" --listener");
+                            }
+                        }
+                        else
+                        {
+                            key.DeleteValue("SMS_Search_Launcher", false);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to update startup registry key", ex);
+            }
+        }
+
+        [RelayCommand]
+        private async Task StartService()
         {
             StatusColor = System.Windows.Media.Brushes.Yellow;
             ServiceStatusText = "Starting...";
@@ -171,6 +213,7 @@ namespace SMS_Search.ViewModels
             CheckServiceStatus();
         }
 
+        [RelayCommand]
         private void StopService()
         {
             StatusColor = System.Windows.Media.Brushes.Yellow;
@@ -194,7 +237,7 @@ namespace SMS_Search.ViewModels
             CheckServiceStatus();
         }
 
-        private async Task MonitorServiceStatus()
+        private async void MonitorServiceStatus()
         {
             while (_isMonitoring)
             {
@@ -214,53 +257,21 @@ namespace SMS_Search.ViewModels
                 {
                     ServiceStatusText = "Running";
                     StatusColor = System.Windows.Media.Brushes.Green;
-                    ServiceWarningVisibility = Visibility.Collapsed;
+                    ServiceWarningVisibility = System.Windows.Visibility.Collapsed;
                 }
                 else
                 {
                     ServiceStatusText = "Stopped";
                     StatusColor = System.Windows.Media.Brushes.Red;
-                    ServiceWarningVisibility = Visibility.Visible;
+                    ServiceWarningVisibility = System.Windows.Visibility.Visible;
                 }
             });
         }
 
-        public void Save()
-        {
-            _config.SetValue("LAUNCHER", "START_WITH_WINDOWS", StartWithWindows ? "1" : "0");
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr FindWindow(string? lpClassName, string lpWindowName);
 
-            if (_hotkey != Key.None)
-            {
-                string hotkeyStr = $"{_modifiers}+{_hotkey}";
-                _config.SetValue("LAUNCHER", "HOTKEY", hotkeyStr);
-            }
-
-            // Manage Registry Key for Startup
-            try
-            {
-                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
-                {
-                    if (key != null)
-                    {
-                        if (StartWithWindows)
-                        {
-                            string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
-                            if (exePath != null)
-                            {
-                                key.SetValue("SMS_Search_Launcher", $"\"{exePath}\" --listener");
-                            }
-                        }
-                        else
-                        {
-                            key.DeleteValue("SMS_Search_Launcher", false);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Failed to update startup registry key", ex);
-            }
-        }
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
     }
 }
