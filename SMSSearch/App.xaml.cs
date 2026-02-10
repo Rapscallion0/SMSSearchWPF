@@ -107,6 +107,7 @@ namespace SMS_Search
             {
                 var hiddenWindow = new Window
                 {
+                    Title = "SMS_Search_Listener_Hidden_Window",
                     Width = 0, Height = 0,
                     WindowStyle = WindowStyle.None,
                     ShowInTaskbar = false,

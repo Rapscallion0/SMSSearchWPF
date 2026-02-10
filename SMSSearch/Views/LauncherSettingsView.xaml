@@ -17,10 +17,26 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <TextBlock Text="Hotkey:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-            <TextBox Text="{Binding HotkeyDisplay}" IsReadOnly="True" Grid.Column="1" PreviewKeyDown="TextBox_PreviewKeyDown"/>
+            <TextBox Text="{Binding HotkeyDisplay}" IsReadOnly="True" Grid.Column="1"
+                     PreviewKeyDown="TextBox_PreviewKeyDown"
+                     PreviewKeyUp="TextBox_PreviewKeyUp"
+                     LostFocus="TextBox_LostFocus"/>
         </Grid>
 
         <TextBlock Text="Press any key combination in the box above to set the hotkey."
-                   FontStyle="Italic" Foreground="Gray" TextWrapping="Wrap"/>
+                   FontStyle="Italic" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+        <GroupBox Header="Service Status">
+            <StackPanel Margin="5">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <Ellipse Width="12" Height="12" Fill="{Binding StatusColor}" Stroke="Gray" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="{Binding ServiceStatusText}" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Start Service" Command="{Binding StartServiceCommand}" Width="100" Margin="0,0,10,0"/>
+                    <Button Content="Stop Service" Command="{Binding StopServiceCommand}" Width="100"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
     </StackPanel>
 </UserControl>
