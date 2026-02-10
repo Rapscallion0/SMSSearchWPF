@@ -38,7 +38,7 @@ namespace SMS_Search.ViewModels
         [RelayCommand]
         private void Cancel()
         {
-            Application.Current.Shutdown();
+            System.Windows.Application.Current.Shutdown();
         }
     }
 }

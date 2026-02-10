@@ -10,7 +10,7 @@ namespace SMS_Search.Services
             if (string.IsNullOrEmpty(text)) return;
             try
             {
-                Clipboard.SetText(text);
+                System.Windows.Clipboard.SetText(text);
             }
             catch (ExternalException)
             {
@@ -20,8 +20,8 @@ namespace SMS_Search.Services
 
         public string GetText()
         {
-            if (Clipboard.ContainsText())
-                return Clipboard.GetText();
+            if (System.Windows.Clipboard.ContainsText())
+                return System.Windows.Clipboard.GetText();
             return string.Empty;
         }
     }

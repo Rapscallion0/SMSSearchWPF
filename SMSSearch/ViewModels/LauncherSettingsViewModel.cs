@@ -52,7 +52,7 @@ namespace SMS_Search.ViewModels
         private string _hotkeyDisplay = "";
 
         [ObservableProperty]
-        private SolidColorBrush _statusColor = Brushes.Red;
+        private SolidColorBrush _statusColor = System.Windows.Media.Brushes.Red;
 
         [ObservableProperty]
         private string _serviceStatusText = "Stopped";
@@ -149,7 +149,7 @@ namespace SMS_Search.ViewModels
 
         private async void StartService()
         {
-            StatusColor = Brushes.Yellow;
+            StatusColor = System.Windows.Media.Brushes.Yellow;
             ServiceStatusText = "Starting...";
             try
             {
@@ -163,7 +163,7 @@ namespace SMS_Search.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError("Failed to start service", ex);
-                StatusColor = Brushes.Red;
+                StatusColor = System.Windows.Media.Brushes.Red;
             }
 
             // Wait for polling to pick it up
@@ -173,7 +173,7 @@ namespace SMS_Search.ViewModels
 
         private void StopService()
         {
-            StatusColor = Brushes.Yellow;
+            StatusColor = System.Windows.Media.Brushes.Yellow;
             ServiceStatusText = "Stopping...";
             try
             {
@@ -213,13 +213,13 @@ namespace SMS_Search.ViewModels
                 if (running)
                 {
                     ServiceStatusText = "Running";
-                    StatusColor = Brushes.Green;
+                    StatusColor = System.Windows.Media.Brushes.Green;
                     ServiceWarningVisibility = Visibility.Collapsed;
                 }
                 else
                 {
                     ServiceStatusText = "Stopped";
-                    StatusColor = Brushes.Red;
+                    StatusColor = System.Windows.Media.Brushes.Red;
                     ServiceWarningVisibility = Visibility.Visible;
                 }
             });

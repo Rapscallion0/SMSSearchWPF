@@ -39,6 +39,11 @@ namespace SMS_Search.ViewModels
             ShowHistoryCommand = new RelayCommand<System.Windows.Controls.Button>(ShowHistory);
             LoadCleanSqlRules();
             LoadHistory();
+
+            if (System.Enum.TryParse(_configService.GetValue("GENERAL", "DEFAULT_TAB"), out SearchMode tabMode))
+            {
+                SelectedMode = tabMode;
+            }
         }
 
         [ObservableProperty]

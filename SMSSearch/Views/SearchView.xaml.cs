@@ -4,7 +4,7 @@ using SMS_Search.ViewModels;
 
 namespace SMS_Search.Views
 {
-    public partial class SearchView : UserControl
+    public partial class SearchView : System.Windows.Controls.UserControl
     {
         public SearchView()
         {

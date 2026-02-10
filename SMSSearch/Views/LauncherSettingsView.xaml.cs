@@ -6,7 +6,7 @@ using SMS_Search.ViewModels;
 
 namespace SMS_Search.Views
 {
-    public partial class LauncherSettingsView : UserControl
+    public partial class LauncherSettingsView : System.Windows.Controls.UserControl
     {
         public LauncherSettingsView()
         {
@@ -20,7 +20,7 @@ namespace SMS_Search.Views
             };
         }
 
-        private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void TextBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (DataContext is LauncherSettingsViewModel vm)
             {
@@ -33,7 +33,7 @@ namespace SMS_Search.Views
             }
         }
 
-        private void TextBox_PreviewKeyUp(object sender, KeyEventArgs e)
+        private void TextBox_PreviewKeyUp(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (DataContext is LauncherSettingsViewModel vm)
             {

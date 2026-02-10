@@ -4,6 +4,7 @@ namespace SMS_Search.Data
 {
     public enum SearchMode { Function, Totalizer, Field }
     public enum SearchType { Number, Description, CustomSql, Table }
+    public enum StartupLocationMode { Last, Primary, Active, Cursor }
 
     public class SearchCriteria
     {

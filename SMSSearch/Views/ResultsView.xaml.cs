@@ -14,7 +14,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace SMS_Search.Views
 {
-    public partial class ResultsView : UserControl
+    public partial class ResultsView : System.Windows.Controls.UserControl
     {
         private DispatcherTimer _debounceTimer;
 
@@ -227,11 +227,11 @@ namespace SMS_Search.Views
 
             try
             {
-                Clipboard.SetText(sb.ToString());
+                System.Windows.Clipboard.SetText(sb.ToString());
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Failed to copy: " + ex.Message);
+                System.Windows.MessageBox.Show("Failed to copy: " + ex.Message);
             }
         }
 
@@ -262,7 +262,7 @@ namespace SMS_Search.Views
                    value is float || value is double || value is decimal;
         }
 
-        private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void UserControl_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == Key.F && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
             {
@@ -276,7 +276,7 @@ namespace SMS_Search.Views
         {
             if (col != null)
             {
-                try { Clipboard.SetText(col.Header.ToString() ?? ""); } catch { }
+                try { System.Windows.Clipboard.SetText(col.Header.ToString() ?? ""); } catch { }
             }
         }
 
