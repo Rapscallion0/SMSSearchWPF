@@ -54,7 +54,7 @@ GROUP BY
             {
                 if (criteria.Type == SearchType.Number)
                 {
-                    string fldNum = "F" + criteria.Value;
+                    string fldNum = "F" + (criteria.Value ?? "");
                     HandleWildcards(ref fldNum, out string op);
 
                     sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} WHERE col.name {op} @Val {FieldSelectGroupBy}";
@@ -62,7 +62,7 @@ GROUP BY
                 }
                 else if (criteria.Type == SearchType.Description)
                 {
-                    string desc = criteria.Value;
+                    string desc = criteria.Value ?? "";
                     if (criteria.AnyMatch) desc = $"*{desc}*";
                     HandleWildcards(ref desc, out string op);
 
@@ -73,7 +73,7 @@ GROUP BY
                 {
                     if (criteria.ShowFields)
                     {
-                        string table = criteria.Value;
+                        string table = criteria.Value ?? "";
                         HandleWildcards(ref table, out string op);
 
                         sql = $"{FieldSelectBase} AND RBF.F1452 {op} @Table {FieldSelectJoinPKey} WHERE TAB.name {op} @Table {FieldSelectGroupBy}";
@@ -81,7 +81,7 @@ GROUP BY
                     }
                     else
                     {
-                        string tableName = SanitizeIdentifier(criteria.Value);
+                        string tableName = SanitizeIdentifier(criteria.Value ?? "");
                         sql = $"SELECT * FROM {tableName}";
 
                         if (criteria.LastTransaction)
@@ -92,7 +92,7 @@ GROUP BY
                 }
                 else if (criteria.Type == SearchType.CustomSql)
                 {
-                    sql = criteria.Value;
+                    sql = criteria.Value ?? "";
                 }
             }
             else if (criteria.Mode == SearchMode.Totalizer)
@@ -102,7 +102,7 @@ GROUP BY
                 {
                     if (!string.IsNullOrEmpty(criteria.Value))
                     {
-                        string val = criteria.Value;
+                        string val = criteria.Value!;
                         HandleWildcards(ref val, out string op);
                         sql += $" WHERE F1034 {op} @Val";
                         p.Add("Val", val);
@@ -112,7 +112,7 @@ GROUP BY
                 {
                     if (!string.IsNullOrEmpty(criteria.Value))
                     {
-                        string val = criteria.Value;
+                        string val = criteria.Value!;
                         if (criteria.AnyMatch) val = $"*{val}*";
                         HandleWildcards(ref val, out string op);
                         sql += $" WHERE F1039 {op} @Val";
@@ -121,7 +121,7 @@ GROUP BY
                 }
                 else if (criteria.Type == SearchType.CustomSql)
                 {
-                    sql = criteria.Value;
+                    sql = criteria.Value ?? "";
                 }
             }
             else if (criteria.Mode == SearchMode.Function)
@@ -131,7 +131,7 @@ GROUP BY
                 {
                     if (!string.IsNullOrEmpty(criteria.Value))
                     {
-                        string val = criteria.Value;
+                        string val = criteria.Value!;
                         HandleWildcards(ref val, out string op);
                         sql += $" WHERE F1063 {op} @Val";
                         p.Add("Val", val);
@@ -141,7 +141,7 @@ GROUP BY
                 {
                     if (!string.IsNullOrEmpty(criteria.Value))
                     {
-                        string val = criteria.Value;
+                        string val = criteria.Value!;
                         if (criteria.AnyMatch) val = $"*{val}*";
                         HandleWildcards(ref val, out string op);
                         sql += $" WHERE F1064 {op} @Val";
@@ -150,7 +150,7 @@ GROUP BY
                 }
                 else if (criteria.Type == SearchType.CustomSql)
                 {
-                    sql = criteria.Value;
+                    sql = criteria.Value ?? "";
                 }
             }
 

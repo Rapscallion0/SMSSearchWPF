@@ -16,7 +16,7 @@ namespace SMS_Search.ViewModels
         private readonly IQueryHistoryService _historyService;
         private readonly IHotkeyService _hotkeyService;
 
-        public event Action RequestOpenSettings;
+        public event Action? RequestOpenSettings;
 
         public MainViewModel(
             SearchViewModel searchViewModel,
@@ -53,7 +53,10 @@ namespace SMS_Search.ViewModels
 
              if (criteria.Type == SearchType.CustomSql)
              {
-                 _historyService.AddQuery(criteria.Mode.ToString(), criteria.Value);
+                 if (criteria.Value != null)
+                 {
+                     _historyService.AddQuery(criteria.Mode.ToString(), criteria.Value);
+                 }
              }
         }
 

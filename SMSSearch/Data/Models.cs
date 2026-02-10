@@ -9,7 +9,7 @@ namespace SMS_Search.Data
     {
         public SearchMode Mode { get; set; }
         public SearchType Type { get; set; }
-        public string Value { get; set; }
+        public string? Value { get; set; }
         public bool AnyMatch { get; set; }
         public bool ShowFields { get; set; }
         public bool LastTransaction { get; set; }
@@ -17,7 +17,7 @@ namespace SMS_Search.Data
 
     public class QueryResult
     {
-        public string Sql { get; set; }
-        public DynamicParameters Parameters { get; set; }
+        public string? Sql { get; set; }
+        public DynamicParameters? Parameters { get; set; }
     }
 }

@@ -28,7 +28,7 @@ namespace SMS_Search.ViewModels
         private SearchMode _selectedMode;
 
         [ObservableProperty]
-        private string _searchText;
+        private string? _searchText;
 
         [ObservableProperty]
         private bool _anyMatch;
@@ -63,7 +63,7 @@ namespace SMS_Search.ViewModels
         private ObservableCollection<string> _tables = new ObservableCollection<string>();
 
         [ObservableProperty]
-        private string _selectedTable;
+        private string? _selectedTable;
 
         [ObservableProperty]
         private bool _showFields = true;
@@ -84,7 +84,7 @@ namespace SMS_Search.ViewModels
                  var database = _configService.GetValue("CONNECTION", "DATABASE");
                  var user = _configService.GetValue("CONNECTION", "SQLUSER");
                  var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
-                 string decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+                 string? decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
 
                  var tables = await _repository.GetTablesAsync(server, database, user, decryptedPass);
                  Tables.Clear();
