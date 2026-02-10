@@ -42,14 +42,14 @@ namespace SMS_Search.Views
             }
         }
 
-        private void Vm_HeadersUpdated(object sender, EventArgs e)
+        private void Vm_HeadersUpdated(object? sender, EventArgs e)
         {
             if (DataContext is ResultsViewModel vm)
             {
                 foreach (var col in resultsGrid.Columns)
                 {
-                    string key = col.SortMemberPath;
-                    if (!string.IsNullOrEmpty(key) && vm.ColumnHeaders.TryGetValue(key, out string header))
+                    string? key = col.SortMemberPath;
+                    if (!string.IsNullOrEmpty(key) && vm.ColumnHeaders.TryGetValue(key, out string? header))
                     {
                         col.Header = header;
                     }
@@ -57,19 +57,19 @@ namespace SMS_Search.Views
             }
         }
 
-        private void resultsGrid_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
+        private void resultsGrid_AutoGeneratingColumn(object? sender, DataGridAutoGeneratingColumnEventArgs e)
         {
              if (DataContext is ResultsViewModel vm)
              {
                  string key = e.PropertyName;
-                 if (vm.ColumnHeaders.TryGetValue(key, out string header))
+                 if (vm.ColumnHeaders.TryGetValue(key, out string? header))
                  {
                      e.Column.Header = header;
                  }
              }
         }
 
-        private void Vm_ScrollToRowRequested(object sender, int rowIndex)
+        private void Vm_ScrollToRowRequested(object? sender, int rowIndex)
         {
             if (resultsGrid.Items.Count > rowIndex && rowIndex >= 0)
             {
@@ -89,7 +89,7 @@ namespace SMS_Search.Views
             _debounceTimer.Start();
         }
 
-        private void DebounceTimer_Tick(object sender, EventArgs e)
+        private void DebounceTimer_Tick(object? sender, EventArgs e)
         {
             _debounceTimer.Stop();
             if (DataContext is ResultsViewModel vm)
@@ -200,10 +200,10 @@ namespace SMS_Search.Views
             }
         }
 
-        private object GetCellValue(object row, DataGridColumn col)
+        private object? GetCellValue(object row, DataGridColumn col)
         {
             if (row == null) return null;
-            string propName = col.SortMemberPath;
+            string? propName = col.SortMemberPath;
             if (string.IsNullOrEmpty(propName)) return null;
 
             var props = TypeDescriptor.GetProperties(row);
@@ -211,16 +211,16 @@ namespace SMS_Search.Views
             return prop?.GetValue(row);
         }
 
-        private string FormatSqlValue(object value)
+        private string FormatSqlValue(object? value)
         {
             if (value == null || value == DBNull.Value) return "NULL";
             if (value is bool b) return b ? "1" : "0";
-            if (IsNumeric(value)) return value.ToString();
+            if (IsNumeric(value)) return value.ToString() ?? "NULL";
             if (value is DateTime dt) return $"'{dt:yyyy-MM-dd HH:mm:ss.fff}'";
-            return $"'{value.ToString().Replace("'", "''")}'";
+            return $"'{value.ToString()?.Replace("'", "''") ?? ""}'";
         }
 
-        private bool IsNumeric(object value)
+        private bool IsNumeric(object? value)
         {
             return value is sbyte || value is byte || value is short || value is ushort ||
                    value is int || value is uint || value is long || value is ulong ||
@@ -241,7 +241,7 @@ namespace SMS_Search.Views
         {
             if (sender is MenuItem mi && mi.Tag is DataGridColumn col)
             {
-                try { Clipboard.SetText(col.Header.ToString()); } catch { }
+                try { Clipboard.SetText(col.Header.ToString() ?? ""); } catch { }
             }
         }
 
@@ -266,10 +266,13 @@ namespace SMS_Search.Views
             var selectedItems = resultsGrid.SelectedItems;
             if (selectedItems.Count == 0) return;
 
+            var firstItem = selectedItems[0];
+            if (firstItem == null) return;
+
             var sb = new StringBuilder();
             if (selectedItems.Count > 0)
             {
-                var props = TypeDescriptor.GetProperties(selectedItems[0]);
+                var props = TypeDescriptor.GetProperties(firstItem);
                 foreach (var item in selectedItems)
                 {
                     var values = new List<string>();

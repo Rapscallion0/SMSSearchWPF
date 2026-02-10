@@ -46,7 +46,7 @@ namespace SMS_Search.ViewModels
         private SearchMode _selectedMode;
 
         [ObservableProperty]
-        private string _searchText;
+        private string _searchText = "";
 
         [ObservableProperty]
         private bool _anyMatch;
@@ -84,7 +84,7 @@ namespace SMS_Search.ViewModels
         private ObservableCollection<string> _tables = new ObservableCollection<string>();
 
         [ObservableProperty]
-        private string _selectedTable;
+        private string _selectedTable = "";
 
         [ObservableProperty]
         private bool _showFields = true;
@@ -122,16 +122,16 @@ namespace SMS_Search.ViewModels
         private void LoadCleanSqlRules()
         {
              _cleanSqlRules.Clear();
-             string countStr = _configService.GetValue("CLEAN_SQL", "Count");
+             string? countStr = _configService.GetValue("CLEAN_SQL", "Count");
              if (int.TryParse(countStr, out int count) && count > 0)
              {
                  for (int i = 0; i < count; i++)
                  {
-                     string pattern = _configService.GetValue("CLEAN_SQL", "Rule_" + i + "_Regex");
-                     string replacement = _configService.GetValue("CLEAN_SQL", "Rule_" + i + "_Replace");
+                     string? pattern = _configService.GetValue("CLEAN_SQL", "Rule_" + i + "_Regex");
+                     string? replacement = _configService.GetValue("CLEAN_SQL", "Rule_" + i + "_Replace");
                      if (!string.IsNullOrEmpty(pattern))
                      {
-                         _cleanSqlRules.Add(new SqlCleaningRule { Pattern = pattern, Replacement = replacement });
+                         _cleanSqlRules.Add(new SqlCleaningRule { Pattern = pattern, Replacement = replacement ?? "" });
                      }
                  }
              }
@@ -148,12 +148,12 @@ namespace SMS_Search.ViewModels
              FieldHistory = new ObservableCollection<string>(_historyService.GetHistory("Field"));
         }
 
-        private void ShowHistory(System.Windows.Controls.Button btn)
+        private void ShowHistory(System.Windows.Controls.Button? btn)
         {
             if (btn == null) return;
 
             var menu = new System.Windows.Controls.ContextMenu();
-            System.Collections.Generic.IEnumerable<string> history = SelectedMode switch
+            System.Collections.Generic.IEnumerable<string>? history = SelectedMode switch
             {
                 SearchMode.Function => FunctionHistory,
                 SearchMode.Totalizer => TotalizerHistory,
@@ -209,7 +209,10 @@ namespace SMS_Search.ViewModels
              {
                  try
                  {
-                     cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, rule.Pattern, rule.Replacement, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                     if (rule.Pattern != null && rule.Replacement != null)
+                     {
+                         cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, rule.Pattern, rule.Replacement, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                     }
                  }
                  catch { }
              }
@@ -226,11 +229,11 @@ namespace SMS_Search.ViewModels
         {
             try
             {
-                 var server = _configService.GetValue("CONNECTION", "SERVER");
-                 var database = _configService.GetValue("CONNECTION", "DATABASE");
-                 var user = _configService.GetValue("CONNECTION", "SQLUSER");
+                 var server = _configService.GetValue("CONNECTION", "SERVER") ?? "";
+                 var database = _configService.GetValue("CONNECTION", "DATABASE") ?? "";
+                 var user = _configService.GetValue("CONNECTION", "SQLUSER") ?? "";
                  var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
-                 string decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+                 string? decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
 
                  var tables = await _repository.GetTablesAsync(server, database, user, decryptedPass);
                  Tables.Clear();

@@ -11,7 +11,7 @@ namespace SMS_Search.ViewModels
         private readonly IConfigService _config;
         private readonly ILoggerService _logger;
 
-        public event Action RequestClose;
+        public event Action? RequestClose;
 
         public UnarchiveViewModel(IConfigService config, ILoggerService logger)
         {

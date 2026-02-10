@@ -34,8 +34,8 @@ namespace SMS_Search.ViewModels
             _configService = configService;
             _clipboardService = clipboardService;
 
-            string fctFields = _configService.GetValue("QUERY", "FUNCTION");
-            string tlzFields = _configService.GetValue("QUERY", "TOTALIZER");
+            string fctFields = _configService.GetValue("QUERY", "FUNCTION") ?? "";
+            string tlzFields = _configService.GetValue("QUERY", "TOTALIZER") ?? "";
             _queryBuilder = new QueryBuilder(fctFields, tlzFields);
 
             _gridContext.DataReady += OnDataReady;
@@ -51,34 +51,35 @@ namespace SMS_Search.ViewModels
 
             ToggleHeaderDescriptionCommand = new RelayCommand(() => ShowDescriptionHeaders = !ShowDescriptionHeaders);
             CopyInsertCommand = new RelayCommand<System.Collections.IList>(CopyAsSqlInsert);
+            ExportSelectedCsvCommand = new RelayCommand<System.Collections.IList>(_ => { });
         }
 
         [ObservableProperty]
-        private IList _searchResults;
+        private IList? _searchResults;
 
         [ObservableProperty]
         private bool _isBusy;
 
         [ObservableProperty]
-        private string _statusText;
+        private string _statusText = "";
 
         [ObservableProperty]
         private int _totalRecords;
 
         [ObservableProperty]
-        private string _filterText;
+        private string _filterText = "";
 
         [ObservableProperty]
-        private string _matchStatusText;
+        private string _matchStatusText = "";
 
         [ObservableProperty]
-        private string _tableName;
+        private string _tableName = "";
 
         [ObservableProperty]
         private bool _showDescriptionHeaders;
 
-        public event EventHandler<int> ScrollToRowRequested;
-        public event EventHandler HeadersUpdated;
+        public event EventHandler<int>? ScrollToRowRequested;
+        public event EventHandler? HeadersUpdated;
 
         public IAsyncRelayCommand<string> ApplyFilterCommand { get; }
         public IAsyncRelayCommand FindNextCommand { get; }
@@ -95,7 +96,7 @@ namespace SMS_Search.ViewModels
         // Dictionary mapping Column Name -> Header Text (Description or Name)
         public Dictionary<string, string> ColumnHeaders { get; private set; } = new Dictionary<string, string>();
 
-        private DataTable _lastSchema;
+        private DataTable? _lastSchema;
 
         partial void OnShowDescriptionHeadersChanged(bool value)
         {
@@ -136,7 +137,7 @@ namespace SMS_Search.ViewModels
             HeadersUpdated?.Invoke(this, EventArgs.Empty);
         }
 
-        private void OnDataReady(object sender, EventArgs e)
+        private void OnDataReady(object? sender, EventArgs e)
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
@@ -156,7 +157,7 @@ namespace SMS_Search.ViewModels
             });
         }
 
-        private void OnLoadError(object sender, string msg)
+        private void OnLoadError(object? sender, string msg)
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
@@ -174,17 +175,17 @@ namespace SMS_Search.ViewModels
             _lastFoundRowIndex = -1;
 
             // Set Table Name if applicable
-            TableName = criteria.Type == SearchType.Table ? criteria.Value : "ResultTable";
+            TableName = (criteria.Type == SearchType.Table && criteria.Value != null) ? criteria.Value : "ResultTable";
 
             try
             {
                 var queryResult = _queryBuilder.Build(criteria);
 
-                var server = _configService.GetValue("CONNECTION", "SERVER");
-                var database = _configService.GetValue("CONNECTION", "DATABASE");
-                var user = _configService.GetValue("CONNECTION", "SQLUSER");
+                var server = _configService.GetValue("CONNECTION", "SERVER") ?? "";
+                var database = _configService.GetValue("CONNECTION", "DATABASE") ?? "";
+                var user = _configService.GetValue("CONNECTION", "SQLUSER") ?? "";
                 var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
-                string decryptedPass = !string.IsNullOrEmpty(pass) ? SMS_Search.Utils.GeneralUtils.Decrypt(pass) : null;
+                string? decryptedPass = !string.IsNullOrEmpty(pass) ? SMS_Search.Utils.GeneralUtils.Decrypt(pass) : null;
 
                 _gridContext.SetConnection(server, database, user, decryptedPass);
 
@@ -213,7 +214,7 @@ namespace SMS_Search.ViewModels
             }
         }
 
-        public async Task ApplyFilterAsync(string filterText)
+        public async Task ApplyFilterAsync(string? filterText)
         {
              var columns = new List<string>();
              if (SearchResults is VirtualizingCollection vc)
@@ -222,7 +223,7 @@ namespace SMS_Search.ViewModels
                  foreach(PropertyDescriptor p in props) columns.Add(p.Name);
              }
 
-             await _gridContext.ApplyFilterAsync(filterText, columns);
+             await _gridContext.ApplyFilterAsync(filterText ?? "", columns);
 
              if (!string.IsNullOrEmpty(filterText))
              {
@@ -295,21 +296,21 @@ namespace SMS_Search.ViewModels
 
         private async Task ExportCsvAsync()
         {
-            string filename = _dialogService.SaveFileDialog("CSV files (*.csv)|*.csv", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+            string? filename = _dialogService.SaveFileDialog("CSV files (*.csv)|*.csv", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
             if (string.IsNullOrEmpty(filename)) return;
             await PerformExportAsync(() => _gridContext.ExportToCsvAsync(filename));
         }
 
         private async Task ExportJsonAsync()
         {
-            string filename = _dialogService.SaveFileDialog("JSON files (*.json)|*.json", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.json");
+            string? filename = _dialogService.SaveFileDialog("JSON files (*.json)|*.json", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.json");
             if (string.IsNullOrEmpty(filename)) return;
             await PerformExportAsync(() => _gridContext.ExportToJsonAsync(filename));
         }
 
         private async Task ExportExcelAsync()
         {
-            string filename = _dialogService.SaveFileDialog("Excel XML (*.xml)|*.xml", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xml");
+            string? filename = _dialogService.SaveFileDialog("Excel XML (*.xml)|*.xml", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xml");
             if (string.IsNullOrEmpty(filename)) return;
             await PerformExportAsync(() => _gridContext.ExportToExcelXmlAsync(filename));
         }
@@ -335,7 +336,7 @@ namespace SMS_Search.ViewModels
             }
         }
 
-        private void CopyAsSqlInsert(System.Collections.IList selectedItems)
+        private void CopyAsSqlInsert(System.Collections.IList? selectedItems)
         {
             if (selectedItems == null || selectedItems.Count == 0 || _lastSchema == null) return;
 
@@ -375,16 +376,16 @@ namespace SMS_Search.ViewModels
             _dialogService.ShowMessage("INSERT statements copied to clipboard", "Copy");
         }
 
-        private string FormatSqlValue(object value)
+        private string FormatSqlValue(object? value)
         {
             if (value == null || value == DBNull.Value) return "NULL";
             if (value is bool b) return b ? "1" : "0";
-            if (IsNumeric(value)) return value.ToString();
+            if (IsNumeric(value)) return value.ToString() ?? "NULL";
             if (value is DateTime dt) return $"'{dt:yyyy-MM-dd HH:mm:ss.fff}'";
-            return $"'{value.ToString().Replace("'", "''")}'";
+            return $"'{value.ToString()?.Replace("'", "''") ?? ""}'";
         }
 
-        private bool IsNumeric(object value)
+        private bool IsNumeric(object? value)
         {
             return value is sbyte || value is byte || value is short || value is ushort ||
                    value is int || value is uint || value is long || value is ulong ||

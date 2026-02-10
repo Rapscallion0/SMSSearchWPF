@@ -49,12 +49,13 @@ GROUP BY
         {
             var p = new DynamicParameters();
             string sql = "";
+            string value = criteria.Value ?? "";
 
             if (criteria.Mode == SearchMode.Field)
             {
                 if (criteria.Type == SearchType.Number)
                 {
-                    string fldNum = "F" + criteria.Value;
+                    string fldNum = "F" + value;
                     HandleWildcards(ref fldNum, out string op);
 
                     sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} WHERE col.name {op} @Val {FieldSelectGroupBy}";
@@ -62,7 +63,7 @@ GROUP BY
                 }
                 else if (criteria.Type == SearchType.Description)
                 {
-                    string desc = criteria.Value;
+                    string desc = value;
                     if (criteria.AnyMatch) desc = $"*{desc}*";
                     HandleWildcards(ref desc, out string op);
 
@@ -73,7 +74,7 @@ GROUP BY
                 {
                     if (criteria.ShowFields)
                     {
-                        string table = criteria.Value;
+                        string table = value;
                         HandleWildcards(ref table, out string op);
 
                         sql = $"{FieldSelectBase} AND RBF.F1452 {op} @Table {FieldSelectJoinPKey} WHERE TAB.name {op} @Table {FieldSelectGroupBy}";
@@ -81,7 +82,7 @@ GROUP BY
                     }
                     else
                     {
-                        string tableName = SanitizeIdentifier(criteria.Value);
+                        string tableName = SanitizeIdentifier(value);
                         sql = $"SELECT * FROM {tableName}";
 
                         if (criteria.LastTransaction)
@@ -92,7 +93,7 @@ GROUP BY
                 }
                 else if (criteria.Type == SearchType.CustomSql)
                 {
-                    sql = criteria.Value;
+                    sql = value;
                 }
             }
             else if (criteria.Mode == SearchMode.Totalizer)
@@ -100,9 +101,9 @@ GROUP BY
                 sql = $"Select {_tlzFields} FROM TLZ_TAB";
                 if (criteria.Type == SearchType.Number)
                 {
-                    if (!string.IsNullOrEmpty(criteria.Value))
+                    if (!string.IsNullOrEmpty(value))
                     {
-                        string val = criteria.Value;
+                        string val = value;
                         HandleWildcards(ref val, out string op);
                         sql += $" WHERE F1034 {op} @Val";
                         p.Add("Val", val);
@@ -110,9 +111,9 @@ GROUP BY
                 }
                 else if (criteria.Type == SearchType.Description)
                 {
-                    if (!string.IsNullOrEmpty(criteria.Value))
+                    if (!string.IsNullOrEmpty(value))
                     {
-                        string val = criteria.Value;
+                        string val = value;
                         if (criteria.AnyMatch) val = $"*{val}*";
                         HandleWildcards(ref val, out string op);
                         sql += $" WHERE F1039 {op} @Val";
@@ -121,7 +122,7 @@ GROUP BY
                 }
                 else if (criteria.Type == SearchType.CustomSql)
                 {
-                    sql = criteria.Value;
+                    sql = value;
                 }
             }
             else if (criteria.Mode == SearchMode.Function)
@@ -129,9 +130,9 @@ GROUP BY
                 sql = $"Select {_fctFields} FROM FCT_TAB";
                 if (criteria.Type == SearchType.Number)
                 {
-                    if (!string.IsNullOrEmpty(criteria.Value))
+                    if (!string.IsNullOrEmpty(value))
                     {
-                        string val = criteria.Value;
+                        string val = value;
                         HandleWildcards(ref val, out string op);
                         sql += $" WHERE F1063 {op} @Val";
                         p.Add("Val", val);
@@ -139,9 +140,9 @@ GROUP BY
                 }
                 else if (criteria.Type == SearchType.Description)
                 {
-                    if (!string.IsNullOrEmpty(criteria.Value))
+                    if (!string.IsNullOrEmpty(value))
                     {
-                        string val = criteria.Value;
+                        string val = value;
                         if (criteria.AnyMatch) val = $"*{val}*";
                         HandleWildcards(ref val, out string op);
                         sql += $" WHERE F1064 {op} @Val";
@@ -150,7 +151,7 @@ GROUP BY
                 }
                 else if (criteria.Type == SearchType.CustomSql)
                 {
-                    sql = criteria.Value;
+                    sql = value;
                 }
             }
 
@@ -172,8 +173,9 @@ GROUP BY
             }
         }
 
-        private string SanitizeIdentifier(string id)
+        private string SanitizeIdentifier(string? id)
         {
+            if (string.IsNullOrEmpty(id)) return "[]";
             string clean = id.Replace("[", "").Replace("]", "");
             return "[" + clean + "]";
         }

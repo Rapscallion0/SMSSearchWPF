@@ -11,10 +11,10 @@ namespace SMS_Search.Utils
 {
     public class UpdateInfo
     {
-        public string Version { get; set; }
-        public string DownloadUrl { get; set; }
-        public string ReleaseUrl { get; set; }
-        public string Changelog { get; set; }
+        public string? Version { get; set; }
+        public string? DownloadUrl { get; set; }
+        public string? ReleaseUrl { get; set; }
+        public string? Changelog { get; set; }
         public bool IsNewer { get; set; }
     }
 
@@ -40,20 +40,20 @@ namespace SMS_Search.Utils
                         var root = doc.RootElement;
                         if (root.TryGetProperty("tag_name", out JsonElement tagNameElement))
                         {
-                            string tagName = tagNameElement.GetString();
-                            string releaseUrl = root.TryGetProperty("html_url", out JsonElement urlElement) ? urlElement.GetString() : "";
-                            string body = root.TryGetProperty("body", out JsonElement bodyElement) ? bodyElement.GetString() : "";
+                            string? tagName = tagNameElement.GetString();
+                            string? releaseUrl = root.TryGetProperty("html_url", out JsonElement urlElement) ? urlElement.GetString() : "";
+                            string? body = root.TryGetProperty("body", out JsonElement bodyElement) ? bodyElement.GetString() : "";
 
                             if (string.IsNullOrEmpty(tagName)) return new UpdateInfo { IsNewer = false };
 
                             string versionStr = tagName.TrimStart('v', 'V');
-                            if (Version.TryParse(versionStr, out Version remoteVersion))
+                            if (Version.TryParse(versionStr, out Version? remoteVersion) && remoteVersion != null)
                             {
-                                Version currentVersion = System.Reflection.Assembly.GetEntryAssembly().GetName().Version;
+                                Version? currentVersion = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version;
 
-                                if (remoteVersion > currentVersion)
+                                if (currentVersion != null && remoteVersion > currentVersion)
                                 {
-                                    string downloadUrl = null;
+                                    string? downloadUrl = null;
                                     if (root.TryGetProperty("assets", out JsonElement assetsElement) && assetsElement.ValueKind == JsonValueKind.Array)
                                     {
                                         foreach (JsonElement asset in assetsElement.EnumerateArray())
@@ -61,7 +61,7 @@ namespace SMS_Search.Utils
                                             if (asset.TryGetProperty("name", out JsonElement nameElement) &&
                                                 asset.TryGetProperty("browser_download_url", out JsonElement downloadUrlElement))
                                             {
-                                                string name = nameElement.GetString();
+                                                string? name = nameElement.GetString();
                                                 if (!string.IsNullOrEmpty(name) && name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
                                                 {
                                                     downloadUrl = downloadUrlElement.GetString();
@@ -120,7 +120,9 @@ namespace SMS_Search.Utils
                     File.WriteAllBytes(installerPath, data);
                 }
 
-                string currentExe = Process.GetCurrentProcess().MainModule.FileName;
+                string? currentExe = Process.GetCurrentProcess().MainModule?.FileName;
+                if (currentExe == null) return;
+
                 string batchPath = Path.Combine(tempPath, "sms_update.bat");
                 string pid = Process.GetCurrentProcess().Id.ToString();
 

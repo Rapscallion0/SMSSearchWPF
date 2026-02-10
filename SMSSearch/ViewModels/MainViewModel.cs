@@ -20,6 +20,8 @@ namespace SMS_Search.ViewModels
         private readonly ILoggerService _logger;
         private readonly IQueryHistoryService _historyService; // Restore history service dependency
 
+        public event Action? RequestOpenSettings;
+
         public MainViewModel(
             IConfigService config,
             IDialogService dialogService,
@@ -70,15 +72,15 @@ namespace SMS_Search.ViewModels
             {
                 var encryptWin = new EncryptionUtilityWindow();
                 encryptWin.DataContext = _serviceProvider.GetRequiredService<EncryptionUtilityViewModel>();
-                encryptWin.Owner = System.Windows.Application.Current.MainWindow;
+                if (System.Windows.Application.Current.MainWindow != null)
+                {
+                    encryptWin.Owner = System.Windows.Application.Current.MainWindow;
+                }
                 encryptWin.ShowDialog();
             }
             else
             {
-                var settingsWin = _serviceProvider.GetRequiredService<SettingsWindow>();
-                settingsWin.DataContext = _serviceProvider.GetRequiredService<SettingsViewModel>();
-                settingsWin.Owner = System.Windows.Application.Current.MainWindow;
-                settingsWin.ShowDialog();
+                RequestOpenSettings?.Invoke();
             }
         }
     }

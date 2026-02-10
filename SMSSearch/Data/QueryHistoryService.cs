@@ -43,7 +43,7 @@ namespace SMS_Search.Data
 
         public List<string> GetHistory(string type)
         {
-            string json = _config.GetValue(SectionName, type);
+            string? json = _config.GetValue(SectionName, type);
             if (string.IsNullOrEmpty(json)) return new List<string>();
 
             try

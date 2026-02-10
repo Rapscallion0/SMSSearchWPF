@@ -25,10 +25,10 @@ namespace SMS_Search.ViewModels
         private bool _checkUpdate;
 
         [ObservableProperty]
-        private string _copyDelimiter;
+        private string _copyDelimiter = "TAB";
 
         [ObservableProperty]
-        private string _customDelimiter;
+        private string _customDelimiter = "";
 
         [ObservableProperty]
         private ObservableCollection<string> _delimiters = new ObservableCollection<string>
@@ -49,10 +49,11 @@ namespace SMS_Search.ViewModels
             ShowInTray = _config.GetValue("GENERAL", "SHOWINTRAY") == "1";
             CheckUpdate = _config.GetValue("GENERAL", "CHECKUPDATE") == "1";
 
-            CopyDelimiter = _config.GetValue("GENERAL", "COPY_DELIMITER");
-            if (string.IsNullOrEmpty(CopyDelimiter)) CopyDelimiter = "TAB";
+            string? copyDelim = _config.GetValue("GENERAL", "COPY_DELIMITER");
+            CopyDelimiter = !string.IsNullOrEmpty(copyDelim) ? copyDelim : "TAB";
 
-            CustomDelimiter = _config.GetValue("GENERAL", "COPY_DELIMITER_CUSTOM");
+            string? customDelim = _config.GetValue("GENERAL", "COPY_DELIMITER_CUSTOM");
+            CustomDelimiter = customDelim ?? "";
 
             UpdateVisibility();
         }

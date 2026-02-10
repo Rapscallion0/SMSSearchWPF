@@ -22,10 +22,10 @@ namespace SMS_Search.ViewModels
         }
 
         [ObservableProperty]
-        private string _decryptedText;
+        private string _decryptedText = "";
 
         [ObservableProperty]
-        private string _encryptedText;
+        private string _encryptedText = "";
 
         [RelayCommand]
         private void Encrypt()

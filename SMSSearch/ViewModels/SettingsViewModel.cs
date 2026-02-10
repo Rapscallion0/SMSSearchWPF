@@ -15,6 +15,8 @@ namespace SMS_Search.ViewModels
         private readonly ILoggerService _logger;
         private readonly IHotkeyService _hotkeyService;
 
+        public event Action? RequestClose;
+
         public SettingsViewModel(
             IConfigService config,
             IDialogService dialogService,
@@ -27,9 +29,9 @@ namespace SMS_Search.ViewModels
             _hotkeyService = hotkeyService;
 
             // Load initial connection settings
-            _server = _config.GetValue("CONNECTION", "SERVER");
-            _database = _config.GetValue("CONNECTION", "DATABASE");
-            _user = _config.GetValue("CONNECTION", "SQLUSER");
+            _server = _config.GetValue("CONNECTION", "SERVER") ?? "";
+            _database = _config.GetValue("CONNECTION", "DATABASE") ?? "";
+            _user = _config.GetValue("CONNECTION", "SQLUSER") ?? "";
 
             // Sub-ViewModels
             General = new GeneralSettingsViewModel(_config);
@@ -54,7 +56,7 @@ namespace SMS_Search.ViewModels
 
         public IRelayCommand<object> SaveCommand => new RelayCommand<object>(Save);
 
-        private void Save(object parameter)
+        private void Save(object? parameter)
         {
             try
             {
@@ -74,6 +76,7 @@ namespace SMS_Search.ViewModels
 
                 _config.Save();
                 _dialogService.ShowToast("Settings saved successfully.", "Settings", SMS_Search.Views.ToastType.Success);
+                RequestClose?.Invoke();
             }
             catch (Exception ex)
             {

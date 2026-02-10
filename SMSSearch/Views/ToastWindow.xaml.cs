@@ -47,7 +47,7 @@ namespace SMS_Search.Views
             MouseLeftButtonUp += (s, e) => Close();
         }
 
-        private void CloseTimer_Tick(object sender, EventArgs e)
+        private void CloseTimer_Tick(object? sender, EventArgs e)
         {
             _closeTimer.Stop();
             var anim = new DoubleAnimation(0, TimeSpan.FromSeconds(0.5));
