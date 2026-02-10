@@ -5,11 +5,13 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
              xmlns:vm="clr-namespace:SMS_Search.ViewModels.Settings"
+             xmlns:conv="clr-namespace:SMS_Search.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:CleanSqlSectionViewModel}"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <conv:IgnoreNewItemPlaceholderConverter x:Key="IgnoreNewItemPlaceholderConverter" />
     </UserControl.Resources>
 
     <StackPanel Margin="0,0,0,20">
@@ -22,7 +24,7 @@
         <Button Content="Restore Defaults" Command="{Binding RestoreDefaultsCommand}" Width="120" HorizontalAlignment="Right" Margin="0,0,0,10" />
 
         <DockPanel LastChildFill="True">
-             <DataGrid ItemsSource="{Binding Rules}" SelectedItem="{Binding SelectedRule}"
+             <DataGrid ItemsSource="{Binding Rules}" SelectedItem="{Binding SelectedRule, Converter={StaticResource IgnoreNewItemPlaceholderConverter}}"
                        AutoGenerateColumns="False"
                        CanUserAddRows="True"
                        CanUserDeleteRows="True"
