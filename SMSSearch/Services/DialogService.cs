@@ -20,14 +20,14 @@ namespace SMS_Search.Services
             return MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
         }
 
-        public string OpenFileDialog(string filter)
+        public string? OpenFileDialog(string filter)
         {
             var dlg = new OpenFileDialog { Filter = filter };
             if (dlg.ShowDialog() == true) return dlg.FileName;
             return null;
         }
 
-        public string SaveFileDialog(string filter, string defaultName = "")
+        public string? SaveFileDialog(string filter, string defaultName = "")
         {
             var dlg = new SaveFileDialog { Filter = filter, FileName = defaultName };
             if (dlg.ShowDialog() == true) return dlg.FileName;

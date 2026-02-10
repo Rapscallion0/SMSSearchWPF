@@ -148,7 +148,7 @@ namespace SMS_Search.Data
             if (_cache.ContainsKey(rowIndex)) return;
 
             int pageIndex = rowIndex / PageSize;
-            TaskCompletionSource<bool> tcs;
+            TaskCompletionSource<bool>? tcs;
 
             if (!_pageCompletionSources.TryGetValue(pageIndex, out tcs))
             {
@@ -157,7 +157,10 @@ namespace SMS_Search.Data
             }
 
             var timeoutTask = Task.Delay(5000);
-            await Task.WhenAny(tcs.Task, timeoutTask);
+            if (tcs != null)
+            {
+                await Task.WhenAny(tcs.Task, timeoutTask);
+            }
         }
 
         public async Task EnsureRangeLoadedAsync(int startIndex, int count)

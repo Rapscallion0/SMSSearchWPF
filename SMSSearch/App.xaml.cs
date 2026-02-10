@@ -82,7 +82,7 @@ namespace SMS_Search
                 var hotkeyService = Services.GetRequiredService<IHotkeyService>();
                 var config = Services.GetRequiredService<IConfigService>();
 
-                string hotkeyStr = config.GetValue("LAUNCHER", "HOTKEY");
+                string? hotkeyStr = config.GetValue("LAUNCHER", "HOTKEY");
                 if (!string.IsNullOrEmpty(hotkeyStr))
                 {
                     try
@@ -95,7 +95,11 @@ namespace SMS_Search
                             {
                                 try
                                 {
-                                    System.Diagnostics.Process.Start(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName);
+                                    string? fileName = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+                                    if (fileName != null)
+                                    {
+                                        System.Diagnostics.Process.Start(fileName);
+                                    }
                                 }
                                 catch (Exception ex)
                                 {

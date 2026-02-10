@@ -6,7 +6,7 @@ namespace SMS_Search.Utils
     public interface ILoggerService
     {
         void Log(LogLevel level, string message);
-        void LogError(string message, Exception ex = null);
+        void LogError(string message, Exception? ex = null);
         void LogInfo(string message);
         void LogDebug(string message);
     }
@@ -44,7 +44,7 @@ namespace SMS_Search.Utils
              }
         }
 
-        public void LogError(string message, Exception ex = null)
+        public void LogError(string message, Exception? ex = null)
         {
             if (ex != null)
                 _logger.Error(ex, message);
