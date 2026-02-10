@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SMS_Search.Data;
 using SMS_Search.Services;
+using SMS_Search.Utils;
 using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
