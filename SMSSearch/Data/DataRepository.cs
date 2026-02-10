@@ -24,7 +24,7 @@ namespace SMS_Search.Data
             "char", "nchar", "varchar", "nvarchar", "text", "ntext", "sysname"
         };
 
-        public string GetConnectionString(string server, string database, string user, string pass)
+        public string GetConnectionString(string server, string database, string user, string? pass)
         {
             if (string.IsNullOrEmpty(user))
             {
@@ -36,7 +36,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task<bool> TestConnectionAsync(string server, string database, string user, string pass, CancellationToken cancellationToken = default)
+        public async Task<bool> TestConnectionAsync(string server, string database, string user, string? pass, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -52,7 +52,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public bool TestConnection(string server, string database, string user, string pass)
+        public bool TestConnection(string server, string database, string user, string? pass)
         {
             try
             {
@@ -68,7 +68,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task<DataTable> ExecuteQueryAsync(string server, string database, string user, string pass, string sql, object parameters = null, CancellationToken cancellationToken = default)
+        public async Task<DataTable> ExecuteQueryAsync(string server, string database, string user, string? pass, string sql, object? parameters = null, CancellationToken cancellationToken = default)
         {
             using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
             {
@@ -83,7 +83,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task<int> GetQueryCountAsync(string server, string database, string user, string pass, string sql, object parameters, string filter = null, CancellationToken cancellationToken = default)
+        public async Task<int> GetQueryCountAsync(string server, string database, string user, string? pass, string sql, object? parameters, string? filter = null, CancellationToken cancellationToken = default)
         {
             string finalSql = ApplyFilter(sql, filter);
             string countSql = $"SELECT COUNT(*) FROM ({finalSql}) AS _CountQ";
@@ -108,7 +108,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task<DataTable> GetQueryPageAsync(string server, string database, string user, string pass, string sql, object parameters, int offset, int limit, string sortCol, string sortDir, string filter = null, CancellationToken cancellationToken = default)
+        public async Task<DataTable> GetQueryPageAsync(string server, string database, string user, string? pass, string sql, object? parameters, int offset, int limit, string? sortCol, string? sortDir, string? filter = null, CancellationToken cancellationToken = default)
         {
             string finalSql = ApplyFilter(sql, filter);
 
@@ -137,7 +137,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task<DataTable> GetQuerySchemaAsync(string server, string database, string user, string pass, string sql, object parameters, CancellationToken cancellationToken = default)
+        public async Task<DataTable> GetQuerySchemaAsync(string server, string database, string user, string? pass, string sql, object? parameters, CancellationToken cancellationToken = default)
         {
             string schemaSql = $"SELECT TOP 0 * FROM ({sql}) AS _SchemaQ";
 
@@ -172,7 +172,7 @@ namespace SMS_Search.Data
             }
         }
 
-        private void LogQuery(string method, string sql, object parameters)
+        private void LogQuery(string method, string sql, object? parameters)
         {
             string paramLog = "";
             if (parameters is DynamicParameters dp)
@@ -188,7 +188,7 @@ namespace SMS_Search.Data
             _logger.LogDebug($"{method}: Executing SQL: {sql} | Params: {paramLog}");
         }
 
-        public async Task<DbDataReader> GetQueryDataReaderAsync(string server, string database, string user, string pass, string sql, object parameters, CancellationToken cancellationToken = default)
+        public async Task<DbDataReader> GetQueryDataReaderAsync(string server, string database, string user, string? pass, string sql, object? parameters, CancellationToken cancellationToken = default)
         {
             var conn = new SqlConnection(GetConnectionString(server, database, user, pass));
             await conn.OpenAsync(cancellationToken);
@@ -208,13 +208,13 @@ namespace SMS_Search.Data
             }
         }
 
-        private string ApplyFilter(string sql, string filter)
+        private string ApplyFilter(string sql, string? filter)
         {
             if (string.IsNullOrWhiteSpace(filter)) return sql;
             return $"SELECT * FROM ({sql}) AS _FilterQ WHERE {filter}";
         }
 
-        public async Task<IEnumerable<string>> GetDatabasesAsync(string server, string user, string pass, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<string>> GetDatabasesAsync(string server, string user, string? pass, CancellationToken cancellationToken = default)
         {
             using (var conn = new SqlConnection(GetConnectionString(server, "master", user, pass)))
             {
@@ -224,7 +224,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task<IEnumerable<string>> GetTablesAsync(string server, string database, string user, string pass, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<string>> GetTablesAsync(string server, string database, string user, string? pass, CancellationToken cancellationToken = default)
         {
             using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
             {
@@ -234,7 +234,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task<List<string>> GetColumnDescriptionsAsync(string server, string database, string user, string pass, IEnumerable<string> columnNames, CancellationToken cancellationToken = default)
+        public async Task<List<string>> GetColumnDescriptionsAsync(string server, string database, string user, string? pass, IEnumerable<string> columnNames, CancellationToken cancellationToken = default)
         {
              using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
              {
@@ -261,7 +261,7 @@ namespace SMS_Search.Data
              }
         }
 
-        public async Task<long> GetTotalMatchCountAsync(string server, string database, string user, string pass, string sql, object parameters, string filterClause, string filterText, Dictionary<string, string> columnTypes, CancellationToken cancellationToken = default)
+        public async Task<long> GetTotalMatchCountAsync(string server, string database, string user, string? pass, string sql, object? parameters, string? filterClause, string? filterText, Dictionary<string, string?> columnTypes, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(filterText)) return 0;
             string safeFilter = filterText.Replace("'", "''");
@@ -270,7 +270,7 @@ namespace SMS_Search.Data
             foreach (var kvp in columnTypes)
             {
                 string col = kvp.Key;
-                string type = kvp.Value;
+                string? type = kvp.Value;
                 if (type != null && SafeStringTypes.Contains(type))
                 {
                     sumParts.Add($"(CASE WHEN [{col}] LIKE '%{safeFilter}%' THEN 1 ELSE 0 END)");
@@ -295,7 +295,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task<long> GetPrecedingMatchCountAsync(string server, string database, string user, string pass, string sql, object parameters, string filterClause, string filterText, Dictionary<string, string> columnTypes, int limitRowIndex, string sortCol, string sortDir, CancellationToken cancellationToken = default)
+        public async Task<long> GetPrecedingMatchCountAsync(string server, string database, string user, string? pass, string sql, object? parameters, string? filterClause, string? filterText, Dictionary<string, string?> columnTypes, int limitRowIndex, string? sortCol, string? sortDir, CancellationToken cancellationToken = default)
         {
             if (limitRowIndex <= 0) return 0;
             if (string.IsNullOrWhiteSpace(filterText)) return 0;
@@ -305,7 +305,7 @@ namespace SMS_Search.Data
             foreach (var kvp in columnTypes)
             {
                 string col = kvp.Key;
-                string type = kvp.Value;
+                string? type = kvp.Value;
                 if (type != null && SafeStringTypes.Contains(type))
                 {
                     sumParts.Add($"(CASE WHEN [{col}] LIKE '%{safeFilter}%' THEN 1 ELSE 0 END)");
@@ -344,7 +344,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task<int> GetMatchRowIndexAsync(string server, string database, string user, string pass, string sql, object parameters, string filterClause, string searchText, Dictionary<string, string> columnTypes, int startRowIndex, string sortCol, string sortDir, bool forward, CancellationToken cancellationToken = default)
+        public async Task<int> GetMatchRowIndexAsync(string server, string database, string user, string? pass, string sql, object? parameters, string? filterClause, string? searchText, Dictionary<string, string?> columnTypes, int startRowIndex, string? sortCol, string? sortDir, bool forward, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(searchText)) return -1;
             string safeFilter = searchText.Replace("'", "''");
@@ -353,7 +353,7 @@ namespace SMS_Search.Data
             foreach (var kvp in columnTypes)
             {
                 string col = kvp.Key;
-                string type = kvp.Value;
+                string? type = kvp.Value;
                 if (type != null && SafeStringTypes.Contains(type))
                 {
                     searchParts.Add($"[{col}] LIKE '%{safeFilter}%'");
