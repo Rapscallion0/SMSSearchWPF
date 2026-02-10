@@ -1,0 +1,82 @@
+<UserControl x:Class="SMS_Search.Views.SearchView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:SMS_Search.Views"
+             xmlns:vm="clr-namespace:SMS_Search.ViewModels"
+             xmlns:conv="clr-namespace:SMS_Search.Converters"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:SearchViewModel}"
+             d:DesignHeight="300" d:DesignWidth="400">
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolToCollapsed" Invert="True"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <TabControl SelectedIndex="{Binding SelectedMode, Mode=TwoWay}">
+            <TabItem Header="Function">
+                <StackPanel Margin="10">
+                    <StackPanel.Resources>
+                        <Style TargetType="RadioButton">
+                            <Setter Property="Margin" Value="0,2,0,2"/>
+                        </Style>
+                    </StackPanel.Resources>
+                    <RadioButton Content="Number" IsChecked="{Binding IsFunctionNumber}" GroupName="FctType"/>
+                    <RadioButton Content="Description" IsChecked="{Binding IsFunctionDescription}" GroupName="FctType"/>
+                    <RadioButton Content="Custom SQL" IsChecked="{Binding IsFunctionCustomSql}" GroupName="FctType"/>
+
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,10,0,0" Height="25"/>
+                    <CheckBox Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Totalizer">
+                <StackPanel Margin="10">
+                    <StackPanel.Resources>
+                        <Style TargetType="RadioButton">
+                            <Setter Property="Margin" Value="0,2,0,2"/>
+                        </Style>
+                    </StackPanel.Resources>
+                    <RadioButton Content="Number" IsChecked="{Binding IsTotalizerNumber}" GroupName="TlzType"/>
+                    <RadioButton Content="Description" IsChecked="{Binding IsTotalizerDescription}" GroupName="TlzType"/>
+                    <RadioButton Content="Custom SQL" IsChecked="{Binding IsTotalizerCustomSql}" GroupName="TlzType"/>
+
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,10,0,0" Height="25"/>
+                    <CheckBox Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Fields">
+                <StackPanel Margin="10">
+                    <StackPanel.Resources>
+                        <Style TargetType="RadioButton">
+                            <Setter Property="Margin" Value="0,2,0,2"/>
+                        </Style>
+                    </StackPanel.Resources>
+                    <RadioButton Content="Number" IsChecked="{Binding IsFieldNumber}" GroupName="FldType"/>
+                    <RadioButton Content="Description" IsChecked="{Binding IsFieldDescription}" GroupName="FldType"/>
+                    <RadioButton Content="Table" IsChecked="{Binding IsFieldTable}" GroupName="FldType"/>
+                    <RadioButton Content="Custom SQL" IsChecked="{Binding IsFieldCustomSql}" GroupName="FldType"/>
+
+                    <ComboBox ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}"
+                              Visibility="{Binding IsFieldTable, Converter={StaticResource BoolToVis}}"
+                              Margin="0,5,0,0" Height="25"
+                              DropDownOpened="ComboBox_DropDownOpened"/>
+
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Visibility="{Binding IsFieldTable, Converter={StaticResource BoolToCollapsed}}"
+                             Margin="0,10,0,0" Height="25"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0"
+                                Visibility="{Binding IsFieldTable, Converter={StaticResource BoolToVis}}">
+                        <RadioButton Content="Show Fields" IsChecked="{Binding ShowFields}" GroupName="FldAction"/>
+                        <RadioButton Content="Show Records" IsChecked="{Binding ShowRecords}" GroupName="FldAction" Margin="10,0,0,0"/>
+                        <CheckBox Content="Last Transaction" IsChecked="{Binding LastTransaction}" Margin="10,0,0,0"/>
+                    </StackPanel>
+
+                    <CheckBox Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

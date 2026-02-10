@@ -1,0 +1,8 @@
+<Application x:Class="SMS_Search.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:SMS_Search">
+    <Application.Resources>
+
+    </Application.Resources>
+</Application>

@@ -1,0 +1,27 @@
+<Window x:Class="SMS_Search.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:SMS_Search.ViewModels"
+        mc:Ignorable="d"
+        Title="Settings" Height="300" Width="400"
+        WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="20">
+        <Label Content="Server:"/>
+        <TextBox Text="{Binding Server}" Margin="0,0,0,10"/>
+
+        <Label Content="Database:"/>
+        <TextBox Text="{Binding Database}" Margin="0,0,0,10"/>
+
+        <Label Content="User:"/>
+        <TextBox Text="{Binding User}" Margin="0,0,0,10"/>
+
+        <Label Content="Password:"/>
+        <PasswordBox x:Name="txtPassword" Margin="0,0,0,20"/>
+
+        <Button Content="Save" Command="{Binding SaveCommand}"
+                CommandParameter="{Binding ElementName=txtPassword}"
+                HorizontalAlignment="Right" Padding="20,5"/>
+    </StackPanel>
+</Window>
