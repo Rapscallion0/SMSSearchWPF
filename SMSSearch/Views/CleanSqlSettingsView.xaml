@@ -4,9 +4,13 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vm="clr-namespace:SMS_Search.ViewModels"
+             xmlns:converters="clr-namespace:SMS_Search.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:CleanSqlSettingsViewModel}"
              d:DesignHeight="300" d:DesignWidth="300">
+    <UserControl.Resources>
+        <converters:RegexReplacementConverter x:Key="RegexConverter"/>
+    </UserControl.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -16,12 +20,12 @@
 
         <TextBlock Text="SQL Cleaning Rules (Regex)" FontWeight="Bold" Margin="0,0,0,10"/>
 
-        <DataGrid Grid.Row="1" ItemsSource="{Binding Rules}" SelectedItem="{Binding SelectedRule}"
+        <DataGrid Grid.Row="1" x:Name="RulesDataGrid" ItemsSource="{Binding Rules}" SelectedItem="{Binding SelectedRule}"
                   AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                   HeadersVisibility="Column" SelectionMode="Single">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Pattern" Binding="{Binding Pattern}" Width="*"/>
-                <DataGridTextColumn Header="Replacement" Binding="{Binding Replacement}" Width="*"/>
+                <DataGridTextColumn Header="Pattern" Binding="{Binding Pattern, Converter={StaticResource RegexConverter}}" Width="*"/>
+                <DataGridTextColumn Header="Replacement" Binding="{Binding Replacement, Converter={StaticResource RegexConverter}}" Width="*"/>
             </DataGrid.Columns>
         </DataGrid>
 
