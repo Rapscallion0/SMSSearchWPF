@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
 using SMS_Search.Utils;
 
 namespace SMS_Search.ViewModels
@@ -15,6 +16,11 @@ namespace SMS_Search.ViewModels
 
         [ObservableProperty]
         private bool _showRowNumbers;
+
+        partial void OnShowRowNumbersChanged(bool value)
+        {
+            WeakReferenceMessenger.Default.Send(new RowNumberVisibilityChangedMessage(value));
+        }
 
         [ObservableProperty]
         private bool _highlightMatches;

@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using SMS_Search.Data;
 using SMS_Search.Services;
 using SMS_Search.Utils;
@@ -9,6 +10,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 
 namespace SMS_Search.ViewModels
 {
@@ -33,6 +35,16 @@ namespace SMS_Search.ViewModels
             _dialogService = dialogService;
             _configService = configService;
             _clipboardService = clipboardService;
+
+            // Initialize HeadersVisibility based on config
+            bool showRowNumbers = _configService.GetValue("GENERAL", "SHOW_ROW_NUMBERS") == "1";
+            HeadersVisibility = showRowNumbers ? DataGridHeadersVisibility.All : DataGridHeadersVisibility.Column;
+
+            // Register for message
+            WeakReferenceMessenger.Default.Register<RowNumberVisibilityChangedMessage>(this, (r, m) =>
+            {
+                HeadersVisibility = m.Value ? DataGridHeadersVisibility.All : DataGridHeadersVisibility.Column;
+            });
 
             string fctFields = _configService.GetValue("QUERY", "FUNCTION") ?? "";
             string tlzFields = _configService.GetValue("QUERY", "TOTALIZER") ?? "";
@@ -79,6 +91,9 @@ namespace SMS_Search.ViewModels
 
         [ObservableProperty]
         private bool _showDescriptionHeaders;
+
+        [ObservableProperty]
+        private DataGridHeadersVisibility _headersVisibility = DataGridHeadersVisibility.Column;
 
         public event EventHandler<int>? ScrollToRowRequested;
         public event EventHandler? HeadersUpdated;

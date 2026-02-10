@@ -72,11 +72,12 @@
                   SelectionUnit="CellOrRowHeader"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
-                  HeadersVisibility="All"
+                  HeadersVisibility="{Binding HeadersVisibility}"
                   GridLinesVisibility="All"
                   AlternatingRowBackground="#F8F8F8"
                   FrozenColumnCount="0"
-                  SelectionChanged="resultsGrid_SelectionChanged">
+                  SelectionChanged="resultsGrid_SelectionChanged"
+                  LoadingRow="resultsGrid_LoadingRow">
 
             <DataGrid.ColumnHeaderStyle>
                 <Style TargetType="DataGridColumnHeader">
