@@ -4,10 +4,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:SMS_Search.Views.Controls"
+             xmlns:conv="clr-namespace:SMS_Search.Converters"
              mc:Ignorable="d"
              d:DesignHeight="100" d:DesignWidth="300">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <conv:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
     </UserControl.Resources>
 
     <Grid Margin="0,5">
@@ -21,7 +23,7 @@
                    FontWeight="SemiBold"
                    Foreground="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"
                    Margin="0,0,0,5"
-                   Visibility="{Binding Header, RelativeSource={RelativeSource AncestorType=local:SettingControl}, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}" />
+                   Visibility="{Binding Header, RelativeSource={RelativeSource AncestorType=local:SettingControl}, Converter={StaticResource StringToVisibilityConverter}, FallbackValue=Collapsed}" />
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
