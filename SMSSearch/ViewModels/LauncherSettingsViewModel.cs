@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -10,6 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using SMS_Search.Services;
 using SMS_Search.Utils;
+using SMS_Search.Views;
 
 namespace SMS_Search.ViewModels
 {
@@ -18,6 +20,7 @@ namespace SMS_Search.ViewModels
         private readonly IConfigService _config;
         private readonly IHotkeyService _hotkeyService;
         private readonly ILoggerService _logger;
+        private readonly IDialogService _dialogService;
 
         [DllImport("user32.dll", SetLastError = true)]
         static extern IntPtr FindWindow(string? lpClassName, string lpWindowName);
@@ -27,11 +30,12 @@ namespace SMS_Search.ViewModels
 
         private bool _isMonitoring = true;
 
-        public LauncherSettingsViewModel(IConfigService config, IHotkeyService hotkeyService, ILoggerService logger)
+        public LauncherSettingsViewModel(IConfigService config, IHotkeyService hotkeyService, ILoggerService logger, IDialogService dialogService)
         {
             _config = config;
             _hotkeyService = hotkeyService;
             _logger = logger;
+            _dialogService = dialogService;
             Load();
             Task.Run(MonitorServiceStatus);
         }
@@ -45,9 +49,6 @@ namespace SMS_Search.ViewModels
         private bool _startWithWindows;
 
         [ObservableProperty]
-        private bool _enableHotkey;
-
-        [ObservableProperty]
         private string _hotkeyDisplay = "";
 
         [ObservableProperty]
@@ -55,6 +56,9 @@ namespace SMS_Search.ViewModels
 
         [ObservableProperty]
         private string _serviceStatusText = "Stopped";
+
+        [ObservableProperty]
+        private Visibility _serviceWarningVisibility = Visibility.Collapsed;
 
         private Key _hotkey;
         private ModifierKeys _modifiers;
@@ -65,7 +69,6 @@ namespace SMS_Search.ViewModels
         private void Load()
         {
             StartWithWindows = _config.GetValue("LAUNCHER", "START_WITH_WINDOWS") == "1";
-            EnableHotkey = _config.GetValue("LAUNCHER", "ENABLE_HOTKEY") == "1";
 
             string? hotkeyStr = _config.GetValue("LAUNCHER", "HOTKEY");
             if (!string.IsNullOrEmpty(hotkeyStr))
@@ -101,8 +104,15 @@ namespace SMS_Search.ViewModels
 
                 if (IsBlacklisted(key, modifiers))
                 {
-                    // Invalid
+                    _dialogService.ShowToast("This hotkey is reserved.", "Reserved", ToastType.Warning);
                     return;
+                }
+
+                // Check availability (unless it's the same as already selected)
+                if ((key != _hotkey || modifiers != _modifiers) && !_hotkeyService.CheckAvailability(key, modifiers))
+                {
+                     _dialogService.ShowToast("This hotkey is already in use.", "In Use", ToastType.Error);
+                     return;
                 }
 
                 // If valid, commit
@@ -204,11 +214,13 @@ namespace SMS_Search.ViewModels
                 {
                     ServiceStatusText = "Running";
                     StatusColor = Brushes.Green;
+                    ServiceWarningVisibility = Visibility.Collapsed;
                 }
                 else
                 {
                     ServiceStatusText = "Stopped";
                     StatusColor = Brushes.Red;
+                    ServiceWarningVisibility = Visibility.Visible;
                 }
             });
         }
@@ -216,7 +228,6 @@ namespace SMS_Search.ViewModels
         public void Save()
         {
             _config.SetValue("LAUNCHER", "START_WITH_WINDOWS", StartWithWindows ? "1" : "0");
-            _config.SetValue("LAUNCHER", "ENABLE_HOTKEY", EnableHotkey ? "1" : "0");
 
             if (_hotkey != Key.None)
             {

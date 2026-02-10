@@ -9,7 +9,6 @@
              d:DesignHeight="300" d:DesignWidth="400">
     <StackPanel Margin="10">
         <CheckBox Content="Start with Windows" IsChecked="{Binding StartWithWindows}" Margin="0,0,0,10"/>
-        <CheckBox Content="Enable Global Hotkey" IsChecked="{Binding EnableHotkey}" Margin="0,0,0,10"/>
 
         <Grid Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
@@ -25,6 +24,10 @@
 
         <TextBlock Text="Press any key combination in the box above to set the hotkey."
                    FontStyle="Italic" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+        <TextBlock Text="The service must be started to enable the hotkey."
+                   Foreground="Red" Margin="0,0,0,5"
+                   Visibility="{Binding ServiceWarningVisibility}"/>
 
         <GroupBox Header="Service Status">
             <StackPanel Margin="5">

@@ -128,6 +128,7 @@ namespace SMS_Search
                         if (key != Key.None)
                         {
                             var helper = new WindowInteropHelper(hiddenWindow);
+                            HwndSource.FromHwnd(helper.Handle).AddHook(hotkeyService.ProcessMessage);
                             hotkeyService.Register(helper.Handle, key, modifiers, () =>
                             {
                                 try

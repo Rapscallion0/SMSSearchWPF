@@ -7,6 +7,7 @@ namespace SMS_Search.Services
     {
         void Register(IntPtr hwnd, Key key, ModifierKeys modifiers, Action action);
         void Unregister();
-        void ProcessMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled);
+        IntPtr ProcessMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled);
+        bool CheckAvailability(Key key, ModifierKeys modifiers);
     }
 }
