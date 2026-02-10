@@ -1,17 +1,13 @@
 <UserControl x:Class="SMS_Search.Views.ResultsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SMS_Search.Views"
              xmlns:vm="clr-namespace:SMS_Search.ViewModels"
-             xmlns:conv="clr-namespace:SMS_Search.Converters"
-             mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance Type=vm:ResultsViewModel}"
-             d:DesignHeight="300" d:DesignWidth="400">
-    <UserControl.Resources>
-        <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
-    </UserControl.Resources>
-
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+             PreviewKeyDown="UserControl_PreviewKeyDown">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -19,25 +15,86 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="{Binding StatusText}" Margin="5" FontWeight="Bold"/>
+        <DockPanel Grid.Row="0" Margin="5">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="10,0,0,0">
+                <Button Content="CSV" Command="{Binding ExportCsvCommand}" Margin="2,0" Padding="5,2" ToolTip="Export All to CSV"/>
+                <Button Content="JSON" Command="{Binding ExportJsonCommand}" Margin="2,0" Padding="5,2" ToolTip="Export All to JSON"/>
+                <Button Content="Excel" Command="{Binding ExportExcelCommand}" Margin="2,0" Padding="5,2" ToolTip="Export All to Excel XML"/>
+                <Separator Margin="5,0"/>
+                <ToggleButton Content="Desc Headers" Command="{Binding ToggleHeaderDescriptionCommand}" IsChecked="{Binding ShowDescriptionHeaders, Mode=OneWay}" Padding="5,2" ToolTip="Show Description instead of Field Name in Headers"/>
+            </StackPanel>
 
-        <DataGrid Grid.Row="1" ItemsSource="{Binding SearchResults}"
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="10,0">
+                <Button Content="Previous" Command="{Binding FindPreviousCommand}" Margin="0,0,5,0" Padding="5,2"/>
+                <Button Content="Next" Command="{Binding FindNextCommand}" Padding="5,2"/>
+            </StackPanel>
+
+            <TextBlock Text="Filter:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBox x:Name="txtFilter" Width="200" TextChanged="txtFilter_TextChanged" ToolTip="Filter results (Ctrl+F)"/>
+            <TextBlock Text="{Binding MatchStatusText}" VerticalAlignment="Center" Margin="10,0,0,0" FontStyle="Italic" Foreground="Gray"/>
+        </DockPanel>
+
+        <DataGrid x:Name="resultsGrid" Grid.Row="1" 
+                  ItemsSource="{Binding SearchResults}"
                   AutoGenerateColumns="True"
                   IsReadOnly="True"
                   SelectionMode="Extended"
-                  EnableRowVirtualization="True"
-                  VirtualizingPanel.IsVirtualizing="True"
-                  VirtualizingPanel.VirtualizationMode="Recycling">
-            <DataGrid.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Export to CSV" Command="{Binding ExportCsvCommand}"/>
-                    <MenuItem Header="Export to JSON" Command="{Binding ExportJsonCommand}"/>
-                    <MenuItem Header="Export to Excel XML" Command="{Binding ExportExcelCommand}"/>
-                </ContextMenu>
-            </DataGrid.ContextMenu>
+                  SelectionUnit="CellOrRowHeader"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  HeadersVisibility="All"
+                  GridLinesVisibility="All"
+                  AlternatingRowBackground="#F8F8F8"
+                  FrozenColumnCount="0"
+                  SelectionChanged="resultsGrid_SelectionChanged">
+
+            <DataGrid.ColumnHeaderStyle>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="ContextMenu">
+                        <Setter.Value>
+                            <ContextMenu>
+                                <MenuItem Header="Copy Name" Click="CopyColumnName_Click" Tag="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                <MenuItem Header="Hide Column" Click="HideColumn_Click" Tag="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                <MenuItem Header="Best Fit" Click="BestFit_Click" Tag="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                            </ContextMenu>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.ColumnHeaderStyle>
+
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="ContextMenu">
+                        <Setter.Value>
+                            <ContextMenu>
+                                <MenuItem Header="Copy Row" Click="CopyRow_Click"/>
+                                <MenuItem Header="Copy as SQL INSERT" Click="CopyAsInsert_Click"/>
+                            </ContextMenu>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.RowStyle>
+
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="ContextMenu">
+                        <Setter.Value>
+                            <ContextMenu>
+                                <MenuItem Header="Filter by Selection" Click="FilterBySelection_Click"/>
+                                <MenuItem Header="Copy with Headers" Click="CopyWithHeaders_Click"/>
+                                <MenuItem Header="Advanced Copy" Click="AdvancedCopy_Click"/>
+                            </ContextMenu>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.CellStyle>
+
         </DataGrid>
 
-        <ProgressBar Grid.Row="2" IsIndeterminate="True" Height="10"
-                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+        <StatusBar Grid.Row="2">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusText}"/>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </UserControl>

@@ -12,13 +12,13 @@ namespace SMS_Search.Data
     {
         private readonly IDataRepository _repo;
 
-        private string? _server;
-        private string? _database;
-        private string? _user;
-        private string? _pass;
+        private string _server;
+        private string _database;
+        private string _user;
+        private string _pass;
 
-        private string? _baseSql;
-        private object? _parameters;
+        private string _baseSql;
+        private object _parameters;
 
         public int TotalCount { get; private set; }
         public int UnfilteredCount { get; private set; }
@@ -28,21 +28,21 @@ namespace SMS_Search.Data
         private const int PageSize = 100;
         private int _version = 0;
 
-        public string? SortColumn { get; private set; }
+        public string SortColumn { get; private set; }
         public string SortDirection { get; private set; } = "ASC";
-        public string? FilterText { get; private set; }
-        private string? _rawFilterText;
-        private List<string>? _filterColumns;
+        public string FilterText { get; private set; }
+        private string _rawFilterText;
+        private List<string> _filterColumns;
 
-        private Dictionary<string, string?> _columnSqlTypes = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, string> _columnSqlTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         private static readonly HashSet<string> SafeStringTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "char", "nchar", "varchar", "nvarchar", "text", "ntext", "sysname"
         };
 
-        public event EventHandler? DataReady;
-        public event EventHandler<string>? LoadError;
+        public event EventHandler DataReady;
+        public event EventHandler<string> LoadError;
 
         public VirtualGridContext(IDataRepository repo)
         {
@@ -52,7 +52,7 @@ namespace SMS_Search.Data
             _pageCompletionSources = new Dictionary<int, TaskCompletionSource<bool>>();
         }
 
-        public void SetConnection(string server, string database, string user, string? pass)
+        public void SetConnection(string server, string database, string user, string pass)
         {
             _server = server;
             _database = database;
@@ -60,7 +60,7 @@ namespace SMS_Search.Data
             _pass = pass;
         }
 
-        public async Task LoadAsync(string sql, object? parameters, string? initialSortColumn = null, CancellationToken cancellationToken = default)
+        public async Task LoadAsync(string sql, object parameters, string initialSortColumn = null, CancellationToken cancellationToken = default)
         {
             _baseSql = sql;
             _parameters = parameters;
@@ -77,7 +77,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task ApplyFilterAsync(string? filterText, IEnumerable<string> columns, CancellationToken cancellationToken = default)
+        public async Task ApplyFilterAsync(string filterText, IEnumerable<string> columns, CancellationToken cancellationToken = default)
         {
             _rawFilterText = filterText;
             _filterColumns = new List<string>(columns);
@@ -92,7 +92,7 @@ namespace SMS_Search.Data
                 string safeFilter = filterText.Replace("'", "''");
                 foreach (var col in columns)
                 {
-                    if (_columnSqlTypes.TryGetValue(col, out string? type) && type != null && SafeStringTypes.Contains(type))
+                    if (_columnSqlTypes.TryGetValue(col, out string type) && SafeStringTypes.Contains(type))
                     {
                         clauses.Add($"[{col}] LIKE '%{safeFilter}%'");
                     }
@@ -112,12 +112,10 @@ namespace SMS_Search.Data
             if (string.IsNullOrWhiteSpace(_rawFilterText) || _filterColumns == null || _filterColumns.Count == 0)
                 return 0;
 
-            if (_server == null || _database == null || _user == null || _baseSql == null) return 0;
-
-            var colTypes = new Dictionary<string, string?>();
+            var colTypes = new Dictionary<string, string>();
             foreach(var col in _filterColumns)
             {
-                if(_columnSqlTypes.TryGetValue(col, out string? type)) colTypes[col] = type;
+                if(_columnSqlTypes.TryGetValue(col, out string type)) colTypes[col] = type;
                 else colTypes[col] = null;
             }
 
@@ -129,12 +127,10 @@ namespace SMS_Search.Data
             if (string.IsNullOrWhiteSpace(_rawFilterText) || _filterColumns == null || _filterColumns.Count == 0 || limitRowIndex <= 0)
                 return 0;
 
-            if (_server == null || _database == null || _user == null || _baseSql == null) return 0;
-
-            var colTypes = new Dictionary<string, string?>();
+            var colTypes = new Dictionary<string, string>();
             foreach (var col in _filterColumns)
             {
-                if (_columnSqlTypes.TryGetValue(col, out string? type)) colTypes[col] = type;
+                if (_columnSqlTypes.TryGetValue(col, out string type)) colTypes[col] = type;
                 else colTypes[col] = null;
             }
 
@@ -148,7 +144,7 @@ namespace SMS_Search.Data
             if (_cache.ContainsKey(rowIndex)) return;
 
             int pageIndex = rowIndex / PageSize;
-            TaskCompletionSource<bool>? tcs;
+            TaskCompletionSource<bool> tcs;
 
             if (!_pageCompletionSources.TryGetValue(pageIndex, out tcs))
             {
@@ -157,10 +153,7 @@ namespace SMS_Search.Data
             }
 
             var timeoutTask = Task.Delay(5000);
-            if (tcs != null)
-            {
-                await Task.WhenAny(tcs.Task, timeoutTask);
-            }
+            await Task.WhenAny(tcs.Task, timeoutTask);
         }
 
         public async Task EnsureRangeLoadedAsync(int startIndex, int count)
@@ -199,8 +192,6 @@ namespace SMS_Search.Data
 
         private async Task ReloadAsync(CancellationToken cancellationToken = default)
         {
-            if (_server == null || _database == null || _user == null || _baseSql == null) return;
-
             _version++;
             int currentVersion = _version;
 
@@ -224,11 +215,11 @@ namespace SMS_Search.Data
             }
         }
 
-        public object? GetValue(int rowIndex, int colIndex)
+        public object GetValue(int rowIndex, int colIndex)
         {
-            if (_cache.TryGetValue(rowIndex, out DataRow? row))
+            if (_cache.TryGetValue(rowIndex, out DataRow row))
             {
-                if (row != null && colIndex >= 0 && colIndex < row.Table.Columns.Count)
+                if (colIndex >= 0 && colIndex < row.Table.Columns.Count)
                     return row[colIndex];
                 return "";
             }
@@ -239,8 +230,6 @@ namespace SMS_Search.Data
 
         private async void RequestPage(int rowIndex)
         {
-            if (_server == null || _database == null || _user == null || _baseSql == null) return;
-
             int pageIndex = rowIndex / PageSize;
 
             if (_pagesBeingFetched.Contains(pageIndex)) return;
@@ -252,9 +241,9 @@ namespace SMS_Search.Data
             {
                 int offset = pageIndex * PageSize;
 
-                string? sortCol = SortColumn;
+                string sortCol = SortColumn;
                 string sortDir = SortDirection;
-                string? filter = FilterText;
+                string filter = FilterText;
 
                 var dt = await _repo.GetQueryPageAsync(_server, _database, _user, _pass, _baseSql, _parameters, offset, PageSize, sortCol, sortDir, filter);
 
@@ -287,10 +276,8 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task<DataTable> GetSchemaAsync(string sql, object? parameters, CancellationToken cancellationToken = default)
+        public async Task<DataTable> GetSchemaAsync(string sql, object parameters, CancellationToken cancellationToken = default)
         {
-             if (_server == null || _database == null || _user == null) throw new InvalidOperationException("Connection not set");
-
              var dt = await _repo.GetQuerySchemaAsync(_server, _database, _user, _pass, sql, parameters, cancellationToken);
              _columnSqlTypes.Clear();
              foreach(DataColumn col in dt.Columns)
@@ -305,7 +292,7 @@ namespace SMS_Search.Data
 
         private string BuildExportSql()
         {
-             string finalSql = _baseSql ?? "";
+             string finalSql = _baseSql;
              if (!string.IsNullOrWhiteSpace(FilterText))
              {
                  finalSql = $"SELECT * FROM ({_baseSql}) AS _FilterQ WHERE {FilterText}";
@@ -326,10 +313,8 @@ namespace SMS_Search.Data
              return finalSql;
         }
 
-        public async Task ExportToCsvAsync(string filename, Dictionary<string, string>? headerMap = null, bool includeHeaders = true, CancellationToken cancellationToken = default)
+        public async Task ExportToCsvAsync(string filename, Dictionary<string, string> headerMap = null, bool includeHeaders = true, CancellationToken cancellationToken = default)
         {
-             if (_server == null || _database == null || _user == null || _baseSql == null) return;
-
              string finalSql = BuildExportSql();
 
              using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
@@ -354,7 +339,7 @@ namespace SMS_Search.Data
                          {
                              if (i > 0) writer.Write(",");
                              var val = reader.GetValue(i);
-                             string sVal = val == DBNull.Value ? "" : val.ToString() ?? "";
+                             string sVal = val == DBNull.Value ? "" : val.ToString();
                              writer.Write("\"" + sVal.Replace("\"", "\"\"") + "\"");
                          }
                          writer.WriteLine();
@@ -363,10 +348,8 @@ namespace SMS_Search.Data
              }
         }
 
-        public async Task ExportToJsonAsync(string filename, Dictionary<string, string>? headerMap = null, CancellationToken cancellationToken = default)
+        public async Task ExportToJsonAsync(string filename, Dictionary<string, string> headerMap = null, CancellationToken cancellationToken = default)
         {
-             if (_server == null || _database == null || _user == null || _baseSql == null) return;
-
              string finalSql = BuildExportSql();
 
              using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
@@ -398,10 +381,8 @@ namespace SMS_Search.Data
              }
         }
 
-        public async Task ExportToExcelXmlAsync(string filename, Dictionary<string, string>? headerMap = null, CancellationToken cancellationToken = default)
+        public async Task ExportToExcelXmlAsync(string filename, Dictionary<string, string> headerMap = null, CancellationToken cancellationToken = default)
         {
-             if (_server == null || _database == null || _user == null || _baseSql == null) return;
-
              string finalSql = BuildExportSql();
 
              using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
@@ -452,33 +433,36 @@ namespace SMS_Search.Data
              }
         }
 
-        private string EscapeXml(string? s)
+        private string EscapeXml(string s)
         {
             if (string.IsNullOrEmpty(s)) return "";
             return s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;").Replace("'", "&apos;");
         }
 
-        private bool IsNumeric(object? value)
+        private bool IsNumeric(object value)
         {
-            if (value == null) return false;
             return value is sbyte || value is byte || value is short || value is ushort ||
                    value is int || value is uint || value is long || value is ulong ||
                    value is float || value is double || value is decimal;
         }
 
-        public async Task<int> FindMatchRowAsync(string? searchText, IEnumerable<string> searchColumns, int startRowIndex, bool forward, CancellationToken cancellationToken = default)
+        public async Task<int> FindMatchRowAsync(string searchText, IEnumerable<string> searchColumns, int startRowIndex, bool forward, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(searchText) || searchColumns == null) return -1;
-            if (_server == null || _database == null || _user == null || _baseSql == null) return -1;
 
-            var colTypes = new Dictionary<string, string?>();
+            var colTypes = new Dictionary<string, string>();
             foreach (var col in searchColumns)
             {
-                if (_columnSqlTypes.TryGetValue(col, out string? type)) colTypes[col] = type;
+                if (_columnSqlTypes.TryGetValue(col, out string type)) colTypes[col] = type;
                 else colTypes[col] = null;
             }
 
             return await _repo.GetMatchRowIndexAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, searchText, colTypes, startRowIndex, SortColumn, SortDirection, forward, cancellationToken);
+        }
+
+        public async Task<List<string>> GetColumnDescriptionsAsync(IEnumerable<string> columns, CancellationToken cancellationToken = default)
+        {
+            return await _repo.GetColumnDescriptionsAsync(_server, _database, _user, _pass, columns, cancellationToken);
         }
     }
 }

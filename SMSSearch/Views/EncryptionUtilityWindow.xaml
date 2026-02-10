@@ -1,0 +1,31 @@
+<Window x:Class="SMS_Search.Views.EncryptionUtilityWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:SMS_Search.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:EncryptionUtilityViewModel}"
+        Title="Encryption Utility" Height="250" Width="400"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Text="Decrypted (Clear Text):" FontWeight="Bold"/>
+        <TextBox Grid.Row="1" Text="{Binding DecryptedText, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,5,10"/>
+        <Button Grid.Row="1" Grid.Column="1" Content="Encrypt" Command="{Binding EncryptCommand}" Margin="0,5,0,10" Width="75"/>
+
+        <TextBlock Grid.Row="2" Text="Encrypted (Base64):" FontWeight="Bold"/>
+        <TextBox Grid.Row="3" Text="{Binding EncryptedText, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,5,0"/>
+        <Button Grid.Row="3" Grid.Column="1" Content="Decrypt" Command="{Binding DecryptCommand}" Margin="0,5,0,0" Width="75"/>
+    </Grid>
+</Window>

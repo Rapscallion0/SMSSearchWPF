@@ -1,0 +1,23 @@
+<Window x:Class="SMS_Search.Views.ClipboardOptionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Clipboard Options" Height="250" Width="350"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="You have selected a disjoint area of cells. How would you like to copy?"
+                   TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+        <StackPanel Grid.Row="1">
+            <Button Content="Copy Content Only (Skip Gaps)" Command="{Binding CopyContentCommand}" Margin="0,5"/>
+            <Button Content="Preserve Layout (Include Gaps)" Command="{Binding PreserveLayoutCommand}" Margin="0,5"/>
+        </StackPanel>
+
+        <CheckBox Grid.Row="2" Content="Don't ask me again" IsChecked="{Binding DontAskAgain}" Margin="0,10,0,0"/>
+    </Grid>
+</Window>

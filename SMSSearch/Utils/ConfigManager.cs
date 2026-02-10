@@ -8,7 +8,7 @@ namespace SMS_Search.Utils
 {
     public interface IConfigService
     {
-        string? GetValue(string section, string key);
+        string GetValue(string section, string key);
         void SetValue(string section, string key, string value);
         void Save();
         void Load();
@@ -16,7 +16,7 @@ namespace SMS_Search.Utils
 
     public class ConfigManager : IConfigService
     {
-        private Dictionary<string, Dictionary<string, string>> _config = new Dictionary<string, Dictionary<string, string>>();
+        private Dictionary<string, Dictionary<string, string>> _config;
         private readonly string _filePath;
 
         public ConfigManager(string filePath)
@@ -25,7 +25,7 @@ namespace SMS_Search.Utils
             Load();
         }
 
-        public string? GetValue(string section, string key)
+        public string GetValue(string section, string key)
         {
             if (_config.TryGetValue(section, out var sectionDict))
             {

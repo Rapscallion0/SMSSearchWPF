@@ -39,22 +39,58 @@ namespace SMS_Search
             services.AddSingleton<IClipboardService, ClipboardService>();
             services.AddSingleton<IHotkeyService, HotkeyService>();
 
+            services.AddSingleton<UpdateChecker>();
+
             services.AddTransient<MainViewModel>();
             services.AddTransient<SearchViewModel>();
             services.AddTransient<ResultsViewModel>();
             services.AddTransient<SettingsViewModel>();
+            services.AddTransient<EulaViewModel>();
+            services.AddTransient<UnarchiveViewModel>();
 
             services.AddTransient<MainWindow>();
             services.AddTransient<SettingsWindow>();
+            services.AddTransient<EulaWindow>();
+            services.AddTransient<UnarchiveWindow>();
 
             return services.BuildServiceProvider();
         }
 
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
             var logger = Services.GetRequiredService<ILoggerService>();
+            var configService = Services.GetRequiredService<IConfigService>();
+
+            // EULA Check
+            if (configService.GetValue("GENERAL", "EULA") != "1")
+            {
+                var eulaWindow = Services.GetRequiredService<EulaWindow>();
+                bool? result = eulaWindow.ShowDialog();
+                if (result != true)
+                {
+                    Shutdown();
+                    return;
+                }
+            }
+
+            // Update Check
+            if (configService.GetValue("GENERAL", "CHECKUPDATE") == "1")
+            {
+                var updateChecker = Services.GetRequiredService<UpdateChecker>();
+                var info = await updateChecker.CheckForUpdatesAsync();
+                if (info.IsNewer)
+                {
+                    var msg = $"There is an update available for download.\n\nCurrent Version: {System.Reflection.Assembly.GetEntryAssembly().GetName().Version}\nNew Version: {info.Version}\n\nWould you like to update now?";
+                    if (MessageBox.Show(msg, "SMS Search Update", MessageBoxButton.YesNo, MessageBoxImage.Asterisk) == MessageBoxResult.Yes)
+                    {
+                        await updateChecker.PerformUpdate(info);
+                        return; // Should have shut down in PerformUpdate, but just in case
+                    }
+                }
+            }
+
             logger.LogInfo("Application starting...");
 
             bool isListener = false;
@@ -82,7 +118,7 @@ namespace SMS_Search
                 var hotkeyService = Services.GetRequiredService<IHotkeyService>();
                 var config = Services.GetRequiredService<IConfigService>();
 
-                string? hotkeyStr = config.GetValue("LAUNCHER", "HOTKEY");
+                string hotkeyStr = config.GetValue("LAUNCHER", "HOTKEY");
                 if (!string.IsNullOrEmpty(hotkeyStr))
                 {
                     try
@@ -95,11 +131,7 @@ namespace SMS_Search
                             {
                                 try
                                 {
-                                    string? fileName = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
-                                    if (fileName != null)
-                                    {
-                                        System.Diagnostics.Process.Start(fileName);
-                                    }
+                                    System.Diagnostics.Process.Start(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName);
                                 }
                                 catch (Exception ex)
                                 {

@@ -1,0 +1,26 @@
+<UserControl x:Class="SMS_Search.Views.LauncherSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:vm="clr-namespace:SMS_Search.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:LauncherSettingsViewModel}"
+             d:DesignHeight="300" d:DesignWidth="400">
+    <StackPanel Margin="10">
+        <CheckBox Content="Start with Windows" IsChecked="{Binding StartWithWindows}" Margin="0,0,0,10"/>
+        <CheckBox Content="Enable Global Hotkey" IsChecked="{Binding EnableHotkey}" Margin="0,0,0,10"/>
+
+        <Grid Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Hotkey:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <TextBox Text="{Binding HotkeyDisplay}" IsReadOnly="True" Grid.Column="1" PreviewKeyDown="TextBox_PreviewKeyDown"/>
+        </Grid>
+
+        <TextBlock Text="Press any key combination in the box above to set the hotkey."
+                   FontStyle="Italic" Foreground="Gray" TextWrapping="Wrap"/>
+    </StackPanel>
+</UserControl>

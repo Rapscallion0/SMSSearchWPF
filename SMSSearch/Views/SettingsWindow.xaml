@@ -5,23 +5,47 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:SMS_Search.ViewModels"
         mc:Ignorable="d"
-        Title="Settings" Height="300" Width="400"
+        xmlns:views="clr-namespace:SMS_Search.Views"
+        Title="Settings" Height="450" Width="500"
         WindowStartupLocation="CenterOwner">
-    <StackPanel Margin="20">
-        <Label Content="Server:"/>
-        <TextBox Text="{Binding Server}" Margin="0,0,0,10"/>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-        <Label Content="Database:"/>
-        <TextBox Text="{Binding Database}" Margin="0,0,0,10"/>
+        <TabControl>
+            <TabItem Header="Connection">
+                <StackPanel Margin="10">
+                    <Label Content="Server:"/>
+                    <TextBox Text="{Binding Server}" Margin="0,0,0,10"/>
 
-        <Label Content="User:"/>
-        <TextBox Text="{Binding User}" Margin="0,0,0,10"/>
+                    <Label Content="Database:"/>
+                    <TextBox Text="{Binding Database}" Margin="0,0,0,10"/>
 
-        <Label Content="Password:"/>
-        <PasswordBox x:Name="txtPassword" Margin="0,0,0,20"/>
+                    <Label Content="User:"/>
+                    <TextBox Text="{Binding User}" Margin="0,0,0,10"/>
 
-        <Button Content="Save" Command="{Binding SaveCommand}"
+                    <Label Content="Password:"/>
+                    <PasswordBox x:Name="txtPassword" Margin="0,0,0,20"/>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="General">
+                <views:GeneralSettingsView DataContext="{Binding General}"/>
+            </TabItem>
+            <TabItem Header="Display">
+                <views:DisplaySettingsView DataContext="{Binding Display}"/>
+            </TabItem>
+            <TabItem Header="Clean SQL">
+                <views:CleanSqlSettingsView DataContext="{Binding CleanSql}"/>
+            </TabItem>
+            <TabItem Header="Launcher">
+                <views:LauncherSettingsView DataContext="{Binding Launcher}"/>
+            </TabItem>
+        </TabControl>
+
+        <Button Grid.Row="1" Content="Save" Command="{Binding SaveCommand}"
                 CommandParameter="{Binding ElementName=txtPassword}"
-                HorizontalAlignment="Right" Padding="20,5"/>
-    </StackPanel>
+                HorizontalAlignment="Right" Padding="20,5" Margin="0,10,0,0"/>
+    </Grid>
 </Window>

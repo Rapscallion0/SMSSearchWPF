@@ -1,0 +1,34 @@
+<UserControl x:Class="SMS_Search.Views.CleanSqlSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:vm="clr-namespace:SMS_Search.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:CleanSqlSettingsViewModel}"
+             d:DesignHeight="300" d:DesignWidth="300">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="SQL Cleaning Rules (Regex)" FontWeight="Bold" Margin="0,0,0,10"/>
+
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Rules}" SelectedItem="{Binding SelectedRule}"
+                  AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                  HeadersVisibility="Column" SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Pattern" Binding="{Binding Pattern}" Width="*"/>
+                <DataGridTextColumn Header="Replacement" Binding="{Binding Replacement}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
+            <Button Content="Add Rule" Command="{Binding AddRuleCommand}" Width="80" Margin="0,0,10,0"/>
+            <Button Content="Remove Rule" Command="{Binding RemoveRuleCommand}" Width="100" Margin="0,0,10,0"/>
+            <Button Content="Restore Defaults" Command="{Binding RestoreDefaultsCommand}" Width="120" HorizontalAlignment="Right"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

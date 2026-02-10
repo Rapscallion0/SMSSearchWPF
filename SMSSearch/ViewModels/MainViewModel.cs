@@ -1,69 +1,85 @@
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using SMS_Search.Data;
-using SMS_Search.Services;
-using SMS_Search.Utils;
 using System;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
+using SMS_Search.Services;
+using SMS_Search.Views;
+using SMS_Search.Data;
+using SMS_Search.Utils;
 
 namespace SMS_Search.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
-        private readonly ILoggerService _logger;
+        private readonly IConfigService _config;
         private readonly IDialogService _dialogService;
-        private readonly IConfigService _configService;
-        private readonly IQueryHistoryService _historyService;
-        private readonly IHotkeyService _hotkeyService;
-
-        public event Action? RequestOpenSettings;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ILoggerService _logger;
+        private readonly IQueryHistoryService _historyService; // Restore history service dependency
 
         public MainViewModel(
-            SearchViewModel searchViewModel,
-            ResultsViewModel resultsViewModel,
-            ILoggerService logger,
+            IConfigService config,
             IDialogService dialogService,
-            IConfigService configService,
-            IQueryHistoryService historyService,
-            IHotkeyService hotkeyService)
+            IServiceProvider serviceProvider,
+            ILoggerService logger,
+            IQueryHistoryService historyService, // Inject it
+            SearchViewModel searchViewModel,
+            ResultsViewModel resultsViewModel)
         {
-            SearchViewModel = searchViewModel;
-            ResultsViewModel = resultsViewModel;
-            _logger = logger;
+            _config = config;
             _dialogService = dialogService;
-            _configService = configService;
+            _serviceProvider = serviceProvider;
+            _logger = logger;
             _historyService = historyService;
-            _hotkeyService = hotkeyService;
-
-            ExecuteSearchCommand = new AsyncRelayCommand(ExecuteSearch);
-            OpenSettingsCommand = new RelayCommand(OpenSettings);
+            SearchVm = searchViewModel;
+            ResultsVm = resultsViewModel;
         }
 
-        public SearchViewModel SearchViewModel { get; }
-        public ResultsViewModel ResultsViewModel { get; }
+        public SearchViewModel SearchVm { get; }
+        public ResultsViewModel ResultsVm { get; }
 
-        public IAsyncRelayCommand ExecuteSearchCommand { get; }
-        public IRelayCommand OpenSettingsCommand { get; }
-
-        private async Task ExecuteSearch()
+        [RelayCommand]
+        private async Task Search()
         {
-             var criteria = SearchViewModel.GetSearchCriteria();
+             var criteria = SearchVm.GetSearchCriteria();
 
-             await ResultsViewModel.ExecuteSearchAsync(criteria);
-
-             if (criteria.Type == SearchType.CustomSql)
+             // Basic validation
+             if (criteria.Type != SearchType.Table && string.IsNullOrWhiteSpace(criteria.Value))
              {
-                 if (criteria.Value != null)
-                 {
-                     _historyService.AddQuery(criteria.Mode.ToString(), criteria.Value);
-                 }
+                 _dialogService.ShowToast("Please enter a search term.", "Search", ToastType.Warning);
+                 return;
              }
+
+             // Add to history
+             if (criteria.Type != SearchType.Table && !string.IsNullOrWhiteSpace(criteria.Value))
+             {
+                 _historyService.AddQuery(SearchVm.SelectedMode.ToString(), criteria.Value);
+             }
+
+             await ResultsVm.ExecuteSearchAsync(criteria);
         }
 
+        [RelayCommand]
         private void OpenSettings()
         {
-            RequestOpenSettings?.Invoke();
+            if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control &&
+                (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+            {
+                var encryptWin = new EncryptionUtilityWindow();
+                encryptWin.DataContext = _serviceProvider.GetRequiredService<EncryptionUtilityViewModel>();
+                encryptWin.Owner = System.Windows.Application.Current.MainWindow;
+                encryptWin.ShowDialog();
+            }
+            else
+            {
+                var settingsWin = _serviceProvider.GetRequiredService<SettingsWindow>();
+                settingsWin.DataContext = _serviceProvider.GetRequiredService<SettingsViewModel>();
+                settingsWin.Owner = System.Windows.Application.Current.MainWindow;
+                settingsWin.ShowDialog();
+            }
         }
     }
 }

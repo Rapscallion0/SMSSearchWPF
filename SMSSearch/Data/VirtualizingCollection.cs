@@ -12,7 +12,7 @@ namespace SMS_Search.Data
         private readonly VirtualGridContext _context;
         private readonly PropertyDescriptorCollection _properties;
 
-        public event NotifyCollectionChangedEventHandler? CollectionChanged;
+        public event NotifyCollectionChangedEventHandler CollectionChanged;
 
         public VirtualizingCollection(VirtualGridContext context, DataTable schema)
         {
@@ -41,15 +41,15 @@ namespace SMS_Search.Data
 
         public object SyncRoot => this;
 
-        public object? this[int index]
+        public object this[int index]
         {
             get => new VirtualRow(_context, index, _properties);
             set => throw new NotSupportedException();
         }
 
-        public int Add(object? value) => throw new NotSupportedException();
+        public int Add(object value) => throw new NotSupportedException();
         public void Clear() => throw new NotSupportedException();
-        public bool Contains(object? value) => false;
+        public bool Contains(object value) => false;
         public void CopyTo(Array array, int index) => throw new NotSupportedException();
         public IEnumerator GetEnumerator()
         {
@@ -58,17 +58,17 @@ namespace SMS_Search.Data
                 yield return this[i];
             }
         }
-        public int IndexOf(object? value) => -1;
-        public void Insert(int index, object? value) => throw new NotSupportedException();
-        public void Remove(object? value) => throw new NotSupportedException();
+        public int IndexOf(object value) => -1;
+        public void Insert(int index, object value) => throw new NotSupportedException();
+        public void Remove(object value) => throw new NotSupportedException();
         public void RemoveAt(int index) => throw new NotSupportedException();
 
-        public PropertyDescriptorCollection GetItemProperties(PropertyDescriptor[]? listAccessors)
+        public PropertyDescriptorCollection GetItemProperties(PropertyDescriptor[] listAccessors)
         {
             return _properties;
         }
 
-        public string GetListName(PropertyDescriptor[]? listAccessors)
+        public string GetListName(PropertyDescriptor[] listAccessors)
         {
             return "VirtualList";
         }

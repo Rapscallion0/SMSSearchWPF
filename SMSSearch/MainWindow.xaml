@@ -13,6 +13,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <GroupBox Header="Search Criteria" Margin="10">
@@ -28,5 +29,19 @@
         </GroupBox>
 
         <views:ResultsView Grid.Row="1" DataContext="{Binding ResultsViewModel}" Margin="10,0,10,10"/>
+
+        <StatusBar Grid.Row="2">
+            <StatusBarItem>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Julian:" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    <TextBox Text="{Binding JulianDateText, UpdateSourceTrigger=PropertyChanged}" Width="60" MaxLength="7" VerticalContentAlignment="Center"/>
+                    <TextBlock Text="Gregorian:" Margin="10,0,5,0" VerticalAlignment="Center"/>
+                    <DatePicker SelectedDate="{Binding GregorianDate}" Width="100"/>
+                </StackPanel>
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <ToggleButton Content="Unarchive Target" Command="{Binding OpenUnarchiveCommand}" IsChecked="{Binding IsUnarchiveTargetVisible, Mode=OneWay}"/>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>

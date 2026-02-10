@@ -9,6 +9,8 @@ namespace SMS_Search.Data
         private readonly int _rowIndex;
         private readonly PropertyDescriptorCollection _properties;
 
+        public int RowIndex => _rowIndex;
+
         public VirtualRow(VirtualGridContext context, int rowIndex, PropertyDescriptorCollection properties)
         {
             _context = context;
@@ -21,12 +23,12 @@ namespace SMS_Search.Data
             return _properties;
         }
 
-        public override PropertyDescriptorCollection GetProperties(Attribute[]? attributes)
+        public override PropertyDescriptorCollection GetProperties(Attribute[] attributes)
         {
             return _properties;
         }
 
-        public object? GetValue(int colIndex)
+        public object GetValue(int colIndex)
         {
             return _context.GetValue(_rowIndex, colIndex);
         }
@@ -47,8 +49,8 @@ namespace SMS_Search.Data
         public override Type ComponentType => typeof(VirtualRow);
         public override bool IsReadOnly => true;
         public override Type PropertyType => _colType;
-        public override bool CanResetValue(object? component) => false;
-        public override object? GetValue(object? component)
+        public override bool CanResetValue(object component) => false;
+        public override object GetValue(object component)
         {
             if (component is VirtualRow row)
             {
@@ -56,8 +58,8 @@ namespace SMS_Search.Data
             }
             return null;
         }
-        public override void ResetValue(object? component) { }
-        public override void SetValue(object? component, object? value) { }
-        public override bool ShouldSerializeValue(object? component) => false;
+        public override void ResetValue(object component) { }
+        public override void SetValue(object component, object value) { }
+        public override bool ShouldSerializeValue(object component) => false;
     }
 }
