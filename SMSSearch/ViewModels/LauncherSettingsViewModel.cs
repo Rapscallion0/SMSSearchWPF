@@ -32,7 +32,7 @@ namespace SMS_Search.ViewModels
         private bool _enableHotkey;
 
         [ObservableProperty]
-        private string _hotkeyDisplay;
+        private string _hotkeyDisplay = "";
 
         private Key _hotkey;
         private ModifierKeys _modifiers;
@@ -42,7 +42,7 @@ namespace SMS_Search.ViewModels
             StartWithWindows = _config.GetValue("LAUNCHER", "START_WITH_WINDOWS") == "1";
             EnableHotkey = _config.GetValue("LAUNCHER", "ENABLE_HOTKEY") == "1";
 
-            string hotkeyStr = _config.GetValue("LAUNCHER", "HOTKEY");
+            string? hotkeyStr = _config.GetValue("LAUNCHER", "HOTKEY");
             if (!string.IsNullOrEmpty(hotkeyStr))
             {
                 var (k, m) = HotkeyUtils.Parse(hotkeyStr);
@@ -73,14 +73,17 @@ namespace SMS_Search.ViewModels
             // Manage Registry Key for Startup
             try
             {
-                using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
                 {
                     if (key != null)
                     {
                         if (StartWithWindows)
                         {
-                            string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
-                            key.SetValue("SMS_Search_Launcher", $"\"{exePath}\" --listener");
+                            string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+                            if (exePath != null)
+                            {
+                                key.SetValue("SMS_Search_Launcher", $"\"{exePath}\" --listener");
+                            }
                         }
                         else
                         {
