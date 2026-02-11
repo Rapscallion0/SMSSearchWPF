@@ -44,7 +44,7 @@ namespace SMS_Search.ViewModels.Settings
         private readonly HashSet<CleanSqlRuleViewModel> _modifiedRules = new();
 
         public override string Title => "Clean SQL";
-        public override Geometry Icon => (Geometry)Application.Current.FindResource("Icon_Nav_CleanSql");
+        public override Style Icon => (Style)Application.Current.FindResource("Icon_Nav_CleanSql");
 
         [ObservableProperty]
         private ObservableCollection<CleanSqlRuleViewModel> _rules = new ObservableCollection<CleanSqlRuleViewModel>();
