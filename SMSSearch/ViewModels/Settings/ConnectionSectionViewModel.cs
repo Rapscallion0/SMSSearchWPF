@@ -15,7 +15,7 @@ namespace SMS_Search.ViewModels.Settings
         private CancellationTokenSource? _passwordCts;
 
         public override string Title => "Connection";
-        public override ImageSource Icon => (ImageSource)Application.Current.FindResource("Icon_Nav_Connection");
+        public override ImageSource Icon => (ImageSource)System.Windows.Application.Current.FindResource("Icon_Nav_Connection");
 
         public ConnectionSectionViewModel(ISettingsRepository repository)
         {
