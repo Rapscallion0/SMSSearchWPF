@@ -26,7 +26,9 @@ namespace SMS_Search.Views.Settings
                     {
                         if (rule != null && string.IsNullOrWhiteSpace(rule.Pattern))
                         {
-                            if (viewModel.Rules.Contains(rule))
+                            // Only remove if it's not the currently selected item.
+                            // This prevents removal while the user is still interacting with the row (e.g. double clicking to edit).
+                            if (viewModel.Rules.Contains(rule) && viewModel.SelectedRule != rule)
                             {
                                 viewModel.Rules.Remove(rule);
                             }

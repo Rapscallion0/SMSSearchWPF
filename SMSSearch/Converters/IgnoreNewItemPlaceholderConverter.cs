@@ -13,9 +13,13 @@ namespace SMS_Search.Converters
 
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            if (value != null && (value.ToString() == "{NewItemPlaceholder}" || value.GetType().FullName == "MS.Internal.NamedObject"))
+            if (value != null)
             {
-                return null;
+                string s = value.ToString() ?? "";
+                if (s == "{NewItemPlaceholder}" || value.GetType().FullName == "MS.Internal.NamedObject")
+                {
+                    return null;
+                }
             }
             return value;
         }
