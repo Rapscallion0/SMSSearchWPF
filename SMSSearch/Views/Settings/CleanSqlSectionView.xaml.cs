@@ -17,17 +17,24 @@ namespace SMS_Search.Views.Settings
             if (e.EditAction == DataGridEditAction.Commit)
             {
                 var rule = e.Row.Item as CleanSqlRuleViewModel;
-                if (rule != null && string.IsNullOrWhiteSpace(rule.Pattern))
+
+                // Use Dispatcher to let the commit finish before we act
+                Dispatcher.InvokeAsync(async () =>
                 {
-                    Dispatcher.InvokeAsync(() =>
+                    var viewModel = DataContext as CleanSqlSectionViewModel;
+                    if (viewModel != null)
                     {
-                        var viewModel = DataContext as CleanSqlSectionViewModel;
-                        if (viewModel != null && viewModel.Rules.Contains(rule))
+                        if (rule != null && string.IsNullOrWhiteSpace(rule.Pattern))
                         {
-                            viewModel.Rules.Remove(rule);
+                            if (viewModel.Rules.Contains(rule))
+                            {
+                                viewModel.Rules.Remove(rule);
+                            }
                         }
-                    });
-                }
+                        // Always save on commit (whether added, modified, or removed empty row)
+                        await viewModel.SaveRules();
+                    }
+                });
             }
         }
 

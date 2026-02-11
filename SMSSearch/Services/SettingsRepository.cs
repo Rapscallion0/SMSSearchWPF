@@ -22,6 +22,11 @@ namespace SMS_Search.Services
             _configService.SetValue(section, key, value);
         }
 
+        public void ClearSection(string section)
+        {
+            _configService.ClearSection(section);
+        }
+
         public Task SaveAsync(string section, string key, string value)
         {
             _configService.SetValue(section, key, value);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -10,6 +11,7 @@ namespace SMS_Search.Utils
     {
         string? GetValue(string section, string key);
         void SetValue(string section, string key, string value);
+        void ClearSection(string section);
         void Save();
         void Load();
     }
@@ -46,6 +48,14 @@ namespace SMS_Search.Utils
             _config[section][key] = value;
         }
 
+        public void ClearSection(string section)
+        {
+            if (_config.ContainsKey(section))
+            {
+                _config[section].Clear();
+            }
+        }
+
         public void Load()
         {
             if (File.Exists(_filePath))
@@ -69,7 +79,11 @@ namespace SMS_Search.Utils
 
         public void Save()
         {
-            var options = new JsonSerializerOptions { WriteIndented = true };
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
             var json = JsonSerializer.Serialize(_config, options);
             File.WriteAllText(_filePath, json);
         }
