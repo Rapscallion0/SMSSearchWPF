@@ -20,12 +20,11 @@
 
         <ctrl:SettingControl Header="Global Hotkey" IsSaved="{Binding StoredHotkey.IsSaved}">
             <DockPanel LastChildFill="True">
-                 <Button DockPanel.Dock="Right" Content="X" Width="30" Command="{Binding ResetPreviewCommand}" Margin="5,0,0,0" ToolTip="Reset Hotkey" />
-                 <TextBox Text="{Binding HotkeyDisplay, Mode=OneWay}"
-                          IsReadOnly="True"
-                          PreviewKeyDown="Hotkey_PreviewKeyDown"
-                          PreviewMouseWheel="OnPreviewMouseWheel"
-                          ToolTip="Click and press keys to set hotkey" />
+                 <ctrl:ClearableTextBox Text="{Binding HotkeyDisplay, Mode=OneWay}"
+                                        IsReadOnly="True"
+                                        PreviewKeyDown="Hotkey_PreviewKeyDown"
+                                        ToolTip="Click and press keys to set hotkey"
+                                        ClearCommand="{Binding ClearHotkeyCommand}" />
             </DockPanel>
         </ctrl:SettingControl>
 

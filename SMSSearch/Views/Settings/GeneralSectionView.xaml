@@ -58,7 +58,7 @@
 
         <ctrl:SettingControl Header="Custom Delimiter" IsSaved="{Binding CustomDelimiter.IsSaved}"
                              Visibility="{Binding IsCustomDelimiterVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <TextBox Text="{Binding CustomDelimiter.Value, UpdateSourceTrigger=PropertyChanged}" PreviewMouseWheel="OnPreviewMouseWheel" />
+            <ctrl:ClearableTextBox Text="{Binding CustomDelimiter.Value, UpdateSourceTrigger=PropertyChanged}" />
         </ctrl:SettingControl>
 
         <Button Content="Reset EULA" Command="{Binding ResetEulaCommand}" HorizontalAlignment="Left" Margin="0,10,0,0" Padding="10,5"/>
