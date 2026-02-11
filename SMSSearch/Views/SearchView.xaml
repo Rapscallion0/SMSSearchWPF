@@ -38,8 +38,8 @@
                         <ctrl:ClearableTextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="25"/>
                         <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
                                 Grid.Column="1" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Path Data="{StaticResource Icon_History}"
-                                  Fill="SeaGreen" Stretch="Uniform" Width="16" Height="16"/>
+                            <Image Source="{StaticResource Icon_History}"
+                                   Width="16" Height="16"/>
                         </Button>
                         <Button Content="Clean" Command="{Binding CleanSqlCommand}"
                                 Grid.Column="2" Height="25" Margin="5,0,0,0" ToolTip="Clean SQL"
@@ -69,8 +69,8 @@
                         <ctrl:ClearableTextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="25"/>
                         <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
                                 Grid.Column="1" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Path Data="{StaticResource Icon_History}"
-                                  Fill="SeaGreen" Stretch="Uniform" Width="16" Height="16"/>
+                            <Image Source="{StaticResource Icon_History}"
+                                   Width="16" Height="16"/>
                         </Button>
                         <Button Content="Clean" Command="{Binding CleanSqlCommand}"
                                 Grid.Column="2" Height="25" Margin="5,0,0,0" ToolTip="Clean SQL"
@@ -106,8 +106,8 @@
                         <ctrl:ClearableTextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="25"/>
                         <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
                                 Grid.Column="1" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Path Data="{StaticResource Icon_History}"
-                                  Fill="SeaGreen" Stretch="Uniform" Width="16" Height="16"/>
+                            <Image Source="{StaticResource Icon_History}"
+                                   Width="16" Height="16"/>
                         </Button>
                         <Button Content="Clean" Command="{Binding CleanSqlCommand}"
                                 Grid.Column="2" Height="25" Margin="5,0,0,0" ToolTip="Clean SQL"
