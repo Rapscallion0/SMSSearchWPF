@@ -22,8 +22,8 @@
                 <DockPanel LastChildFill="False">
                     <Button Command="{Binding OpenSettingsCommand}" DockPanel.Dock="Left"
                             Style="{StaticResource TransparentIconButtonStyle}" ToolTip="Settings">
-                        <Path Style="{StaticResource Icon_Settings}"
-                              Width="16" Height="16"/>
+                        <Path Data="{StaticResource Icon_Settings}"
+                              Fill="RoyalBlue" Stretch="Uniform" Width="16" Height="16"/>
                     </Button>
                     <Button Content="Search" Command="{Binding SearchCommand}"
                             DockPanel.Dock="Right" Padding="20,5"

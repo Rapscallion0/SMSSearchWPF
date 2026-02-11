@@ -68,8 +68,9 @@
                 </StackPanel.Style>
 
                 <!-- Checkmark Icon -->
-                <Path Style="{StaticResource Icon_Check}"
-                      Width="16" Height="16" />
+                <Path Data="{StaticResource Icon_Check}"
+                      Fill="Green"
+                      Width="16" Height="16" Stretch="Uniform" />
 
                 <TextBlock Text="Saved" Foreground="Green" Margin="5,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" />
             </StackPanel>
