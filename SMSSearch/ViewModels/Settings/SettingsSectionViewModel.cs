@@ -1,10 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using System.Windows.Media;
 
 namespace SMS_Search.ViewModels.Settings
 {
     public abstract class SettingsSectionViewModel : ObservableObject
     {
         public abstract string Title { get; }
-        public abstract string IconData { get; } // SVG Path Data for the icon
+        public abstract Geometry Icon { get; }
     }
 }
