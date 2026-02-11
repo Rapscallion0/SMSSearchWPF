@@ -19,7 +19,7 @@ namespace SMS_Search.ViewModels.Settings
         private readonly IDialogService _dialogService;
 
         public override string Title => "General";
-        public override ImageSource Icon => (ImageSource)Application.Current.FindResource("Icon_Nav_General");
+        public override ImageSource Icon => (ImageSource)System.Windows.Application.Current.FindResource("Icon_Nav_General");
 
         public GeneralSectionViewModel(ISettingsRepository repository, IDialogService dialogService)
         {
