@@ -41,8 +41,8 @@
                                            <Condition Binding="{Binding Item, RelativeSource={RelativeSource AncestorType=DataGridRow}, Converter={StaticResource IsPlaceholderConverter}}" Value="True"/>
                                       </MultiDataTrigger.Conditions>
                                       <Setter TargetName="IconPath" Property="Visibility" Value="Visible"/>
-                                      <Setter TargetName="IconPath" Property="Data" Value="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z"/>
-                                      <Setter TargetName="IconPath" Property="Fill" Value="Gold"/>
+                                <Setter TargetName="IconPath" Property="Data" Value="M7.5,5.6L5,7L6.4,4.5L5,2L7.5,3.4L10,2L8.6,4.5L10,7L7.5,5.6M19.5,15.4L17,14L15.6,16.5L17,19L19.5,17.6L22,19L20.6,16.5L22,14L19.5,15.4M22,2L19.5,3.4L17,2L18.4,4.5L17,7L19.5,5.6L22,7L20.6,4.5L22,2M13.4,12.5L11,20L8.6,12.5L1,10L8.6,7.5L11,0L13.4,7.5L21,10L13.4,12.5Z"/>
+                                <Setter TargetName="IconPath" Property="Fill" Value="#FFD700"/>
                                  </MultiDataTrigger>
                             </ControlTemplate.Triggers>
                        </ControlTemplate>
