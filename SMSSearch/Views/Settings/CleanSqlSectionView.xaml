@@ -12,6 +12,43 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <conv:IgnoreNewItemPlaceholderConverter x:Key="IgnoreNewItemPlaceholderConverter" />
+        <conv:RawStringConverter x:Key="RawStringConverter" />
+        <conv:IsPlaceholderConverter x:Key="IsPlaceholderConverter" />
+
+        <Style x:Key="RowHeaderStyle" TargetType="DataGridRowHeader">
+             <Setter Property="Width" Value="25"/>
+             <Setter Property="Template">
+                  <Setter.Value>
+                       <ControlTemplate TargetType="DataGridRowHeader">
+                            <Grid Background="Transparent">
+                                 <Path x:Name="IconPath"
+                                       Data=""
+                                       Fill="Gray"
+                                       Stretch="Uniform"
+                                       Width="12" Height="12"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="Collapsed"/>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                 <DataTrigger Binding="{Binding IsEditing, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                      <Setter TargetName="IconPath" Property="Visibility" Value="Visible"/>
+                                      <Setter TargetName="IconPath" Property="Data" Value="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
+                                      <Setter TargetName="IconPath" Property="Fill" Value="Black"/>
+                                 </DataTrigger>
+                                 <MultiDataTrigger>
+                                      <MultiDataTrigger.Conditions>
+                                           <Condition Binding="{Binding IsEditing, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="False"/>
+                                           <Condition Binding="{Binding Item, RelativeSource={RelativeSource AncestorType=DataGridRow}, Converter={StaticResource IsPlaceholderConverter}}" Value="True"/>
+                                      </MultiDataTrigger.Conditions>
+                                      <Setter TargetName="IconPath" Property="Visibility" Value="Visible"/>
+                                      <Setter TargetName="IconPath" Property="Data" Value="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z"/>
+                                      <Setter TargetName="IconPath" Property="Fill" Value="Gold"/>
+                                 </MultiDataTrigger>
+                            </ControlTemplate.Triggers>
+                       </ControlTemplate>
+                  </Setter.Value>
+             </Setter>
+        </Style>
 
         <Style x:Key="ContentCellStyle" TargetType="DataGridCell">
              <Setter Property="BorderThickness" Value="0,0,0,1"/>
@@ -49,10 +86,11 @@
                        AutoGenerateColumns="False"
                        CanUserAddRows="True"
                        CanUserDeleteRows="True"
-                       HeadersVisibility="Column"
+                       HeadersVisibility="All"
                        GridLinesVisibility="None"
                        BorderThickness="0"
                        Background="Transparent"
+                       RowHeaderStyle="{StaticResource RowHeaderStyle}"
                        PreviewMouseWheel="DataGrid_PreviewMouseWheel"
                        RowEditEnding="DataGrid_RowEditEnding">
 
@@ -70,12 +108,13 @@
                                                 <Style TargetType="Button">
                                                      <Setter Property="Visibility" Value="Collapsed"/>
                                                      <Style.Triggers>
-                                                          <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                          <MultiDataTrigger>
+                                                               <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True"/>
+                                                                    <Condition Binding="{Binding Item, RelativeSource={RelativeSource AncestorType=DataGridRow}, Converter={StaticResource IsPlaceholderConverter}}" Value="False"/>
+                                                               </MultiDataTrigger.Conditions>
                                                                <Setter Property="Visibility" Value="Visible"/>
-                                                          </DataTrigger>
-                                                          <DataTrigger Binding="{Binding IsNewItem, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
-                                                               <Setter Property="Visibility" Value="Collapsed"/>
-                                                          </DataTrigger>
+                                                          </MultiDataTrigger>
                                                      </Style.Triggers>
                                                 </Style>
                                            </Button.Style>
@@ -86,9 +125,9 @@
                             </DataGridTemplateColumn.CellTemplate>
                        </DataGridTemplateColumn>
 
-                       <DataGridTextColumn Header="Regex Pattern" Binding="{Binding Pattern, UpdateSourceTrigger=PropertyChanged}" Width="*"
+                       <DataGridTextColumn Header="Regex Pattern" Binding="{Binding Pattern, Converter={StaticResource RawStringConverter}, UpdateSourceTrigger=LostFocus}" Width="*"
                                            CellStyle="{StaticResource ContentCellStyle}"/>
-                       <DataGridTextColumn Header="Replacement" Binding="{Binding Replacement, UpdateSourceTrigger=PropertyChanged}" Width="*"
+                       <DataGridTextColumn Header="Replacement" Binding="{Binding Replacement, Converter={StaticResource RawStringConverter}, UpdateSourceTrigger=LostFocus}" Width="*"
                                            CellStyle="{StaticResource ContentCellStyle}"/>
 
                        <DataGridTemplateColumn Width="Auto" CanUserResize="False"

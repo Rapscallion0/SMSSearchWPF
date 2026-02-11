@@ -38,7 +38,6 @@ namespace SMS_Search.ViewModels.Settings
     public partial class CleanSqlSectionViewModel : SettingsSectionViewModel
     {
         private readonly ISettingsRepository _repository;
-        private CancellationTokenSource? _saveCts;
         private bool _isLoading;
         private readonly HashSet<CleanSqlRuleViewModel> _modifiedRules = new();
 
@@ -119,8 +118,6 @@ namespace SMS_Search.ViewModels.Settings
                     item.PropertyChanged -= OnRulePropertyChanged;
                 }
             }
-
-            if (!_isLoading) DebounceSave();
         }
 
         private void OnRulePropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -135,49 +132,48 @@ namespace SMS_Search.ViewModels.Settings
                      rule.IsSaved = false;
                  }
              }
-             if (!_isLoading) DebounceSave();
         }
 
-        private async void DebounceSave()
+        [RelayCommand]
+        public async Task SaveRules()
         {
-            _saveCts?.Cancel();
-            _saveCts = new CancellationTokenSource();
-            var token = _saveCts.Token;
+            if (IsSaving) return;
+            IsSaving = true;
+            IsSaved = false;
 
             try
             {
-                await Task.Delay(500, token);
-                if (token.IsCancellationRequested) return;
-
-                IsSaving = true;
-                IsSaved = false;
+                // Clear existing section first to remove stale keys
+                _repository.ClearSection("CLEAN_SQL");
 
                 // Save Logic
-                await _repository.SaveAsync("CLEAN_SQL", "Count", Rules.Count.ToString());
+                _repository.SetValue("CLEAN_SQL", "Count", Rules.Count.ToString());
                 for (int i = 0; i < Rules.Count; i++)
                 {
                     var rule = Rules[i];
                     if (rule == null) continue;
 
-                    await _repository.SaveAsync("CLEAN_SQL", "Rule_" + i + "_Regex", rule.Pattern ?? "");
-                    await _repository.SaveAsync("CLEAN_SQL", "Rule_" + i + "_Replace", rule.Replacement ?? "");
+                    _repository.SetValue("CLEAN_SQL", "Rule_" + i + "_Regex", rule.Pattern ?? "");
+                    _repository.SetValue("CLEAN_SQL", "Rule_" + i + "_Replace", rule.Replacement ?? "");
                 }
 
-                if (token.IsCancellationRequested) return;
+                // Force commit to disk
+                await _repository.SaveAsync();
 
                 IsSaving = false;
                 IsSaved = true;
 
                 // Flash modified rules
                 var rulesToFlash = _modifiedRules.ToList();
+                _modifiedRules.Clear();
+
                 foreach (var rule in rulesToFlash)
                 {
                     if (rule == null) continue;
                     rule.IsSaved = true;
                 }
-                _modifiedRules.Clear();
 
-                await Task.Delay(2000, token);
+                await Task.Delay(2000);
                 IsSaved = false;
                 foreach (var rule in rulesToFlash)
                 {
@@ -185,12 +181,11 @@ namespace SMS_Search.ViewModels.Settings
                     rule.IsSaved = false;
                 }
             }
-            catch (OperationCanceledException) { }
             catch (Exception ex)
             {
                 // Prevent crash
                 IsSaving = false;
-                System.Diagnostics.Debug.WriteLine($"Error in Clean SQL DebounceSave: {ex}");
+                System.Diagnostics.Debug.WriteLine($"Error in SaveRules: {ex}");
             }
         }
 
@@ -203,7 +198,7 @@ namespace SMS_Search.ViewModels.Settings
         }
 
         [RelayCommand]
-        private void RemoveRule(object? parameter)
+        private async Task RemoveRule(object? parameter)
         {
             var rule = parameter as CleanSqlRuleViewModel;
             if (rule == null && parameter == null) rule = SelectedRule;
@@ -212,11 +207,12 @@ namespace SMS_Search.ViewModels.Settings
             {
                 Rules.Remove(rule);
                 _modifiedRules.Remove(rule); // Ensure we don't try to access removed rule
+                await SaveRules();
             }
         }
 
         [RelayCommand]
-        private void RestoreDefaults()
+        private async Task RestoreDefaults()
         {
              _isLoading = true; // Prevent save during clear/add cycle
              try
@@ -230,8 +226,7 @@ namespace SMS_Search.ViewModels.Settings
                  {
                      var vm = new CleanSqlRuleViewModel { Pattern = rule.Pattern ?? "", Replacement = rule.Replacement ?? "" };
                      Rules.Add(vm);
-                     _modifiedRules.Add(vm); // Mark restored defaults as modified so they save? Or not?
-                     // If we restore, we probably want to save immediately.
+                     _modifiedRules.Add(vm);
                  }
              }
              finally
@@ -239,7 +234,7 @@ namespace SMS_Search.ViewModels.Settings
                  _isLoading = false;
              }
              // Trigger save explicitly after restore
-             DebounceSave();
+             await SaveRules();
         }
     }
 }
