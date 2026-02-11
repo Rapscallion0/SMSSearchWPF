@@ -26,7 +26,7 @@ namespace SMS_Search.ViewModels.Settings
         private ModifierKeys _currentModifiers = ModifierKeys.None;
 
         public override string Title => "Launcher";
-        public override Geometry Icon => (Geometry)Application.Current.FindResource("Icon_Nav_Launcher");
+        public override Style Icon => (Style)Application.Current.FindResource("Icon_Nav_Launcher");
 
         public LauncherSectionViewModel(
             ISettingsRepository repository,
