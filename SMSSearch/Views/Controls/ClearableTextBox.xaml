@@ -32,8 +32,7 @@
                 Background="Transparent"
                 ToolTip="Clear Text"
                 Visibility="{Binding Text, ElementName=Root, Converter={StaticResource StringToVisibilityConverter}}">
-             <Path Data="{StaticResource Icon_Clear}"
-                   Fill="Red" Stretch="Uniform" />
+             <Image Source="{StaticResource Icon_Clear}" />
         </Button>
     </Grid>
 </UserControl>
