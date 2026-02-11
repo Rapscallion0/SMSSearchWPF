@@ -19,7 +19,8 @@ namespace SMS_Search.Views.Settings
                 var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta);
                 eventArg.RoutedEvent = UIElement.MouseWheelEvent;
                 eventArg.Source = sender;
-                var parent = ((System.Windows.Controls.Control)sender).Parent as UIElement;
+                var parent = ((sender as System.Windows.Controls.Control)?.Parent as UIElement) ??
+                             (sender is DependencyObject d ? System.Windows.Media.VisualTreeHelper.GetParent(d) as UIElement : null);
                 parent?.RaiseEvent(eventArg);
             }
         }
