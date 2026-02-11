@@ -6,6 +6,8 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SMS_Search.Data;
@@ -42,7 +44,7 @@ namespace SMS_Search.ViewModels.Settings
         private readonly HashSet<CleanSqlRuleViewModel> _modifiedRules = new();
 
         public override string Title => "Clean SQL";
-        public override string IconData => "M14,10H2V12H14M14,6H2V8H14M2,16H10V14H2M21.5,11.5L23,13L16,20L11.5,15.5L13,14L16,17L21.5,11.5Z"; // Check list or similar
+        public override Geometry Icon => (Geometry)Application.Current.FindResource("Icon_Nav_CleanSql");
 
         [ObservableProperty]
         private ObservableCollection<CleanSqlRuleViewModel> _rules = new ObservableCollection<CleanSqlRuleViewModel>();

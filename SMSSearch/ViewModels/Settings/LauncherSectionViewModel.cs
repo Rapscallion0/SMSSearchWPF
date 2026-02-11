@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
@@ -24,8 +26,7 @@ namespace SMS_Search.ViewModels.Settings
         private ModifierKeys _currentModifiers = ModifierKeys.None;
 
         public override string Title => "Launcher";
-        public override string IconData => "M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"; // Alert icon (placeholder). Or rocket: M13,2.03C13,2.03 13,2.03 13,2.03C16.45,2.45 19.34,4.76 20.61,7.91L13,2.03M12,20C12,20 12,20 12,20C8.55,19.58 5.66,17.27 4.39,14.12L12,20M12,2C12,2 12,2 12,2C12,2 11.96,2 11.93,2C11.94,2 11.96,2 11.97,2C7.38,2.71 3.5,6.43 2.29,11.23L10.12,18.53L12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2M12,2Z
-        // Rocket icon approximation or just Launch icon.
+        public override Geometry Icon => (Geometry)Application.Current.FindResource("Icon_Nav_Launcher");
 
         public LauncherSectionViewModel(
             ISettingsRepository repository,
