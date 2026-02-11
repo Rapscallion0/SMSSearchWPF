@@ -12,7 +12,7 @@ namespace SMS_Search.ViewModels.Settings
         private readonly ISettingsRepository _repository;
 
         public override string Title => "Display";
-        public override Style Icon => (Style)Application.Current.FindResource("Icon_Nav_Display");
+        public override Geometry Icon => (Geometry)Application.Current.FindResource("Icon_Nav_Display");
 
         public DisplaySectionViewModel(ISettingsRepository repository)
         {

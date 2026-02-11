@@ -22,6 +22,9 @@
                        <ControlTemplate TargetType="DataGridRowHeader">
                             <Grid Background="Transparent">
                                  <Path x:Name="IconPath"
+                                       Data=""
+                                       Fill="Gray"
+                                       Stretch="Uniform"
                                        Width="12" Height="12"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Visibility="Collapsed"/>
@@ -29,7 +32,8 @@
                             <ControlTemplate.Triggers>
                                  <DataTrigger Binding="{Binding IsEditing, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
                                       <Setter TargetName="IconPath" Property="Visibility" Value="Visible"/>
-                                      <Setter TargetName="IconPath" Property="Style" Value="{StaticResource Icon_Edit}"/>
+                                      <Setter TargetName="IconPath" Property="Data" Value="{StaticResource Icon_Edit}"/>
+                                      <Setter TargetName="IconPath" Property="Fill" Value="Black"/>
                                  </DataTrigger>
                                  <MultiDataTrigger>
                                       <MultiDataTrigger.Conditions>
@@ -37,7 +41,8 @@
                                            <Condition Binding="{Binding Item, RelativeSource={RelativeSource AncestorType=DataGridRow}, Converter={StaticResource IsPlaceholderConverter}}" Value="True"/>
                                       </MultiDataTrigger.Conditions>
                                       <Setter TargetName="IconPath" Property="Visibility" Value="Visible"/>
-                                      <Setter TargetName="IconPath" Property="Style" Value="{StaticResource Icon_NewItem}"/>
+                                <Setter TargetName="IconPath" Property="Data" Value="{StaticResource Icon_NewItem}"/>
+                                <Setter TargetName="IconPath" Property="Fill" Value="#FFD700"/>
                                  </MultiDataTrigger>
                             </ControlTemplate.Triggers>
                        </ControlTemplate>
@@ -113,8 +118,8 @@
                                                      </Style.Triggers>
                                                 </Style>
                                            </Button.Style>
-                                           <Path Style="{StaticResource Icon_Delete}"
-                                                 Width="12" Height="12"/>
+                                           <Path Data="{StaticResource Icon_Delete}"
+                                                 Fill="Red" Width="12" Height="12" Stretch="Uniform"/>
                                       </Button>
                                  </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
@@ -161,7 +166,7 @@
                                                       </Style.Triggers>
                                                  </Style>
                                             </StackPanel.Style>
-                                            <Path Style="{StaticResource Icon_Check}" Width="16" Height="16" />
+                                            <Path Data="{StaticResource Icon_Check}" Fill="Green" Width="16" Height="16" Stretch="Uniform" />
                                             <TextBlock Text="Saved" Foreground="Green" Margin="5,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" />
                                       </StackPanel>
                                  </DataTemplate>

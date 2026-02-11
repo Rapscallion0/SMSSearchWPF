@@ -2,89 +2,29 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- Common Icons -->
-    <StreamGeometry x:Key="Icon_History_Geometry">M13 3C8.03 3 4 7.03 4 12H1L4.89 15.89L8.78 12H5.82C5.82 8.03 9.03 4.82 13 4.82C16.97 4.82 20.18 8.03 20.18 12C20.18 15.97 16.97 19.18 13 19.18C9.03 19.18 5.82 15.97 5.82 12H4C4 16.97 8.03 21 13 21C17.97 21 22 16.97 22 12C22 7.03 17.97 3 13 3Z M12 8V13L16.28 15.54L17 14.33L13.5 12.25V8H12Z</StreamGeometry>
-    <Style x:Key="Icon_History" TargetType="Path">
-        <Setter Property="Data" Value="{StaticResource Icon_History_Geometry}" />
-        <Setter Property="Fill" Value="SeaGreen" />
-        <Setter Property="Stretch" Value="Uniform" />
-    </Style>
+    <StreamGeometry x:Key="Icon_History">M13 3C8.03 3 4 7.03 4 12H1L4.89 15.89L8.78 12H5.82C5.82 8.03 9.03 4.82 13 4.82C16.97 4.82 20.18 8.03 20.18 12C20.18 15.97 16.97 19.18 13 19.18C9.03 19.18 5.82 15.97 5.82 12H4C4 16.97 8.03 21 13 21C17.97 21 22 16.97 22 12C22 7.03 17.97 3 13 3Z M12 8V13L16.28 15.54L17 14.33L13.5 12.25V8H12Z</StreamGeometry>
 
-    <StreamGeometry x:Key="Icon_Delete_Geometry">M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z</StreamGeometry>
-    <Style x:Key="Icon_Delete" TargetType="Path">
-        <Setter Property="Data" Value="{StaticResource Icon_Delete_Geometry}" />
-        <Setter Property="Fill" Value="Red" />
-        <Setter Property="Stretch" Value="Uniform" />
-    </Style>
+    <StreamGeometry x:Key="Icon_Delete">M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z</StreamGeometry>
 
-    <StreamGeometry x:Key="Icon_Check_Geometry">M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z</StreamGeometry>
-    <Style x:Key="Icon_Check" TargetType="Path">
-        <Setter Property="Data" Value="{StaticResource Icon_Check_Geometry}" />
-        <Setter Property="Fill" Value="Green" />
-        <Setter Property="Stretch" Value="Uniform" />
-    </Style>
+    <StreamGeometry x:Key="Icon_Check">M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z</StreamGeometry>
 
-    <StreamGeometry x:Key="Icon_Clear_Geometry">M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z</StreamGeometry>
-    <Style x:Key="Icon_Clear" TargetType="Path">
-        <Setter Property="Data" Value="{StaticResource Icon_Clear_Geometry}" />
-        <Setter Property="Fill" Value="Red" />
-        <Setter Property="Stretch" Value="Uniform" />
-    </Style>
+    <StreamGeometry x:Key="Icon_Clear">M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z</StreamGeometry>
 
-    <StreamGeometry x:Key="Icon_Settings_Geometry">M19.43 12.98C19.47 12.66 19.5 12.34 19.5 12C19.5 11.66 19.47 11.34 19.43 11.02L21.54 9.37C21.73 9.22 21.78 8.95 21.66 8.73L19.66 5.27C19.54 5.05 19.27 4.96 19.05 5.05L16.56 6.05C16.04 5.66 15.5 5.32 14.87 5.07L14.5 2.42C14.46 2.18 14.25 2 14 2H10C9.75 2 9.54 2.18 9.5 2.42L9.13 5.07C8.5 5.32 7.96 5.66 7.44 6.05L4.95 5.05C4.73 4.96 4.46 5.05 4.34 5.27L2.34 8.73C2.21 8.95 2.27 9.22 2.46 9.37L4.57 11.02C4.53 11.34 4.5 11.66 4.5 12C4.5 12.34 4.53 12.66 4.57 12.98L2.46 14.63C2.27 14.78 2.21 15.05 2.34 15.27L4.34 18.73C4.46 18.95 4.73 19.04 4.95 18.95L7.44 17.95C7.96 18.34 8.5 18.68 9.13 18.93L9.5 21.58C9.54 21.82 9.75 22 10 22H14C14.25 22 14.46 21.82 14.5 21.58L14.87 18.93C15.5 18.68 16.04 18.34 16.56 17.95L19.05 18.95C19.27 19.04 19.54 18.95 19.66 18.73L21.66 15.27C21.78 15.05 21.73 14.78 21.54 14.63L19.43 12.98Z M12 15.5C10.07 15.5 8.5 13.93 8.5 12C8.5 10.07 10.07 8.5 12 8.5C13.93 8.5 15.5 10.07 15.5 12C15.5 13.93 13.93 15.5 12 15.5Z</StreamGeometry>
-    <Style x:Key="Icon_Settings" TargetType="Path">
-        <Setter Property="Data" Value="{StaticResource Icon_Settings_Geometry}" />
-        <Setter Property="Fill" Value="RoyalBlue" />
-        <Setter Property="Stretch" Value="Uniform" />
-    </Style>
+    <StreamGeometry x:Key="Icon_Settings">M19.43 12.98C19.47 12.66 19.5 12.34 19.5 12C19.5 11.66 19.47 11.34 19.43 11.02L21.54 9.37C21.73 9.22 21.78 8.95 21.66 8.73L19.66 5.27C19.54 5.05 19.27 4.96 19.05 5.05L16.56 6.05C16.04 5.66 15.5 5.32 14.87 5.07L14.5 2.42C14.46 2.18 14.25 2 14 2H10C9.75 2 9.54 2.18 9.5 2.42L9.13 5.07C8.5 5.32 7.96 5.66 7.44 6.05L4.95 5.05C4.73 4.96 4.46 5.05 4.34 5.27L2.34 8.73C2.21 8.95 2.27 9.22 2.46 9.37L4.57 11.02C4.53 11.34 4.5 11.66 4.5 12C4.5 12.34 4.53 12.66 4.57 12.98L2.46 14.63C2.27 14.78 2.21 15.05 2.34 15.27L4.34 18.73C4.46 18.95 4.73 19.04 4.95 18.95L7.44 17.95C7.96 18.34 8.5 18.68 9.13 18.93L9.5 21.58C9.54 21.82 9.75 22 10 22H14C14.25 22 14.46 21.82 14.5 21.58L14.87 18.93C15.5 18.68 16.04 18.34 16.56 17.95L19.05 18.95C19.27 19.04 19.54 18.95 19.66 18.73L21.66 15.27C21.78 15.05 21.73 14.78 21.54 14.63L19.43 12.98Z M12 15.5C10.07 15.5 8.5 13.93 8.5 12C8.5 10.07 10.07 8.5 12 8.5C13.93 8.5 15.5 10.07 15.5 12C15.5 13.93 13.93 15.5 12 15.5Z</StreamGeometry>
 
-    <StreamGeometry x:Key="Icon_Edit_Geometry">M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z</StreamGeometry>
-    <Style x:Key="Icon_Edit" TargetType="Path">
-        <Setter Property="Data" Value="{StaticResource Icon_Edit_Geometry}" />
-        <Setter Property="Fill" Value="Black" />
-        <Setter Property="Stretch" Value="Uniform" />
-    </Style>
+    <StreamGeometry x:Key="Icon_Edit">M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z</StreamGeometry>
 
-    <StreamGeometry x:Key="Icon_NewItem_Geometry">M7.5,5.6L5,7L6.4,4.5L5,2L7.5,3.4L10,2L8.6,4.5L10,7L7.5,5.6M19.5,15.4L17,14L15.6,16.5L17,19L19.5,17.6L22,19L20.6,16.5L22,14L19.5,15.4M22,2L19.5,3.4L17,2L18.4,4.5L17,7L19.5,5.6L22,7L20.6,4.5L22,2M13.4,12.5L11,20L8.6,12.5L1,10L8.6,7.5L11,0L13.4,7.5L21,10L13.4,12.5Z</StreamGeometry>
-    <Style x:Key="Icon_NewItem" TargetType="Path">
-        <Setter Property="Data" Value="{StaticResource Icon_NewItem_Geometry}" />
-        <Setter Property="Fill" Value="#FFD700" />
-        <Setter Property="Stretch" Value="Uniform" />
-    </Style>
+    <StreamGeometry x:Key="Icon_NewItem">M7.5,5.6L5,7L6.4,4.5L5,2L7.5,3.4L10,2L8.6,4.5L10,7L7.5,5.6M19.5,15.4L17,14L15.6,16.5L17,19L19.5,17.6L22,19L20.6,16.5L22,14L19.5,15.4M22,2L19.5,3.4L17,2L18.4,4.5L17,7L19.5,5.6L22,7L20.6,4.5L22,2M13.4,12.5L11,20L8.6,12.5L1,10L8.6,7.5L11,0L13.4,7.5L21,10L13.4,12.5Z</StreamGeometry>
 
     <!-- Navigation Icons -->
-    <StreamGeometry x:Key="Icon_Nav_General_Geometry">M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z</StreamGeometry>
-    <Style x:Key="Icon_Nav_General" TargetType="Path">
-        <Setter Property="Data" Value="{StaticResource Icon_Nav_General_Geometry}" />
-        <Setter Property="Fill" Value="#555555" />
-        <Setter Property="Stretch" Value="Uniform" />
-    </Style>
+    <StreamGeometry x:Key="Icon_Nav_General">M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z</StreamGeometry>
 
-    <StreamGeometry x:Key="Icon_Nav_CleanSql_Geometry">M14,10H2V12H14M14,6H2V8H14M2,16H10V14H2M21.5,11.5L23,13L16,20L11.5,15.5L13,14L16,17L21.5,11.5Z</StreamGeometry>
-    <Style x:Key="Icon_Nav_CleanSql" TargetType="Path">
-        <Setter Property="Data" Value="{StaticResource Icon_Nav_CleanSql_Geometry}" />
-        <Setter Property="Fill" Value="#555555" />
-        <Setter Property="Stretch" Value="Uniform" />
-    </Style>
+    <StreamGeometry x:Key="Icon_Nav_CleanSql">M14,10H2V12H14M14,6H2V8H14M2,16H10V14H2M21.5,11.5L23,13L16,20L11.5,15.5L13,14L16,17L21.5,11.5Z</StreamGeometry>
 
-    <StreamGeometry x:Key="Icon_Nav_Launcher_Geometry">M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z</StreamGeometry>
-    <Style x:Key="Icon_Nav_Launcher" TargetType="Path">
-        <Setter Property="Data" Value="{StaticResource Icon_Nav_Launcher_Geometry}" />
-        <Setter Property="Fill" Value="#555555" />
-        <Setter Property="Stretch" Value="Uniform" />
-    </Style>
+    <StreamGeometry x:Key="Icon_Nav_Launcher">M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z</StreamGeometry>
 
-    <StreamGeometry x:Key="Icon_Nav_Display_Geometry">M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM8 15c0-1.66 1.34-3 3-3 .35 0 .69.07 1 .18V6h5v2h-3v7.03c-.02 1.64-1.35 2.97-3 2.97-1.66 0-3-1.34-3-3z</StreamGeometry>
-    <Style x:Key="Icon_Nav_Display" TargetType="Path">
-        <Setter Property="Data" Value="{StaticResource Icon_Nav_Display_Geometry}" />
-        <Setter Property="Fill" Value="#555555" />
-        <Setter Property="Stretch" Value="Uniform" />
-    </Style>
+    <StreamGeometry x:Key="Icon_Nav_Display">M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM8 15c0-1.66 1.34-3 3-3 .35 0 .69.07 1 .18V6h5v2h-3v7.03c-.02 1.64-1.35 2.97-3 2.97-1.66 0-3-1.34-3-3z</StreamGeometry>
 
-    <StreamGeometry x:Key="Icon_Nav_Connection_Geometry">M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-13h4v2h-4v-2zm0 4h4v6h-4V11z</StreamGeometry>
-    <Style x:Key="Icon_Nav_Connection" TargetType="Path">
-        <Setter Property="Data" Value="{StaticResource Icon_Nav_Connection_Geometry}" />
-        <Setter Property="Fill" Value="#555555" />
-        <Setter Property="Stretch" Value="Uniform" />
-    </Style>
+    <StreamGeometry x:Key="Icon_Nav_Connection">M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-13h4v2h-4v-2zm0 4h4v6h-4V11z</StreamGeometry>
 
 </ResourceDictionary>
