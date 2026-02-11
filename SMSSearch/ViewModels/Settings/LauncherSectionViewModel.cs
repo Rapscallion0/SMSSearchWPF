@@ -145,6 +145,15 @@ namespace SMS_Search.ViewModels.Settings
             }
         }
 
+        [RelayCommand]
+        public void ClearHotkey()
+        {
+            _currentKey = Key.None;
+            _currentModifiers = ModifierKeys.None;
+            HotkeyDisplay = "";
+            StoredHotkey.Value = "";
+        }
+
         private bool IsBlacklisted(Key key, ModifierKeys modifiers)
         {
             // Common shortcuts (Ctrl+C, V, X, Z, A, S, P, F)
