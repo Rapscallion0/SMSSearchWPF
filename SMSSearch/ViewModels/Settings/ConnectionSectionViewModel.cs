@@ -45,7 +45,6 @@ namespace SMS_Search.ViewModels.Settings
 
         partial void OnPasswordChanged(string value)
         {
-            if (string.IsNullOrEmpty(value)) return;
             DebounceSavePassword();
         }
 
