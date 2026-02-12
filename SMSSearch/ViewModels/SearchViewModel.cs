@@ -36,6 +36,7 @@ namespace SMS_Search.ViewModels
 
             LoadTablesCommand = new AsyncRelayCommand(LoadTablesAsync);
             CleanSqlCommand = new RelayCommand(CleanSql);
+            BuildSqlCommand = new RelayCommand(BuildSql);
             ShowHistoryCommand = new RelayCommand<System.Windows.Controls.Button>(ShowHistory);
             LoadCleanSqlRules();
             LoadHistory();
@@ -111,6 +112,7 @@ namespace SMS_Search.ViewModels
 
         public IAsyncRelayCommand LoadTablesCommand { get; }
         public IRelayCommand CleanSqlCommand { get; }
+        public IRelayCommand BuildSqlCommand { get; }
         public IRelayCommand<System.Windows.Controls.Button> ShowHistoryCommand { get; }
 
         public bool IsCustomSqlMode => (SelectedMode == SearchMode.Function && IsFunctionCustomSql) ||
@@ -228,6 +230,47 @@ namespace SMS_Search.ViewModels
              {
                  _clipboardService.SetText(cleaned);
              }
+        }
+
+        private void BuildSql()
+        {
+            if (IsCustomSqlMode) return;
+
+            var criteria = GetSearchCriteria();
+            // Should not happen given check above, but for safety
+            if (criteria.Type == SearchType.CustomSql) return;
+
+            string fctFields = _configService.GetValue("QUERY", "FUNCTION") ?? "";
+            string tlzFields = _configService.GetValue("QUERY", "TOTALIZER") ?? "";
+            var qb = new QueryBuilder(fctFields, tlzFields);
+
+            var result = qb.Build(criteria);
+            string sql = result.Sql;
+
+            if (result.Parameters is Dapper.DynamicParameters dp)
+            {
+                // Sort by length descending to prevent substring replacement issues (e.g. replacing @p1 inside @p10)
+                var names = System.Linq.Enumerable.ToList(System.Linq.Enumerable.OrderByDescending(dp.ParameterNames, n => n.Length));
+                foreach (var name in names)
+                {
+                    var val = dp.Get<object>(name);
+                    string sVal = "NULL";
+                    if (val != null)
+                    {
+                        if (val is string || val is System.DateTime)
+                            sVal = $"'{val.ToString()?.Replace("'", "''")}'";
+                        else
+                            sVal = val.ToString() ?? "NULL";
+                    }
+                    sql = sql.Replace("@" + name, sVal);
+                }
+            }
+
+            SearchText = sql;
+
+            if (SelectedMode == SearchMode.Function) IsFunctionCustomSql = true;
+            else if (SelectedMode == SearchMode.Totalizer) IsTotalizerCustomSql = true;
+            else if (SelectedMode == SearchMode.Field) IsFieldCustomSql = true;
         }
 
         private async Task LoadTablesAsync()
