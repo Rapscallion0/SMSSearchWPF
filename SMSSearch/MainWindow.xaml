@@ -22,7 +22,7 @@
                 <DockPanel LastChildFill="False">
                     <Button Command="{Binding OpenSettingsCommand}" DockPanel.Dock="Left"
                             Style="{StaticResource TransparentIconButtonStyle}" ToolTip="Settings">
-                        <Image Source="{StaticResource Icon_Settings}"
+                        <Control Template="{StaticResource Icon_Settings}"
                                Width="16" Height="16"/>
                     </Button>
                     <Button Content="Search" Command="{Binding SearchCommand}"

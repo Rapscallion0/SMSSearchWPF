@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media;
+using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using SMS_Search.Services;
 using SMS_Search.Utils;
@@ -15,7 +15,7 @@ namespace SMS_Search.ViewModels.Settings
         private CancellationTokenSource? _passwordCts;
 
         public override string Title => "Connection";
-        public override ImageSource Icon => (ImageSource)System.Windows.Application.Current.FindResource("Icon_Nav_Connection");
+        public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_Connection");
 
         public ConnectionSectionViewModel(ISettingsRepository repository)
         {

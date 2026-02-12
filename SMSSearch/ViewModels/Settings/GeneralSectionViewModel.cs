@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media;
+using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SMS_Search.Data;
@@ -19,7 +19,7 @@ namespace SMS_Search.ViewModels.Settings
         private readonly IDialogService _dialogService;
 
         public override string Title => "General";
-        public override ImageSource Icon => (ImageSource)System.Windows.Application.Current.FindResource("Icon_Nav_General");
+        public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_General");
 
         public GeneralSectionViewModel(ISettingsRepository repository, IDialogService dialogService)
         {

@@ -21,24 +21,24 @@
                   <Setter.Value>
                        <ControlTemplate TargetType="DataGridRowHeader">
                             <Grid Background="Transparent">
-                                 <Image x:Name="IconImage"
-                                        Source="{x:Null}"
+                                 <Control x:Name="IconControl"
+                                        Template="{x:Null}"
                                         Width="12" Height="12"
                                         HorizontalAlignment="Center" VerticalAlignment="Center"
                                         Visibility="Collapsed"/>
                             </Grid>
                             <ControlTemplate.Triggers>
                                  <DataTrigger Binding="{Binding IsEditing, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
-                                      <Setter TargetName="IconImage" Property="Visibility" Value="Visible"/>
-                                      <Setter TargetName="IconImage" Property="Source" Value="{StaticResource Icon_Edit}"/>
+                                      <Setter TargetName="IconControl" Property="Visibility" Value="Visible"/>
+                                      <Setter TargetName="IconControl" Property="Template" Value="{StaticResource Icon_Edit}"/>
                                  </DataTrigger>
                                  <MultiDataTrigger>
                                       <MultiDataTrigger.Conditions>
                                            <Condition Binding="{Binding IsEditing, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="False"/>
                                            <Condition Binding="{Binding Item, RelativeSource={RelativeSource AncestorType=DataGridRow}, Converter={StaticResource IsPlaceholderConverter}}" Value="True"/>
                                       </MultiDataTrigger.Conditions>
-                                      <Setter TargetName="IconImage" Property="Visibility" Value="Visible"/>
-                                      <Setter TargetName="IconImage" Property="Source" Value="{StaticResource Icon_NewItem}"/>
+                                      <Setter TargetName="IconControl" Property="Visibility" Value="Visible"/>
+                                      <Setter TargetName="IconControl" Property="Template" Value="{StaticResource Icon_NewItem}"/>
                                  </MultiDataTrigger>
                             </ControlTemplate.Triggers>
                        </ControlTemplate>
@@ -114,7 +114,7 @@
                                                      </Style.Triggers>
                                                 </Style>
                                            </Button.Style>
-                                           <Image Source="{StaticResource Icon_Delete}"
+                                           <Control Template="{StaticResource Icon_Delete}"
                                                   Width="12" Height="12"/>
                                       </Button>
                                  </DataTemplate>
@@ -162,7 +162,7 @@
                                                       </Style.Triggers>
                                                  </Style>
                                             </StackPanel.Style>
-                                            <Image Source="{StaticResource Icon_Check}" Width="16" Height="16" />
+                                            <Control Template="{StaticResource Icon_Check}" Width="16" Height="16" />
                                             <TextBlock Text="Saved" Foreground="Green" Margin="5,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" />
                                       </StackPanel>
                                  </DataTemplate>

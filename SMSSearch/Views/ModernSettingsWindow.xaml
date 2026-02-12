@@ -67,7 +67,7 @@
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
                             <!-- Icon -->
-                            <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <Control Template="{Binding Icon}" Width="16" Height="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Title}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </DataTemplate>
