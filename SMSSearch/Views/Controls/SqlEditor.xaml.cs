@@ -15,7 +15,7 @@ namespace SMS_Search.Views.Controls
         {
             InitializeComponent();
             LoadHighlighting();
-            this.Height = 200;
+            this.Height = 100;
         }
 
         private void ResizeGrip_DragDelta(object sender, DragDeltaEventArgs e)

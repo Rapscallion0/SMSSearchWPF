@@ -8,7 +8,7 @@
         xmlns:vm="clr-namespace:SMS_Search.ViewModels"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
-        Title="SMS Search" Height="600" Width="800"
+        Title="SMS Search" Height="800" Width="800"
         Icon="/Resources/SMS Search.ico" MinWidth="675" MinHeight="600">
     <Grid>
         <Grid.RowDefinitions>

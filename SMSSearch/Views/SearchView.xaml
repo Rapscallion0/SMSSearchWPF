@@ -41,7 +41,9 @@
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
-                        <Button Grid.Column="3" Content="Build SQL" Command="{Binding BuildSqlCommand}" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
+                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
+                        </Button>
                     </Grid>
 
                     <!-- Description -->
@@ -57,7 +59,9 @@
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
-                        <Button Grid.Column="3" Content="Build SQL" Command="{Binding BuildSqlCommand}" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
+                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
+                        </Button>
                     </Grid>
 
                     <!-- Custom SQL Radio -->
@@ -76,7 +80,7 @@
                     </Grid>
 
                     <!-- SQL Editor -->
-                    <ctrl:SqlEditor Grid.Row="3" x:Name="FunctionSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="FunctionSqlEditor_GotFocus"/>
+                    <ctrl:SqlEditor Grid.Row="3" x:Name="FunctionSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Height="100" MinHeight="100" Margin="0,0,0,5" GotFocus="FunctionSqlEditor_GotFocus"/>
 
                     <!-- Any Match -->
                     <CheckBox Grid.Row="4" Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
@@ -106,7 +110,9 @@
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
-                        <Button Grid.Column="3" Content="Build SQL" Command="{Binding BuildSqlCommand}" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
+                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
+                        </Button>
                     </Grid>
 
                     <!-- Description -->
@@ -122,7 +128,9 @@
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
-                        <Button Grid.Column="3" Content="Build SQL" Command="{Binding BuildSqlCommand}" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
+                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
+                        </Button>
                     </Grid>
 
                     <!-- Custom SQL -->
@@ -141,7 +149,7 @@
                     </Grid>
 
                     <!-- SQL Editor -->
-                    <ctrl:SqlEditor Grid.Row="3" x:Name="TotalizerSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="TotalizerSqlEditor_GotFocus"/>
+                    <ctrl:SqlEditor Grid.Row="3" x:Name="TotalizerSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Height="100" MinHeight="100" Margin="0,0,0,5" GotFocus="TotalizerSqlEditor_GotFocus"/>
 
                     <!-- Checkbox -->
                     <CheckBox Grid.Row="4" Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
@@ -173,7 +181,9 @@
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
-                        <Button Grid.Column="3" Content="Build SQL" Command="{Binding BuildSqlCommand}" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
+                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
+                        </Button>
                     </Grid>
 
                     <!-- Description -->
@@ -189,7 +199,9 @@
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
-                        <Button Grid.Column="3" Content="Build SQL" Command="{Binding BuildSqlCommand}" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
+                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
+                        </Button>
                     </Grid>
 
                     <!-- Table -->
@@ -197,9 +209,13 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Table" Tag="Table" IsChecked="{Binding IsFieldTable}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="1" ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" Height="25" DropDownOpened="ComboBox_DropDownOpened" GotFocus="ComboBox_GotFocus" Margin="0,0,318,0"/>
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" Height="25" DropDownOpened="ComboBox_DropDownOpened" GotFocus="ComboBox_GotFocus" Margin="0,0,5,0"/>
+                        <Button Grid.Column="2" Command="{Binding BuildSqlCommand}" Margin="0,0,318,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
+                        </Button>
                     </Grid>
 
                     <!-- Table Options -->
@@ -225,7 +241,7 @@
                     </Grid>
 
                     <!-- SQL Editor -->
-                    <ctrl:SqlEditor Grid.Row="5" x:Name="FieldSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="FieldSqlEditor_GotFocus"/>
+                    <ctrl:SqlEditor Grid.Row="5" x:Name="FieldSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Height="100" MinHeight="100" Margin="0,0,0,5" GotFocus="FieldSqlEditor_GotFocus"/>
 
                     <!-- Checkbox -->
                     <CheckBox Grid.Row="6" Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
