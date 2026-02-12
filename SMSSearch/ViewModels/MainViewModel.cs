@@ -41,8 +41,13 @@ namespace SMS_Search.ViewModels
             SearchVm = searchViewModel;
             ResultsVm = resultsViewModel;
 
+            var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version;
+            Title = $"SMS Search - V{version}";
+
             GregorianDate = DateTime.Today;
         }
+
+        public string Title { get; }
 
         [ObservableProperty]
         private string _julianDateText = "";
