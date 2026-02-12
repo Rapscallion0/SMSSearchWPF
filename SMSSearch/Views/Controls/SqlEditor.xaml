@@ -7,11 +7,7 @@
              mc:Ignorable="d"
              d:DesignHeight="200" d:DesignWidth="400">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <Border Grid.Row="0" BorderBrush="Gray" BorderThickness="1">
+        <Border BorderBrush="Gray" BorderThickness="1">
             <avalon:TextEditor x:Name="Editor"
                                ShowLineNumbers="True"
                                FontFamily="{Binding EditorFontFamily, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -21,12 +17,5 @@
                                HorizontalScrollBarVisibility="Auto"
                                TextChanged="Editor_TextChanged"/>
         </Border>
-        <Thumb x:Name="ResizeGrip" Grid.Row="1" Height="10" Cursor="SizeNS" DragDelta="ResizeGrip_DragDelta">
-            <Thumb.Template>
-                <ControlTemplate TargetType="Thumb">
-                    <Grid Background="Transparent"/>
-                </ControlTemplate>
-            </Thumb.Template>
-        </Thumb>
     </Grid>
 </UserControl>

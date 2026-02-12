@@ -15,20 +15,21 @@
     </Window.InputBindings>
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="270" MinHeight="270"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <GroupBox Header="Search Criteria" Margin="10">
-            <StackPanel>
-                <views:SearchView DataContext="{Binding SearchVm}" Margin="0,5,0,0"/>
-            </StackPanel>
+            <views:SearchView DataContext="{Binding SearchVm}" Margin="0,5,0,0"/>
         </GroupBox>
 
-        <views:ResultsView Grid.Row="1" DataContext="{Binding ResultsVm}" Margin="10,0,10,10"/>
+        <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" ResizeBehavior="PreviousAndNext"/>
 
-        <StatusBar Grid.Row="2">
+        <views:ResultsView Grid.Row="2" DataContext="{Binding ResultsVm}" Margin="10,0,10,10"/>
+
+        <StatusBar Grid.Row="3">
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Julian:" Margin="0,0,5,0" VerticalAlignment="Center"/>
@@ -65,6 +66,6 @@
             </StatusBarItem>
         </StatusBar>
 
-        <Grid x:Name="MaskOverlay" Background="#AA000000" Visibility="Collapsed" Grid.RowSpan="3"/>
+        <Grid x:Name="MaskOverlay" Background="#AA000000" Visibility="Collapsed" Grid.RowSpan="4"/>
     </Grid>
 </Window>
