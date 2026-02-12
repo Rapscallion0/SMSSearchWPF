@@ -21,7 +21,7 @@ namespace SMS_Search.Views
 
         private void SearchType_Checked(object sender, System.Windows.RoutedEventArgs e)
         {
-            if (sender is RadioButton rb)
+            if (sender is System.Windows.Controls.RadioButton rb)
             {
                 Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                 {

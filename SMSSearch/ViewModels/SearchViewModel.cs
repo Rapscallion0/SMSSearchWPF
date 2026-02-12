@@ -57,7 +57,7 @@ namespace SMS_Search.ViewModels
 
         private void LoadFontSettings()
         {
-            string font = _configService.GetValue("GENERAL", "SQL_FONT_FAMILY");
+            string? font = _configService.GetValue("GENERAL", "SQL_FONT_FAMILY");
             SqlFontFamily = string.IsNullOrEmpty(font) ? "Consolas" : font;
 
             if (int.TryParse(_configService.GetValue("GENERAL", "SQL_FONT_SIZE"), out int size))
