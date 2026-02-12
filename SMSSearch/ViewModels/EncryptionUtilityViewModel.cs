@@ -14,11 +14,13 @@ namespace SMS_Search.ViewModels
     {
         private readonly IClipboardService _clipboard;
         private readonly IDialogService _dialogService;
+        private readonly ILoggerService _logger;
 
-        public EncryptionUtilityViewModel(IClipboardService clipboard, IDialogService dialogService)
+        public EncryptionUtilityViewModel(IClipboardService clipboard, IDialogService dialogService, ILoggerService logger)
         {
             _clipboard = clipboard;
             _dialogService = dialogService;
+            _logger = logger;
         }
 
         [ObservableProperty]
@@ -40,10 +42,12 @@ namespace SMS_Search.ViewModels
                  {
                      _clipboard.SetText(encrypted);
                      _dialogService.ShowToast("Encrypted string copied to clipboard.", "Encryption", SMS_Search.Views.ToastType.Success);
+                     _logger.LogInfo("String encrypted successfully.");
                  }
             }
             catch (Exception ex)
             {
+                _logger.LogError("Encryption failed", ex);
                 _dialogService.ShowError("Encryption failed: " + ex.Message, "Error");
             }
         }
@@ -61,10 +65,12 @@ namespace SMS_Search.ViewModels
                 {
                     _clipboard.SetText(decrypted);
                     _dialogService.ShowToast("Decrypted string copied to clipboard.", "Encryption", SMS_Search.Views.ToastType.Success);
+                    _logger.LogInfo("String decrypted successfully.");
                 }
             }
             catch (Exception ex)
             {
+                _logger.LogError("Decryption failed", ex);
                 _dialogService.ShowError("Decryption failed: " + ex.Message, "Error");
             }
         }

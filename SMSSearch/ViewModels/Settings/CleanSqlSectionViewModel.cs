@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SMS_Search.Data;
 using SMS_Search.Services;
+using SMS_Search.Utils;
 
 namespace SMS_Search.ViewModels.Settings
 {
@@ -40,6 +41,7 @@ namespace SMS_Search.ViewModels.Settings
     public partial class CleanSqlSectionViewModel : SettingsSectionViewModel
     {
         private readonly ISettingsRepository _repository;
+        private readonly ILoggerService _logger;
         private bool _isLoading;
         private readonly HashSet<CleanSqlRuleViewModel> _modifiedRules = new();
 
@@ -58,9 +60,10 @@ namespace SMS_Search.ViewModels.Settings
         [ObservableProperty]
         private bool _isSaving;
 
-        public CleanSqlSectionViewModel(ISettingsRepository repository)
+        public CleanSqlSectionViewModel(ISettingsRepository repository, ILoggerService logger)
         {
             _repository = repository;
+            _logger = logger;
 
             Rules.CollectionChanged += OnRulesCollectionChanged;
 
@@ -161,6 +164,7 @@ namespace SMS_Search.ViewModels.Settings
 
                 // Force commit to disk
                 await _repository.SaveAsync();
+                _logger.LogInfo($"Saved {Rules.Count} clean SQL rules.");
 
                 IsSaving = false;
                 IsSaved = true;
@@ -187,13 +191,14 @@ namespace SMS_Search.ViewModels.Settings
             {
                 // Prevent crash
                 IsSaving = false;
-                System.Diagnostics.Debug.WriteLine($"Error in SaveRules: {ex}");
+                _logger.LogError("Failed to save clean SQL rules", ex);
             }
         }
 
         [RelayCommand]
         private void AddRule()
         {
+            _logger.LogInfo("Adding new clean SQL rule.");
             var rule = new CleanSqlRuleViewModel { Pattern = "", Replacement = "" };
             Rules.Add(rule);
             SelectedRule = rule;
@@ -207,6 +212,7 @@ namespace SMS_Search.ViewModels.Settings
 
             if (rule != null)
             {
+                _logger.LogInfo($"Removing clean SQL rule: {rule.Pattern}");
                 Rules.Remove(rule);
                 _modifiedRules.Remove(rule); // Ensure we don't try to access removed rule
                 await SaveRules();
@@ -216,6 +222,7 @@ namespace SMS_Search.ViewModels.Settings
         [RelayCommand]
         private async Task RestoreDefaults()
         {
+             _logger.LogInfo("Restoring default clean SQL rules.");
              _isLoading = true; // Prevent save during clear/add cycle
              try
              {

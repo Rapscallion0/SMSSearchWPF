@@ -261,6 +261,7 @@ namespace SMS_Search.ViewModels
                     var clear = new System.Windows.Controls.MenuItem { Header = "Clear History" };
                     clear.Click += (s, e) =>
                     {
+                        _logger.LogInfo($"Clearing history for mode: {SelectedMode}");
                         _historyService.ClearHistory(SelectedMode.ToString());
                         LoadHistory();
                     };
@@ -310,6 +311,8 @@ namespace SMS_Search.ViewModels
 
              if (string.IsNullOrEmpty(original)) return;
 
+             _logger.LogDebug($"Cleaning SQL for mode {SelectedMode}. Length: {original.Length}");
+
              string cleaned = original;
              foreach(var rule in _cleanSqlRules)
              {
@@ -320,7 +323,10 @@ namespace SMS_Search.ViewModels
                          cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, rule.Pattern, rule.Replacement, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
                      }
                  }
-                 catch { }
+                 catch (System.Exception ex)
+                 {
+                     _logger.LogError($"Error applying clean SQL rule: {rule.Pattern}", ex);
+                 }
              }
 
              if (SelectedMode == SearchMode.Function) FunctionSqlText = cleaned;
@@ -331,10 +337,13 @@ namespace SMS_Search.ViewModels
              {
                  _clipboardService.SetText(cleaned);
              }
+             _logger.LogInfo("SQL cleaned.");
         }
 
         private void BuildSql(string? type)
         {
+            _logger.LogDebug($"Building SQL for type: {type ?? "null"}, Mode: {SelectedMode}");
+
             if (type != null)
             {
                 if (type == "Number")
@@ -402,6 +411,7 @@ namespace SMS_Search.ViewModels
                 FieldSqlText = sql;
                 IsFieldCustomSql = true;
             }
+            _logger.LogInfo("SQL built successfully.");
         }
 
         private async Task LoadTablesAsync()
@@ -417,6 +427,7 @@ namespace SMS_Search.ViewModels
                  var tables = await _repository.GetTablesAsync(server, database, user, decryptedPass);
                  Tables.Clear();
                  foreach(var t in tables) Tables.Add(t);
+                 _logger.LogInfo($"Loaded {Tables.Count} tables from database.");
             }
             catch (System.Exception ex)
             {

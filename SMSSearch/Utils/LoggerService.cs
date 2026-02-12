@@ -12,8 +12,10 @@ namespace SMS_Search.Utils
         void LogStartupInfo();
         void Log(LogLevel level, string message);
         void LogError(string message, Exception? ex = null);
+        void LogWarning(string message);
         void LogInfo(string message);
         void LogDebug(string message);
+        void LogCritical(string message);
         void ApplyConfig();
         string GetCurrentLogPath();
     }
@@ -144,8 +146,10 @@ namespace SMS_Search.Utils
                 _logger.Error(message);
         }
 
+        public void LogWarning(string message) => _logger?.Warning(message);
         public void LogInfo(string message) => _logger?.Information(message);
         public void LogDebug(string message) => _logger?.Debug(message);
+        public void LogCritical(string message) => _logger?.Fatal(message);
 
         public void Dispose()
         {

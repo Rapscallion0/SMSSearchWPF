@@ -193,6 +193,8 @@ namespace SMS_Search.ViewModels
             MatchStatusText = string.Empty;
             _lastFoundRowIndex = -1;
 
+            _logger.LogDebug($"ExecuteSearchAsync started. Criteria: {criteria.Value}");
+
             // Set Table Name if applicable
             TableName = (criteria.Type == SearchType.Table && criteria.Value != null) ? criteria.Value : "ResultTable";
 
@@ -220,6 +222,7 @@ namespace SMS_Search.ViewModels
 
                 TotalRecords = _gridContext.TotalCount;
                 StatusText = $"Found {TotalRecords} records";
+                _logger.LogInfo($"Search completed successfully. Found {TotalRecords} records.");
             }
             catch (Exception ex)
             {
@@ -235,6 +238,7 @@ namespace SMS_Search.ViewModels
 
         public async Task ApplyFilterAsync(string? filterText)
         {
+             _logger.LogDebug($"Applying filter: '{filterText}'");
              var columns = new List<string>();
              if (SearchResults is VirtualizingCollection vc)
              {
@@ -249,10 +253,12 @@ namespace SMS_Search.ViewModels
                  MatchStatusText = "Calculating...";
                  long count = await _gridContext.GetTotalMatchCountAsync();
                  MatchStatusText = $"Found: {count} matches";
+                 _logger.LogDebug($"Filter applied. Matches: {count}");
              }
              else
              {
                  MatchStatusText = string.Empty;
+                 _logger.LogDebug("Filter cleared.");
              }
         }
 
@@ -338,10 +344,12 @@ namespace SMS_Search.ViewModels
         {
             IsBusy = true;
             StatusText = "Exporting...";
+            _logger.LogInfo("Starting export...");
             try
             {
                 await exportAction();
                 _dialogService.ShowMessage("Export successful", "Export");
+                _logger.LogInfo("Export successful.");
             }
             catch (Exception ex)
             {
@@ -383,6 +391,7 @@ namespace SMS_Search.ViewModels
             try
             {
                 _clipboardService.SetText(sb.ToString());
+                _logger.LogInfo($"Copied {selectedItems.Count} rows to clipboard.");
             }
             catch (Exception ex)
             {
@@ -429,6 +438,7 @@ namespace SMS_Search.ViewModels
 
             _clipboardService.SetText(sb.ToString());
             _dialogService.ShowMessage("INSERT statements copied to clipboard", "Copy");
+            _logger.LogInfo($"Copied SQL INSERT statements for {selectedItems.Count} rows.");
         }
 
         private string FormatSqlValue(object? value)

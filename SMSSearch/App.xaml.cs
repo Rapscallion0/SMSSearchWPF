@@ -7,6 +7,7 @@ using SMS_Search.ViewModels.Settings;
 using SMS_Search.Views;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -73,6 +74,30 @@ namespace SMS_Search
 
             var logger = Services.GetRequiredService<ILoggerService>();
             var configService = Services.GetRequiredService<IConfigService>();
+
+            // Global Exception Handling
+            this.DispatcherUnhandledException += (s, args) =>
+            {
+                logger.Log(LogLevel.Critical, $"Unhandled Dispatcher Exception: {args.Exception.Message}");
+                logger.LogError("Unhandled Dispatcher Exception", args.Exception);
+                // Optional: Notify user
+                // MessageBox.Show("An unexpected error occurred. See logs for details.", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                args.Handled = true; // Prevent immediate crash, but app might be unstable
+            };
+
+            TaskScheduler.UnobservedTaskException += (s, args) =>
+            {
+                logger.Log(LogLevel.Critical, $"Unobserved Task Exception: {args.Exception.Message}");
+                logger.LogError("Unobserved Task Exception", args.Exception);
+                args.SetObserved();
+            };
+
+            AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+            {
+                var ex = args.ExceptionObject as Exception;
+                logger.Log(LogLevel.Critical, $"Unhandled AppDomain Exception: {ex?.Message ?? "Unknown Error"}");
+                if (ex != null) logger.LogError("Unhandled AppDomain Exception", ex);
+            };
 
             // EULA Check
             if (configService.GetValue("GENERAL", "EULA") != "1")
