@@ -1,14 +1,18 @@
 using System;
+using System.IO;
 using Serilog;
+using Serilog.Events;
 
 namespace SMS_Search.Utils
 {
-    public interface ILoggerService
+    public interface ILoggerService : IDisposable
     {
         void Log(LogLevel level, string message);
         void LogError(string message, Exception? ex = null);
         void LogInfo(string message);
         void LogDebug(string message);
+        void ApplyConfig();
+        string GetCurrentLogPath();
     }
 
     public enum LogLevel
@@ -22,18 +26,80 @@ namespace SMS_Search.Utils
 
     public class LoggerService : ILoggerService
     {
-        private readonly Serilog.ILogger _logger;
+        private Serilog.Core.Logger? _logger;
+        private readonly IConfigService _configService;
+        private readonly string _appName = "App";
 
-        public LoggerService(string appName)
+        public LoggerService(IConfigService configService)
         {
-            _logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.File($"logs/{appName}_.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 14)
-                .CreateLogger();
+            _configService = configService;
+            ApplyConfig();
+        }
+
+        public void ApplyConfig()
+        {
+            // Read settings
+            string? enabledStr = _configService.GetValue("LOGGING", "ENABLED");
+            bool isEnabled = enabledStr != "0"; // Default to true
+
+            string? levelStr = _configService.GetValue("LOGGING", "LEVEL");
+            LogEventLevel minimumLevel = LogEventLevel.Information;
+
+            // Map "Critical" to Fatal if stored that way, or just parse
+            if (!string.IsNullOrEmpty(levelStr))
+            {
+                if (string.Equals(levelStr, "Critical", StringComparison.OrdinalIgnoreCase))
+                {
+                    minimumLevel = LogEventLevel.Fatal;
+                }
+                else if (string.Equals(levelStr, "Info", StringComparison.OrdinalIgnoreCase))
+                {
+                    minimumLevel = LogEventLevel.Information;
+                }
+                else if (Enum.TryParse(levelStr, true, out LogEventLevel parsedLevel))
+                {
+                    minimumLevel = parsedLevel;
+                }
+            }
+
+            string? retentionStr = _configService.GetValue("LOGGING", "RETENTION");
+            int retentionDays = 14;
+            if (int.TryParse(retentionStr, out int r))
+            {
+                retentionDays = r;
+            }
+
+            Serilog.Core.Logger? newLogger = null;
+
+            if (isEnabled)
+            {
+                newLogger = new LoggerConfiguration()
+                    .MinimumLevel.Is(minimumLevel)
+                    .WriteTo.File($"logs/{_appName}_.log",
+                        rollingInterval: RollingInterval.Day,
+                        retainedFileCountLimit: retentionDays)
+                    .CreateLogger();
+            }
+
+            // Dispose old logger if exists
+            var oldLogger = _logger;
+            _logger = newLogger;
+            oldLogger?.Dispose();
+        }
+
+        public string GetCurrentLogPath()
+        {
+            // Predict the current log file path
+            // Serilog rolling file with RollingInterval.Day appends yyyyMMdd before extension
+            string datePart = DateTime.Now.ToString("yyyyMMdd");
+            string fileName = $"logs/{_appName}_{datePart}.log";
+            return Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName));
         }
 
         public void Log(LogLevel level, string message)
         {
+             if (_logger == null) return;
+
              switch (level)
              {
                  case LogLevel.Debug: _logger.Debug(message); break;
@@ -46,13 +112,19 @@ namespace SMS_Search.Utils
 
         public void LogError(string message, Exception? ex = null)
         {
+            if (_logger == null) return;
             if (ex != null)
                 _logger.Error(ex, message);
             else
                 _logger.Error(message);
         }
 
-        public void LogInfo(string message) => _logger.Information(message);
-        public void LogDebug(string message) => _logger.Debug(message);
+        public void LogInfo(string message) => _logger?.Information(message);
+        public void LogDebug(string message) => _logger?.Debug(message);
+
+        public void Dispose()
+        {
+            _logger?.Dispose();
+        }
     }
 }

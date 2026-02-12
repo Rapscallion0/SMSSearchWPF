@@ -32,7 +32,7 @@ namespace SMS_Search
 
             services.AddSingleton<ISettingsRepository, SettingsRepository>();
 
-            services.AddSingleton<ILoggerService>(provider => new LoggerService("App"));
+            services.AddSingleton<ILoggerService, LoggerService>();
 
             services.AddSingleton<IDataRepository, DataRepository>();
             services.AddTransient<VirtualGridContext>();
@@ -56,6 +56,7 @@ namespace SMS_Search
             services.AddTransient<DisplaySectionViewModel>();
             services.AddTransient<CleanSqlSectionViewModel>();
             services.AddTransient<LauncherSectionViewModel>();
+            services.AddTransient<LoggingSectionViewModel>();
             services.AddTransient<ModernSettingsViewModel>();
 
             services.AddTransient<MainWindow>();
