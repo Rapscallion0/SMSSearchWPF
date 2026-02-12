@@ -70,14 +70,29 @@ namespace SMS_Search.ViewModels
         [NotifyPropertyChangedFor(nameof(IsCustomSqlMode))]
         private SearchMode _selectedMode;
 
+        // Function Tab Inputs
         [ObservableProperty]
-        private string _numberSearchText = "";
+        private string _functionNumberText = "";
+        [ObservableProperty]
+        private string _functionDescriptionText = "";
+        [ObservableProperty]
+        private string _functionSqlText = "";
 
+        // Totalizer Tab Inputs
         [ObservableProperty]
-        private string _descriptionSearchText = "";
+        private string _totalizerNumberText = "";
+        [ObservableProperty]
+        private string _totalizerDescriptionText = "";
+        [ObservableProperty]
+        private string _totalizerSqlText = "";
 
+        // Field Tab Inputs
         [ObservableProperty]
-        private string _sqlSearchText = "";
+        private string _fieldNumberText = "";
+        [ObservableProperty]
+        private string _fieldDescriptionText = "";
+        [ObservableProperty]
+        private string _fieldSqlText = "";
 
         [ObservableProperty]
         private string _sqlFontFamily = "Consolas";
@@ -128,6 +143,24 @@ namespace SMS_Search.ViewModels
 
         [ObservableProperty]
         private bool _showRecords;
+
+        partial void OnShowRecordsChanged(bool value)
+        {
+            if (value)
+            {
+                ShowFields = false;
+                IsFieldTable = true;
+            }
+        }
+
+        partial void OnShowFieldsChanged(bool value)
+        {
+            if (value)
+            {
+                ShowRecords = false;
+                IsFieldTable = true;
+            }
+        }
 
         [ObservableProperty]
         private bool _lastTransaction;
@@ -237,16 +270,35 @@ namespace SMS_Search.ViewModels
 
         private void SetCurrentSearchText(string value)
         {
-            if (IsCustomSqlMode) SqlSearchText = value;
-            else if (IsFunctionNumber || IsTotalizerNumber || IsFieldNumber) NumberSearchText = value;
-            else if (IsFunctionDescription || IsTotalizerDescription || IsFieldDescription) DescriptionSearchText = value;
+            if (SelectedMode == SearchMode.Function)
+            {
+                if (IsFunctionCustomSql) FunctionSqlText = value;
+                else if (IsFunctionNumber) FunctionNumberText = value;
+                else if (IsFunctionDescription) FunctionDescriptionText = value;
+            }
+            else if (SelectedMode == SearchMode.Totalizer)
+            {
+                if (IsTotalizerCustomSql) TotalizerSqlText = value;
+                else if (IsTotalizerNumber) TotalizerNumberText = value;
+                else if (IsTotalizerDescription) TotalizerDescriptionText = value;
+            }
+            else if (SelectedMode == SearchMode.Field)
+            {
+                if (IsFieldCustomSql) FieldSqlText = value;
+                else if (IsFieldNumber) FieldNumberText = value;
+                else if (IsFieldDescription) FieldDescriptionText = value;
+            }
         }
 
         private void CleanSql()
         {
              if (!IsFunctionCustomSql && !IsTotalizerCustomSql && !IsFieldCustomSql) return;
 
-             string original = SqlSearchText;
+             string original = "";
+             if (SelectedMode == SearchMode.Function) original = FunctionSqlText;
+             else if (SelectedMode == SearchMode.Totalizer) original = TotalizerSqlText;
+             else if (SelectedMode == SearchMode.Field) original = FieldSqlText;
+
              if (string.IsNullOrEmpty(original)) return;
 
              string cleaned = original;
@@ -262,7 +314,9 @@ namespace SMS_Search.ViewModels
                  catch { }
              }
 
-             SqlSearchText = cleaned;
+             if (SelectedMode == SearchMode.Function) FunctionSqlText = cleaned;
+             else if (SelectedMode == SearchMode.Totalizer) TotalizerSqlText = cleaned;
+             else if (SelectedMode == SearchMode.Field) FieldSqlText = cleaned;
 
              if (_configService.GetValue("GENERAL", "COPYCLEANSQL") == "1")
              {
@@ -304,11 +358,21 @@ namespace SMS_Search.ViewModels
                 }
             }
 
-            SqlSearchText = sql;
-
-            if (SelectedMode == SearchMode.Function) IsFunctionCustomSql = true;
-            else if (SelectedMode == SearchMode.Totalizer) IsTotalizerCustomSql = true;
-            else if (SelectedMode == SearchMode.Field) IsFieldCustomSql = true;
+            if (SelectedMode == SearchMode.Function)
+            {
+                FunctionSqlText = sql;
+                IsFunctionCustomSql = true;
+            }
+            else if (SelectedMode == SearchMode.Totalizer)
+            {
+                TotalizerSqlText = sql;
+                IsTotalizerCustomSql = true;
+            }
+            else if (SelectedMode == SearchMode.Field)
+            {
+                FieldSqlText = sql;
+                IsFieldCustomSql = true;
+            }
         }
 
         private async Task LoadTablesAsync()
@@ -340,17 +404,17 @@ namespace SMS_Search.ViewModels
                 if (IsFunctionNumber)
                 {
                     criteria.Type = SearchType.Number;
-                    criteria.Value = NumberSearchText;
+                    criteria.Value = FunctionNumberText;
                 }
                 else if (IsFunctionDescription)
                 {
                     criteria.Type = SearchType.Description;
-                    criteria.Value = DescriptionSearchText;
+                    criteria.Value = FunctionDescriptionText;
                 }
                 else if (IsFunctionCustomSql)
                 {
                     criteria.Type = SearchType.CustomSql;
-                    criteria.Value = SqlSearchText;
+                    criteria.Value = FunctionSqlText;
                 }
             }
             else if (SelectedMode == SearchMode.Totalizer)
@@ -358,17 +422,17 @@ namespace SMS_Search.ViewModels
                 if (IsTotalizerNumber)
                 {
                     criteria.Type = SearchType.Number;
-                    criteria.Value = NumberSearchText;
+                    criteria.Value = TotalizerNumberText;
                 }
                 else if (IsTotalizerDescription)
                 {
                     criteria.Type = SearchType.Description;
-                    criteria.Value = DescriptionSearchText;
+                    criteria.Value = TotalizerDescriptionText;
                 }
                 else if (IsTotalizerCustomSql)
                 {
                     criteria.Type = SearchType.CustomSql;
-                    criteria.Value = SqlSearchText;
+                    criteria.Value = TotalizerSqlText;
                 }
             }
             else if (SelectedMode == SearchMode.Field)
@@ -376,17 +440,17 @@ namespace SMS_Search.ViewModels
                 if (IsFieldNumber)
                 {
                     criteria.Type = SearchType.Number;
-                    criteria.Value = NumberSearchText;
+                    criteria.Value = FieldNumberText;
                 }
                 else if (IsFieldDescription)
                 {
                     criteria.Type = SearchType.Description;
-                    criteria.Value = DescriptionSearchText;
+                    criteria.Value = FieldDescriptionText;
                 }
                 else if (IsFieldCustomSql)
                 {
                     criteria.Type = SearchType.CustomSql;
-                    criteria.Value = SqlSearchText;
+                    criteria.Value = FieldSqlText;
                 }
                 else if (IsFieldTable)
                 {

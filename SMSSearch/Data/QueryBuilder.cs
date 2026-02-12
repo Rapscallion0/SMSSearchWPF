@@ -20,7 +20,7 @@ namespace SMS_Search.Data
     TAB.create_date AS 'Created'
 FROM sys.columns COL
 JOIN sys.tables TAB ON COL.object_id = TAB.object_id
-JOIN RB_FIELDS RBF ON COL.name = RBF.F1453 ";
+LEFT JOIN RB_FIELDS RBF ON COL.name = RBF.F1453 ";
 
         private const string FieldSelectJoinPKey = @"
 LEFT OUTER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE PKEY ON

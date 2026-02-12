@@ -40,6 +40,8 @@
 
   <ItemGroup>
     <Resource Include="Resources\**" />
+    <Resource Remove="Resources\SQL.xshd" />
+    <EmbeddedResource Include="Resources\SQL.xshd" />
   </ItemGroup>
 
 </Project>

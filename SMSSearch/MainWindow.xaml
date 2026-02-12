@@ -20,11 +20,6 @@
         <GroupBox Header="Search Criteria" Margin="10">
             <StackPanel>
                 <DockPanel LastChildFill="False">
-                    <Button Command="{Binding OpenSettingsCommand}" DockPanel.Dock="Left"
-                            Style="{StaticResource TransparentIconButtonStyle}" ToolTip="Settings">
-                        <Control Template="{StaticResource Icon_Settings}"
-                               Width="16" Height="16"/>
-                    </Button>
                     <Button Content="Search" Command="{Binding SearchCommand}"
                             DockPanel.Dock="Right" Padding="20,5"
                             IsDefault="True"/>
@@ -45,9 +40,16 @@
                 </StackPanel>
             </StatusBarItem>
             <StatusBarItem HorizontalAlignment="Right">
-                <ToggleButton Command="{Binding OpenUnarchiveCommand}" IsChecked="{Binding IsUnarchiveTargetVisible, Mode=OneWay}" ToolTip="Unarchive Target">
-                    <Image Source="/Resources/Unarchive.png" Width="16" Height="16"/>
-                </ToggleButton>
+                <StackPanel Orientation="Horizontal">
+                    <Button Command="{Binding OpenSettingsCommand}"
+                            Style="{StaticResource TransparentIconButtonStyle}" ToolTip="Settings" Margin="0,0,10,0">
+                        <Control Template="{StaticResource Icon_Settings}"
+                               Width="16" Height="16"/>
+                    </Button>
+                    <ToggleButton Command="{Binding OpenUnarchiveCommand}" IsChecked="{Binding IsUnarchiveTargetVisible, Mode=OneWay}" ToolTip="Unarchive Target">
+                        <Image Source="/Resources/Unarchive.png" Width="16" Height="16"/>
+                    </ToggleButton>
+                </StackPanel>
             </StatusBarItem>
         </StatusBar>
 
