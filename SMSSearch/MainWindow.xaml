@@ -8,7 +8,7 @@
         xmlns:vm="clr-namespace:SMS_Search.ViewModels"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
-        Title="SMS Search" Height="800" Width="800"
+        Title="{Binding Title}" Height="800" Width="800"
         Icon="/Resources/SMS Search.ico" MinWidth="675" MinHeight="600">
     <Window.InputBindings>
         <KeyBinding Key="F5" Command="{Binding SearchCommand}" />
