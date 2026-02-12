@@ -97,7 +97,14 @@ namespace SMS_Search.ViewModels.Settings
         public ObservableSetting<SMS_Search.Utils.LogLevel> LogLevel { get; }
         public ObservableSetting<int> RetentionDays { get; }
 
-        public IEnumerable<SMS_Search.Utils.LogLevel> LogLevels => Enum.GetValues<SMS_Search.Utils.LogLevel>();
+        public IEnumerable<SMS_Search.Utils.LogLevel> LogLevels => new[]
+        {
+            SMS_Search.Utils.LogLevel.Critical,
+            SMS_Search.Utils.LogLevel.Error,
+            SMS_Search.Utils.LogLevel.Warning,
+            SMS_Search.Utils.LogLevel.Info,
+            SMS_Search.Utils.LogLevel.Debug
+        };
 
         [RelayCommand]
         private void OpenLogFile()

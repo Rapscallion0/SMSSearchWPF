@@ -67,9 +67,14 @@ namespace SMS_Search.ViewModels
             var dt = DateUtils.FromJulian(value);
             if (dt != null)
             {
+                _logger.LogDebug($"Converted Julian date '{value}' to Gregorian '{dt}'.");
                 _isUpdatingDate = true;
                 GregorianDate = dt;
                 _isUpdatingDate = false;
+            }
+            else
+            {
+                _logger.LogDebug($"Failed to convert Julian date '{value}'.");
             }
         }
 
@@ -79,6 +84,7 @@ namespace SMS_Search.ViewModels
 
             _isUpdatingDate = true;
             JulianDateText = DateUtils.ToJulian(value);
+            _logger.LogDebug($"Converted Gregorian date '{value}' to Julian '{JulianDateText}'.");
             _isUpdatingDate = false;
         }
 
@@ -89,10 +95,12 @@ namespace SMS_Search.ViewModels
         private async Task Search()
         {
              var criteria = SearchVm.GetSearchCriteria();
+             _logger.LogInfo($"Search initiated. Type: {criteria.Type}, Mode: {criteria.Mode}, Value: {criteria.Value}, AnyMatch: {criteria.AnyMatch}");
 
              // Basic validation
              if (criteria.Type != SearchType.Table && string.IsNullOrWhiteSpace(criteria.Value))
              {
+                 _logger.LogWarning("Search validation failed: Empty search term.");
                  _dialogService.ShowToast("Please enter a search term.", "Search", ToastType.Warning);
                  return;
              }
@@ -111,6 +119,7 @@ namespace SMS_Search.ViewModels
         private void OpenUnarchive()
         {
             IsUnarchiveTargetVisible = !IsUnarchiveTargetVisible;
+            _logger.LogInfo($"Unarchive window visibility toggled. New State: {IsUnarchiveTargetVisible}");
         }
 
         [RelayCommand]
@@ -119,6 +128,7 @@ namespace SMS_Search.ViewModels
             if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control &&
                 (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
             {
+                _logger.LogInfo("Opening Encryption Utility (Hidden Feature).");
                 var encryptWin = new EncryptionUtilityWindow();
                 encryptWin.DataContext = _serviceProvider.GetRequiredService<EncryptionUtilityViewModel>();
                 if (System.Windows.Application.Current.MainWindow != null)
@@ -129,6 +139,7 @@ namespace SMS_Search.ViewModels
             }
             else
             {
+                _logger.LogInfo("Opening Settings.");
                 RequestOpenSettings?.Invoke();
             }
         }
