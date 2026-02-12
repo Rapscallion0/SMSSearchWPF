@@ -9,7 +9,7 @@
 	<Color name="Function" foreground="Magenta" exampleText="COUNT" />
 	<Color name="Variable" foreground="Teal" exampleText="@Variable" />
 
-	<RuleSet>
+	<RuleSet ignoreCase="true">
 		<Span color="String" multiline="true">
 			<Begin>'</Begin>
 			<End>'</End>
@@ -37,7 +37,7 @@
 			[?,.;()\[\]{}+\-/%*&lt;&gt;^=~!&amp;]+
 		</Rule>
 
-		<Keywords color="Keyword" ignoreCase="true">
+		<Keywords color="Keyword">
 			<Word>ABORT</Word>
 			<Word>BETWEEN</Word>
 			<Word>CRASH</Word>
@@ -226,7 +226,7 @@
 			<Word>SUBTYPE</Word>
 		</Keywords>
 
-		<Keywords color="Function" ignoreCase="true">
+		<Keywords color="Function">
 			<Word>COUNT</Word>
 			<Word>SUM</Word>
 			<Word>AVG</Word>
