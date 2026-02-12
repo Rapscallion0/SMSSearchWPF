@@ -90,13 +90,20 @@ namespace SMS_Search.Views.Controls
         {
             try
             {
-                var uri = new Uri("pack://application:,,,/SMSSearch;component/Resources/SQL.xshd", UriKind.Absolute);
-                var streamInfo = System.Windows.Application.GetResourceStream(uri);
-                if (streamInfo != null)
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                var resourceName = System.Linq.Enumerable.FirstOrDefault(assembly.GetManifestResourceNames(), s => s.EndsWith("SQL.xshd"));
+
+                if (resourceName != null)
                 {
-                    using (var reader = new XmlTextReader(streamInfo.Stream))
+                    using (var stream = assembly.GetManifestResourceStream(resourceName))
                     {
-                        Editor.SyntaxHighlighting = HighlightingLoader.Load(reader, HighlightingManager.Instance);
+                        if (stream != null)
+                        {
+                            using (var reader = new XmlTextReader(stream))
+                            {
+                                Editor.SyntaxHighlighting = HighlightingLoader.Load(reader, HighlightingManager.Instance);
+                            }
+                        }
                     }
                 }
             }

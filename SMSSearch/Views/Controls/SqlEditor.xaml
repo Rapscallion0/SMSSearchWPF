@@ -24,9 +24,7 @@
         <Thumb x:Name="ResizeGrip" Grid.Row="1" Height="10" Cursor="SizeNS" DragDelta="ResizeGrip_DragDelta">
             <Thumb.Template>
                 <ControlTemplate TargetType="Thumb">
-                    <Grid Background="Transparent">
-                        <Path Data="M 0 5 L 100 5" Stroke="Gray" StrokeThickness="1" StrokeDashArray="2 2" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="5,0"/>
-                    </Grid>
+                    <Grid Background="Transparent"/>
                 </ControlTemplate>
             </Thumb.Template>
         </Thumb>

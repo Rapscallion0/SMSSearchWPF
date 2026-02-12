@@ -37,7 +37,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsFunctionNumber}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionNumberBox" Text="{Binding NumberSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionNumberBox_GotFocus"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionNumberBox" Text="{Binding FunctionNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionNumberBox_GotFocus"/>
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
@@ -55,7 +55,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsFunctionDescription}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionDescriptionBox" Text="{Binding DescriptionSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionDescriptionBox_GotFocus"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionDescriptionBox" Text="{Binding FunctionDescriptionText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionDescriptionBox_GotFocus"/>
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
@@ -80,7 +80,7 @@
                     </Grid>
 
                     <!-- SQL Editor -->
-                    <ctrl:SqlEditor Grid.Row="3" x:Name="FunctionSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Height="100" MinHeight="100" Margin="0,0,0,5" GotFocus="FunctionSqlEditor_GotFocus"/>
+                    <ctrl:SqlEditor Grid.Row="3" x:Name="FunctionSqlEditor" Text="{Binding FunctionSqlText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Height="100" MinHeight="100" Margin="0,0,0,5" GotFocus="FunctionSqlEditor_GotFocus"/>
 
                     <!-- Any Match -->
                     <CheckBox Grid.Row="4" Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
@@ -106,7 +106,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsTotalizerNumber}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerNumberBox" Text="{Binding NumberSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerNumberBox_GotFocus"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerNumberBox" Text="{Binding TotalizerNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerNumberBox_GotFocus"/>
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
@@ -124,7 +124,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsTotalizerDescription}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerDescriptionBox" Text="{Binding DescriptionSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerDescriptionBox_GotFocus"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerDescriptionBox" Text="{Binding TotalizerDescriptionText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerDescriptionBox_GotFocus"/>
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
@@ -149,7 +149,7 @@
                     </Grid>
 
                     <!-- SQL Editor -->
-                    <ctrl:SqlEditor Grid.Row="3" x:Name="TotalizerSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Height="100" MinHeight="100" Margin="0,0,0,5" GotFocus="TotalizerSqlEditor_GotFocus"/>
+                    <ctrl:SqlEditor Grid.Row="3" x:Name="TotalizerSqlEditor" Text="{Binding TotalizerSqlText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Height="100" MinHeight="100" Margin="0,0,0,5" GotFocus="TotalizerSqlEditor_GotFocus"/>
 
                     <!-- Checkbox -->
                     <CheckBox Grid.Row="4" Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
@@ -177,7 +177,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsFieldNumber}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldNumberBox" Text="{Binding NumberSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldNumberBox_GotFocus"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldNumberBox" Text="{Binding FieldNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldNumberBox_GotFocus"/>
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
@@ -195,7 +195,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsFieldDescription}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldDescriptionBox" Text="{Binding DescriptionSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldDescriptionBox_GotFocus"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldDescriptionBox" Text="{Binding FieldDescriptionText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldDescriptionBox_GotFocus"/>
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
@@ -220,8 +220,8 @@
 
                     <!-- Table Options -->
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="234,5,0,10" HorizontalAlignment="Right" Width="309" VerticalAlignment="Bottom">
-                        <RadioButton Content="Show Fields" IsChecked="{Binding ShowFields}" GroupName="FldAction"/>
-                        <RadioButton Content="Show Records" IsChecked="{Binding ShowRecords}" GroupName="FldAction" Margin="10,0,0,0"/>
+                        <RadioButton Content="Query Fields" IsChecked="{Binding ShowFields}" GroupName="FldAction"/>
+                        <RadioButton Content="Query Records" IsChecked="{Binding ShowRecords}" GroupName="FldAction" Margin="10,0,0,0"/>
                         <CheckBox Content="Last Transaction" IsChecked="{Binding LastTransaction}" Margin="10,0,0,0"/>
                     </StackPanel>
 
@@ -241,7 +241,7 @@
                     </Grid>
 
                     <!-- SQL Editor -->
-                    <ctrl:SqlEditor Grid.Row="5" x:Name="FieldSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Height="100" MinHeight="100" Margin="0,0,0,5" GotFocus="FieldSqlEditor_GotFocus"/>
+                    <ctrl:SqlEditor Grid.Row="5" x:Name="FieldSqlEditor" Text="{Binding FieldSqlText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Height="100" MinHeight="100" Margin="0,0,0,5" GotFocus="FieldSqlEditor_GotFocus"/>
 
                     <!-- Checkbox -->
                     <CheckBox Grid.Row="6" Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
