@@ -91,7 +91,7 @@ namespace SMS_Search.Views.Controls
             try
             {
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                var resourceName = System.Linq.Enumerable.FirstOrDefault(assembly.GetManifestResourceNames(), s => s.EndsWith("SQL.xshd"));
+                var resourceName = System.Linq.Enumerable.FirstOrDefault(assembly.GetManifestResourceNames(), s => s.EndsWith("SQL.xshd", StringComparison.OrdinalIgnoreCase));
 
                 if (resourceName != null)
                 {
@@ -107,9 +107,9 @@ namespace SMS_Search.Views.Controls
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Fallback to plain text if failed
+                System.Diagnostics.Debug.WriteLine($"Failed to load syntax highlighting: {ex}");
             }
         }
     }

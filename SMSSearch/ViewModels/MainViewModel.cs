@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using SMS_Search.Services;
 using SMS_Search.Views;
@@ -103,6 +104,7 @@ namespace SMS_Search.ViewModels
              }
 
              await ResultsVm.ExecuteSearchAsync(criteria);
+             WeakReferenceMessenger.Default.Send(new SearchExecutedMessage(true));
         }
 
         [RelayCommand]

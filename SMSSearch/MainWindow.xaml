@@ -10,6 +10,9 @@
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
         Title="SMS Search" Height="800" Width="800"
         Icon="/Resources/SMS Search.ico" MinWidth="675" MinHeight="600">
+    <Window.InputBindings>
+        <KeyBinding Key="F5" Command="{Binding SearchCommand}" />
+    </Window.InputBindings>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -19,11 +22,6 @@
 
         <GroupBox Header="Search Criteria" Margin="10">
             <StackPanel>
-                <DockPanel LastChildFill="False">
-                    <Button Content="Search" Command="{Binding SearchCommand}"
-                            DockPanel.Dock="Right" Padding="20,5"
-                            IsDefault="True"/>
-                </DockPanel>
                 <views:SearchView DataContext="{Binding SearchVm}" Margin="0,5,0,0"/>
             </StackPanel>
         </GroupBox>
@@ -46,7 +44,21 @@
                         <Control Template="{StaticResource Icon_Settings}"
                                Width="16" Height="16"/>
                     </Button>
-                    <ToggleButton Command="{Binding OpenUnarchiveCommand}" IsChecked="{Binding IsUnarchiveTargetVisible, Mode=OneWay}" ToolTip="Unarchive Target">
+                    <ToggleButton Command="{Binding OpenUnarchiveCommand}" IsChecked="{Binding IsUnarchiveTargetVisible, Mode=OneWay}" ToolTip="Unarchive Target"
+                                  Background="Transparent" BorderThickness="0" Padding="0">
+                        <ToggleButton.Style>
+                             <Style TargetType="ToggleButton">
+                                 <Setter Property="Template">
+                                     <Setter.Value>
+                                         <ControlTemplate TargetType="ToggleButton">
+                                             <Border Background="Transparent">
+                                                 <ContentPresenter/>
+                                             </Border>
+                                         </ControlTemplate>
+                                     </Setter.Value>
+                                 </Setter>
+                             </Style>
+                        </ToggleButton.Style>
                         <Image Source="/Resources/Unarchive.png" Width="16" Height="16"/>
                     </ToggleButton>
                 </StackPanel>

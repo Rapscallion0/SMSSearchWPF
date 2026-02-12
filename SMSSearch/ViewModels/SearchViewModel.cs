@@ -37,11 +37,12 @@ namespace SMS_Search.ViewModels
 
             LoadTablesCommand = new AsyncRelayCommand(LoadTablesAsync);
             CleanSqlCommand = new RelayCommand(CleanSql);
-            BuildSqlCommand = new RelayCommand(BuildSql);
+            BuildSqlCommand = new RelayCommand<string>(BuildSql);
             ShowHistoryCommand = new RelayCommand<System.Windows.Controls.Button>(ShowHistory);
             LoadCleanSqlRules();
             LoadHistory();
             LoadFontSettings();
+            LoadAnyMatchConfig();
 
             if (System.Enum.TryParse(_configService.GetValue("GENERAL", "DEFAULT_TAB"), out SearchMode tabMode))
             {
@@ -63,6 +64,14 @@ namespace SMS_Search.ViewModels
             if (int.TryParse(_configService.GetValue("GENERAL", "SQL_FONT_SIZE"), out int size))
             {
                 SqlFontSize = size;
+            }
+        }
+
+        private void LoadAnyMatchConfig()
+        {
+            if (bool.TryParse(_configService.GetValue("GENERAL", "ANY_MATCH_DEFAULT"), out bool result))
+            {
+                AnyMatch = result;
             }
         }
 
@@ -176,7 +185,7 @@ namespace SMS_Search.ViewModels
 
         public IAsyncRelayCommand LoadTablesCommand { get; }
         public IRelayCommand CleanSqlCommand { get; }
-        public IRelayCommand BuildSqlCommand { get; }
+        public IRelayCommand<string> BuildSqlCommand { get; }
         public IRelayCommand<System.Windows.Controls.Button> ShowHistoryCommand { get; }
 
         public bool IsCustomSqlMode => (SelectedMode == SearchMode.Function && IsFunctionCustomSql) ||
@@ -324,8 +333,28 @@ namespace SMS_Search.ViewModels
              }
         }
 
-        private void BuildSql()
+        private void BuildSql(string? type)
         {
+            if (type != null)
+            {
+                if (type == "Number")
+                {
+                    if (SelectedMode == SearchMode.Function) IsFunctionNumber = true;
+                    else if (SelectedMode == SearchMode.Totalizer) IsTotalizerNumber = true;
+                    else if (SelectedMode == SearchMode.Field) IsFieldNumber = true;
+                }
+                else if (type == "Description")
+                {
+                    if (SelectedMode == SearchMode.Function) IsFunctionDescription = true;
+                    else if (SelectedMode == SearchMode.Totalizer) IsTotalizerDescription = true;
+                    else if (SelectedMode == SearchMode.Field) IsFieldDescription = true;
+                }
+                else if (type == "Table" && SelectedMode == SearchMode.Field)
+                {
+                    IsFieldTable = true;
+                }
+            }
+
             if (IsCustomSqlMode) return;
 
             var criteria = GetSearchCriteria();
