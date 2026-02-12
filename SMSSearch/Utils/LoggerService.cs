@@ -87,9 +87,10 @@ namespace SMS_Search.Utils
 
             if (isEnabled)
             {
+                string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", $"{_appName}_.json");
                 newLogger = new LoggerConfiguration()
                     .MinimumLevel.Is(minimumLevel)
-                    .WriteTo.File(new JsonFormatter(renderMessage: true), $"logs/{_appName}_.json",
+                    .WriteTo.File(new JsonFormatter(renderMessage: true), logPath,
                         rollingInterval: RollingInterval.Day,
                         retainedFileCountLimit: retentionDays)
                     .CreateLogger();
@@ -119,8 +120,8 @@ namespace SMS_Search.Utils
             // Predict the current log file path
             // Serilog rolling file with RollingInterval.Day appends yyyyMMdd before extension
             string datePart = DateTime.Now.ToString("yyyyMMdd");
-            string fileName = $"logs/{_appName}_{datePart}.json";
-            return Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName));
+            string fileName = $"{_appName}_{datePart}.json";
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", fileName);
         }
 
         public void Log(LogLevel level, string message)
