@@ -9,6 +9,9 @@
         </Viewbox>
     </ControlTemplate>
 
+    <!-- DB Stack Geometry (Shared) -->
+    <StreamGeometry x:Key="Geometry_DB_Stack">M18,15v3c0,2.21-3.58,4-8,4s-8-1.79-8-4v-3c0,2.21,3.58,4,8,4S18,17.21,18,15z M18,10v3c0,2.21-3.58,4-8,4s-8-1.79-8-4v-3c0,2.21,3.58,4,8,4S18,12.21,18,10z M10,3c-4.42,0-8,1.79-8,4s3.58,4,8,4s8-1.79,8-4S14.42,3,10,3z</StreamGeometry>
+
     <!-- Delete Icon -->
     <StreamGeometry x:Key="Geometry_Delete_Lid">M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19Z</StreamGeometry>
     <StreamGeometry x:Key="Geometry_Delete_Bin">M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z</StreamGeometry>
@@ -48,6 +51,34 @@
             <Grid>
                 <Path Fill="#FFC62828" Data="{StaticResource Geometry_Clear_Blade1}" />
                 <Path Fill="#FFEF5350" Data="{StaticResource Geometry_Clear_Blade2}" />
+            </Grid>
+        </Viewbox>
+    </ControlTemplate>
+
+    <!-- Build SQL Icon -->
+    <ControlTemplate x:Key="Icon_BuildSql" TargetType="Control">
+        <Viewbox>
+            <Grid>
+                <Path Data="{StaticResource Geometry_DB_Stack}">
+                    <Path.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#FF455A64" Offset="0.0"/>
+                            <GradientStop Color="#FF263238" Offset="1.0"/>
+                        </LinearGradientBrush>
+                    </Path.Fill>
+                </Path>
+                <!-- Hammer Handle -->
+                <Line X1="16" Y1="14" X2="22" Y2="20" Stroke="#FF8B4513" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                    <Line.Effect>
+                        <DropShadowEffect BlurRadius="2" Color="Black" ShadowDepth="1" Opacity="0.5"/>
+                    </Line.Effect>
+                </Line>
+                <!-- Hammer Head -->
+                <Line X1="19" Y1="11" X2="13" Y2="17" Stroke="#FF607D8B" StrokeThickness="3" StrokeStartLineCap="Square" StrokeEndLineCap="Square">
+                    <Line.Effect>
+                        <DropShadowEffect BlurRadius="2" Color="Black" ShadowDepth="1" Opacity="0.5"/>
+                    </Line.Effect>
+                </Line>
             </Grid>
         </Viewbox>
     </ControlTemplate>
@@ -222,8 +253,6 @@
     </ControlTemplate>
 
     <!-- Settings Nav Connection Icon -->
-    <StreamGeometry x:Key="Geometry_DB_Stack">M18,15v3c0,2.21-3.58,4-8,4s-8-1.79-8-4v-3c0,2.21,3.58,4,8,4S18,17.21,18,15z M18,10v3c0,2.21-3.58,4-8,4s-8-1.79-8-4v-3c0,2.21,3.58,4,8,4S18,12.21,18,10z M10,3c-4.42,0-8,1.79-8,4s3.58,4,8,4s8-1.79,8-4S14.42,3,10,3z
-    </StreamGeometry>
     <StreamGeometry x:Key="Geometry_Connection_Link">M18,20h-4v-2h4c1.1,0,2-0.9,2-2V9c0-1.1-0.9-2-2-2h-4V5h4c2.21,0,4,1.79,4,4v7C22,18.21,20.21,20,18,20z M15,11h-7V9h7V11z M15,15h-7v-2h7V15z
     </StreamGeometry>
     <ControlTemplate x:Key="Icon_Nav_Connection" TargetType="Control">
