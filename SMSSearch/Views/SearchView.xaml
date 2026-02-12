@@ -9,7 +9,7 @@
              xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SearchViewModel}"
-             d:DesignHeight="400" d:DesignWidth="500">
+             d:DesignHeight="400" d:DesignWidth="569.031">
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
         <conv:BoolToVisibilityConverter x:Key="BoolToCollapsed" Invert="True"/>
@@ -62,17 +62,17 @@
 
                     <!-- Custom SQL Radio -->
                     <Grid Grid.Row="2" Margin="0,0,0,5">
-                         <Grid.ColumnDefinitions>
-                             <ColumnDefinition Width="Auto"/>
-                             <ColumnDefinition Width="*"/>
-                         </Grid.ColumnDefinitions>
-                         <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsFunctionCustomSql}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                             <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
-                             <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                 <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
-                             </Button>
-                         </StackPanel>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsFunctionCustomSql}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
+                            <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                                <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                            </Button>
+                        </StackPanel>
                     </Grid>
 
                     <!-- SQL Editor -->
@@ -127,17 +127,17 @@
 
                     <!-- Custom SQL -->
                     <Grid Grid.Row="2" Margin="0,0,0,5">
-                         <Grid.ColumnDefinitions>
-                             <ColumnDefinition Width="Auto"/>
-                             <ColumnDefinition Width="*"/>
-                         </Grid.ColumnDefinitions>
-                         <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsTotalizerCustomSql}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                             <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
-                             <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                 <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
-                             </Button>
-                         </StackPanel>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsTotalizerCustomSql}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
+                            <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                                <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                            </Button>
+                        </StackPanel>
                     </Grid>
 
                     <!-- SQL Editor -->
@@ -194,16 +194,16 @@
 
                     <!-- Table -->
                     <Grid Grid.Row="2" Margin="0,0,0,5">
-                         <Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100"/>
                             <ColumnDefinition Width="*"/>
-                         </Grid.ColumnDefinitions>
+                        </Grid.ColumnDefinitions>
                         <RadioButton Content="Table" Tag="Table" IsChecked="{Binding IsFieldTable}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="1" ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" Height="25" DropDownOpened="ComboBox_DropDownOpened" GotFocus="ComboBox_GotFocus"/>
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" Height="25" DropDownOpened="ComboBox_DropDownOpened" GotFocus="ComboBox_GotFocus" Margin="0,0,318,0"/>
                     </Grid>
 
                     <!-- Table Options -->
-                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,5">
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="234,5,0,10" HorizontalAlignment="Right" Width="309" VerticalAlignment="Bottom">
                         <RadioButton Content="Show Fields" IsChecked="{Binding ShowFields}" GroupName="FldAction"/>
                         <RadioButton Content="Show Records" IsChecked="{Binding ShowRecords}" GroupName="FldAction" Margin="10,0,0,0"/>
                         <CheckBox Content="Last Transaction" IsChecked="{Binding LastTransaction}" Margin="10,0,0,0"/>
@@ -211,17 +211,17 @@
 
                     <!-- Custom SQL -->
                     <Grid Grid.Row="4" Margin="0,0,0,5">
-                         <Grid.ColumnDefinitions>
-                             <ColumnDefinition Width="Auto"/>
-                             <ColumnDefinition Width="*"/>
-                         </Grid.ColumnDefinitions>
-                         <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsFieldCustomSql}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                             <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
-                             <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                 <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
-                             </Button>
-                         </StackPanel>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsFieldCustomSql}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
+                            <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                                <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                            </Button>
+                        </StackPanel>
                     </Grid>
 
                     <!-- SQL Editor -->

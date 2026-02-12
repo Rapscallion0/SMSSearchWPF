@@ -9,7 +9,7 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
         Title="SMS Search" Height="600" Width="800"
-        Icon="/Resources/SMS Search.ico">
+        Icon="/Resources/SMS Search.ico" MinWidth="675" MinHeight="600">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
