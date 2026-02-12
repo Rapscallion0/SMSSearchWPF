@@ -33,5 +33,13 @@
         <ctrl:SettingControl Header="Description Columns" IsSaved="{Binding DescriptionColumns.IsSaved}">
             <CheckBox IsChecked="{Binding DescriptionColumns.Value}" Content="Show description columns for codes" />
         </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="SQL Font Family" IsSaved="{Binding SqlFontFamily.IsSaved}">
+            <ctrl:ClearableTextBox Text="{Binding SqlFontFamily.Value, UpdateSourceTrigger=PropertyChanged}" />
+        </ctrl:SettingControl>
+
+        <ctrl:SettingControl Header="SQL Font Size" IsSaved="{Binding SqlFontSize.IsSaved}">
+            <ctrl:ClearableTextBox Text="{Binding SqlFontSize.Value, UpdateSourceTrigger=PropertyChanged}" />
+        </ctrl:SettingControl>
     </StackPanel>
 </UserControl>

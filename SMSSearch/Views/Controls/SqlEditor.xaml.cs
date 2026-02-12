@@ -36,6 +36,26 @@ namespace SMS_Search.Views.Controls
             set { SetValue(TextProperty, value); }
         }
 
+        public static readonly DependencyProperty EditorFontFamilyProperty =
+            DependencyProperty.Register("EditorFontFamily", typeof(System.Windows.Media.FontFamily), typeof(SqlEditor),
+                new FrameworkPropertyMetadata(new System.Windows.Media.FontFamily("Consolas")));
+
+        public System.Windows.Media.FontFamily EditorFontFamily
+        {
+            get { return (System.Windows.Media.FontFamily)GetValue(EditorFontFamilyProperty); }
+            set { SetValue(EditorFontFamilyProperty, value); }
+        }
+
+        public static readonly DependencyProperty EditorFontSizeProperty =
+            DependencyProperty.Register("EditorFontSize", typeof(double), typeof(SqlEditor),
+                new FrameworkPropertyMetadata(14.0));
+
+        public double EditorFontSize
+        {
+            get { return (double)GetValue(EditorFontSizeProperty); }
+            set { SetValue(EditorFontSizeProperty, value); }
+        }
+
         private static void OnTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is SqlEditor control)
@@ -56,11 +76,21 @@ namespace SMS_Search.Views.Controls
             }
         }
 
+        public new bool Focus()
+        {
+            return Editor.Focus();
+        }
+
+        public void SelectAll()
+        {
+            Editor.SelectAll();
+        }
+
         private void LoadHighlighting()
         {
             try
             {
-                var uri = new Uri("pack://application:,,,/Resources/SQL.xshd", UriKind.Absolute);
+                var uri = new Uri("pack://application:,,,/SMSSearch;component/Resources/SQL.xshd", UriKind.Absolute);
                 var streamInfo = System.Windows.Application.GetResourceStream(uri);
                 if (streamInfo != null)
                 {

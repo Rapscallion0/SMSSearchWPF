@@ -80,5 +80,15 @@ namespace SMS_Search.Views.Controls
                 parent?.RaiseEvent(eventArg);
             }
         }
+
+        public new bool Focus()
+        {
+            return InputBox.Focus();
+        }
+
+        public void SelectAll()
+        {
+            InputBox.SelectAll();
+        }
     }
 }
