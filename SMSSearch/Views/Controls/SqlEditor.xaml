@@ -11,15 +11,16 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <avalon:TextEditor x:Name="Editor"
-                           Grid.Row="0"
-                           ShowLineNumbers="True"
-                           FontFamily="{Binding EditorFontFamily, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                           FontSize="{Binding EditorFontSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                           WordWrap="True"
-                           VerticalScrollBarVisibility="Auto"
-                           HorizontalScrollBarVisibility="Auto"
-                           TextChanged="Editor_TextChanged"/>
+        <Border Grid.Row="0" BorderBrush="Gray" BorderThickness="1">
+            <avalon:TextEditor x:Name="Editor"
+                               ShowLineNumbers="True"
+                               FontFamily="{Binding EditorFontFamily, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                               FontSize="{Binding EditorFontSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                               WordWrap="True"
+                               VerticalScrollBarVisibility="Auto"
+                               HorizontalScrollBarVisibility="Auto"
+                               TextChanged="Editor_TextChanged"/>
+        </Border>
         <Thumb x:Name="ResizeGrip" Grid.Row="1" Height="10" Cursor="SizeNS" DragDelta="ResizeGrip_DragDelta">
             <Thumb.Template>
                 <ControlTemplate TargetType="Thumb">

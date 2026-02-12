@@ -37,7 +37,7 @@
 			[?,.;()\[\]{}+\-/%*&lt;&gt;^=~!&amp;]+
 		</Rule>
 
-		<Keywords color="Keyword">
+		<Keywords color="Keyword" ignoreCase="true">
 			<Word>ABORT</Word>
 			<Word>BETWEEN</Word>
 			<Word>CRASH</Word>
@@ -226,7 +226,7 @@
 			<Word>SUBTYPE</Word>
 		</Keywords>
 
-		<Keywords color="Function">
+		<Keywords color="Function" ignoreCase="true">
 			<Word>COUNT</Word>
 			<Word>SUM</Word>
 			<Word>AVG</Word>
