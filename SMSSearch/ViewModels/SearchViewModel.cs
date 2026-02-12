@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using SMS_Search.Data;
 using SMS_Search.Services;
 using SMS_Search.Utils;
@@ -40,10 +41,28 @@ namespace SMS_Search.ViewModels
             ShowHistoryCommand = new RelayCommand<System.Windows.Controls.Button>(ShowHistory);
             LoadCleanSqlRules();
             LoadHistory();
+            LoadFontSettings();
 
             if (System.Enum.TryParse(_configService.GetValue("GENERAL", "DEFAULT_TAB"), out SearchMode tabMode))
             {
                 SelectedMode = tabMode;
+            }
+
+            WeakReferenceMessenger.Default.Register<SqlFontSettingsChangedMessage>(this, (r, m) =>
+            {
+                SqlFontFamily = m.Value.Family;
+                SqlFontSize = m.Value.Size;
+            });
+        }
+
+        private void LoadFontSettings()
+        {
+            string font = _configService.GetValue("GENERAL", "SQL_FONT_FAMILY");
+            SqlFontFamily = string.IsNullOrEmpty(font) ? "Consolas" : font;
+
+            if (int.TryParse(_configService.GetValue("GENERAL", "SQL_FONT_SIZE"), out int size))
+            {
+                SqlFontSize = size;
             }
         }
 
@@ -52,7 +71,19 @@ namespace SMS_Search.ViewModels
         private SearchMode _selectedMode;
 
         [ObservableProperty]
-        private string _searchText = "";
+        private string _numberSearchText = "";
+
+        [ObservableProperty]
+        private string _descriptionSearchText = "";
+
+        [ObservableProperty]
+        private string _sqlSearchText = "";
+
+        [ObservableProperty]
+        private string _sqlFontFamily = "Consolas";
+
+        [ObservableProperty]
+        private double _sqlFontSize = 14;
 
         [ObservableProperty]
         private bool _anyMatch;
@@ -178,7 +209,7 @@ namespace SMS_Search.ViewModels
 
                     var mi = new System.Windows.Controls.MenuItem { Header = display, ToolTip = item };
                     string fullText = item;
-                    mi.Click += (s, e) => SearchText = fullText;
+                    mi.Click += (s, e) => SetCurrentSearchText(fullText);
                     menu.Items.Add(mi);
                 }
 
@@ -204,11 +235,18 @@ namespace SMS_Search.ViewModels
             }
         }
 
+        private void SetCurrentSearchText(string value)
+        {
+            if (IsCustomSqlMode) SqlSearchText = value;
+            else if (IsFunctionNumber || IsTotalizerNumber || IsFieldNumber) NumberSearchText = value;
+            else if (IsFunctionDescription || IsTotalizerDescription || IsFieldDescription) DescriptionSearchText = value;
+        }
+
         private void CleanSql()
         {
              if (!IsFunctionCustomSql && !IsTotalizerCustomSql && !IsFieldCustomSql) return;
 
-             string original = SearchText;
+             string original = SqlSearchText;
              if (string.IsNullOrEmpty(original)) return;
 
              string cleaned = original;
@@ -224,7 +262,7 @@ namespace SMS_Search.ViewModels
                  catch { }
              }
 
-             SearchText = cleaned;
+             SqlSearchText = cleaned;
 
              if (_configService.GetValue("GENERAL", "COPYCLEANSQL") == "1")
              {
@@ -266,7 +304,7 @@ namespace SMS_Search.ViewModels
                 }
             }
 
-            SearchText = sql;
+            SqlSearchText = sql;
 
             if (SelectedMode == SearchMode.Function) IsFunctionCustomSql = true;
             else if (SelectedMode == SearchMode.Totalizer) IsTotalizerCustomSql = true;
@@ -299,24 +337,57 @@ namespace SMS_Search.ViewModels
 
             if (SelectedMode == SearchMode.Function)
             {
-                criteria.Value = SearchText;
-                if (IsFunctionNumber) criteria.Type = SearchType.Number;
-                else if (IsFunctionDescription) criteria.Type = SearchType.Description;
-                else if (IsFunctionCustomSql) criteria.Type = SearchType.CustomSql;
+                if (IsFunctionNumber)
+                {
+                    criteria.Type = SearchType.Number;
+                    criteria.Value = NumberSearchText;
+                }
+                else if (IsFunctionDescription)
+                {
+                    criteria.Type = SearchType.Description;
+                    criteria.Value = DescriptionSearchText;
+                }
+                else if (IsFunctionCustomSql)
+                {
+                    criteria.Type = SearchType.CustomSql;
+                    criteria.Value = SqlSearchText;
+                }
             }
             else if (SelectedMode == SearchMode.Totalizer)
             {
-                criteria.Value = SearchText;
-                if (IsTotalizerNumber) criteria.Type = SearchType.Number;
-                else if (IsTotalizerDescription) criteria.Type = SearchType.Description;
-                else if (IsTotalizerCustomSql) criteria.Type = SearchType.CustomSql;
+                if (IsTotalizerNumber)
+                {
+                    criteria.Type = SearchType.Number;
+                    criteria.Value = NumberSearchText;
+                }
+                else if (IsTotalizerDescription)
+                {
+                    criteria.Type = SearchType.Description;
+                    criteria.Value = DescriptionSearchText;
+                }
+                else if (IsTotalizerCustomSql)
+                {
+                    criteria.Type = SearchType.CustomSql;
+                    criteria.Value = SqlSearchText;
+                }
             }
             else if (SelectedMode == SearchMode.Field)
             {
-                criteria.Value = SearchText;
-                if (IsFieldNumber) criteria.Type = SearchType.Number;
-                else if (IsFieldDescription) criteria.Type = SearchType.Description;
-                else if (IsFieldCustomSql) criteria.Type = SearchType.CustomSql;
+                if (IsFieldNumber)
+                {
+                    criteria.Type = SearchType.Number;
+                    criteria.Value = NumberSearchText;
+                }
+                else if (IsFieldDescription)
+                {
+                    criteria.Type = SearchType.Description;
+                    criteria.Value = DescriptionSearchText;
+                }
+                else if (IsFieldCustomSql)
+                {
+                    criteria.Type = SearchType.CustomSql;
+                    criteria.Value = SqlSearchText;
+                }
                 else if (IsFieldTable)
                 {
                     criteria.Type = SearchType.Table;

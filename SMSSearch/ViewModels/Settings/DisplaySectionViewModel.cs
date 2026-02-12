@@ -58,6 +58,46 @@ namespace SMS_Search.ViewModels.Settings
                 repository, "GENERAL", "AUTO_RESIZE_LIMIT",
                 limit,
                 v => v.ToString());
+
+            // Sql Font Family
+            string font = repository.GetValue("GENERAL", "SQL_FONT_FAMILY");
+            if (string.IsNullOrEmpty(font)) font = "Consolas";
+
+            SqlFontFamily = new ObservableSetting<string>(
+                repository, "GENERAL", "SQL_FONT_FAMILY",
+                font,
+                v => v);
+
+            SqlFontFamily.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<string>.Value))
+                {
+                    SendFontMessage();
+                }
+            };
+
+            // Sql Font Size
+            int fontSize = 14;
+            if (int.TryParse(repository.GetValue("GENERAL", "SQL_FONT_SIZE"), out int fs))
+                fontSize = fs;
+
+            SqlFontSize = new ObservableSetting<int>(
+                repository, "GENERAL", "SQL_FONT_SIZE",
+                fontSize,
+                v => v.ToString());
+
+            SqlFontSize.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<int>.Value))
+                {
+                    SendFontMessage();
+                }
+            };
+        }
+
+        private void SendFontMessage()
+        {
+            WeakReferenceMessenger.Default.Send(new SqlFontSettingsChangedMessage((SqlFontFamily.Value, SqlFontSize.Value)));
         }
 
         public ObservableSetting<bool> ShowRowNumbers { get; }
@@ -65,5 +105,7 @@ namespace SMS_Search.ViewModels.Settings
         public ObservableSetting<bool> ResizeColumns { get; }
         public ObservableSetting<bool> DescriptionColumns { get; }
         public ObservableSetting<int> AutoResizeLimit { get; }
+        public ObservableSetting<string> SqlFontFamily { get; }
+        public ObservableSetting<int> SqlFontSize { get; }
     }
 }
