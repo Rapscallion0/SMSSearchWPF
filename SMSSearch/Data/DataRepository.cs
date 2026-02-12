@@ -88,7 +88,7 @@ namespace SMS_Search.Data
             string finalSql = ApplyFilter(sql, filter);
             string countSql = $"SELECT COUNT(*) FROM ({finalSql}) AS _CountQ";
 
-            LogQuery("GetQueryCountAsync", countSql, parameters);
+            // LogQuery("GetQueryCountAsync", countSql, parameters); // Superseded by Info log below
 
             try
             {
@@ -97,7 +97,10 @@ namespace SMS_Search.Data
                     await conn.OpenAsync(cancellationToken);
                     var cmdDef = new CommandDefinition(countSql, parameters, cancellationToken: cancellationToken);
                     int count = await conn.ExecuteScalarAsync<int>(cmdDef);
-                    _logger.LogDebug($"GetQueryCountAsync: Returned {count}");
+
+                    string paramLog = GetParamString(parameters);
+                    _logger.LogInfo($"Query Executed. SQL: {countSql} | Params: {paramLog} | Results: {count}");
+
                     return count;
                 }
             }
@@ -174,7 +177,12 @@ namespace SMS_Search.Data
 
         private void LogQuery(string method, string sql, object? parameters)
         {
-            string paramLog = "";
+            string paramLog = GetParamString(parameters);
+            _logger.LogDebug($"{method}: Executing SQL: {sql} | Params: {paramLog}");
+        }
+
+        private string GetParamString(object? parameters)
+        {
             if (parameters is DynamicParameters dp)
             {
                 var list = new List<string>();
@@ -183,9 +191,9 @@ namespace SMS_Search.Data
                     var val = dp.Get<object>(name);
                     list.Add($"{name}={val}");
                 }
-                paramLog = string.Join(", ", list);
+                return string.Join(", ", list);
             }
-            _logger.LogDebug($"{method}: Executing SQL: {sql} | Params: {paramLog}");
+            return "";
         }
 
         public async Task<DbDataReader> GetQueryDataReaderAsync(string server, string database, string? user, string? pass, string sql, object? parameters, CancellationToken cancellationToken = default)

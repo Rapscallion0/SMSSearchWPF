@@ -1,12 +1,15 @@
 using System;
 using System.IO;
+using System.Reflection;
 using Serilog;
 using Serilog.Events;
+using Serilog.Formatting.Json;
 
 namespace SMS_Search.Utils
 {
     public interface ILoggerService : IDisposable
     {
+        void LogStartupInfo();
         void Log(LogLevel level, string message);
         void LogError(string message, Exception? ex = null);
         void LogInfo(string message);
@@ -28,7 +31,7 @@ namespace SMS_Search.Utils
     {
         private Serilog.Core.Logger? _logger;
         private readonly IConfigService _configService;
-        private readonly string _appName = "App";
+        private readonly string _appName = "SMSSearch_log";
 
         public LoggerService(IConfigService configService)
         {
@@ -69,13 +72,22 @@ namespace SMS_Search.Utils
                 retentionDays = r;
             }
 
+            // Check if log file exists BEFORE creating logger
+            // This is crucial for the requirement "On first log creation of the day"
+            bool isNewFile = false;
+            string currentPath = GetCurrentLogPath();
+            if (!File.Exists(currentPath))
+            {
+                isNewFile = true;
+            }
+
             Serilog.Core.Logger? newLogger = null;
 
             if (isEnabled)
             {
                 newLogger = new LoggerConfiguration()
                     .MinimumLevel.Is(minimumLevel)
-                    .WriteTo.File($"logs/{_appName}_.log",
+                    .WriteTo.File(new JsonFormatter(renderMessage: true), $"logs/{_appName}_.json",
                         rollingInterval: RollingInterval.Day,
                         retainedFileCountLimit: retentionDays)
                     .CreateLogger();
@@ -85,6 +97,19 @@ namespace SMS_Search.Utils
             var oldLogger = _logger;
             _logger = newLogger;
             oldLogger?.Dispose();
+
+            if (isEnabled && isNewFile && _logger != null)
+            {
+                LogStartupInfo();
+            }
+        }
+
+        public void LogStartupInfo()
+        {
+            if (_logger == null) return;
+            var version = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "Unknown";
+            var settings = _configService.GetAllSettings();
+            _logger.Information("Application Startup. Version: {Version}. Settings: {@Settings}", version, settings);
         }
 
         public string GetCurrentLogPath()
@@ -92,7 +117,7 @@ namespace SMS_Search.Utils
             // Predict the current log file path
             // Serilog rolling file with RollingInterval.Day appends yyyyMMdd before extension
             string datePart = DateTime.Now.ToString("yyyyMMdd");
-            string fileName = $"logs/{_appName}_{datePart}.log";
+            string fileName = $"logs/{_appName}_{datePart}.json";
             return Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName));
         }
 

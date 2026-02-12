@@ -12,6 +12,7 @@ namespace SMS_Search.Utils
         string? GetValue(string section, string key);
         void SetValue(string section, string key, string value);
         void ClearSection(string section);
+        Dictionary<string, Dictionary<string, string>> GetAllSettings();
         void Save();
         void Load();
     }
@@ -54,6 +55,17 @@ namespace SMS_Search.Utils
             {
                 _config[section].Clear();
             }
+        }
+
+        public Dictionary<string, Dictionary<string, string>> GetAllSettings()
+        {
+            // Deep copy to prevent external modification
+            var copy = new Dictionary<string, Dictionary<string, string>>();
+            foreach (var section in _config)
+            {
+                copy[section.Key] = new Dictionary<string, string>(section.Value);
+            }
+            return copy;
         }
 
         public void Load()
