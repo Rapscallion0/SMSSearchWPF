@@ -16,7 +16,8 @@ namespace SMS_Search.ViewModels.Settings
             ConnectionSectionViewModel connection,
             DisplaySectionViewModel display,
             CleanSqlSectionViewModel cleanSql,
-            LauncherSectionViewModel launcher)
+            LauncherSectionViewModel launcher,
+            LoggingSectionViewModel logging)
         {
             Sections = new ObservableCollection<SettingsSectionViewModel>
             {
@@ -24,7 +25,8 @@ namespace SMS_Search.ViewModels.Settings
                 connection,
                 display,
                 cleanSql,
-                launcher
+                launcher,
+                logging
             };
             SelectedSection = Sections[0];
         }

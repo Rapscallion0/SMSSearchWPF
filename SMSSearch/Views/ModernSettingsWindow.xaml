@@ -26,6 +26,9 @@
         <DataTemplate DataType="{x:Type vm:LauncherSectionViewModel}">
             <views:LauncherSectionView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:LoggingSectionViewModel}">
+            <views:LoggingSectionView />
+        </DataTemplate>
 
         <Style TargetType="ListBoxItem">
             <Setter Property="Padding" Value="10,8"/>

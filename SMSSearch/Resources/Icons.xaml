@@ -344,4 +344,26 @@
             </DataTrigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
+
+    <!-- Settings Nav Logging Icon -->
+    <StreamGeometry x:Key="Geometry_Nav_Logging_Paper">M14,2H6C4.9,2 4,2.9 4,4V20C4,21.1 4.9,22 6,22H18C19.1,22 20,21.1 20,20V8L14,2Z</StreamGeometry>
+    <ControlTemplate x:Key="Icon_Nav_Logging" TargetType="Control">
+        <Viewbox>
+            <Grid>
+                <Path Data="{StaticResource Geometry_Nav_Logging_Paper}">
+                    <Path.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#FF708090" Offset="0.0"/>
+                            <GradientStop Color="#FF2F4F4F" Offset="1.0"/>
+                        </LinearGradientBrush>
+                    </Path.Fill>
+                </Path>
+                <!-- Fold -->
+                <Path Data="M13,3V9H19" Stroke="Transparent" Fill="#FF5F7F8F" Opacity="0.5"/>
+
+                <!-- Lines -->
+                <Path Data="M7,12H17V13H7V12Z M7,15H17V16H7V15Z M7,18H14V19H7V18Z M7,9H12V10H7V9Z" Fill="#FFB0BEC5"/>
+            </Grid>
+        </Viewbox>
+    </ControlTemplate>
 </ResourceDictionary>
