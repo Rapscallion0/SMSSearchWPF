@@ -37,11 +37,15 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsFunctionNumber}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionNumberBox" Text="{Binding FunctionNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionNumberBox_GotFocus"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionNumberBox" Text="{Binding FunctionNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionNumberBox_GotFocus" Placeholder="Search... (* ?)">
+                            <ctrl:ClearableTextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            </ctrl:ClearableTextBox.InputBindings>
+                        </ctrl:ClearableTextBox>
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
-                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Number" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
                         </Button>
                     </Grid>
@@ -55,11 +59,15 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsFunctionDescription}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionDescriptionBox" Text="{Binding FunctionDescriptionText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionDescriptionBox_GotFocus"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionDescriptionBox" Text="{Binding FunctionDescriptionText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionDescriptionBox_GotFocus" Placeholder="Search... (* ?)">
+                            <ctrl:ClearableTextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            </ctrl:ClearableTextBox.InputBindings>
+                        </ctrl:ClearableTextBox>
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
-                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Description" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
                         </Button>
                     </Grid>
@@ -82,8 +90,7 @@
                     <!-- SQL Editor -->
                     <ctrl:SqlEditor Grid.Row="3" x:Name="FunctionSqlEditor" Text="{Binding FunctionSqlText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Height="100" MinHeight="100" Margin="0,0,0,5" GotFocus="FunctionSqlEditor_GotFocus"/>
 
-                    <!-- Any Match -->
-                    <CheckBox Grid.Row="4" Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
+                    <!-- Any Match removed -->
                 </Grid>
             </TabItem>
 
@@ -106,11 +113,15 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsTotalizerNumber}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerNumberBox" Text="{Binding TotalizerNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerNumberBox_GotFocus"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerNumberBox" Text="{Binding TotalizerNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerNumberBox_GotFocus" Placeholder="Search... (* ?)">
+                            <ctrl:ClearableTextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            </ctrl:ClearableTextBox.InputBindings>
+                        </ctrl:ClearableTextBox>
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
-                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Number" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
                         </Button>
                     </Grid>
@@ -124,11 +135,15 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsTotalizerDescription}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerDescriptionBox" Text="{Binding TotalizerDescriptionText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerDescriptionBox_GotFocus"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerDescriptionBox" Text="{Binding TotalizerDescriptionText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerDescriptionBox_GotFocus" Placeholder="Search... (* ?)">
+                            <ctrl:ClearableTextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            </ctrl:ClearableTextBox.InputBindings>
+                        </ctrl:ClearableTextBox>
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
-                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Description" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
                         </Button>
                     </Grid>
@@ -151,8 +166,7 @@
                     <!-- SQL Editor -->
                     <ctrl:SqlEditor Grid.Row="3" x:Name="TotalizerSqlEditor" Text="{Binding TotalizerSqlText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Height="100" MinHeight="100" Margin="0,0,0,5" GotFocus="TotalizerSqlEditor_GotFocus"/>
 
-                    <!-- Checkbox -->
-                    <CheckBox Grid.Row="4" Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
+                    <!-- Any Match removed -->
                 </Grid>
             </TabItem>
 
@@ -177,11 +191,15 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsFieldNumber}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldNumberBox" Text="{Binding FieldNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldNumberBox_GotFocus"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldNumberBox" Text="{Binding FieldNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldNumberBox_GotFocus" Placeholder="Search... (* ?)">
+                            <ctrl:ClearableTextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            </ctrl:ClearableTextBox.InputBindings>
+                        </ctrl:ClearableTextBox>
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
-                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Number" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
                         </Button>
                     </Grid>
@@ -195,11 +213,15 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsFieldDescription}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldDescriptionBox" Text="{Binding FieldDescriptionText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldDescriptionBox_GotFocus"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldDescriptionBox" Text="{Binding FieldDescriptionText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldDescriptionBox_GotFocus" Placeholder="Search... (* ?)">
+                            <ctrl:ClearableTextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            </ctrl:ClearableTextBox.InputBindings>
+                        </ctrl:ClearableTextBox>
                         <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
-                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Description" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
                         </Button>
                     </Grid>
@@ -212,8 +234,12 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Table" Tag="Table" IsChecked="{Binding IsFieldTable}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="1" ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" Height="25" DropDownOpened="ComboBox_DropDownOpened" GotFocus="ComboBox_GotFocus" Margin="0,0,5,0"/>
-                        <Button Grid.Column="2" Command="{Binding BuildSqlCommand}" Margin="0,0,318,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                        <ComboBox Grid.Column="1" x:Name="TableComboBox" ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" Height="25" DropDownOpened="ComboBox_DropDownOpened" GotFocus="ComboBox_GotFocus" Margin="0,0,5,0">
+                            <ComboBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            </ComboBox.InputBindings>
+                        </ComboBox>
+                        <Button Grid.Column="2" Command="{Binding BuildSqlCommand}" CommandParameter="Table" Margin="0,0,318,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
                         </Button>
                     </Grid>
@@ -243,8 +269,7 @@
                     <!-- SQL Editor -->
                     <ctrl:SqlEditor Grid.Row="5" x:Name="FieldSqlEditor" Text="{Binding FieldSqlText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Height="100" MinHeight="100" Margin="0,0,0,5" GotFocus="FieldSqlEditor_GotFocus"/>
 
-                    <!-- Checkbox -->
-                    <CheckBox Grid.Row="6" Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
+                    <!-- Any Match removed -->
                 </Grid>
             </TabItem>
         </TabControl>

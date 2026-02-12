@@ -58,6 +58,15 @@ namespace SMS_Search.Views.Controls
             set { SetValue(ClearCommandParameterProperty, value); }
         }
 
+        public static readonly DependencyProperty PlaceholderProperty =
+            DependencyProperty.Register("Placeholder", typeof(string), typeof(ClearableTextBox), new PropertyMetadata(string.Empty));
+
+        public string Placeholder
+        {
+            get { return (string)GetValue(PlaceholderProperty); }
+            set { SetValue(PlaceholderProperty, value); }
+        }
+
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             if (ClearCommand == null)

@@ -9,6 +9,44 @@ namespace SMS_Search.Views
         public SearchView()
         {
             InitializeComponent();
+            CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.Register<SMS_Search.Utils.SearchExecutedMessage>(this, (r, m) =>
+            {
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(FocusActiveSearchInput));
+            });
+        }
+
+        private void FocusActiveSearchInput()
+        {
+            if (DataContext is SearchViewModel vm)
+            {
+                if (vm.SelectedMode == SMS_Search.Data.SearchMode.Function)
+                {
+                    if (vm.IsFunctionNumber) FocusAndSelect(FunctionNumberBox, force: true);
+                    else if (vm.IsFunctionDescription) FocusAndSelect(FunctionDescriptionBox, force: true);
+                    else if (vm.IsFunctionCustomSql) FocusAndSelectSql(FunctionSqlEditor, force: true);
+                }
+                else if (vm.SelectedMode == SMS_Search.Data.SearchMode.Totalizer)
+                {
+                    if (vm.IsTotalizerNumber) FocusAndSelect(TotalizerNumberBox, force: true);
+                    else if (vm.IsTotalizerDescription) FocusAndSelect(TotalizerDescriptionBox, force: true);
+                    else if (vm.IsTotalizerCustomSql) FocusAndSelectSql(TotalizerSqlEditor, force: true);
+                }
+                else if (vm.SelectedMode == SMS_Search.Data.SearchMode.Field)
+                {
+                    if (vm.IsFieldNumber) FocusAndSelect(FieldNumberBox, force: true);
+                    else if (vm.IsFieldDescription) FocusAndSelect(FieldDescriptionBox, force: true);
+                    else if (vm.IsFieldCustomSql) FocusAndSelectSql(FieldSqlEditor, force: true);
+                    else if (vm.IsFieldTable) FocusTableCombo();
+                }
+            }
+        }
+
+        private void FocusTableCombo()
+        {
+            if (TableComboBox != null && TableComboBox.Visibility == System.Windows.Visibility.Visible)
+            {
+                TableComboBox.Focus();
+            }
         }
 
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
@@ -47,19 +85,20 @@ namespace SMS_Search.Views
                         if (tag == "Number") FocusAndSelect(FieldNumberBox);
                         else if (tag == "Description") FocusAndSelect(FieldDescriptionBox);
                         else if (tag == "CustomSql") FocusAndSelectSql(FieldSqlEditor);
+                        else if (tag == "Table") FocusTableCombo();
                     }
                 }));
             }
         }
 
-        private void FocusAndSelect(SMS_Search.Views.Controls.ClearableTextBox box)
+        private void FocusAndSelect(SMS_Search.Views.Controls.ClearableTextBox box, bool force = false)
         {
             if (box != null && box.Visibility == System.Windows.Visibility.Visible)
             {
                 // If the user clicked the box, it already has focus.
                 // We don't want to re-select all text in that case.
-                // We only Focus/SelectAll if the user clicked the Radio Button.
-                if (!box.IsKeyboardFocusWithin)
+                // We only Focus/SelectAll if the user clicked the Radio Button or if forced (Search Executed).
+                if (force || !box.IsKeyboardFocusWithin)
                 {
                     box.Focus();
                     box.SelectAll();
@@ -67,11 +106,11 @@ namespace SMS_Search.Views
             }
         }
 
-        private void FocusAndSelectSql(SMS_Search.Views.Controls.SqlEditor editor)
+        private void FocusAndSelectSql(SMS_Search.Views.Controls.SqlEditor editor, bool force = false)
         {
             if (editor != null && editor.Visibility == System.Windows.Visibility.Visible)
             {
-                if (!editor.IsKeyboardFocusWithin)
+                if (force || !editor.IsKeyboardFocusWithin)
                 {
                     editor.Focus();
                     editor.SelectAll();

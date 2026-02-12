@@ -10,6 +10,7 @@
              x:Name="Root">
     <UserControl.Resources>
         <conv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <conv:StringToVisibilityConverter x:Key="StringToVisibilityConverterInverted" Invert="True"/>
     </UserControl.Resources>
     <Grid>
         <TextBox x:Name="InputBox"
@@ -19,6 +20,13 @@
                  VerticalContentAlignment="Center"
                  Padding="2,0,20,0"
                  PreviewMouseWheel="OnPreviewMouseWheel"/>
+
+        <TextBlock Text="{Binding Placeholder, ElementName=Root}"
+                   VerticalAlignment="Center"
+                   Margin="4,0,20,0"
+                   Foreground="Gray"
+                   IsHitTestVisible="False"
+                   Visibility="{Binding Text, ElementName=Root, Converter={StaticResource StringToVisibilityConverterInverted}}"/>
 
         <Button Command="{Binding ClearCommand, ElementName=Root}"
                 CommandParameter="{Binding ClearCommandParameter, ElementName=Root}"
