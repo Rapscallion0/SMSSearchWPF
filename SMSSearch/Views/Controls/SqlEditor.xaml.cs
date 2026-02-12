@@ -1,7 +1,11 @@
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Highlighting.Xshd;
+using Microsoft.Extensions.DependencyInjection;
+using SMS_Search.Services;
+using SMS_Search.Utils;
 using System;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -79,10 +83,24 @@ namespace SMS_Search.Views.Controls
 
         private void LoadHighlighting()
         {
+            ILoggerService? logger = null;
+            try
+            {
+                if (Application.Current is App app && app.Services != null)
+                {
+                    logger = app.Services.GetService<ILoggerService>();
+                }
+            }
+            catch
+            {
+                // Ignore if we can't get logger (e.g. design time)
+            }
+
             try
             {
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                var resourceName = System.Linq.Enumerable.FirstOrDefault(assembly.GetManifestResourceNames(), s => s.EndsWith("SQL.xshd", StringComparison.OrdinalIgnoreCase));
+                var resourceNames = assembly.GetManifestResourceNames();
+                var resourceName = resourceNames.FirstOrDefault(s => s.EndsWith("SQL.xshd", StringComparison.OrdinalIgnoreCase));
 
                 if (resourceName != null)
                 {
@@ -93,14 +111,30 @@ namespace SMS_Search.Views.Controls
                             using (var reader = new XmlTextReader(stream))
                             {
                                 Editor.SyntaxHighlighting = HighlightingLoader.Load(reader, HighlightingManager.Instance);
+                                logger?.LogInfo($"Successfully loaded SQL syntax highlighting from '{resourceName}'.");
                             }
                         }
+                        else
+                        {
+                            var msg = $"Failed to get manifest resource stream for '{resourceName}'.";
+                            logger?.LogError(msg);
+                            MessageBox.Show(msg, "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
                     }
+                }
+                else
+                {
+                    var msg = $"Could not find SQL syntax highlighting resource (SQL.xshd).\nAvailable resources:\n{string.Join("\n", resourceNames)}";
+                    logger?.LogError(msg);
+                    MessageBox.Show("Could not find SQL syntax highlighting resource (SQL.xshd). Check logs for details.", "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to load syntax highlighting: {ex}");
+                var msg = $"Failed to load syntax highlighting: {ex.Message}";
+                logger?.LogError(msg, ex);
+                System.Diagnostics.Debug.WriteLine(msg);
+                MessageBox.Show(msg, "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
