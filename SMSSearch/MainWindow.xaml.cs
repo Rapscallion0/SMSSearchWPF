@@ -60,6 +60,12 @@ namespace SMS_Search
             }
         }
 
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            _unarchiveWindow?.Close();
+        }
+
         private void OnRequestToggleUnarchiveWindow(bool isVisible)
         {
             if (isVisible)

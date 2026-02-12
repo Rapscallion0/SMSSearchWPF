@@ -256,49 +256,54 @@
     </ControlTemplate>
 
     <!-- Unarchive Icon -->
-    <StreamGeometry x:Key="Geometry_Unarchive_Target">M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4</StreamGeometry>
-    <StreamGeometry x:Key="Geometry_Unarchive_Folder">M10,4H4C2.9,4 2,4.9 2,6V18C2,19.1 2.9,20 4,20H20C21.1,20 22,19.1 22,18V8C22,6.9 21.1,6 20,6H12L10,4Z</StreamGeometry>
-    <!-- Combined + and A shape -->
-    <StreamGeometry x:Key="Geometry_Unarchive_PlusA">
-        M11.5,8 L9.5,14 H10.5 L10.8,13 H12.2 L12.5,14 H13.5 L11.5,8 M11,12 L11.5,10.5 L12,12 H11
-        M16,9 V10.5 H14.5 V11.5 H16 V13 H17 V11.5 H18.5 V10.5 H17 V9 H16
+    <StreamGeometry x:Key="Geometry_Unarchive_Target">
+        M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2
+    M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4
+    M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6
+    M12,7.5A4.5,4.5 0 0,0 7.5,12A4.5,4.5 0 0,0 12,16.5A4.5,4.5 0 0,0 16.5,12A4.5,4.5 0 0,0 12,7.5
+    </StreamGeometry>
+
+    <StreamGeometry x:Key="Geometry_Target_Arrows">
+        M12,0L14,4H10L12,0 M12,24L10,20H14L12,24 M0,12L4,10V14L0,12 M24,12L20,14V10L24,12
     </StreamGeometry>
 
     <ControlTemplate x:Key="Icon_Unarchive" TargetType="Control">
         <Viewbox>
-            <Grid>
-                <!-- Target Background -->
-                <Path x:Name="Target" Data="{StaticResource Geometry_Unarchive_Target}" Fill="#FF455A64" Opacity="0.5" />
+            <Grid Width="28" Height="28">
+                <Path x:Name="Arrows" Data="{StaticResource Geometry_Target_Arrows}" Fill="#FF00E5FF">
+                    <Path.Effect>
+                        <DropShadowEffect BlurRadius="8" Color="#FF00E5FF" ShadowDepth="0"/>
+                    </Path.Effect>
+                </Path>
 
-                <!-- Normal Content -->
-                <Grid x:Name="Content_Normal">
-                    <Path Data="{StaticResource Geometry_Unarchive_Folder}" Fill="#FFFFC107" Margin="4" />
-                    <Path Data="{StaticResource Geometry_Unarchive_PlusA}" Fill="Black" Margin="4" />
+                <Path Data="{StaticResource Geometry_Unarchive_Target}" Fill="#FF455A64" Margin="2"/>
+
+                <Grid x:Name="Content_Normal" Margin="8">
+                    <Path Data="{StaticResource Geometry_Unarchive_Folder}" Fill="#FFFFC107" />
+
+                    <Grid HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,-2,0">
+                        <Ellipse Fill="#FF00E5FF" Width="10" Height="10">
+                            <Ellipse.Effect>
+                                <DropShadowEffect BlurRadius="5" Color="#FF00E5FF" ShadowDepth="0"/>
+                            </Ellipse.Effect>
+                        </Ellipse>
+                        <Path Data="{StaticResource Geometry_Unarchive_PlusA}" Fill="White" Stretch="Uniform" Margin="2"/>
+                    </Grid>
                 </Grid>
 
-                <!-- Completed Content -->
                 <Grid x:Name="Content_Completed" Visibility="Collapsed">
-                     <!-- Reuse Check Icon logic here, effectively overlaying the target -->
-                     <!-- We use the Check Icon Check Mark geometry but scaled to fit -->
                     <Path Fill="#FF1B5E20" Data="M9,19L21,7L19.59,5.59L9,16.17L4.83,12L3.41,13.41L9,19Z" />
-                    <Path Data="M9,18.5L20.5,6.5L19.5,5.5L9,16L5,12L4,13L9,18Z">
-                        <Path.Fill>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#FF8BC34A" Offset="0.0" />
-                                <GradientStop Color="#FF4CAF50" Offset="0.5" />
-                                <GradientStop Color="#FF2E7D32" Offset="1.0" />
-                            </LinearGradientBrush>
-                        </Path.Fill>
-                    </Path>
+                    <Path Data="M9,18.5L20.5,6.5L19.5,5.5L9,16L5,12L4,13L9,18Z" Fill="#FF4CAF50"/>
                 </Grid>
             </Grid>
         </Viewbox>
+
         <ControlTemplate.Triggers>
             <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
                 <Setter TargetName="Content_Normal" Property="Visibility" Value="Collapsed" />
                 <Setter TargetName="Content_Completed" Property="Visibility" Value="Visible" />
+                <Setter TargetName="Arrows" Property="Fill" Value="#FF4CAF50" />
             </DataTrigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
-
 </ResourceDictionary>
