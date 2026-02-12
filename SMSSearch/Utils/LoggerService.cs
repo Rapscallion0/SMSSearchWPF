@@ -83,6 +83,10 @@ namespace SMS_Search.Utils
                 isNewFile = true;
             }
 
+            // Dispose old logger if exists before creating new one to release file lock
+            _logger?.Dispose();
+            _logger = null;
+
             Serilog.Core.Logger? newLogger = null;
 
             if (isEnabled)
@@ -92,14 +96,12 @@ namespace SMS_Search.Utils
                     .MinimumLevel.Is(minimumLevel)
                     .WriteTo.File(new JsonFormatter(renderMessage: true), logPath,
                         rollingInterval: RollingInterval.Day,
-                        retainedFileCountLimit: retentionDays)
+                        retainedFileCountLimit: retentionDays,
+                        shared: true)
                     .CreateLogger();
             }
 
-            // Dispose old logger if exists
-            var oldLogger = _logger;
             _logger = newLogger;
-            oldLogger?.Dispose();
 
             if (isEnabled && isNewFile && _logger != null)
             {
