@@ -9,7 +9,7 @@
              xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SearchViewModel}"
-             d:DesignHeight="300" d:DesignWidth="400">
+             d:DesignHeight="400" d:DesignWidth="500">
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
         <conv:BoolToVisibilityConverter x:Key="BoolToCollapsed" Invert="True"/>
@@ -19,212 +19,217 @@
     <Grid>
         <TabControl SelectedIndex="{Binding SelectedMode, Mode=TwoWay, Converter={StaticResource EnumToIntConverter}}">
             <TabItem Header="Function">
-                <StackPanel Margin="10">
-                    <StackPanel.Resources>
-                        <Style TargetType="RadioButton">
-                            <Setter Property="Margin" Value="0,2,0,2"/>
-                        </Style>
-                    </StackPanel.Resources>
-                    <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsFunctionNumber}" GroupName="FctType" Checked="SearchType_Checked"/>
-                    <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsFunctionDescription}" GroupName="FctType" Checked="SearchType_Checked"/>
-                    <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsFunctionCustomSql}" GroupName="FctType" Checked="SearchType_Checked"/>
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <Grid Margin="0,10,0,0">
-                        <Grid Visibility="{Binding IsFunctionNumber, Converter={StaticResource BoolToVis}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ctrl:ClearableTextBox x:Name="FunctionNumberBox" Text="{Binding NumberSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25"/>
-                            <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                    Grid.Column="1" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                <Control Template="{StaticResource Icon_History}"
-                                       Width="16" Height="16"/>
-                            </Button>
-                            <Button Content="Build SQL" Command="{Binding BuildSqlCommand}"
-                                    Grid.Column="2" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
-                        </Grid>
-                        <Grid Visibility="{Binding IsFunctionDescription, Converter={StaticResource BoolToVis}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ctrl:ClearableTextBox x:Name="FunctionDescriptionBox" Text="{Binding DescriptionSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25"/>
-                            <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                    Grid.Column="1" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                <Control Template="{StaticResource Icon_History}"
-                                       Width="16" Height="16"/>
-                            </Button>
-                            <Button Content="Build SQL" Command="{Binding BuildSqlCommand}"
-                                    Grid.Column="2" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
-                        </Grid>
-
-                        <Grid Visibility="{Binding IsFunctionCustomSql, Converter={StaticResource BoolToVis}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ctrl:SqlEditor x:Name="FunctionSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                            EditorFontFamily="{Binding SqlFontFamily}"
-                                            EditorFontSize="{Binding SqlFontSize}"/>
-                            <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                                <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL"/>
-                                <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                        Margin="0,5,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                    <Control Template="{StaticResource Icon_History}"
-                                           Width="16" Height="16"/>
-                                </Button>
-                            </StackPanel>
-                        </Grid>
+                    <!-- Number -->
+                    <Grid Grid.Row="0" Margin="0,0,0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsFunctionNumber}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionNumberBox" Text="{Binding NumberSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionNumberBox_GotFocus"/>
+                        <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                        </Button>
+                        <Button Grid.Column="3" Content="Build SQL" Command="{Binding BuildSqlCommand}" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
                     </Grid>
 
-                    <CheckBox Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
-                </StackPanel>
+                    <!-- Description -->
+                    <Grid Grid.Row="1" Margin="0,0,0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsFunctionDescription}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionDescriptionBox" Text="{Binding DescriptionSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionDescriptionBox_GotFocus"/>
+                        <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                        </Button>
+                        <Button Grid.Column="3" Content="Build SQL" Command="{Binding BuildSqlCommand}" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
+                    </Grid>
+
+                    <!-- Custom SQL Radio -->
+                    <Grid Grid.Row="2" Margin="0,0,0,5">
+                         <Grid.ColumnDefinitions>
+                             <ColumnDefinition Width="Auto"/>
+                             <ColumnDefinition Width="*"/>
+                         </Grid.ColumnDefinitions>
+                         <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsFunctionCustomSql}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
+                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                             <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
+                             <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                                 <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                             </Button>
+                         </StackPanel>
+                    </Grid>
+
+                    <!-- SQL Editor -->
+                    <ctrl:SqlEditor Grid.Row="3" x:Name="FunctionSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="FunctionSqlEditor_GotFocus"/>
+
+                    <!-- Any Match -->
+                    <CheckBox Grid.Row="4" Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
+                </Grid>
             </TabItem>
+
             <TabItem Header="Totalizer">
-                <StackPanel Margin="10">
-                    <StackPanel.Resources>
-                        <Style TargetType="RadioButton">
-                            <Setter Property="Margin" Value="0,2,0,2"/>
-                        </Style>
-                    </StackPanel.Resources>
-                    <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsTotalizerNumber}" GroupName="TlzType" Checked="SearchType_Checked"/>
-                    <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsTotalizerDescription}" GroupName="TlzType" Checked="SearchType_Checked"/>
-                    <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsTotalizerCustomSql}" GroupName="TlzType" Checked="SearchType_Checked"/>
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <Grid Margin="0,10,0,0">
-                        <Grid Visibility="{Binding IsTotalizerNumber, Converter={StaticResource BoolToVis}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ctrl:ClearableTextBox x:Name="TotalizerNumberBox" Text="{Binding NumberSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25"/>
-                            <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                    Grid.Column="1" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                <Control Template="{StaticResource Icon_History}"
-                                       Width="16" Height="16"/>
-                            </Button>
-                            <Button Content="Build SQL" Command="{Binding BuildSqlCommand}"
-                                    Grid.Column="2" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
-                        </Grid>
-                        <Grid Visibility="{Binding IsTotalizerDescription, Converter={StaticResource BoolToVis}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ctrl:ClearableTextBox x:Name="TotalizerDescriptionBox" Text="{Binding DescriptionSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25"/>
-                            <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                    Grid.Column="1" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                <Control Template="{StaticResource Icon_History}"
-                                       Width="16" Height="16"/>
-                            </Button>
-                            <Button Content="Build SQL" Command="{Binding BuildSqlCommand}"
-                                    Grid.Column="2" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
-                        </Grid>
-
-                        <Grid Visibility="{Binding IsTotalizerCustomSql, Converter={StaticResource BoolToVis}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ctrl:SqlEditor x:Name="TotalizerSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                            EditorFontFamily="{Binding SqlFontFamily}"
-                                            EditorFontSize="{Binding SqlFontSize}"/>
-                            <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                                <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL"/>
-                                <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                        Margin="0,5,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                    <Control Template="{StaticResource Icon_History}"
-                                           Width="16" Height="16"/>
-                                </Button>
-                            </StackPanel>
-                        </Grid>
+                    <!-- Number -->
+                    <Grid Grid.Row="0" Margin="0,0,0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsTotalizerNumber}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerNumberBox" Text="{Binding NumberSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerNumberBox_GotFocus"/>
+                        <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                        </Button>
+                        <Button Grid.Column="3" Content="Build SQL" Command="{Binding BuildSqlCommand}" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
                     </Grid>
 
-                    <CheckBox Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
-                </StackPanel>
+                    <!-- Description -->
+                    <Grid Grid.Row="1" Margin="0,0,0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsTotalizerDescription}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerDescriptionBox" Text="{Binding DescriptionSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerDescriptionBox_GotFocus"/>
+                        <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                        </Button>
+                        <Button Grid.Column="3" Content="Build SQL" Command="{Binding BuildSqlCommand}" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
+                    </Grid>
+
+                    <!-- Custom SQL -->
+                    <Grid Grid.Row="2" Margin="0,0,0,5">
+                         <Grid.ColumnDefinitions>
+                             <ColumnDefinition Width="Auto"/>
+                             <ColumnDefinition Width="*"/>
+                         </Grid.ColumnDefinitions>
+                         <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsTotalizerCustomSql}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
+                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                             <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
+                             <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                                 <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                             </Button>
+                         </StackPanel>
+                    </Grid>
+
+                    <!-- SQL Editor -->
+                    <ctrl:SqlEditor Grid.Row="3" x:Name="TotalizerSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="TotalizerSqlEditor_GotFocus"/>
+
+                    <!-- Checkbox -->
+                    <CheckBox Grid.Row="4" Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
+                </Grid>
             </TabItem>
+
             <TabItem Header="Fields">
-                <StackPanel Margin="10">
-                    <StackPanel.Resources>
-                        <Style TargetType="RadioButton">
-                            <Setter Property="Margin" Value="0,2,0,2"/>
-                        </Style>
-                    </StackPanel.Resources>
-                    <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsFieldNumber}" GroupName="FldType" Checked="SearchType_Checked"/>
-                    <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsFieldDescription}" GroupName="FldType" Checked="SearchType_Checked"/>
-                    <RadioButton Content="Table" Tag="Table" IsChecked="{Binding IsFieldTable}" GroupName="FldType" Checked="SearchType_Checked"/>
-                    <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsFieldCustomSql}" GroupName="FldType" Checked="SearchType_Checked"/>
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <ComboBox ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}"
-                              Visibility="{Binding IsFieldTable, Converter={StaticResource BoolToVis}}"
-                              Margin="0,5,0,0" Height="25"
-                              DropDownOpened="ComboBox_DropDownOpened"/>
-
-                    <Grid Margin="0,10,0,0" Visibility="{Binding IsFieldTable, Converter={StaticResource BoolToCollapsed}}">
-                        <Grid Visibility="{Binding IsFieldNumber, Converter={StaticResource BoolToVis}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ctrl:ClearableTextBox x:Name="FieldNumberBox" Text="{Binding NumberSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25"/>
-                            <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                    Grid.Column="1" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                <Control Template="{StaticResource Icon_History}"
-                                       Width="16" Height="16"/>
-                            </Button>
-                            <Button Content="Build SQL" Command="{Binding BuildSqlCommand}"
-                                    Grid.Column="2" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
-                        </Grid>
-                        <Grid Visibility="{Binding IsFieldDescription, Converter={StaticResource BoolToVis}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ctrl:ClearableTextBox x:Name="FieldDescriptionBox" Text="{Binding DescriptionSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25"/>
-                            <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                    Grid.Column="1" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                <Control Template="{StaticResource Icon_History}"
-                                       Width="16" Height="16"/>
-                            </Button>
-                            <Button Content="Build SQL" Command="{Binding BuildSqlCommand}"
-                                    Grid.Column="2" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
-                        </Grid>
-
-                        <Grid Visibility="{Binding IsFieldCustomSql, Converter={StaticResource BoolToVis}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ctrl:SqlEditor x:Name="FieldSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                            EditorFontFamily="{Binding SqlFontFamily}"
-                                            EditorFontSize="{Binding SqlFontSize}"/>
-                            <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                                <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL"/>
-                                <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                        Margin="0,5,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                    <Control Template="{StaticResource Icon_History}"
-                                           Width="16" Height="16"/>
-                                </Button>
-                            </StackPanel>
-                        </Grid>
+                    <!-- Number -->
+                    <Grid Grid.Row="0" Margin="0,0,0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsFieldNumber}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldNumberBox" Text="{Binding NumberSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldNumberBox_GotFocus"/>
+                        <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                        </Button>
+                        <Button Grid.Column="3" Content="Build SQL" Command="{Binding BuildSqlCommand}" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
                     </Grid>
 
-                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0"
-                                Visibility="{Binding IsFieldTable, Converter={StaticResource BoolToVis}}">
+                    <!-- Description -->
+                    <Grid Grid.Row="1" Margin="0,0,0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsFieldDescription}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldDescriptionBox" Text="{Binding DescriptionSearchText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldDescriptionBox_GotFocus"/>
+                        <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                        </Button>
+                        <Button Grid.Column="3" Content="Build SQL" Command="{Binding BuildSqlCommand}" Height="25" Margin="5,0,0,0" ToolTip="Build SQL Query"/>
+                    </Grid>
+
+                    <!-- Table -->
+                    <Grid Grid.Row="2" Margin="0,0,0,5">
+                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                         </Grid.ColumnDefinitions>
+                        <RadioButton Content="Table" Tag="Table" IsChecked="{Binding IsFieldTable}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" Height="25" DropDownOpened="ComboBox_DropDownOpened" GotFocus="ComboBox_GotFocus"/>
+                    </Grid>
+
+                    <!-- Table Options -->
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,5">
                         <RadioButton Content="Show Fields" IsChecked="{Binding ShowFields}" GroupName="FldAction"/>
                         <RadioButton Content="Show Records" IsChecked="{Binding ShowRecords}" GroupName="FldAction" Margin="10,0,0,0"/>
                         <CheckBox Content="Last Transaction" IsChecked="{Binding LastTransaction}" Margin="10,0,0,0"/>
                     </StackPanel>
 
-                    <CheckBox Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
-                </StackPanel>
+                    <!-- Custom SQL -->
+                    <Grid Grid.Row="4" Margin="0,0,0,5">
+                         <Grid.ColumnDefinitions>
+                             <ColumnDefinition Width="Auto"/>
+                             <ColumnDefinition Width="*"/>
+                         </Grid.ColumnDefinitions>
+                         <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsFieldCustomSql}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
+                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                             <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
+                             <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                                 <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                             </Button>
+                         </StackPanel>
+                    </Grid>
+
+                    <!-- SQL Editor -->
+                    <ctrl:SqlEditor Grid.Row="5" x:Name="FieldSqlEditor" Text="{Binding SqlSearchText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="FieldSqlEditor_GotFocus"/>
+
+                    <!-- Checkbox -->
+                    <CheckBox Grid.Row="6" Content="Any Match (contains)" IsChecked="{Binding AnyMatch}" Margin="0,5,0,0"/>
+                </Grid>
             </TabItem>
         </TabControl>
     </Grid>

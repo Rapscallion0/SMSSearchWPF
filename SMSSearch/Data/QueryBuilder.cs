@@ -98,7 +98,7 @@ GROUP BY
             }
             else if (criteria.Mode == SearchMode.Totalizer)
             {
-                sql = $"Select {_tlzFields} FROM TLZ_TAB";
+                sql = $"SELECT {_tlzFields} FROM TLZ_TAB";
                 if (criteria.Type == SearchType.Number)
                 {
                     if (!string.IsNullOrEmpty(value))
@@ -127,7 +127,7 @@ GROUP BY
             }
             else if (criteria.Mode == SearchMode.Function)
             {
-                sql = $"Select {_fctFields} FROM FCT_TAB";
+                sql = $"SELECT {_fctFields} FROM FCT_TAB";
                 if (criteria.Type == SearchType.Number)
                 {
                     if (!string.IsNullOrEmpty(value))
