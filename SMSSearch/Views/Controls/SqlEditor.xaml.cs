@@ -86,7 +86,7 @@ namespace SMS_Search.Views.Controls
             ILoggerService? logger = null;
             try
             {
-                if (Application.Current is App app && app.Services != null)
+                if (System.Windows.Application.Current is App app && app.Services != null)
                 {
                     logger = app.Services.GetService<ILoggerService>();
                 }
@@ -118,7 +118,7 @@ namespace SMS_Search.Views.Controls
                         {
                             var msg = $"Failed to get manifest resource stream for '{resourceName}'.";
                             logger?.LogError(msg);
-                            MessageBox.Show(msg, "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            System.Windows.MessageBox.Show(msg, "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
                 }
@@ -126,7 +126,7 @@ namespace SMS_Search.Views.Controls
                 {
                     var msg = $"Could not find SQL syntax highlighting resource (SQL.xshd).\nAvailable resources:\n{string.Join("\n", resourceNames)}";
                     logger?.LogError(msg);
-                    MessageBox.Show("Could not find SQL syntax highlighting resource (SQL.xshd). Check logs for details.", "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show("Could not find SQL syntax highlighting resource (SQL.xshd). Check logs for details.", "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
@@ -134,7 +134,7 @@ namespace SMS_Search.Views.Controls
                 var msg = $"Failed to load syntax highlighting: {ex.Message}";
                 logger?.LogError(msg, ex);
                 System.Diagnostics.Debug.WriteLine(msg);
-                MessageBox.Show(msg, "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show(msg, "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
