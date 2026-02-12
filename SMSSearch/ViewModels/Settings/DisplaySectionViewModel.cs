@@ -60,7 +60,7 @@ namespace SMS_Search.ViewModels.Settings
                 v => v.ToString());
 
             // Sql Font Family
-            string font = repository.GetValue("GENERAL", "SQL_FONT_FAMILY");
+            string? font = repository.GetValue("GENERAL", "SQL_FONT_FAMILY");
             if (string.IsNullOrEmpty(font)) font = "Consolas";
 
             SqlFontFamily = new ObservableSetting<string>(
