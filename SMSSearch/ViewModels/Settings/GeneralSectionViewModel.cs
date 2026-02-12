@@ -94,9 +94,17 @@ namespace SMS_Search.ViewModels.Settings
                 repository, "GENERAL", "COPY_DELIMITER_CUSTOM",
                 customDelimStr ?? "");
 
+            // Select Custom SQL on Build
+            var selectCustomSqlStr = repository.GetValue("GENERAL", "SELECT_CUSTOM_SQL_ON_BUILD");
+            SelectCustomSqlOnBuild = new ObservableSetting<bool>(
+                repository, "GENERAL", "SELECT_CUSTOM_SQL_ON_BUILD",
+                selectCustomSqlStr != "0", // Default true
+                v => v ? "1" : "0");
+
             UpdateVisibility();
         }
 
+        public ObservableSetting<bool> SelectCustomSqlOnBuild { get; }
         public ObservableSetting<bool> AlwaysOnTop { get; }
         public ObservableSetting<bool> ShowInTray { get; }
         public ObservableSetting<bool> CheckUpdate { get; }

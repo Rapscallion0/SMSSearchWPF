@@ -344,30 +344,37 @@ namespace SMS_Search.ViewModels
         {
             _logger.LogDebug($"Building SQL for type: {type ?? "null"}, Mode: {SelectedMode}");
 
-            if (type != null)
+            // Determine search criteria without changing UI state (preventing focus bounce)
+            var criteria = new SearchCriteria { Mode = SelectedMode, AnyMatch = AnyMatch };
+
+            if (type == "Number")
             {
-                if (type == "Number")
-                {
-                    if (SelectedMode == SearchMode.Function) IsFunctionNumber = true;
-                    else if (SelectedMode == SearchMode.Totalizer) IsTotalizerNumber = true;
-                    else if (SelectedMode == SearchMode.Field) IsFieldNumber = true;
-                }
-                else if (type == "Description")
-                {
-                    if (SelectedMode == SearchMode.Function) IsFunctionDescription = true;
-                    else if (SelectedMode == SearchMode.Totalizer) IsTotalizerDescription = true;
-                    else if (SelectedMode == SearchMode.Field) IsFieldDescription = true;
-                }
-                else if (type == "Table" && SelectedMode == SearchMode.Field)
-                {
-                    IsFieldTable = true;
-                }
+                criteria.Type = SearchType.Number;
+                if (SelectedMode == SearchMode.Function) criteria.Value = FunctionNumberText;
+                else if (SelectedMode == SearchMode.Totalizer) criteria.Value = TotalizerNumberText;
+                else if (SelectedMode == SearchMode.Field) criteria.Value = FieldNumberText;
+            }
+            else if (type == "Description")
+            {
+                criteria.Type = SearchType.Description;
+                if (SelectedMode == SearchMode.Function) criteria.Value = FunctionDescriptionText;
+                else if (SelectedMode == SearchMode.Totalizer) criteria.Value = TotalizerDescriptionText;
+                else if (SelectedMode == SearchMode.Field) criteria.Value = FieldDescriptionText;
+            }
+            else if (type == "Table" && SelectedMode == SearchMode.Field)
+            {
+                criteria.Type = SearchType.Table;
+                criteria.Value = SelectedTable;
+                criteria.ShowFields = ShowFields;
+                criteria.LastTransaction = LastTransaction;
+            }
+            else
+            {
+                // Fallback if no type specified
+                if (IsCustomSqlMode) return;
+                criteria = GetSearchCriteria();
             }
 
-            if (IsCustomSqlMode) return;
-
-            var criteria = GetSearchCriteria();
-            // Should not happen given check above, but for safety
             if (criteria.Type == SearchType.CustomSql) return;
 
             string fctFields = _configService.GetValue("QUERY", "FUNCTION") ?? "";
@@ -399,18 +406,27 @@ namespace SMS_Search.ViewModels
             if (SelectedMode == SearchMode.Function)
             {
                 FunctionSqlText = sql;
-                IsFunctionCustomSql = true;
             }
             else if (SelectedMode == SearchMode.Totalizer)
             {
                 TotalizerSqlText = sql;
-                IsTotalizerCustomSql = true;
             }
             else if (SelectedMode == SearchMode.Field)
             {
                 FieldSqlText = sql;
-                IsFieldCustomSql = true;
             }
+
+            // Only switch to Custom SQL mode if setting is enabled (default: true)
+            string? selectCustomSqlStr = _configService.GetValue("GENERAL", "SELECT_CUSTOM_SQL_ON_BUILD");
+            bool selectCustomSql = selectCustomSqlStr != "0"; // Default true if null or "1"
+
+            if (selectCustomSql)
+            {
+                if (SelectedMode == SearchMode.Function) IsFunctionCustomSql = true;
+                else if (SelectedMode == SearchMode.Totalizer) IsTotalizerCustomSql = true;
+                else if (SelectedMode == SearchMode.Field) IsFieldCustomSql = true;
+            }
+
             _logger.LogInfo("SQL built successfully.");
         }
 
