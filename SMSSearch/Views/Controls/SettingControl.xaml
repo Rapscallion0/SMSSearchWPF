@@ -68,7 +68,7 @@
                 </StackPanel.Style>
 
                 <!-- Checkmark Icon -->
-                <Image Source="{StaticResource Icon_Check}"
+                <Control Template="{StaticResource Icon_Check}"
                        Width="16" Height="16" />
 
                 <TextBlock Text="Saved" Foreground="Green" Margin="5,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" />

@@ -1,17 +1,15 @@
-using SMS_Search.Views;
+using SMS_Search.Services;
+using SMS_Search.Utils;
+using Microsoft.Win32;
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Win32;
-using SMS_Search.Services;
-using SMS_Search.Utils;
+using SMS_Search.Views;
 
 namespace SMS_Search.ViewModels.Settings
 {
@@ -26,7 +24,7 @@ namespace SMS_Search.ViewModels.Settings
         private ModifierKeys _currentModifiers = ModifierKeys.None;
 
         public override string Title => "Launcher";
-        public override ImageSource Icon => (ImageSource)System.Windows.Application.Current.FindResource("Icon_Nav_Launcher");
+        public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_Launcher");
 
         public LauncherSectionViewModel(
             ISettingsRepository repository,
