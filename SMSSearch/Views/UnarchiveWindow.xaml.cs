@@ -41,13 +41,12 @@ namespace SMS_Search.Views
                 this.DragMove();
         }
 
-        private void Window_Drop(object sender, System.Windows.DragEventArgs e)
+        private async void Window_Drop(object sender, System.Windows.DragEventArgs e)
         {
             if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
             {
                 string[] files = (string[])e.Data.GetData(System.Windows.DataFormats.FileDrop);
-                _viewModel.ProcessFiles(files);
-                System.Windows.MessageBox.Show($"Processed {files.Length} items.", "Unarchive", MessageBoxButton.OK, MessageBoxImage.Information);
+                await _viewModel.ProcessFiles(files);
             }
         }
 

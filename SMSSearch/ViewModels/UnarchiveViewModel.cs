@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using SMS_Search.Utils;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace SMS_Search.ViewModels
 {
@@ -26,6 +27,9 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         private double _top;
 
+        [ObservableProperty]
+        private bool _isCompleted;
+
         private void LoadLocation()
         {
             if (double.TryParse(_config.GetValue("UNARCHIVE", "LOCATIONX"), out double x))
@@ -46,7 +50,7 @@ namespace SMS_Search.ViewModels
             _config.Save();
         }
 
-        public void ProcessFiles(string[] files)
+        public async Task ProcessFiles(string[] files)
         {
             int count = 0;
             foreach (string path in files)
@@ -77,6 +81,9 @@ namespace SMS_Search.ViewModels
             {
                 // Optional: Notify user or just log
                 _logger.LogInfo($"Unarchived {count} files.");
+                IsCompleted = true;
+                await Task.Delay(3000);
+                IsCompleted = false;
             }
         }
 
