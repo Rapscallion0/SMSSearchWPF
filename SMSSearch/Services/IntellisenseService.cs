@@ -2,6 +2,7 @@ using SMS_Search.Data;
 using SMS_Search.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -15,16 +16,36 @@ namespace SMS_Search.Services
         private readonly IConfigService _configService;
 
         private Dictionary<string, List<string>> _schemaCache = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+        // Level 1: Standard Keywords
         private readonly List<string> _keywords = new List<string>
         {
             "SELECT", "FROM", "WHERE", "INSERT", "INTO", "VALUES", "UPDATE", "SET", "DELETE",
             "JOIN", "INNER", "LEFT", "RIGHT", "FULL", "OUTER", "ON", "GROUP", "BY", "ORDER",
             "HAVING", "LIMIT", "TOP", "DISTINCT", "AS", "AND", "OR", "NOT", "NULL", "IS",
             "IN", "LIKE", "BETWEEN", "UNION", "ALL", "CASE", "WHEN", "THEN", "ELSE", "END",
-            "CAST", "CONVERT", "EXEC", "DECLARE", "CREATE", "ALTER", "DROP", "TABLE", "VIEW",
+            "EXEC", "DECLARE", "CREATE", "ALTER", "DROP", "TABLE", "VIEW",
             "PROCEDURE", "FUNCTION", "INDEX", "CONSTRAINT", "PRIMARY", "KEY", "FOREIGN",
             "REFERENCES", "DEFAULT", "CHECK", "UNIQUE", "TRANSACTION", "COMMIT", "ROLLBACK",
-            "GRANT", "REVOKE", "DENY", "WITH", "NOLOCK", "CROSS", "APPLY"
+            "WITH", "NOLOCK", "CROSS", "APPLY"
+        };
+
+        // Level 2: Functional (+ SQL Functions)
+        private readonly List<string> _functionalKeywords = new List<string>
+        {
+            "SUM", "AVG", "MIN", "MAX", "COUNT", "GETDATE", "CAST", "CONVERT", "COALESCE",
+            "NULLIF", "ISNULL", "DATEADD", "DATEDIFF", "DATENAME", "DATEPART", "YEAR",
+            "MONTH", "DAY", "LEN", "LTRIM", "RTRIM", "SUBSTRING", "REPLACE", "CHARINDEX",
+            "UPPER", "LOWER", "ABS", "ROUND", "FLOOR", "CEILING"
+        };
+
+        // Level 3: Full (+ Admin/DCL commands)
+        private readonly List<string> _adminKeywords = new List<string>
+        {
+            "GRANT", "REVOKE", "DENY", "BACKUP", "RESTORE", "TRUNCATE", "DBCC",
+            "sp_who", "sp_who2", "sp_help", "sp_helptext", "xp_cmdshell",
+            "ALTER DATABASE", "CREATE LOGIN", "CREATE USER", "sys.tables",
+            "sys.columns", "sys.objects", "sys.databases", "sys.sysprocesses"
         };
 
         public bool IsEnabled { get; set; } = true;
@@ -89,13 +110,18 @@ namespace SMS_Search.Services
             }
         }
 
-        public IEnumerable<CompletionItem> GetCompletions(string text, int caretOffset)
+        public IEnumerable<CompletionItem> GetCompletions(string text, int caretOffset, IntellisenseLevel level)
         {
+            var stopwatch = Stopwatch.StartNew();
+
             if (!IsEnabled || !IsReady || string.IsNullOrEmpty(text))
                 return Enumerable.Empty<CompletionItem>();
 
             if (caretOffset < 0) caretOffset = 0;
             if (caretOffset > text.Length) caretOffset = text.Length;
+
+            // Use a local reference for thread safety during read
+            var schema = _schemaCache;
 
             // Parsing backwards to find context
             // We want to find if we are in a "Table.Column" context
@@ -145,8 +171,8 @@ namespace SMS_Search.Services
 
             if (isDotContext)
             {
-                 // Return columns for parentIdentifier
-                 if (_schemaCache.TryGetValue(parentIdentifier, out var columns))
+                 // Return columns for parentIdentifier (Level 0+ always includes this)
+                 if (schema.TryGetValue(parentIdentifier, out var columns))
                  {
                      foreach (var col in columns)
                      {
@@ -178,14 +204,33 @@ namespace SMS_Search.Services
                     }
                 }
 
-                // Add Keywords
-                foreach (var kw in _keywords)
+                // Add Keywords based on Level
+                if (level >= IntellisenseLevel.Standard)
                 {
-                    results.Add(new CompletionItem { Text = kw, Description = "Keyword", Type = "Keyword", Priority = 0.5 });
+                    foreach (var kw in _keywords)
+                    {
+                        results.Add(new CompletionItem { Text = kw, Description = "Keyword", Type = "Keyword", Priority = 0.5 });
+                    }
                 }
 
-                // Add Tables
-                foreach (var kvp in _schemaCache)
+                if (level >= IntellisenseLevel.Functional)
+                {
+                    foreach (var kw in _functionalKeywords)
+                    {
+                        results.Add(new CompletionItem { Text = kw, Description = "Function", Type = "Function", Priority = 0.6 });
+                    }
+                }
+
+                if (level >= IntellisenseLevel.Full)
+                {
+                    foreach (var kw in _adminKeywords)
+                    {
+                        results.Add(new CompletionItem { Text = kw, Description = "Admin/DCL", Type = "Admin", Priority = 0.4 });
+                    }
+                }
+
+                // Add Tables (Level 0+)
+                foreach (var kvp in schema)
                 {
                     string table = kvp.Key;
                     // Boost priority if table is already in query (maybe user wants to type it again?)
@@ -201,6 +246,20 @@ namespace SMS_Search.Services
                         }
                     }
                 }
+            }
+
+            stopwatch.Stop();
+            long elapsed = stopwatch.ElapsedMilliseconds;
+
+            // Log fetch time if it's significant or if debug logging is useful
+            // User requested tracking fetch times.
+            if (elapsed > 50)
+            {
+                _logger.LogInfo($"Intellisense fetch ({level}) took {elapsed}ms. Found {results.Count} items.");
+            }
+            else
+            {
+                _logger.LogDebug($"Intellisense fetch ({level}) took {elapsed}ms. Found {results.Count} items.");
             }
 
             // Note: AvalonEdit filters the list based on what the user has already typed in the current word.

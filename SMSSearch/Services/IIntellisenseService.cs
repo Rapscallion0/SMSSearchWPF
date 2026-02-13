@@ -7,7 +7,7 @@ namespace SMS_Search.Services
     {
         public string Text { get; set; } = "";
         public string Description { get; set; } = "";
-        public string Type { get; set; } = ""; // "Table", "Column", "Keyword"
+        public string Type { get; set; } = ""; // "Table", "Column", "Keyword", "Function", "Admin"
         public double Priority { get; set; }
     }
 
@@ -15,8 +15,8 @@ namespace SMS_Search.Services
     {
         bool IsEnabled { get; set; }
         bool IsReady { get; }
-        bool AutoTriggerEnabled { get; set; } // New property
+        bool AutoTriggerEnabled { get; set; }
         Task InitializeAsync(string server, string database, string? user, string? pass);
-        IEnumerable<CompletionItem> GetCompletions(string text, int caretOffset);
+        IEnumerable<CompletionItem> GetCompletions(string text, int caretOffset, IntellisenseLevel level);
     }
 }
