@@ -53,7 +53,7 @@ namespace SMS_Search.ViewModels
             {
                 IsHighlightEnabled = m.Value.IsHighlightEnabled;
                 UpdateHighlightColor(m.Value.HighlightColor);
-                IsFilterNavigationVisible = IsHighlightEnabled;
+                UpdateFilterNavigationVisibility();
                 // Re-apply filter/highlight logic if there is text
                 if (!string.IsNullOrEmpty(FilterText))
                 {
@@ -62,7 +62,7 @@ namespace SMS_Search.ViewModels
             });
 
             IsHighlightEnabled = _configService.GetValue("GENERAL", "HIGHLIGHT_MATCHES") == "1";
-            IsFilterNavigationVisible = IsHighlightEnabled;
+            UpdateFilterNavigationVisibility();
             UpdateHighlightColor(_configService.GetValue("GENERAL", "HIGHLIGHT_COLOR"));
 
             string fctFields = _configService.GetValue("QUERY", "FUNCTION") ?? "";
@@ -124,7 +124,7 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         private bool _isFilterNavigationVisible;
 
-        public event EventHandler<int>? ScrollToRowRequested;
+        public event EventHandler<(int RowIndex, string ColumnName)>? ScrollToCellRequested;
         public event EventHandler? HeadersUpdated;
 
         public IAsyncRelayCommand<string> ApplyFilterCommand { get; }
@@ -351,7 +351,9 @@ namespace SMS_Search.ViewModels
                      _logger.LogDebug("Filter cleared.");
                  }
 
+                 UpdateFilterNavigationVisibility();
                  _lastFoundRowIndex = -1;
+                 _currentColumnIndex = -1;
              }
              catch (OperationCanceledException)
              {
@@ -381,10 +383,25 @@ namespace SMS_Search.ViewModels
         }
 
         private int _lastFoundRowIndex = -1;
+        private int _currentColumnIndex = -1;
 
         public void SetCurrentRowIndex(int index)
         {
             _lastFoundRowIndex = index;
+        }
+
+        public void SetCurrentCell(int rowIndex, string? columnName)
+        {
+            _lastFoundRowIndex = rowIndex;
+            if (_lastSchema != null && !string.IsNullOrEmpty(columnName) && _lastSchema.Columns.Contains(columnName))
+            {
+                _currentColumnIndex = _lastSchema.Columns[columnName]!.Ordinal;
+            }
+        }
+
+        private void UpdateFilterNavigationVisibility()
+        {
+            IsFilterNavigationVisible = IsHighlightEnabled && !string.IsNullOrEmpty(FilterText);
         }
 
         private async Task FindMatchAsync(bool forward)
@@ -392,23 +409,94 @@ namespace SMS_Search.ViewModels
             if (IsBusy) return;
             if (string.IsNullOrEmpty(FilterText)) return;
             if (TotalRecords == 0) return;
+            if (_lastSchema == null) return;
 
-            // Always just move to next visible row since we filter now
-            int nextRow = _lastFoundRowIndex + (forward ? 1 : -1);
+            int startRow = _lastFoundRowIndex;
+            int startCol = _currentColumnIndex;
 
-            // Wrap around
-            if (nextRow >= TotalRecords) nextRow = 0;
-            if (nextRow < 0) nextRow = TotalRecords - 1;
+            int rowCount = TotalRecords;
+            int colCount = _lastSchema.Columns.Count;
 
-            _lastFoundRowIndex = nextRow;
-            ScrollToRowRequested?.Invoke(this, nextRow);
+            if (startRow < 0) startRow = 0;
+            if (startCol < 0) startCol = forward ? -1 : colCount;
 
-            MatchStatusText = $"Match {nextRow + 1} of {TotalRecords}";
+            if (forward)
+            {
+                // Current Row
+                for (int c = startCol + 1; c < colCount; c++)
+                {
+                    if (await CheckMatch(startRow, c)) { FoundMatch(startRow, c); return; }
+                }
 
-            // Wait, this method signature was async Task, but now it's synchronous logic.
-            // We can keep signature async Task and just await Task.CompletedTask or nothing if awaited implicitly.
-            // Or return Task.CompletedTask.
-            await Task.CompletedTask;
+                // Next Rows
+                for (int offset = 1; offset < rowCount; offset++)
+                {
+                    int r = (startRow + offset) % rowCount;
+                    await _gridContext.WaitForRowAsync(r);
+                    for (int c = 0; c < colCount; c++)
+                    {
+                        if (await CheckMatch(r, c)) { FoundMatch(r, c); return; }
+                    }
+                }
+
+                // Wrap around to start of startRow
+                for (int c = 0; c <= startCol; c++)
+                {
+                    if (await CheckMatch(startRow, c)) { FoundMatch(startRow, c); return; }
+                }
+            }
+            else
+            {
+                // Current Row
+                for (int c = startCol - 1; c >= 0; c--)
+                {
+                    if (await CheckMatch(startRow, c)) { FoundMatch(startRow, c); return; }
+                }
+
+                // Previous Rows
+                for (int offset = 1; offset < rowCount; offset++)
+                {
+                    int r = startRow - offset;
+                    if (r < 0) r += rowCount;
+
+                    await _gridContext.WaitForRowAsync(r);
+
+                    for (int c = colCount - 1; c >= 0; c--)
+                    {
+                        if (await CheckMatch(r, c)) { FoundMatch(r, c); return; }
+                    }
+                }
+
+                // Wrap around to end of startRow
+                for (int c = colCount - 1; c >= startCol; c--)
+                {
+                    if (await CheckMatch(startRow, c)) { FoundMatch(startRow, c); return; }
+                }
+            }
+        }
+
+        private async Task<bool> CheckMatch(int row, int col)
+        {
+            var val = _gridContext.GetValue(row, col);
+            if (val == null)
+            {
+                await _gridContext.WaitForRowAsync(row);
+                val = _gridContext.GetValue(row, col);
+            }
+            string sVal = val?.ToString() ?? "";
+            return sVal.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private void FoundMatch(int row, int col)
+        {
+            _lastFoundRowIndex = row;
+            _currentColumnIndex = col;
+            if (_lastSchema != null)
+            {
+                string colName = _lastSchema.Columns[col].ColumnName;
+                ScrollToCellRequested?.Invoke(this, (row, colName));
+            }
+            MatchStatusText = $"Match {row + 1} of {TotalRecords}";
         }
 
         private async Task ExportCsvAsync()
