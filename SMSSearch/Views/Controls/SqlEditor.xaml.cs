@@ -60,7 +60,7 @@ namespace SMS_Search.Views.Controls
             }
         }
 
-        private void TextArea_KeyDown(object sender, KeyEventArgs e)
+        private void TextArea_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == Key.Space && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
             {
