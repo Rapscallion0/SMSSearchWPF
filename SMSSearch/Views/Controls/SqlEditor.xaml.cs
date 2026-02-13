@@ -21,6 +21,9 @@ namespace SMS_Search.Views.Controls
         private IIntellisenseService? _intellisenseService;
         private ILoggerService? _logger;
 
+        private IntellisenseLevel _currentLevel = IntellisenseLevel.Schema;
+        private bool _isCycling = false;
+
         public SqlEditor()
         {
             InitializeComponent();
@@ -63,15 +66,11 @@ namespace SMS_Search.Views.Controls
                 if (e.Text == "." ||
                    (e.Text.Length > 0 && (char.IsLetterOrDigit(e.Text[0]) || e.Text[0] == '_' || e.Text[0] == '@')))
                 {
+                    // Auto-trigger always tries to show completion.
+                    // If window is already open, ShowCompletion returns early.
+                    // If window is not open, it uses the current level (which is reset to Schema on close).
                     ShowCompletion();
                 }
-            }
-            else
-            {
-                // If AutoTrigger is disabled, only trigger on dot (optional, or maybe require manual only?)
-                // Usually "Manual" means Ctrl+Space only, but '.' is often expected.
-                // Based on user request "manual vs automatic", we'll make Automatic control typing triggers.
-                // So if disabled, we do nothing here. Ctrl+Space handles manual.
             }
         }
 
@@ -80,6 +79,33 @@ namespace SMS_Search.Views.Controls
             if (e.Key == Key.Space && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
             {
                 e.Handled = true;
+
+                // If window is open, we are cycling to the next level
+                if (_completionWindow != null)
+                {
+                    _isCycling = true;
+                    _completionWindow.Close();
+                    _isCycling = false;
+
+                    // Cycle: Schema -> Standard -> Functional -> Full -> Schema
+                    if (_currentLevel >= IntellisenseLevel.Full)
+                    {
+                        _currentLevel = IntellisenseLevel.Schema;
+                    }
+                    else
+                    {
+                        _currentLevel++;
+                    }
+
+                    _logger?.LogDebug($"Intellisense: Cycling to level {_currentLevel}");
+                }
+                else
+                {
+                    // Manual trigger when closed starts at default (Schema)
+                    // Note: If previously closed, it was reset to Schema.
+                    _currentLevel = IntellisenseLevel.Schema;
+                }
+
                 ShowCompletion();
             }
         }
@@ -101,14 +127,14 @@ namespace SMS_Search.Views.Controls
                 var text = Editor.Text;
                 var offset = Editor.CaretOffset;
 
-                var completions = _intellisenseService.GetCompletions(text, offset);
+                var completions = _intellisenseService.GetCompletions(text, offset, _currentLevel);
                 if (completions == null || !completions.Any())
                 {
-                     _logger?.LogDebug($"Intellisense: No completions found at offset {offset}.");
+                     _logger?.LogDebug($"Intellisense: No completions found at offset {offset} for level {_currentLevel}.");
                      return;
                 }
 
-                _logger?.LogDebug($"Intellisense: Found {completions.Count()} completions.");
+                _logger?.LogDebug($"Intellisense: Found {completions.Count()} completions (Level: {_currentLevel}).");
 
                 _completionWindow = new CompletionWindow(Editor.TextArea);
 
@@ -134,7 +160,14 @@ namespace SMS_Search.Views.Controls
                 if (data.Count == 0) return;
 
                 _completionWindow.Show();
-                _completionWindow.Closed += delegate { _completionWindow = null; };
+                _completionWindow.Closed += (s, args) =>
+                {
+                    _completionWindow = null;
+                    if (!_isCycling)
+                    {
+                        _currentLevel = IntellisenseLevel.Schema;
+                    }
+                };
             }
             catch (Exception ex)
             {
