@@ -16,65 +16,62 @@
 
     <StackPanel Margin="0,0,0,20">
 
-        <ctrl:SettingControl Header="Build SQL" IsSaved="{Binding SelectCustomSqlOnBuild.IsSaved}">
-            <CheckBox IsChecked="{Binding SelectCustomSqlOnBuild.Value}" Content="Switch to Custom SQL tab when building query" />
-        </ctrl:SettingControl>
+        <GroupBox Header="Startup">
+            <StackPanel Margin="5">
+                <ctrl:SettingControl Header="Application startup location" IsSaved="{Binding MainStartupLocation.IsSaved}">
+                    <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding MainStartupLocation.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </ctrl:SettingControl>
 
-        <ctrl:SettingControl Header="IntelliSense" IsSaved="{Binding EnableIntellisense.IsSaved}">
-            <CheckBox IsChecked="{Binding EnableIntellisense.Value}" Content="Enable SQL IntelliSense in Custom SQL editor" />
-        </ctrl:SettingControl>
+                <ctrl:SettingControl Header="Target startup location" IsSaved="{Binding UnarchiveStartupLocation.IsSaved}">
+                    <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding UnarchiveStartupLocation.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </ctrl:SettingControl>
 
-        <ctrl:SettingControl Header="Automatic IntelliSense Trigger" IsSaved="{Binding AutoTriggerIntellisense.IsSaved}">
-            <CheckBox IsChecked="{Binding AutoTriggerIntellisense.Value}"
-                      IsEnabled="{Binding EnableIntellisense.Value}"
-                      Content="Automatically trigger IntelliSense while typing" />
-        </ctrl:SettingControl>
+                <ctrl:SettingControl Header="Default Search Tab" IsSaved="{Binding DefaultSearchTab.IsSaved}">
+                    <ComboBox ItemsSource="{Binding SearchModes}" SelectedItem="{Binding DefaultSearchTab.Value}" PreviewMouseWheel="OnPreviewMouseWheel" />
+                </ctrl:SettingControl>
 
-        <ctrl:SettingControl Header="Always On Top" IsSaved="{Binding AlwaysOnTop.IsSaved}">
-            <CheckBox IsChecked="{Binding AlwaysOnTop.Value}" Content="Keep application window on top" />
-        </ctrl:SettingControl>
+                <ctrl:SettingControl Header="Check for Updates" IsSaved="{Binding CheckUpdate.IsSaved}">
+                    <CheckBox IsChecked="{Binding CheckUpdate.Value}" Content="Automatically check for updates on startup" />
+                </ctrl:SettingControl>
+            </StackPanel>
+        </GroupBox>
 
-        <ctrl:SettingControl Header="Minimize to Tray" IsSaved="{Binding ShowInTray.IsSaved}">
-            <CheckBox IsChecked="{Binding ShowInTray.Value}" Content="Minimize application to system tray" />
-        </ctrl:SettingControl>
+        <GroupBox Header="Window" Margin="0,10,0,0">
+            <StackPanel Margin="5">
+                <ctrl:SettingControl Header="Always On Top" IsSaved="{Binding AlwaysOnTop.IsSaved}">
+                    <CheckBox IsChecked="{Binding AlwaysOnTop.Value}" Content="Keep application window on top" />
+                </ctrl:SettingControl>
 
-        <ctrl:SettingControl Header="Check for Updates" IsSaved="{Binding CheckUpdate.IsSaved}">
-            <CheckBox IsChecked="{Binding CheckUpdate.Value}" Content="Automatically check for updates on startup" />
-        </ctrl:SettingControl>
+                <ctrl:SettingControl Header="Minimize to Tray" IsSaved="{Binding ShowInTray.IsSaved}">
+                    <CheckBox IsChecked="{Binding ShowInTray.Value}" Content="Minimize application to system tray" />
+                </ctrl:SettingControl>
+            </StackPanel>
+        </GroupBox>
 
-        <ctrl:SettingControl Header="Application startup location" IsSaved="{Binding MainStartupLocation.IsSaved}">
-            <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding MainStartupLocation.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-        </ctrl:SettingControl>
+        <GroupBox Header="Data Export" Margin="0,10,0,0">
+             <StackPanel Margin="5">
+                <ctrl:SettingControl Header="Copy Delimiter" IsSaved="{Binding CopyDelimiter.IsSaved}">
+                    <ComboBox ItemsSource="{Binding Delimiters}" SelectedItem="{Binding CopyDelimiter.Value}" PreviewMouseWheel="OnPreviewMouseWheel" />
+                </ctrl:SettingControl>
 
-        <ctrl:SettingControl Header="Target startup location" IsSaved="{Binding UnarchiveStartupLocation.IsSaved}">
-            <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding UnarchiveStartupLocation.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-        </ctrl:SettingControl>
+                <ctrl:SettingControl Header="Custom Delimiter" IsSaved="{Binding CustomDelimiter.IsSaved}"
+                                     Visibility="{Binding IsCustomDelimiterVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ctrl:ClearableTextBox Text="{Binding CustomDelimiter.Value, UpdateSourceTrigger=PropertyChanged}" />
+                </ctrl:SettingControl>
+             </StackPanel>
+        </GroupBox>
 
-        <ctrl:SettingControl Header="Default Search Tab" IsSaved="{Binding DefaultSearchTab.IsSaved}">
-            <ComboBox ItemsSource="{Binding SearchModes}" SelectedItem="{Binding DefaultSearchTab.Value}" PreviewMouseWheel="OnPreviewMouseWheel" />
-        </ctrl:SettingControl>
-
-        <ctrl:SettingControl Header="Copy Delimiter" IsSaved="{Binding CopyDelimiter.IsSaved}">
-            <ComboBox ItemsSource="{Binding Delimiters}" SelectedItem="{Binding CopyDelimiter.Value}" PreviewMouseWheel="OnPreviewMouseWheel" />
-        </ctrl:SettingControl>
-
-        <ctrl:SettingControl Header="Custom Delimiter" IsSaved="{Binding CustomDelimiter.IsSaved}"
-                             Visibility="{Binding IsCustomDelimiterVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <ctrl:ClearableTextBox Text="{Binding CustomDelimiter.Value, UpdateSourceTrigger=PropertyChanged}" />
-        </ctrl:SettingControl>
-
-        <Button Content="Reset EULA" Command="{Binding ResetEulaCommand}" HorizontalAlignment="Left" Margin="0,10,0,0" Padding="10,5"/>
     </StackPanel>
 </UserControl>

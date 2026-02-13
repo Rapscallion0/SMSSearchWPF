@@ -5,9 +5,9 @@ using System.Windows.Media;
 
 namespace SMS_Search.Views.Settings
 {
-    public partial class LoggingSectionView : System.Windows.Controls.UserControl
+    public partial class SystemSectionView : System.Windows.Controls.UserControl
     {
-        public LoggingSectionView()
+        public SystemSectionView()
         {
             InitializeComponent();
         }
