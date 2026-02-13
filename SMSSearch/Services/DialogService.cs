@@ -2,6 +2,8 @@ using System;
 using System.Windows;
 using Microsoft.Win32;
 using SMS_Search.Views;
+using System.Drawing;
+using System.Windows.Forms;
 
 namespace SMS_Search.Services
 {
@@ -34,6 +36,27 @@ namespace SMS_Search.Services
             var dlg = new Microsoft.Win32.SaveFileDialog { Filter = filter, FileName = defaultName };
             if (dlg.ShowDialog() == true) return dlg.FileName;
             return null;
+        }
+
+        public string? PickColor(string? defaultColor = null)
+        {
+             using (var dlg = new ColorDialog())
+             {
+                 if (!string.IsNullOrEmpty(defaultColor))
+                 {
+                     try
+                     {
+                         dlg.Color = ColorTranslator.FromHtml(defaultColor);
+                     }
+                     catch { }
+                 }
+
+                 if (dlg.ShowDialog() == DialogResult.OK)
+                 {
+                     return ColorTranslator.ToHtml(dlg.Color);
+                 }
+             }
+             return null;
         }
 
         public void ShowToast(string message, string title, ToastType type = ToastType.Info)
