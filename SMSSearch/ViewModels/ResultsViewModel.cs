@@ -12,6 +12,7 @@ using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace SMS_Search.ViewModels
 {
@@ -48,6 +49,22 @@ namespace SMS_Search.ViewModels
                 HeadersVisibility = m.Value ? DataGridHeadersVisibility.All : DataGridHeadersVisibility.Column;
             });
 
+            WeakReferenceMessenger.Default.Register<HighlightConfigurationChangedMessage>(this, (r, m) =>
+            {
+                IsHighlightEnabled = m.Value.IsHighlightEnabled;
+                UpdateHighlightColor(m.Value.HighlightColor);
+                IsFilterNavigationVisible = IsHighlightEnabled;
+                // Re-apply filter/highlight logic if there is text
+                if (!string.IsNullOrEmpty(FilterText))
+                {
+                    ApplyFilterCommand.Execute(FilterText);
+                }
+            });
+
+            IsHighlightEnabled = _configService.GetValue("GENERAL", "HIGHLIGHT_MATCHES") == "1";
+            IsFilterNavigationVisible = IsHighlightEnabled;
+            UpdateHighlightColor(_configService.GetValue("GENERAL", "HIGHLIGHT_COLOR"));
+
             string fctFields = _configService.GetValue("QUERY", "FUNCTION") ?? "";
             string tlzFields = _configService.GetValue("QUERY", "TOTALIZER") ?? "";
             _queryBuilder = new QueryBuilder(fctFields, tlzFields);
@@ -60,8 +77,8 @@ namespace SMS_Search.ViewModels
             ExportExcelCommand = new AsyncRelayCommand(ExportExcelAsync);
 
             ApplyFilterCommand = new AsyncRelayCommand<string>(ApplyFilterAsync);
-            FindNextCommand = new RelayCommand(() => FindMatchAsync(true));
-            FindPreviousCommand = new RelayCommand(() => FindMatchAsync(false));
+            FindNextCommand = new AsyncRelayCommand(() => FindMatchAsync(true));
+            FindPreviousCommand = new AsyncRelayCommand(() => FindMatchAsync(false));
             CancelCommand = new RelayCommand(Cancel);
 
             ToggleHeaderDescriptionCommand = new RelayCommand(() => ShowDescriptionHeaders = !ShowDescriptionHeaders);
@@ -98,12 +115,21 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         private DataGridHeadersVisibility _headersVisibility = DataGridHeadersVisibility.Column;
 
+        [ObservableProperty]
+        private bool _isHighlightEnabled;
+
+        [ObservableProperty]
+        private System.Windows.Media.Brush? _highlightColor;
+
+        [ObservableProperty]
+        private bool _isFilterNavigationVisible;
+
         public event EventHandler<int>? ScrollToRowRequested;
         public event EventHandler? HeadersUpdated;
 
         public IAsyncRelayCommand<string> ApplyFilterCommand { get; }
-        public IRelayCommand FindNextCommand { get; }
-        public IRelayCommand FindPreviousCommand { get; }
+        public IAsyncRelayCommand FindNextCommand { get; }
+        public IAsyncRelayCommand FindPreviousCommand { get; }
         public IRelayCommand CancelCommand { get; }
 
         public IAsyncRelayCommand ExportCsvCommand { get; }
@@ -124,6 +150,21 @@ namespace SMS_Search.ViewModels
         private void Cancel()
         {
             _cts?.Cancel();
+        }
+
+        private void UpdateHighlightColor(string? colorString)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(colorString)) colorString = "#FFFFE0";
+                var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorString);
+                HighlightColor = new System.Windows.Media.SolidColorBrush(color);
+                HighlightColor.Freeze();
+            }
+            catch
+            {
+                 HighlightColor = System.Windows.Media.Brushes.LightYellow;
+            }
         }
 
         partial void OnShowDescriptionHeadersChanged(bool value)
@@ -276,23 +317,44 @@ namespace SMS_Search.ViewModels
              try
              {
                  IsBusy = true;
-                 await _gridContext.ApplyFilterAsync(filterText ?? "", columns, token);
 
-                 // Update TotalRecords immediately after async operation completes
-                 TotalRecords = _gridContext.TotalCount;
-
-                 _lastFoundRowIndex = -1;
-
-                 if (!string.IsNullOrEmpty(filterText))
+                 if (IsHighlightEnabled)
                  {
-                     MatchStatusText = $"Found: {TotalRecords} matches";
-                     _logger.LogDebug($"Filter applied. Matches: {TotalRecords}");
+                     // Clear filter to show all rows
+                     await _gridContext.ApplyFilterAsync("", columns, token);
+                     TotalRecords = _gridContext.TotalCount;
+
+                     if (!string.IsNullOrEmpty(filterText))
+                     {
+                         // Count matches
+                         long matchCount = await _gridContext.CountMatchesAsync(filterText, columns, token);
+                         MatchStatusText = $"Found: {matchCount} matches";
+                         _logger.LogDebug($"Highlight applied. Matches: {matchCount}");
+                     }
+                     else
+                     {
+                         MatchStatusText = string.Empty;
+                     }
                  }
                  else
                  {
-                     MatchStatusText = string.Empty;
-                     _logger.LogDebug("Filter cleared.");
+                     // Traditional Filter
+                     await _gridContext.ApplyFilterAsync(filterText ?? "", columns, token);
+                     TotalRecords = _gridContext.TotalCount;
+
+                     if (!string.IsNullOrEmpty(filterText))
+                     {
+                         MatchStatusText = $"Found: {TotalRecords} matches";
+                         _logger.LogDebug($"Filter applied. Matches: {TotalRecords}");
+                     }
+                     else
+                     {
+                         MatchStatusText = string.Empty;
+                         _logger.LogDebug("Filter cleared.");
+                     }
                  }
+
+                 _lastFoundRowIndex = -1;
              }
              catch (OperationCanceledException)
              {
@@ -317,22 +379,57 @@ namespace SMS_Search.ViewModels
             _lastFoundRowIndex = index;
         }
 
-        private void FindMatchAsync(bool forward)
+        private async Task FindMatchAsync(bool forward)
         {
             if (IsBusy) return;
             if (string.IsNullOrEmpty(FilterText)) return;
             if (TotalRecords == 0) return;
 
-            int nextRow = _lastFoundRowIndex + (forward ? 1 : -1);
+            if (IsHighlightEnabled)
+            {
+                 var columns = new List<string>();
+                 if (SearchResults is VirtualizingCollection vc)
+                 {
+                     var props = vc.GetItemProperties(null);
+                     foreach(PropertyDescriptor p in props) columns.Add(p.Name);
+                 }
 
-            // Wrap around
-            if (nextRow >= TotalRecords) nextRow = 0;
-            if (nextRow < 0) nextRow = TotalRecords - 1;
+                 int nextRow = await _gridContext.FindMatchRowAsync(FilterText, columns, _lastFoundRowIndex, forward);
+                 if (nextRow >= 0)
+                 {
+                     _lastFoundRowIndex = nextRow;
+                     ScrollToRowRequested?.Invoke(this, nextRow);
+                     MatchStatusText = $"Match at row {nextRow + 1}";
+                 }
+                 else
+                 {
+                     // Wrap around logic if needed?
+                     // FindMatchRowAsync usually searches from startRow.
+                     // If it returns -1, maybe start from 0 (or end) and search again?
+                     // For now, let's try wrapping manually
+                     int start = forward ? -1 : TotalRecords;
+                     nextRow = await _gridContext.FindMatchRowAsync(FilterText, columns, start, forward);
+                     if (nextRow >= 0)
+                     {
+                         _lastFoundRowIndex = nextRow;
+                         ScrollToRowRequested?.Invoke(this, nextRow);
+                         MatchStatusText = $"Match at row {nextRow + 1}";
+                     }
+                 }
+            }
+            else
+            {
+                int nextRow = _lastFoundRowIndex + (forward ? 1 : -1);
 
-            _lastFoundRowIndex = nextRow;
-            ScrollToRowRequested?.Invoke(this, nextRow);
+                // Wrap around
+                if (nextRow >= TotalRecords) nextRow = 0;
+                if (nextRow < 0) nextRow = TotalRecords - 1;
 
-            MatchStatusText = $"Match {nextRow + 1} of {TotalRecords}";
+                _lastFoundRowIndex = nextRow;
+                ScrollToRowRequested?.Invoke(this, nextRow);
+
+                MatchStatusText = $"Match {nextRow + 1} of {TotalRecords}";
+            }
         }
 
         private async Task ExportCsvAsync()

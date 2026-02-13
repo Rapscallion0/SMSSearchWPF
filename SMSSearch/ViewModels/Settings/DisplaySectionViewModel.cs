@@ -37,6 +37,31 @@ namespace SMS_Search.ViewModels.Settings
                 repository.GetValue("GENERAL", "HIGHLIGHT_MATCHES") == "1",
                 v => v ? "1" : "0");
 
+            HighlightMatches.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
+                {
+                    SendHighlightMessage();
+                }
+            };
+
+            // Highlight Color
+            string? highlightColor = repository.GetValue("GENERAL", "HIGHLIGHT_COLOR");
+            if (string.IsNullOrEmpty(highlightColor)) highlightColor = "#FFFFE0"; // Light Yellow
+
+            HighlightColor = new ObservableSetting<string>(
+                repository, "GENERAL", "HIGHLIGHT_COLOR",
+                highlightColor,
+                v => v);
+
+            HighlightColor.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<string>.Value))
+                {
+                    SendHighlightMessage();
+                }
+            };
+
             // Resize Columns
             ResizeColumns = new ObservableSetting<bool>(
                 repository, "GENERAL", "RESIZECOLUMNS",
@@ -100,8 +125,14 @@ namespace SMS_Search.ViewModels.Settings
             WeakReferenceMessenger.Default.Send(new SqlFontSettingsChangedMessage((SqlFontFamily.Value, SqlFontSize.Value)));
         }
 
+        private void SendHighlightMessage()
+        {
+            WeakReferenceMessenger.Default.Send(new HighlightConfigurationChangedMessage(HighlightMatches.Value, HighlightColor.Value));
+        }
+
         public ObservableSetting<bool> ShowRowNumbers { get; }
         public ObservableSetting<bool> HighlightMatches { get; }
+        public ObservableSetting<string> HighlightColor { get; }
         public ObservableSetting<bool> ResizeColumns { get; }
         public ObservableSetting<bool> DescriptionColumns { get; }
         public ObservableSetting<int> AutoResizeLimit { get; }
