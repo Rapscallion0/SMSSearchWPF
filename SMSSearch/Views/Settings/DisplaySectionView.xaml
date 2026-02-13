@@ -22,6 +22,10 @@
             <CheckBox IsChecked="{Binding HighlightMatches.Value}" Content="Highlight search terms in results" />
         </ctrl:SettingControl>
 
+        <ctrl:SettingControl Header="Highlight Color" IsSaved="{Binding HighlightColor.IsSaved}">
+            <ctrl:ClearableTextBox Text="{Binding HighlightColor.Value, UpdateSourceTrigger=PropertyChanged}" />
+        </ctrl:SettingControl>
+
         <ctrl:SettingControl Header="Resize Columns" IsSaved="{Binding ResizeColumns.IsSaved}">
             <CheckBox IsChecked="{Binding ResizeColumns.Value}" Content="Automatically resize columns to fit content" />
         </ctrl:SettingControl>

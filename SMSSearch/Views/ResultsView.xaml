@@ -11,6 +11,7 @@
              PreviewKeyDown="UserControl_PreviewKeyDown">
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+        <conv:HighlightConverter x:Key="HighlightConverter"/>
 
         <ContextMenu x:Key="HeaderContextMenu">
             <MenuItem Header="Copy Name"
@@ -58,8 +59,8 @@
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="10,0">
-                <Button Content="Previous" Command="{Binding FindPreviousCommand}" Margin="0,0,5,0" Padding="5,2"/>
-                <Button Content="Next" Command="{Binding FindNextCommand}" Padding="5,2"/>
+                <Button Content="Previous" Command="{Binding FindPreviousCommand}" Margin="0,0,5,0" Padding="5,2" Visibility="{Binding IsFilterNavigationVisible, Converter={StaticResource BoolToVis}}"/>
+                <Button Content="Next" Command="{Binding FindNextCommand}" Padding="5,2" Visibility="{Binding IsFilterNavigationVisible, Converter={StaticResource BoolToVis}}"/>
             </StackPanel>
 
             <TextBlock Text="Filter:" VerticalAlignment="Center" Margin="0,0,5,0"/>
@@ -100,6 +101,16 @@
                 <Style TargetType="DataGridCell">
                     <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource AncestorType=local:ResultsView}}"/>
                     <Setter Property="ContextMenu" Value="{StaticResource CellContextMenu}"/>
+                    <Setter Property="Background">
+                        <Setter.Value>
+                            <MultiBinding Converter="{StaticResource HighlightConverter}">
+                                <Binding RelativeSource="{RelativeSource Self}" Path="Content"/>
+                                <Binding Path="DataContext.FilterText" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                                <Binding Path="DataContext.IsHighlightEnabled" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                                <Binding Path="DataContext.HighlightColor" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                            </MultiBinding>
+                        </Setter.Value>
+                    </Setter>
                 </Style>
             </DataGrid.CellStyle>
 
