@@ -5,10 +5,13 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:SMS_Search.Views"
              xmlns:vm="clr-namespace:SMS_Search.ViewModels"
+             xmlns:conv="clr-namespace:SMS_Search.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800"
              PreviewKeyDown="UserControl_PreviewKeyDown">
     <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+
         <ContextMenu x:Key="HeaderContextMenu">
             <MenuItem Header="Copy Name"
                       Command="{Binding PlacementTarget.Tag.CopyColumnNameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
@@ -103,6 +106,12 @@
         </DataGrid>
 
         <StatusBar Grid.Row="2">
+             <StatusBarItem DockPanel.Dock="Right" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+                 <Button Content="Cancel" Command="{Binding CancelCommand}" Margin="5,0,0,0" Padding="10,0" Height="20"/>
+             </StatusBarItem>
+             <StatusBarItem DockPanel.Dock="Right" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+                <ProgressBar Width="120" Height="12" IsIndeterminate="True" Margin="5,0"/>
+            </StatusBarItem>
             <StatusBarItem>
                 <TextBlock Text="{Binding StatusText}"/>
             </StatusBarItem>

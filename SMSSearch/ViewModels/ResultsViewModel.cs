@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 
@@ -22,6 +23,7 @@ namespace SMS_Search.ViewModels
         private readonly QueryBuilder _queryBuilder;
         private readonly IConfigService _configService;
         private readonly IClipboardService _clipboardService;
+        private CancellationTokenSource? _cts;
 
         public ResultsViewModel(
             VirtualGridContext gridContext,
@@ -58,8 +60,9 @@ namespace SMS_Search.ViewModels
             ExportExcelCommand = new AsyncRelayCommand(ExportExcelAsync);
 
             ApplyFilterCommand = new AsyncRelayCommand<string>(ApplyFilterAsync);
-            FindNextCommand = new AsyncRelayCommand(() => FindMatchAsync(true));
-            FindPreviousCommand = new AsyncRelayCommand(() => FindMatchAsync(false));
+            FindNextCommand = new RelayCommand(() => FindMatchAsync(true));
+            FindPreviousCommand = new RelayCommand(() => FindMatchAsync(false));
+            CancelCommand = new RelayCommand(Cancel);
 
             ToggleHeaderDescriptionCommand = new RelayCommand(() => ShowDescriptionHeaders = !ShowDescriptionHeaders);
             CopyInsertCommand = new RelayCommand<System.Collections.IList>(CopyAsSqlInsert);
@@ -99,8 +102,9 @@ namespace SMS_Search.ViewModels
         public event EventHandler? HeadersUpdated;
 
         public IAsyncRelayCommand<string> ApplyFilterCommand { get; }
-        public IAsyncRelayCommand FindNextCommand { get; }
-        public IAsyncRelayCommand FindPreviousCommand { get; }
+        public IRelayCommand FindNextCommand { get; }
+        public IRelayCommand FindPreviousCommand { get; }
+        public IRelayCommand CancelCommand { get; }
 
         public IAsyncRelayCommand ExportCsvCommand { get; }
         public IAsyncRelayCommand ExportJsonCommand { get; }
@@ -116,6 +120,11 @@ namespace SMS_Search.ViewModels
         public Dictionary<string, string> ColumnHeaders { get; private set; } = new Dictionary<string, string>();
 
         private DataTable? _lastSchema;
+
+        private void Cancel()
+        {
+            _cts?.Cancel();
+        }
 
         partial void OnShowDescriptionHeadersChanged(bool value)
         {
@@ -187,6 +196,10 @@ namespace SMS_Search.ViewModels
 
         public async Task ExecuteSearchAsync(SearchCriteria criteria)
         {
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            var token = _cts.Token;
+
             IsBusy = true;
             StatusText = "Searching...";
             FilterText = string.Empty;
@@ -210,19 +223,26 @@ namespace SMS_Search.ViewModels
 
                 _gridContext.SetConnection(server, database, user, decryptedPass);
 
-                // Load initial count and cache schema
-                var schema = await _gridContext.GetSchemaAsync(queryResult.Sql, queryResult.Parameters);
-                _lastSchema = schema;
-                UpdateHeadersAsync();
+                // Load initial count and cache schema in parallel
+                var schemaTask = _gridContext.GetSchemaAsync(queryResult.Sql, queryResult.Parameters, token);
+                var loadTask = _gridContext.LoadAsync(queryResult.Sql, queryResult.Parameters, null, token);
 
-                await _gridContext.LoadAsync(queryResult.Sql, queryResult.Parameters);
+                await Task.WhenAll(schemaTask, loadTask);
+
+                _lastSchema = await schemaTask;
+                UpdateHeadersAsync(); // This runs async but doesn't block UI much
 
                 // Create new collection
-                SearchResults = new VirtualizingCollection(_gridContext, schema);
+                SearchResults = new VirtualizingCollection(_gridContext, _lastSchema);
 
                 TotalRecords = _gridContext.TotalCount;
                 StatusText = $"Found {TotalRecords} records";
                 _logger.LogInfo($"Search completed successfully. Found {TotalRecords} records.");
+            }
+            catch (OperationCanceledException)
+            {
+                StatusText = "Search cancelled";
+                _logger.LogInfo("Search cancelled by user.");
             }
             catch (Exception ex)
             {
@@ -233,11 +253,18 @@ namespace SMS_Search.ViewModels
             finally
             {
                 IsBusy = false;
+                _cts?.Dispose();
+                _cts = null;
             }
         }
 
         public async Task ApplyFilterAsync(string? filterText)
         {
+             // Cancel previous search/filter
+             _cts?.Cancel();
+             _cts = new CancellationTokenSource();
+             var token = _cts.Token;
+
              _logger.LogDebug($"Applying filter: '{filterText}'");
              var columns = new List<string>();
              if (SearchResults is VirtualizingCollection vc)
@@ -246,19 +273,40 @@ namespace SMS_Search.ViewModels
                  foreach(PropertyDescriptor p in props) columns.Add(p.Name);
              }
 
-             await _gridContext.ApplyFilterAsync(filterText ?? "", columns);
+             try
+             {
+                 IsBusy = true;
+                 await _gridContext.ApplyFilterAsync(filterText ?? "", columns, token);
 
-             if (!string.IsNullOrEmpty(filterText))
-             {
-                 MatchStatusText = "Calculating...";
-                 long count = await _gridContext.GetTotalMatchCountAsync();
-                 MatchStatusText = $"Found: {count} matches";
-                 _logger.LogDebug($"Filter applied. Matches: {count}");
+                 // Update TotalRecords immediately after async operation completes
+                 TotalRecords = _gridContext.TotalCount;
+
+                 _lastFoundRowIndex = -1;
+
+                 if (!string.IsNullOrEmpty(filterText))
+                 {
+                     MatchStatusText = $"Found: {TotalRecords} matches";
+                     _logger.LogDebug($"Filter applied. Matches: {TotalRecords}");
+                 }
+                 else
+                 {
+                     MatchStatusText = string.Empty;
+                     _logger.LogDebug("Filter cleared.");
+                 }
              }
-             else
+             catch (OperationCanceledException)
              {
-                 MatchStatusText = string.Empty;
-                 _logger.LogDebug("Filter cleared.");
+                 // Ignore
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogError("Filter failed", ex);
+             }
+             finally
+             {
+                 IsBusy = false;
+                 _cts?.Dispose();
+                 _cts = null;
              }
         }
 
@@ -269,54 +317,22 @@ namespace SMS_Search.ViewModels
             _lastFoundRowIndex = index;
         }
 
-        private async Task FindMatchAsync(bool forward)
+        private void FindMatchAsync(bool forward)
         {
+            if (IsBusy) return;
             if (string.IsNullOrEmpty(FilterText)) return;
+            if (TotalRecords == 0) return;
 
-            MatchStatusText = "Searching...";
+            int nextRow = _lastFoundRowIndex + (forward ? 1 : -1);
 
-            var columns = new List<string>();
-             if (SearchResults is VirtualizingCollection vc)
-             {
-                 var props = vc.GetItemProperties(null);
-                 foreach(PropertyDescriptor p in props) columns.Add(p.Name);
-             }
+            // Wrap around
+            if (nextRow >= TotalRecords) nextRow = 0;
+            if (nextRow < 0) nextRow = TotalRecords - 1;
 
-            int startRow = _lastFoundRowIndex;
-            // If starting fresh, pick based on direction
-            if (startRow < 0) startRow = forward ? -1 : _gridContext.TotalCount;
+            _lastFoundRowIndex = nextRow;
+            ScrollToRowRequested?.Invoke(this, nextRow);
 
-            int nextRow = await _gridContext.FindMatchRowAsync(FilterText, columns, startRow, forward);
-
-            if (nextRow == -1)
-            {
-                 // Wrap around
-                 int wrapStart = forward ? -1 : _gridContext.TotalCount;
-                 nextRow = await _gridContext.FindMatchRowAsync(FilterText, columns, wrapStart, forward);
-            }
-
-            if (nextRow != -1)
-            {
-                _lastFoundRowIndex = nextRow;
-                ScrollToRowRequested?.Invoke(this, nextRow);
-
-                // Update match status X of Y
-                // Note: Getting match count can be expensive, maybe we skip or show "Found" only
-                try
-                {
-                    long total = await _gridContext.GetTotalMatchCountAsync();
-                    long preceding = await _gridContext.GetPrecedingMatchCountAsync(nextRow);
-                    MatchStatusText = $"Match {preceding + 1} of {total}";
-                }
-                catch
-                {
-                    MatchStatusText = "Match found";
-                }
-            }
-            else
-            {
-                MatchStatusText = "No more matches";
-            }
+            MatchStatusText = $"Match {nextRow + 1} of {TotalRecords}";
         }
 
         private async Task ExportCsvAsync()
