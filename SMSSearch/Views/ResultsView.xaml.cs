@@ -51,12 +51,12 @@ namespace SMS_Search.Views
         {
             if (e.NewValue is ResultsViewModel newVm)
             {
-                newVm.ScrollToRowRequested += Vm_ScrollToRowRequested;
+                newVm.ScrollToCellRequested += Vm_ScrollToCellRequested;
                 newVm.HeadersUpdated += Vm_HeadersUpdated;
             }
             if (e.OldValue is ResultsViewModel oldVm)
             {
-                oldVm.ScrollToRowRequested -= Vm_ScrollToRowRequested;
+                oldVm.ScrollToCellRequested -= Vm_ScrollToCellRequested;
                 oldVm.HeadersUpdated -= Vm_HeadersUpdated;
             }
         }
@@ -76,6 +76,19 @@ namespace SMS_Search.Views
             }
         }
 
+        private void resultsGrid_CurrentCellChanged(object? sender, EventArgs e)
+        {
+            if (DataContext is ResultsViewModel vm)
+            {
+                var cellInfo = resultsGrid.CurrentCell;
+                if (cellInfo.IsValid && cellInfo.Item is SMS_Search.Data.VirtualRow vRow)
+                {
+                    string? colName = cellInfo.Column?.SortMemberPath;
+                    vm.SetCurrentCell(vRow.RowIndex, colName);
+                }
+            }
+        }
+
         private void resultsGrid_AutoGeneratingColumn(object? sender, DataGridAutoGeneratingColumnEventArgs e)
         {
              if (DataContext is ResultsViewModel vm)
@@ -88,55 +101,38 @@ namespace SMS_Search.Views
              }
         }
 
-        private void Vm_ScrollToRowRequested(object? sender, int rowIndex)
+        private void Vm_ScrollToCellRequested(object? sender, (int RowIndex, string ColumnName) args)
         {
+            int rowIndex = args.RowIndex;
+            string colName = args.ColumnName;
+
             if (resultsGrid.Items.Count > rowIndex && rowIndex >= 0)
             {
                 var item = resultsGrid.Items[rowIndex];
                 resultsGrid.ScrollIntoView(item);
-                resultsGrid.SelectedItems.Clear();
-                resultsGrid.SelectedItems.Add(item);
 
-                if (DataContext is ResultsViewModel vm && !string.IsNullOrEmpty(vm.FilterText))
+                // Find column
+                var col = resultsGrid.Columns.FirstOrDefault(c => c.SortMemberPath == colName);
+                if (col != null)
                 {
-                    SelectMatchedCell(item, vm.FilterText);
+                    resultsGrid.SelectedCells.Clear();
+                    resultsGrid.SelectedItems.Clear();
+
+                    var cellInfo = new DataGridCellInfo(item, col);
+                    resultsGrid.CurrentCell = cellInfo;
+                    resultsGrid.SelectedCells.Add(cellInfo);
+                    resultsGrid.ScrollIntoView(item, col);
+                }
+                else
+                {
+                    // Fallback to row selection if column not found
+                    resultsGrid.SelectedItems.Clear();
+                    resultsGrid.SelectedItems.Add(item);
                 }
 
                 // Try to focus the grid so keyboard navigation works
                 resultsGrid.Focus();
             }
-        }
-
-        private void SelectMatchedCell(object item, string filterText)
-        {
-            try
-            {
-                var props = TypeDescriptor.GetProperties(item);
-                foreach (DataGridColumn col in resultsGrid.Columns)
-                {
-                    if (col.Visibility != Visibility.Visible) continue;
-
-                    string? propName = col.SortMemberPath;
-                    if (string.IsNullOrEmpty(propName)) continue;
-
-                    var prop = props[propName];
-                    if (prop == null) continue;
-
-                    var val = prop.GetValue(item);
-                    string? sVal = val?.ToString();
-
-                    if (!string.IsNullOrEmpty(sVal) && sVal.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        resultsGrid.SelectedCells.Clear();
-                        var cellInfo = new DataGridCellInfo(item, col);
-                        resultsGrid.SelectedCells.Add(cellInfo);
-                        resultsGrid.CurrentCell = cellInfo;
-                        resultsGrid.ScrollIntoView(item, col);
-                        break;
-                    }
-                }
-            }
-            catch { }
         }
 
         private void txtFilter_TextChanged(object sender, TextChangedEventArgs e)

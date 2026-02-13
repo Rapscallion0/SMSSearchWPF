@@ -99,5 +99,11 @@ namespace SMS_Search.Views.Controls
         {
             InputBox.SelectAll();
         }
+
+        public event TextChangedEventHandler TextChanged
+        {
+            add { InputBox.TextChanged += value; }
+            remove { InputBox.TextChanged -= value; }
+        }
     }
 }
