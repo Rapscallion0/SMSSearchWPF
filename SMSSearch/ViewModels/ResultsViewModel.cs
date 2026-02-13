@@ -210,27 +210,36 @@ namespace SMS_Search.ViewModels
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                if (SearchResults is VirtualizingCollection vc)
+                try
                 {
-                    vc.Refresh();
-                    TotalRecords = _gridContext.TotalCount;
-                    if (!string.IsNullOrEmpty(_gridContext.FilterText))
+                    if (SearchResults is VirtualizingCollection vc)
                     {
-                        StatusText = $"Found {TotalRecords} records (Filtered from {_gridContext.UnfilteredCount})";
+                        vc.Refresh();
+                        TotalRecords = _gridContext.TotalCount;
+                        if (!string.IsNullOrEmpty(_gridContext.FilterText))
+                        {
+                            StatusText = $"Found {TotalRecords} records (Filtered from {_gridContext.UnfilteredCount})";
+                        }
+                        else
+                        {
+                            StatusText = $"Found {TotalRecords} records";
+                        }
                     }
-                    else
-                    {
-                        StatusText = $"Found {TotalRecords} records";
-                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Error updating UI after data load", ex);
+                    StatusText = "Error updating view";
                 }
             });
         }
 
-        private void OnLoadError(object? sender, string msg)
+        private void OnLoadError(object? sender, Exception ex)
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                _dialogService.ShowError(msg, "Data Load Error");
+                _logger.LogError("Data Load Error", ex);
+                _dialogService.ShowError(ex.Message, "Data Load Error");
                 StatusText = "Error loading data";
             });
         }
