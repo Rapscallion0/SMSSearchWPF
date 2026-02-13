@@ -9,16 +9,102 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Xml;
+using ICSharpCode.AvalonEdit.CodeCompletion;
 
 namespace SMS_Search.Views.Controls
 {
     public partial class SqlEditor : System.Windows.Controls.UserControl
     {
+        private CompletionWindow? _completionWindow;
+        private IIntellisenseService? _intellisenseService;
+
         public SqlEditor()
         {
             InitializeComponent();
             LoadHighlighting();
+
+            if (System.ComponentModel.DesignerProperties.GetIsInDesignMode(this)) return;
+
+            if (System.Windows.Application.Current is App app && app.Services != null)
+            {
+                _intellisenseService = app.Services.GetService<IIntellisenseService>();
+            }
+
+            Editor.TextArea.TextEntered += TextArea_TextEntered;
+            Editor.TextArea.TextEntering += TextArea_TextEntering;
+            Editor.TextArea.KeyDown += TextArea_KeyDown;
+        }
+
+        private void TextArea_TextEntering(object sender, TextCompositionEventArgs e)
+        {
+            if (e.Text.Length > 0 && _completionWindow != null)
+            {
+                if (!char.IsLetterOrDigit(e.Text[0]))
+                {
+                    // Whenever a non-letter is typed while the completion window is open,
+                    // insert the currently selected element.
+                    _completionWindow.CompletionList.RequestInsertion(e);
+                }
+            }
+        }
+
+        private void TextArea_TextEntered(object sender, TextCompositionEventArgs e)
+        {
+            if (_intellisenseService == null || !_intellisenseService.IsEnabled) return;
+
+            if (e.Text == ".")
+            {
+                ShowCompletion();
+            }
+        }
+
+        private void TextArea_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Space && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            {
+                e.Handled = true;
+                ShowCompletion();
+            }
+        }
+
+        private void ShowCompletion()
+        {
+            if (_completionWindow != null) return;
+            if (_intellisenseService == null || !_intellisenseService.IsEnabled) return;
+
+            var text = Editor.Text;
+            var offset = Editor.CaretOffset;
+
+            var completions = _intellisenseService.GetCompletions(text, offset);
+            if (completions == null || !completions.Any()) return;
+
+            _completionWindow = new CompletionWindow(Editor.TextArea);
+
+            // Calculate the start offset of the word being typed
+            int startOffset = offset;
+            while (startOffset > 0)
+            {
+                char c = text[startOffset - 1];
+                if (char.IsLetterOrDigit(c) || c == '_' || c == '@' || c == '#' || c == '$')
+                    startOffset--;
+                else
+                    break;
+            }
+            _completionWindow.StartOffset = startOffset;
+
+            var data = _completionWindow.CompletionList.CompletionData;
+
+            foreach (var item in completions)
+            {
+                data.Add(new SqlCompletionData(item.Text, item.Description, item.Priority));
+            }
+
+            if (data.Count == 0) return;
+
+            _completionWindow.Show();
+            _completionWindow.Closed += delegate { _completionWindow = null; };
         }
 
         public static readonly DependencyProperty TextProperty =

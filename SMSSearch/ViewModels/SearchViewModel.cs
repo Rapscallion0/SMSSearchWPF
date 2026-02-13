@@ -17,6 +17,7 @@ namespace SMS_Search.ViewModels
         private readonly ILoggerService _logger;
         private readonly IQueryHistoryService _historyService;
         private readonly IClipboardService _clipboardService; // Assuming we have this service or use System.Windows.Clipboard
+        private readonly IIntellisenseService _intellisenseService;
 
         private System.Collections.Generic.List<SqlCleaningRule> _cleanSqlRules = new();
 
@@ -26,7 +27,8 @@ namespace SMS_Search.ViewModels
             IConfigService configService,
             ILoggerService logger,
             IQueryHistoryService historyService,
-            IClipboardService clipboardService)
+            IClipboardService clipboardService,
+            IIntellisenseService intellisenseService)
         {
             _repository = repository;
             _dialogService = dialogService;
@@ -34,6 +36,7 @@ namespace SMS_Search.ViewModels
             _logger = logger;
             _historyService = historyService;
             _clipboardService = clipboardService;
+            _intellisenseService = intellisenseService;
 
             LoadTablesCommand = new AsyncRelayCommand(LoadTablesAsync);
             CleanSqlCommand = new RelayCommand(CleanSql);
@@ -54,6 +57,20 @@ namespace SMS_Search.ViewModels
                 SqlFontFamily = m.Value.Family;
                 SqlFontSize = m.Value.Size;
             });
+
+            InitializeIntellisense();
+        }
+
+        private void InitializeIntellisense()
+        {
+            var server = _configService.GetValue("CONNECTION", "SERVER") ?? "";
+            var database = _configService.GetValue("CONNECTION", "DATABASE") ?? "";
+            var user = _configService.GetValue("CONNECTION", "SQLUSER") ?? "";
+            var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
+            string? decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+
+            // Fire and forget
+            Task.Run(() => _intellisenseService.InitializeAsync(server, database, user, decryptedPass));
         }
 
         private void LoadFontSettings()
@@ -444,6 +461,9 @@ namespace SMS_Search.ViewModels
                  Tables.Clear();
                  foreach(var t in tables) Tables.Add(t);
                  _logger.LogInfo($"Loaded {Tables.Count} tables from database.");
+
+                 // Also reload schema
+                 await _intellisenseService.InitializeAsync(server, database, user, decryptedPass);
             }
             catch (System.Exception ex)
             {

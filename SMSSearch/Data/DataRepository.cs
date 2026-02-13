@@ -269,6 +269,37 @@ namespace SMS_Search.Data
              }
         }
 
+        public async Task<Dictionary<string, List<string>>> GetDatabaseSchemaAsync(string server, string database, string? user, string? pass, CancellationToken cancellationToken = default)
+        {
+            using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
+            {
+                await conn.OpenAsync(cancellationToken);
+                string sql = @"
+                    SELECT t.name as TableName, c.name as ColumnName
+                    FROM sys.tables t
+                    INNER JOIN sys.columns c ON t.object_id = c.object_id
+                    ORDER BY t.name, c.name";
+
+                var cmdDef = new CommandDefinition(sql, cancellationToken: cancellationToken);
+                var rows = await conn.QueryAsync(cmdDef);
+
+                var schema = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                foreach (var row in rows)
+                {
+                    string tableName = row.TableName;
+                    string columnName = row.ColumnName;
+
+                    if (!schema.TryGetValue(tableName, out var columns))
+                    {
+                        columns = new List<string>();
+                        schema[tableName] = columns;
+                    }
+                    columns.Add(columnName);
+                }
+                return schema;
+            }
+        }
+
         public async Task<long> GetTotalMatchCountAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string? filterText, Dictionary<string, string?> columnTypes, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(filterText)) return 0;
