@@ -29,6 +29,7 @@ namespace SMS_Search.Services
 
         public bool IsEnabled { get; set; } = true;
         public bool IsReady { get; private set; } = false;
+        public bool AutoTriggerEnabled { get; set; } = true;
 
         public IntellisenseService(IDataRepository repository, ILoggerService logger, IConfigService configService)
         {
@@ -48,6 +49,20 @@ namespace SMS_Search.Services
             else
             {
                 IsEnabled = true; // Default
+            }
+
+            // Load Auto Trigger Setting
+            var autoTriggerStr = _configService.GetValue("GENERAL", "AUTO_TRIGGER_INTELLISENSE");
+            if (autoTriggerStr != null)
+            {
+                if (autoTriggerStr == "0") AutoTriggerEnabled = false;
+                else if (autoTriggerStr == "1") AutoTriggerEnabled = true;
+                else if (bool.TryParse(autoTriggerStr, out bool b)) AutoTriggerEnabled = b;
+                else AutoTriggerEnabled = true;
+            }
+            else
+            {
+                AutoTriggerEnabled = true; // Default
             }
         }
 

@@ -15,6 +15,7 @@ namespace SMS_Search.Services
     {
         bool IsEnabled { get; set; }
         bool IsReady { get; }
+        bool AutoTriggerEnabled { get; set; } // New property
         Task InitializeAsync(string server, string database, string? user, string? pass);
         IEnumerable<CompletionItem> GetCompletions(string text, int caretOffset);
     }
