@@ -57,9 +57,21 @@ namespace SMS_Search.Views.Controls
         {
             if (_intellisenseService == null || !_intellisenseService.IsEnabled) return;
 
-            if (e.Text == ".")
+            // If AutoTrigger is enabled, trigger on dot or letter/digit/underscore
+            if (_intellisenseService.AutoTriggerEnabled)
             {
-                ShowCompletion();
+                if (e.Text == "." ||
+                   (e.Text.Length > 0 && (char.IsLetterOrDigit(e.Text[0]) || e.Text[0] == '_' || e.Text[0] == '@')))
+                {
+                    ShowCompletion();
+                }
+            }
+            else
+            {
+                // If AutoTrigger is disabled, only trigger on dot (optional, or maybe require manual only?)
+                // Usually "Manual" means Ctrl+Space only, but '.' is often expected.
+                // Based on user request "manual vs automatic", we'll make Automatic control typing triggers.
+                // So if disabled, we do nothing here. Ctrl+Space handles manual.
             }
         }
 
@@ -90,7 +102,13 @@ namespace SMS_Search.Views.Controls
                 var offset = Editor.CaretOffset;
 
                 var completions = _intellisenseService.GetCompletions(text, offset);
-                if (completions == null || !completions.Any()) return;
+                if (completions == null || !completions.Any())
+                {
+                     _logger?.LogDebug($"Intellisense: No completions found at offset {offset}.");
+                     return;
+                }
+
+                _logger?.LogDebug($"Intellisense: Found {completions.Count()} completions.");
 
                 _completionWindow = new CompletionWindow(Editor.TextArea);
 

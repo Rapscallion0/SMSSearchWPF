@@ -24,6 +24,12 @@
             <CheckBox IsChecked="{Binding EnableIntellisense.Value}" Content="Enable SQL IntelliSense in Custom SQL editor" />
         </ctrl:SettingControl>
 
+        <ctrl:SettingControl Header="Automatic IntelliSense Trigger" IsSaved="{Binding AutoTriggerIntellisense.IsSaved}">
+            <CheckBox IsChecked="{Binding AutoTriggerIntellisense.Value}"
+                      IsEnabled="{Binding EnableIntellisense.Value}"
+                      Content="Automatically trigger IntelliSense while typing" />
+        </ctrl:SettingControl>
+
         <ctrl:SettingControl Header="Always On Top" IsSaved="{Binding AlwaysOnTop.IsSaved}">
             <CheckBox IsChecked="{Binding AlwaysOnTop.Value}" Content="Keep application window on top" />
         </ctrl:SettingControl>

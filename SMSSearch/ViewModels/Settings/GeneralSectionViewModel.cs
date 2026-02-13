@@ -43,6 +43,21 @@ namespace SMS_Search.ViewModels.Settings
                 }
             };
 
+            // Auto Trigger IntelliSense
+            var autoTriggerStr = repository.GetValue("GENERAL", "AUTO_TRIGGER_INTELLISENSE");
+            AutoTriggerIntellisense = new ObservableSetting<bool>(
+                repository, "GENERAL", "AUTO_TRIGGER_INTELLISENSE",
+                autoTriggerStr != "0", // Default true
+                v => v ? "1" : "0");
+
+            AutoTriggerIntellisense.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
+                {
+                    _intellisenseService.AutoTriggerEnabled = AutoTriggerIntellisense.Value;
+                }
+            };
+
             // Always On Top
             var alwaysOnTopStr = repository.GetValue("GENERAL", "ALWAYSONTOP");
             AlwaysOnTop = new ObservableSetting<bool>(
@@ -123,6 +138,7 @@ namespace SMS_Search.ViewModels.Settings
 
         public ObservableSetting<bool> SelectCustomSqlOnBuild { get; }
         public ObservableSetting<bool> EnableIntellisense { get; }
+        public ObservableSetting<bool> AutoTriggerIntellisense { get; }
         public ObservableSetting<bool> AlwaysOnTop { get; }
         public ObservableSetting<bool> ShowInTray { get; }
         public ObservableSetting<bool> CheckUpdate { get; }
