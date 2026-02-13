@@ -38,13 +38,17 @@ namespace SMS_Search.Services
 
             // Load initial setting
             var enabledStr = _configService.GetValue("GENERAL", "ENABLE_INTELLISENSE");
-            if (bool.TryParse(enabledStr, out bool enabled))
+            if (enabledStr != null)
             {
-                IsEnabled = enabled;
+                if (enabledStr == "0") IsEnabled = false;
+                else if (enabledStr == "1") IsEnabled = true;
+                else if (bool.TryParse(enabledStr, out bool b)) IsEnabled = b;
+                else IsEnabled = true; // Default
             }
-            // Default is true, which aligns with property initialization if parsing fails or value is null (assuming user wants it by default)
-            // But if null, TryParse returns false. So we should check for null explicitly if we want default true.
-            if (enabledStr == null) IsEnabled = true;
+            else
+            {
+                IsEnabled = true; // Default
+            }
         }
 
         public async Task InitializeAsync(string server, string database, string? user, string? pass)
@@ -58,14 +62,14 @@ namespace SMS_Search.Services
             try
             {
                 IsReady = false;
-                _logger.LogInfo("IntellisenseService: Loading schema...");
+                _logger.LogInfo($"IntellisenseService: Loading schema for {server}.{database}...");
                 _schemaCache = await _repository.GetDatabaseSchemaAsync(server, database, user, pass);
                 IsReady = true;
-                _logger.LogInfo($"IntellisenseService: Schema loaded ({_schemaCache.Count} tables).");
+                _logger.LogInfo($"IntellisenseService: Schema loaded successfully ({_schemaCache.Count} tables).");
             }
             catch (Exception ex)
             {
-                _logger.LogError("IntellisenseService: Failed to load schema.", ex);
+                _logger.LogError($"IntellisenseService: Failed to load schema for {server}.{database}. Error: {ex.Message}", ex);
                 IsReady = false;
             }
         }
