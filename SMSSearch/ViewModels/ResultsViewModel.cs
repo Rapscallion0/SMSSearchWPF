@@ -333,6 +333,13 @@ namespace SMS_Search.ViewModels
                  await _gridContext.ApplyFilterAsync(filterText ?? "", columns, token);
                  TotalRecords = _gridContext.TotalCount;
 
+                 // Explicitly update collection to ensure DataGrid resets correctly
+                 // This avoids "index -1" errors when count changes significantly
+                 if (_lastSchema != null)
+                 {
+                     SearchResults = new VirtualizingCollection(_gridContext, _lastSchema);
+                 }
+
                  if (!string.IsNullOrEmpty(filterText))
                  {
                      MatchStatusText = $"Found: {TotalRecords} matches";

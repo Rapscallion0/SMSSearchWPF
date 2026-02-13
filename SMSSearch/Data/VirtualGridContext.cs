@@ -228,11 +228,6 @@ namespace SMS_Search.Data
                 {
                     TotalCount = await _repo.GetQueryCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, cancellationToken);
                 }
-
-                if (_version == currentVersion)
-                {
-                    DataReady?.Invoke(this, EventArgs.Empty);
-                }
             }
             catch (OperationCanceledException) { }
             catch (Exception ex)

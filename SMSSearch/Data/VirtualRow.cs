@@ -3,13 +3,16 @@ using System.ComponentModel;
 
 namespace SMS_Search.Data
 {
-    public class VirtualRow : CustomTypeDescriptor
+    public class VirtualRow : CustomTypeDescriptor, IEquatable<VirtualRow>
     {
         private readonly VirtualGridContext _context;
         private readonly int _rowIndex;
         private readonly PropertyDescriptorCollection _properties;
 
         public int RowIndex => _rowIndex;
+
+        // Expose Context internal for equality check or just use in Equals
+        internal VirtualGridContext Context => _context;
 
         public VirtualRow(VirtualGridContext context, int rowIndex, PropertyDescriptorCollection properties)
         {
@@ -31,6 +34,25 @@ namespace SMS_Search.Data
         public object? GetValue(int colIndex)
         {
             return _context.GetValue(_rowIndex, colIndex);
+        }
+
+        public bool Equals(VirtualRow? other)
+        {
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return ReferenceEquals(_context, other._context) && _rowIndex == other._rowIndex;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj is null) return false;
+            return Equals(obj as VirtualRow);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(_context, _rowIndex);
         }
     }
 
