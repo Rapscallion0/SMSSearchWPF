@@ -1,5 +1,6 @@
 using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using SMS_Search.Services;
 using SMS_Search.Utils;
@@ -9,13 +10,17 @@ namespace SMS_Search.ViewModels.Settings
     public partial class DisplaySectionViewModel : SettingsSectionViewModel
     {
         private readonly ISettingsRepository _repository;
+        private readonly IDialogService _dialogService;
 
         public override string Title => "Display";
         public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_Display");
 
-        public DisplaySectionViewModel(ISettingsRepository repository)
+        public DisplaySectionViewModel(ISettingsRepository repository, IDialogService dialogService)
         {
             _repository = repository;
+            _dialogService = dialogService;
+
+            PickHighlightColorCommand = new RelayCommand(PickHighlightColor);
 
             // Show Row Numbers
             ShowRowNumbers = new ObservableSetting<bool>(
@@ -129,6 +134,17 @@ namespace SMS_Search.ViewModels.Settings
         {
             WeakReferenceMessenger.Default.Send(new HighlightConfigurationChangedMessage(HighlightMatches.Value, HighlightColor.Value));
         }
+
+        private void PickHighlightColor()
+        {
+            string? color = _dialogService.PickColor(HighlightColor.Value);
+            if (!string.IsNullOrEmpty(color))
+            {
+                HighlightColor.Value = color;
+            }
+        }
+
+        public IRelayCommand PickHighlightColorCommand { get; }
 
         public ObservableSetting<bool> ShowRowNumbers { get; }
         public ObservableSetting<bool> HighlightMatches { get; }

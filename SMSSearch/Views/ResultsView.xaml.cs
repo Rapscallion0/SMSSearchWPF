@@ -97,9 +97,46 @@ namespace SMS_Search.Views
                 resultsGrid.SelectedItems.Clear();
                 resultsGrid.SelectedItems.Add(item);
 
+                if (DataContext is ResultsViewModel vm && !string.IsNullOrEmpty(vm.FilterText))
+                {
+                    SelectMatchedCell(item, vm.FilterText);
+                }
+
                 // Try to focus the grid so keyboard navigation works
                 resultsGrid.Focus();
             }
+        }
+
+        private void SelectMatchedCell(object item, string filterText)
+        {
+            try
+            {
+                var props = TypeDescriptor.GetProperties(item);
+                foreach (DataGridColumn col in resultsGrid.Columns)
+                {
+                    if (col.Visibility != Visibility.Visible) continue;
+
+                    string? propName = col.SortMemberPath;
+                    if (string.IsNullOrEmpty(propName)) continue;
+
+                    var prop = props[propName];
+                    if (prop == null) continue;
+
+                    var val = prop.GetValue(item);
+                    string? sVal = val?.ToString();
+
+                    if (!string.IsNullOrEmpty(sVal) && sVal.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        resultsGrid.SelectedCells.Clear();
+                        var cellInfo = new DataGridCellInfo(item, col);
+                        resultsGrid.SelectedCells.Add(cellInfo);
+                        resultsGrid.CurrentCell = cellInfo;
+                        resultsGrid.ScrollIntoView(item, col);
+                        break;
+                    }
+                }
+            }
+            catch { }
         }
 
         private void txtFilter_TextChanged(object sender, TextChangedEventArgs e)

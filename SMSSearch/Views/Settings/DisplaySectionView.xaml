@@ -23,7 +23,12 @@
         </ctrl:SettingControl>
 
         <ctrl:SettingControl Header="Highlight Color" IsSaved="{Binding HighlightColor.IsSaved}">
-            <ctrl:ClearableTextBox Text="{Binding HighlightColor.Value, UpdateSourceTrigger=PropertyChanged}" />
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding PickHighlightColorCommand}" ToolTip="Pick Color" Margin="0,0,10,0" Padding="2">
+                    <Border Width="40" Height="15" BorderBrush="Gray" BorderThickness="1" Background="{Binding HighlightColor.Value}" />
+                </Button>
+                <TextBlock Text="{Binding HighlightColor.Value}" VerticalAlignment="Center" />
+            </StackPanel>
         </ctrl:SettingControl>
 
         <ctrl:SettingControl Header="Resize Columns" IsSaved="{Binding ResizeColumns.IsSaved}">
