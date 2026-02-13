@@ -42,7 +42,7 @@ namespace SMS_Search.Data
         };
 
         public event EventHandler? DataReady;
-        public event EventHandler<string>? LoadError;
+        public event EventHandler<Exception>? LoadError;
 
         public VirtualGridContext(IDataRepository repo)
         {
@@ -237,7 +237,7 @@ namespace SMS_Search.Data
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                LoadError?.Invoke(this, ex.Message);
+                LoadError?.Invoke(this, ex);
             }
         }
 
