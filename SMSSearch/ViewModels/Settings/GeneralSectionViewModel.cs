@@ -17,14 +17,31 @@ namespace SMS_Search.ViewModels.Settings
     {
         private readonly ISettingsRepository _repository;
         private readonly IDialogService _dialogService;
+        private readonly IIntellisenseService _intellisenseService;
 
         public override string Title => "General";
         public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_General");
 
-        public GeneralSectionViewModel(ISettingsRepository repository, IDialogService dialogService)
+        public GeneralSectionViewModel(ISettingsRepository repository, IDialogService dialogService, IIntellisenseService intellisenseService)
         {
             _repository = repository;
             _dialogService = dialogService;
+            _intellisenseService = intellisenseService;
+
+            // Enable IntelliSense
+            var enableIntellisenseStr = repository.GetValue("GENERAL", "ENABLE_INTELLISENSE");
+            EnableIntellisense = new ObservableSetting<bool>(
+                repository, "GENERAL", "ENABLE_INTELLISENSE",
+                enableIntellisenseStr != "0", // Default true
+                v => v ? "1" : "0");
+
+            EnableIntellisense.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
+                {
+                    _intellisenseService.IsEnabled = EnableIntellisense.Value;
+                }
+            };
 
             // Always On Top
             var alwaysOnTopStr = repository.GetValue("GENERAL", "ALWAYSONTOP");
@@ -105,6 +122,7 @@ namespace SMS_Search.ViewModels.Settings
         }
 
         public ObservableSetting<bool> SelectCustomSqlOnBuild { get; }
+        public ObservableSetting<bool> EnableIntellisense { get; }
         public ObservableSetting<bool> AlwaysOnTop { get; }
         public ObservableSetting<bool> ShowInTray { get; }
         public ObservableSetting<bool> CheckUpdate { get; }

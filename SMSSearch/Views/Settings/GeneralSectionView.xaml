@@ -20,6 +20,10 @@
             <CheckBox IsChecked="{Binding SelectCustomSqlOnBuild.Value}" Content="Switch to Custom SQL tab when building query" />
         </ctrl:SettingControl>
 
+        <ctrl:SettingControl Header="IntelliSense" IsSaved="{Binding EnableIntellisense.IsSaved}">
+            <CheckBox IsChecked="{Binding EnableIntellisense.Value}" Content="Enable SQL IntelliSense in Custom SQL editor" />
+        </ctrl:SettingControl>
+
         <ctrl:SettingControl Header="Always On Top" IsSaved="{Binding AlwaysOnTop.IsSaved}">
             <CheckBox IsChecked="{Binding AlwaysOnTop.Value}" Content="Keep application window on top" />
         </ctrl:SettingControl>

@@ -36,6 +36,7 @@ namespace SMS_Search
             services.AddSingleton<ILoggerService, LoggerService>();
 
             services.AddSingleton<IDataRepository, DataRepository>();
+            services.AddSingleton<IIntellisenseService, IntellisenseService>();
             services.AddTransient<VirtualGridContext>();
             services.AddSingleton<IQueryHistoryService, QueryHistoryService>();
 
