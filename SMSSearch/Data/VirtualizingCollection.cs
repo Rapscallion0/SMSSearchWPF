@@ -49,7 +49,12 @@ namespace SMS_Search.Data
 
         public int Add(object? value) => throw new NotSupportedException();
         public void Clear() => throw new NotSupportedException();
-        public bool Contains(object? value) => false;
+
+        public bool Contains(object? value)
+        {
+            return IndexOf(value) != -1;
+        }
+
         public void CopyTo(Array array, int index) => throw new NotSupportedException();
         public IEnumerator GetEnumerator()
         {
@@ -58,7 +63,19 @@ namespace SMS_Search.Data
                 yield return this[i];
             }
         }
-        public int IndexOf(object? value) => -1;
+
+        public int IndexOf(object? value)
+        {
+            if (value is VirtualRow row && ReferenceEquals(row.Context, _context))
+            {
+                if (row.RowIndex >= 0 && row.RowIndex < Count)
+                {
+                    return row.RowIndex;
+                }
+            }
+            return -1;
+        }
+
         public void Insert(int index, object? value) => throw new NotSupportedException();
         public void Remove(object? value) => throw new NotSupportedException();
         public void RemoveAt(int index) => throw new NotSupportedException();
