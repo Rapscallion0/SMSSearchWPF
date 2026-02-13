@@ -70,6 +70,7 @@
 
         <DataGrid x:Name="resultsGrid" Grid.Row="1" 
                   ItemsSource="{Binding SearchResults}"
+                  SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
                   AutoGenerateColumns="True"
                   IsReadOnly="True"
                   SelectionMode="Extended"
@@ -108,9 +109,18 @@
                                 <Binding Path="DataContext.FilterText" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
                                 <Binding Path="DataContext.IsHighlightEnabled" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
                                 <Binding Path="DataContext.HighlightColor" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                                <Binding RelativeSource="{RelativeSource Self}" Path="Column" />
+                                <Binding Path="." />
                             </MultiBinding>
                         </Setter.Value>
                     </Setter>
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                             <Setter Property="Foreground" Value="Black" />
+                             <Setter Property="Background" Value="#CCE8FF" />
+                             <Setter Property="BorderBrush" Value="#99D1FF" />
+                        </Trigger>
+                    </Style.Triggers>
                 </Style>
             </DataGrid.CellStyle>
 

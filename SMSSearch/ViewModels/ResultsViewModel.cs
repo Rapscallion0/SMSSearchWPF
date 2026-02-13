@@ -369,6 +369,17 @@ namespace SMS_Search.ViewModels
              }
         }
 
+        [ObservableProperty]
+        private object? _selectedRow;
+
+        partial void OnSelectedRowChanged(object? value)
+        {
+            if (value is VirtualRow vRow)
+            {
+                SetCurrentRowIndex(vRow.RowIndex);
+            }
+        }
+
         private int _lastFoundRowIndex = -1;
 
         public void SetCurrentRowIndex(int index)
