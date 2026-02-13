@@ -274,24 +274,24 @@ namespace SMS_Search.Data
             if (string.IsNullOrWhiteSpace(filterText)) return 0;
             string safeFilter = filterText.Replace("'", "''");
 
-            List<string> sumParts = new List<string>();
+            List<string> whereParts = new List<string>();
             foreach (var kvp in columnTypes)
             {
                 string col = kvp.Key;
                 string? type = kvp.Value;
                 if (type != null && SafeStringTypes.Contains(type))
                 {
-                    sumParts.Add($"(CASE WHEN [{col}] LIKE '%{safeFilter}%' THEN 1 ELSE 0 END)");
+                    whereParts.Add($"[{col}] LIKE '%{safeFilter}%'");
                 }
                 else
                 {
-                    sumParts.Add($"(CASE WHEN CAST([{col}] AS NVARCHAR(MAX)) LIKE '%{safeFilter}%' THEN 1 ELSE 0 END)");
+                    whereParts.Add($"CAST([{col}] AS NVARCHAR(MAX)) LIKE '%{safeFilter}%'");
                 }
             }
-            string sumExpression = string.Join(" + ", sumParts);
+            string whereExpression = string.Join(" OR ", whereParts);
 
             string finalSql = ApplyFilter(sql, filterClause);
-            string countSql = $"SELECT SUM((0 + {sumExpression})) FROM ({finalSql}) AS _CountQ";
+            string countSql = $"SELECT COUNT(*) FROM ({finalSql}) AS _CountQ WHERE ({whereExpression})";
 
             using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
             {
@@ -309,21 +309,21 @@ namespace SMS_Search.Data
             if (string.IsNullOrWhiteSpace(filterText)) return 0;
             string safeFilter = filterText.Replace("'", "''");
 
-            List<string> sumParts = new List<string>();
+            List<string> whereParts = new List<string>();
             foreach (var kvp in columnTypes)
             {
                 string col = kvp.Key;
                 string? type = kvp.Value;
                 if (type != null && SafeStringTypes.Contains(type))
                 {
-                    sumParts.Add($"(CASE WHEN [{col}] LIKE '%{safeFilter}%' THEN 1 ELSE 0 END)");
+                    whereParts.Add($"[{col}] LIKE '%{safeFilter}%'");
                 }
                 else
                 {
-                    sumParts.Add($"(CASE WHEN CAST([{col}] AS NVARCHAR(MAX)) LIKE '%{safeFilter}%' THEN 1 ELSE 0 END)");
+                    whereParts.Add($"CAST([{col}] AS NVARCHAR(MAX)) LIKE '%{safeFilter}%'");
                 }
             }
-            string sumExpression = string.Join(" + ", sumParts);
+            string whereExpression = string.Join(" OR ", whereParts);
 
             string finalSql = ApplyFilter(sql, filterClause);
 
@@ -335,12 +335,13 @@ namespace SMS_Search.Data
             }
 
             string countSql = $@"
-                SELECT SUM((0 + {sumExpression}))
+                SELECT COUNT(*)
                 FROM (
                     SELECT * FROM ({finalSql}) AS _Base
                     ORDER BY {orderBy}
                     OFFSET 0 ROWS FETCH NEXT {limitRowIndex} ROWS ONLY
-                ) AS _Preceding";
+                ) AS _Preceding
+                WHERE ({whereExpression})";
 
             using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
             {
