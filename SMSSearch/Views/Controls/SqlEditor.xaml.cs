@@ -19,18 +19,21 @@ namespace SMS_Search.Views.Controls
     {
         private CompletionWindow? _completionWindow;
         private IIntellisenseService? _intellisenseService;
+        private ILoggerService? _logger;
 
         public SqlEditor()
         {
             InitializeComponent();
-            LoadHighlighting();
 
             if (System.ComponentModel.DesignerProperties.GetIsInDesignMode(this)) return;
 
             if (System.Windows.Application.Current is App app && app.Services != null)
             {
+                _logger = app.Services.GetService<ILoggerService>();
                 _intellisenseService = app.Services.GetService<IIntellisenseService>();
             }
+
+            LoadHighlighting();
 
             Editor.TextArea.TextEntered += TextArea_TextEntered;
             Editor.TextArea.TextEntering += TextArea_TextEntering;
@@ -72,39 +75,53 @@ namespace SMS_Search.Views.Controls
         private void ShowCompletion()
         {
             if (_completionWindow != null) return;
-            if (_intellisenseService == null || !_intellisenseService.IsEnabled) return;
+            if (_intellisenseService == null) return;
+            if (!_intellisenseService.IsEnabled) return;
 
-            var text = Editor.Text;
-            var offset = Editor.CaretOffset;
-
-            var completions = _intellisenseService.GetCompletions(text, offset);
-            if (completions == null || !completions.Any()) return;
-
-            _completionWindow = new CompletionWindow(Editor.TextArea);
-
-            // Calculate the start offset of the word being typed
-            int startOffset = offset;
-            while (startOffset > 0)
+            if (!_intellisenseService.IsReady)
             {
-                char c = text[startOffset - 1];
-                if (char.IsLetterOrDigit(c) || c == '_' || c == '@' || c == '#' || c == '$')
-                    startOffset--;
-                else
-                    break;
-            }
-            _completionWindow.StartOffset = startOffset;
-
-            var data = _completionWindow.CompletionList.CompletionData;
-
-            foreach (var item in completions)
-            {
-                data.Add(new SqlCompletionData(item.Text, item.Description, item.Priority));
+                _logger?.LogWarning("IntelliSense requested but service is not ready (Schema not loaded).");
+                return;
             }
 
-            if (data.Count == 0) return;
+            try
+            {
+                var text = Editor.Text;
+                var offset = Editor.CaretOffset;
 
-            _completionWindow.Show();
-            _completionWindow.Closed += delegate { _completionWindow = null; };
+                var completions = _intellisenseService.GetCompletions(text, offset);
+                if (completions == null || !completions.Any()) return;
+
+                _completionWindow = new CompletionWindow(Editor.TextArea);
+
+                // Calculate the start offset of the word being typed
+                int startOffset = offset;
+                while (startOffset > 0)
+                {
+                    char c = text[startOffset - 1];
+                    if (char.IsLetterOrDigit(c) || c == '_' || c == '@' || c == '#' || c == '$')
+                        startOffset--;
+                    else
+                        break;
+                }
+                _completionWindow.StartOffset = startOffset;
+
+                var data = _completionWindow.CompletionList.CompletionData;
+
+                foreach (var item in completions)
+                {
+                    data.Add(new SqlCompletionData(item.Text, item.Description, item.Priority));
+                }
+
+                if (data.Count == 0) return;
+
+                _completionWindow.Show();
+                _completionWindow.Closed += delegate { _completionWindow = null; };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError("Error showing completion window", ex);
+            }
         }
 
         public static readonly DependencyProperty TextProperty =
@@ -169,19 +186,6 @@ namespace SMS_Search.Views.Controls
 
         private void LoadHighlighting()
         {
-            ILoggerService? logger = null;
-            try
-            {
-                if (System.Windows.Application.Current is App app && app.Services != null)
-                {
-                    logger = app.Services.GetService<ILoggerService>();
-                }
-            }
-            catch
-            {
-                // Ignore if we can't get logger (e.g. design time)
-            }
-
             try
             {
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
@@ -197,13 +201,13 @@ namespace SMS_Search.Views.Controls
                             using (var reader = new XmlTextReader(stream))
                             {
                                 Editor.SyntaxHighlighting = HighlightingLoader.Load(reader, HighlightingManager.Instance);
-                                logger?.LogInfo($"Successfully loaded SQL syntax highlighting from '{resourceName}'.");
+                                _logger?.LogInfo($"Successfully loaded SQL syntax highlighting from '{resourceName}'.");
                             }
                         }
                         else
                         {
                             var msg = $"Failed to get manifest resource stream for '{resourceName}'.";
-                            logger?.LogError(msg);
+                            _logger?.LogError(msg);
                             System.Windows.MessageBox.Show(msg, "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
@@ -211,14 +215,14 @@ namespace SMS_Search.Views.Controls
                 else
                 {
                     var msg = $"Could not find SQL syntax highlighting resource (SQL.xshd).\nAvailable resources:\n{string.Join("\n", resourceNames)}";
-                    logger?.LogError(msg);
+                    _logger?.LogError(msg);
                     System.Windows.MessageBox.Show("Could not find SQL syntax highlighting resource (SQL.xshd). Check logs for details.", "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
                 var msg = $"Failed to load syntax highlighting: {ex.Message}";
-                logger?.LogError(msg, ex);
+                _logger?.LogError(msg, ex);
                 System.Diagnostics.Debug.WriteLine(msg);
                 System.Windows.MessageBox.Show(msg, "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
