@@ -5,9 +5,9 @@ using SMS_Search.ViewModels.Settings;
 
 namespace SMS_Search.Views.Settings
 {
-    public partial class LauncherSectionView : System.Windows.Controls.UserControl
+    public partial class IntegrationSectionView : System.Windows.Controls.UserControl
     {
-        public LauncherSectionView()
+        public IntegrationSectionView()
         {
             InitializeComponent();
         }
@@ -15,7 +15,7 @@ namespace SMS_Search.Views.Settings
         private void Hotkey_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
             e.Handled = true;
-            if (DataContext is LauncherSectionViewModel vm)
+            if (DataContext is IntegrationSectionViewModel vm)
             {
                 Key key = (e.Key == Key.System ? e.SystemKey : e.Key);
                 ModifierKeys modifiers = Keyboard.Modifiers;
@@ -23,6 +23,5 @@ namespace SMS_Search.Views.Settings
                 vm.CaptureHotkey(key, modifiers);
             }
         }
-
     }
 }

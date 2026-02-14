@@ -7,15 +7,16 @@ using SMS_Search.Utils;
 
 namespace SMS_Search.ViewModels.Settings
 {
-    public partial class DisplaySectionViewModel : SettingsSectionViewModel
+    public partial class ResultsSectionViewModel : SettingsSectionViewModel
     {
         private readonly ISettingsRepository _repository;
         private readonly IDialogService _dialogService;
 
-        public override string Title => "Display";
+        public override string Title => "Results";
+        // Keeping Icon_Nav_Display as it represents the grid/display settings
         public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_Display");
 
-        public DisplaySectionViewModel(ISettingsRepository repository, IDialogService dialogService)
+        public ResultsSectionViewModel(ISettingsRepository repository, IDialogService dialogService)
         {
             _repository = repository;
             _dialogService = dialogService;
@@ -88,46 +89,6 @@ namespace SMS_Search.ViewModels.Settings
                 repository, "GENERAL", "AUTO_RESIZE_LIMIT",
                 limit,
                 v => v.ToString());
-
-            // Sql Font Family
-            string? font = repository.GetValue("GENERAL", "SQL_FONT_FAMILY");
-            if (string.IsNullOrEmpty(font)) font = "Consolas";
-
-            SqlFontFamily = new ObservableSetting<string>(
-                repository, "GENERAL", "SQL_FONT_FAMILY",
-                font,
-                v => v);
-
-            SqlFontFamily.PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == nameof(ObservableSetting<string>.Value))
-                {
-                    SendFontMessage();
-                }
-            };
-
-            // Sql Font Size
-            int fontSize = 14;
-            if (int.TryParse(repository.GetValue("GENERAL", "SQL_FONT_SIZE"), out int fs))
-                fontSize = fs;
-
-            SqlFontSize = new ObservableSetting<int>(
-                repository, "GENERAL", "SQL_FONT_SIZE",
-                fontSize,
-                v => v.ToString());
-
-            SqlFontSize.PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == nameof(ObservableSetting<int>.Value))
-                {
-                    SendFontMessage();
-                }
-            };
-        }
-
-        private void SendFontMessage()
-        {
-            WeakReferenceMessenger.Default.Send(new SqlFontSettingsChangedMessage((SqlFontFamily.Value, SqlFontSize.Value)));
         }
 
         private void SendHighlightMessage()
@@ -152,7 +113,18 @@ namespace SMS_Search.ViewModels.Settings
         public ObservableSetting<bool> ResizeColumns { get; }
         public ObservableSetting<bool> DescriptionColumns { get; }
         public ObservableSetting<int> AutoResizeLimit { get; }
-        public ObservableSetting<string> SqlFontFamily { get; }
-        public ObservableSetting<int> SqlFontSize { get; }
+
+        public override bool Matches(string query)
+        {
+             if (base.Matches(query)) return true;
+
+             if ("Grid".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Highlight".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Color".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Resize".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Row".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+
+             return false;
+        }
     }
 }

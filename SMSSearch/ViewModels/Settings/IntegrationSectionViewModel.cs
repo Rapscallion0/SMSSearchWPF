@@ -13,7 +13,7 @@ using SMS_Search.Views;
 
 namespace SMS_Search.ViewModels.Settings
 {
-    public partial class LauncherSectionViewModel : SettingsSectionViewModel, IDisposable
+    public partial class IntegrationSectionViewModel : SettingsSectionViewModel, IDisposable
     {
         private readonly ISettingsRepository _repository;
         private readonly IHotkeyService _hotkeyService;
@@ -23,10 +23,10 @@ namespace SMS_Search.ViewModels.Settings
         private Key _currentKey = Key.None;
         private ModifierKeys _currentModifiers = ModifierKeys.None;
 
-        public override string Title => "Launcher";
+        public override string Title => "Integration";
         public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_Launcher");
 
-        public LauncherSectionViewModel(
+        public IntegrationSectionViewModel(
             ISettingsRepository repository,
             IHotkeyService hotkeyService,
             ILoggerService logger,
@@ -281,5 +281,18 @@ namespace SMS_Search.ViewModels.Settings
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        public override bool Matches(string query)
+        {
+             if (base.Matches(query)) return true;
+
+             if ("Launcher".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Hotkey".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Startup".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Service".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Global".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+
+             return false;
+        }
     }
 }

@@ -17,46 +17,14 @@ namespace SMS_Search.ViewModels.Settings
     {
         private readonly ISettingsRepository _repository;
         private readonly IDialogService _dialogService;
-        private readonly IIntellisenseService _intellisenseService;
 
         public override string Title => "General";
         public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_General");
 
-        public GeneralSectionViewModel(ISettingsRepository repository, IDialogService dialogService, IIntellisenseService intellisenseService)
+        public GeneralSectionViewModel(ISettingsRepository repository, IDialogService dialogService)
         {
             _repository = repository;
             _dialogService = dialogService;
-            _intellisenseService = intellisenseService;
-
-            // Enable IntelliSense
-            var enableIntellisenseStr = repository.GetValue("GENERAL", "ENABLE_INTELLISENSE");
-            EnableIntellisense = new ObservableSetting<bool>(
-                repository, "GENERAL", "ENABLE_INTELLISENSE",
-                enableIntellisenseStr != "0", // Default true
-                v => v ? "1" : "0");
-
-            EnableIntellisense.PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
-                {
-                    _intellisenseService.IsEnabled = EnableIntellisense.Value;
-                }
-            };
-
-            // Auto Trigger IntelliSense
-            var autoTriggerStr = repository.GetValue("GENERAL", "AUTO_TRIGGER_INTELLISENSE");
-            AutoTriggerIntellisense = new ObservableSetting<bool>(
-                repository, "GENERAL", "AUTO_TRIGGER_INTELLISENSE",
-                autoTriggerStr != "0", // Default true
-                v => v ? "1" : "0");
-
-            AutoTriggerIntellisense.PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
-                {
-                    _intellisenseService.AutoTriggerEnabled = AutoTriggerIntellisense.Value;
-                }
-            };
 
             // Always On Top
             var alwaysOnTopStr = repository.GetValue("GENERAL", "ALWAYSONTOP");
@@ -126,19 +94,9 @@ namespace SMS_Search.ViewModels.Settings
                 repository, "GENERAL", "COPY_DELIMITER_CUSTOM",
                 customDelimStr ?? "");
 
-            // Select Custom SQL on Build
-            var selectCustomSqlStr = repository.GetValue("GENERAL", "SELECT_CUSTOM_SQL_ON_BUILD");
-            SelectCustomSqlOnBuild = new ObservableSetting<bool>(
-                repository, "GENERAL", "SELECT_CUSTOM_SQL_ON_BUILD",
-                selectCustomSqlStr != "0", // Default true
-                v => v ? "1" : "0");
-
             UpdateVisibility();
         }
 
-        public ObservableSetting<bool> SelectCustomSqlOnBuild { get; }
-        public ObservableSetting<bool> EnableIntellisense { get; }
-        public ObservableSetting<bool> AutoTriggerIntellisense { get; }
         public ObservableSetting<bool> AlwaysOnTop { get; }
         public ObservableSetting<bool> ShowInTray { get; }
         public ObservableSetting<bool> CheckUpdate { get; }
@@ -168,11 +126,20 @@ namespace SMS_Search.ViewModels.Settings
             IsCustomDelimiterVisible = CopyDelimiter.Value == "Custom...";
         }
 
-        [RelayCommand]
-        private async Task ResetEula()
+        public override bool Matches(string query)
         {
-            await _repository.SaveAsync("GENERAL", "EULA", "0");
-            _dialogService.ShowToast("EULA has been reset. It will appear on next startup.", "Settings", ToastType.Info);
+             if (base.Matches(query)) return true;
+
+             if ("Startup".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Location".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Window".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Tray".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Update".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Export".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Delimiter".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Tab".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+
+             return false;
         }
     }
 }

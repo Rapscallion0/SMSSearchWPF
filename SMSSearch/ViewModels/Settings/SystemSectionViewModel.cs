@@ -12,19 +12,19 @@ using System.Collections.Generic;
 
 namespace SMS_Search.ViewModels.Settings
 {
-    public partial class LoggingSectionViewModel : SettingsSectionViewModel
+    public partial class SystemSectionViewModel : SettingsSectionViewModel
     {
         private readonly ISettingsRepository _repository;
         private readonly ILoggerService _loggerService;
         private readonly IDialogService _dialogService;
 
-        public override string Title => "Logging";
+        public override string Title => "System";
         public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_Logging");
 
         [ObservableProperty]
         private string _currentLogFile = "";
 
-        public LoggingSectionViewModel(
+        public SystemSectionViewModel(
             ISettingsRepository repository,
             ILoggerService loggerService,
             IDialogService dialogService)
@@ -147,6 +147,27 @@ namespace SMS_Search.ViewModels.Settings
                 _loggerService.LogError("Failed to open log file", ex);
                 _dialogService.ShowToast("Failed to open log file.", "Error", ToastType.Error);
             }
+        }
+
+        [RelayCommand]
+        private async Task ResetEula()
+        {
+            await _repository.SaveAsync("GENERAL", "EULA", "0");
+            _dialogService.ShowToast("EULA has been reset. It will appear on next startup.", "Settings", ToastType.Info);
+        }
+
+        public override bool Matches(string query)
+        {
+             if (base.Matches(query)) return true;
+
+             if ("Log".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Debug".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("EULA".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Agreement".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("License".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Reset".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+
+             return false;
         }
     }
 }

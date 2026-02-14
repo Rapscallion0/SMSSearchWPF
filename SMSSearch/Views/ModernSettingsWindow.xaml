@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:SMS_Search.ViewModels.Settings"
         xmlns:views="clr-namespace:SMS_Search.Views.Settings"
+        xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
         mc:Ignorable="d"
         Title="Settings" Height="600" Width="900"
         WindowStartupLocation="CenterOwner"
@@ -17,17 +18,20 @@
         <DataTemplate DataType="{x:Type vm:ConnectionSectionViewModel}">
             <views:ConnectionSectionView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:DisplaySectionViewModel}">
-            <views:DisplaySectionView />
+        <DataTemplate DataType="{x:Type vm:ResultsSectionViewModel}">
+            <views:ResultsSectionView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:EditorSectionViewModel}">
+            <views:EditorSectionView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:CleanSqlSectionViewModel}">
             <views:CleanSqlSectionView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:LauncherSectionViewModel}">
-            <views:LauncherSectionView />
+        <DataTemplate DataType="{x:Type vm:IntegrationSectionViewModel}">
+            <views:IntegrationSectionView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:LoggingSectionViewModel}">
-            <views:LoggingSectionView />
+        <DataTemplate DataType="{x:Type vm:SystemSectionViewModel}">
+            <views:SystemSectionView />
         </DataTemplate>
 
         <Style TargetType="ListBoxItem">
@@ -64,18 +68,29 @@
 
         <!-- Sidebar -->
         <Border BorderBrush="#DDDDDD" BorderThickness="0,0,1,0" Background="#F9F9F9">
-            <ListBox x:Name="Sidebar" ItemsSource="{Binding Sections}" SelectedItem="{Binding SelectedSection}"
-                     BorderThickness="0" Background="Transparent" SelectionChanged="Sidebar_SelectionChanged">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <!-- Icon -->
-                            <Control Template="{Binding Icon}" Width="16" Height="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding Title}" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+             <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <ctrl:ClearableTextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                       Placeholder="Search settings..."
+                                       Margin="10" />
+
+                <ListBox x:Name="Sidebar" Grid.Row="1" ItemsSource="{Binding Sections}" SelectedItem="{Binding SelectedSection}"
+                         BorderThickness="0" Background="Transparent" SelectionChanged="Sidebar_SelectionChanged">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <!-- Icon -->
+                                <Control Template="{Binding Icon}" Width="16" Height="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Title}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+             </Grid>
         </Border>
 
         <!-- Main Content -->

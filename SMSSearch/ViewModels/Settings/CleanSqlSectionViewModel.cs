@@ -245,5 +245,17 @@ namespace SMS_Search.ViewModels.Settings
              // Trigger save explicitly after restore
              await SaveRules();
         }
+
+        public override bool Matches(string query)
+        {
+             if (base.Matches(query)) return true;
+
+             if ("Regex".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Rule".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Pattern".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Replace".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+
+             return false;
+        }
     }
 }

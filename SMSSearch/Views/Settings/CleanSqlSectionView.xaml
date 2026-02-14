@@ -68,38 +68,37 @@
         </Style>
     </UserControl.Resources>
 
-    <StackPanel Margin="0,0,0,20">
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-             <StackPanel Orientation="Horizontal" Visibility="{Binding IsSaving, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="10,0,0,0">
-                  <TextBlock Text="Saving..." Foreground="Blue" VerticalAlignment="Center" />
-             </StackPanel>
-        </StackPanel>
+    <GroupBox Header="Text Cleaning Rules" Margin="0,0,0,20">
+        <StackPanel Margin="5">
+            <DockPanel LastChildFill="False" Margin="0,0,0,10">
+                 <StackPanel Orientation="Horizontal" Visibility="{Binding IsSaving, Converter={StaticResource BooleanToVisibilityConverter}}">
+                      <TextBlock Text="Saving..." Foreground="Blue" VerticalAlignment="Center" />
+                 </StackPanel>
+                 <Button DockPanel.Dock="Right" Content="Restore Defaults" Command="{Binding RestoreDefaultsCommand}" Padding="10,5" />
+            </DockPanel>
 
-        <Button Content="Restore Defaults" Command="{Binding RestoreDefaultsCommand}" Width="120" HorizontalAlignment="Right" Margin="0,0,0,10" />
-
-        <DockPanel LastChildFill="True">
              <DataGrid ItemsSource="{Binding Rules}" SelectedItem="{Binding SelectedRule, Converter={StaticResource IgnoreNewItemPlaceholderConverter}}"
                        AutoGenerateColumns="False"
                        CanUserAddRows="True"
                        CanUserDeleteRows="True"
-                       HeadersVisibility="All"
-                       GridLinesVisibility="None"
-                       BorderThickness="0"
-                       Background="Transparent"
+                       HeadersVisibility="Column"
+                       GridLinesVisibility="Horizontal"
+                       BorderThickness="1" BorderBrush="#DDDDDD"
+                       Background="White"
                        RowHeaderStyle="{StaticResource RowHeaderStyle}"
-                       PreviewMouseWheel="DataGrid_PreviewMouseWheel"
-                       RowEditEnding="DataGrid_RowEditEnding">
+                       CanUserSortColumns="False"
+                       MinHeight="200">
 
                   <DataGrid.Columns>
                        <!-- Delete Button Column -->
-                       <DataGridTemplateColumn Width="Auto" CanUserResize="False"
+                       <DataGridTemplateColumn Width="30" CanUserResize="False"
                                                CellStyle="{StaticResource TransparentCellStyle}"
                                                HeaderStyle="{StaticResource TransparentHeaderStyle}">
                             <DataGridTemplateColumn.CellTemplate>
                                  <DataTemplate>
                                       <Button Command="{Binding DataContext.RemoveRuleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                               CommandParameter="{Binding}"
-                                              BorderThickness="0" Background="Transparent" Padding="2" ToolTip="Remove Rule">
+                                              BorderThickness="0" Background="Transparent" Padding="2" ToolTip="Remove Rule" Cursor="Hand">
                                            <Button.Style>
                                                 <Style TargetType="Button">
                                                      <Setter Property="Visibility" Value="Collapsed"/>
@@ -140,7 +139,6 @@
                                                            <DataTrigger Binding="{Binding IsSaved}" Value="True">
                                                                 <Setter Property="Visibility" Value="Visible"/>
                                                                 <DataTrigger.EnterActions>
-                                                                    <StopStoryboard BeginStoryboardName="FadeOutRow"/>
                                                                     <BeginStoryboard Name="FadeInRow">
                                                                         <Storyboard>
                                                                             <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2" />
@@ -148,7 +146,6 @@
                                                                     </BeginStoryboard>
                                                                 </DataTrigger.EnterActions>
                                                                 <DataTrigger.ExitActions>
-                                                                    <StopStoryboard BeginStoryboardName="FadeInRow"/>
                                                                     <BeginStoryboard Name="FadeOutRow">
                                                                         <Storyboard>
                                                                             <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.5" />
@@ -170,6 +167,6 @@
                        </DataGridTemplateColumn>
                   </DataGrid.Columns>
              </DataGrid>
-        </DockPanel>
-    </StackPanel>
+        </StackPanel>
+    </GroupBox>
 </UserControl>

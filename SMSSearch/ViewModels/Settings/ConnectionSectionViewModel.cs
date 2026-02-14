@@ -76,5 +76,18 @@ namespace SMS_Search.ViewModels.Settings
             }
             catch (OperationCanceledException) { }
         }
+
+        public override bool Matches(string query)
+        {
+             if (base.Matches(query)) return true;
+
+             if ("Server".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Database".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("User".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Password".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Credentials".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+
+             return false;
+        }
     }
 }

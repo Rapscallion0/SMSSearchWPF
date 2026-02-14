@@ -55,10 +55,11 @@ namespace SMS_Search
             // New Settings ViewModels
             services.AddTransient<GeneralSectionViewModel>();
             services.AddTransient<ConnectionSectionViewModel>();
-            services.AddTransient<DisplaySectionViewModel>();
+            services.AddTransient<ResultsSectionViewModel>();
+            services.AddTransient<EditorSectionViewModel>();
             services.AddTransient<CleanSqlSectionViewModel>();
-            services.AddTransient<LauncherSectionViewModel>();
-            services.AddTransient<LoggingSectionViewModel>();
+            services.AddTransient<IntegrationSectionViewModel>();
+            services.AddTransient<SystemSectionViewModel>();
             services.AddTransient<ModernSettingsViewModel>();
 
             services.AddTransient<MainWindow>();
