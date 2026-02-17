@@ -94,6 +94,15 @@ namespace SMS_Search.ViewModels.Settings
                 repository, "GENERAL", "COPY_DELIMITER_CUSTOM",
                 customDelimStr ?? "");
 
+            // Toast Timeout
+            var toastTimeoutStr = repository.GetValue("GENERAL", "TOAST_TIMEOUT");
+            int toastTimeout;
+            if (!int.TryParse(toastTimeoutStr, out toastTimeout)) toastTimeout = 5;
+            ToastTimeout = new ObservableSetting<int>(
+                repository, "GENERAL", "TOAST_TIMEOUT",
+                toastTimeout,
+                v => v.ToString());
+
             UpdateVisibility();
         }
 
@@ -105,6 +114,7 @@ namespace SMS_Search.ViewModels.Settings
         public ObservableSetting<SearchMode> DefaultSearchTab { get; }
         public ObservableSetting<string> CopyDelimiter { get; }
         public ObservableSetting<string> CustomDelimiter { get; }
+        public ObservableSetting<int> ToastTimeout { get; }
 
         public IEnumerable<StartupLocationMode> StartupLocationModes => Enum.GetValues<StartupLocationMode>();
         public IEnumerable<SearchMode> SearchModes => Enum.GetValues<SearchMode>();
@@ -138,6 +148,8 @@ namespace SMS_Search.ViewModels.Settings
              if ("Export".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Delimiter".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Tab".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Toast".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Notification".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
 
              return false;
         }

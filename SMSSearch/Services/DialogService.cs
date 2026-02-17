@@ -9,6 +9,13 @@ namespace SMS_Search.Services
 {
     public class DialogService : IDialogService
     {
+        private readonly ISettingsRepository _settingsRepository;
+
+        public DialogService(ISettingsRepository settingsRepository)
+        {
+            _settingsRepository = settingsRepository;
+        }
+
         public void ShowMessage(string message, string title)
         {
             System.Windows.MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
@@ -59,14 +66,22 @@ namespace SMS_Search.Services
              return null;
         }
 
-        public void ShowToast(string message, string title, ToastType type = ToastType.Info)
+        public void ShowToast(string message, string title, ToastType type = ToastType.Info, string? details = null)
         {
             // Ensure UI thread access for creating window
             if (System.Windows.Application.Current != null && System.Windows.Application.Current.Dispatcher != null)
             {
                  System.Windows.Application.Current.Dispatcher.Invoke(() =>
                  {
-                     var toast = new ToastWindow(message, title, type);
+                     // Get Timeout
+                     int timeout = 5;
+                     string? val = _settingsRepository.GetValue("GENERAL", "TOAST_TIMEOUT");
+                     if (!string.IsNullOrEmpty(val) && int.TryParse(val, out int t))
+                     {
+                         timeout = t;
+                     }
+
+                     var toast = new ToastWindow(message, title, type, timeout, details);
                      toast.Show();
                  });
             }
