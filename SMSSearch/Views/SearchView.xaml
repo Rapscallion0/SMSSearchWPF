@@ -42,7 +42,7 @@
                                 <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                             </ctrl:ClearableTextBox.InputBindings>
                         </ctrl:ClearableTextBox>
-                        <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                        <Button Grid.Column="2" Tag="Number" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
                         <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Number" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
@@ -64,7 +64,7 @@
                                 <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                             </ctrl:ClearableTextBox.InputBindings>
                         </ctrl:ClearableTextBox>
-                        <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                        <Button Grid.Column="2" Tag="Description" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
                         <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Description" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
@@ -81,7 +81,7 @@
                         <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsFunctionCustomSql}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
-                            <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Button Tag="CustomSql" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                                 <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                             </Button>
                         </StackPanel>
@@ -118,7 +118,7 @@
                                 <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                             </ctrl:ClearableTextBox.InputBindings>
                         </ctrl:ClearableTextBox>
-                        <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                        <Button Grid.Column="2" Tag="Number" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
                         <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Number" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
@@ -140,7 +140,7 @@
                                 <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                             </ctrl:ClearableTextBox.InputBindings>
                         </ctrl:ClearableTextBox>
-                        <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                        <Button Grid.Column="2" Tag="Description" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
                         <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Description" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
@@ -157,7 +157,7 @@
                         <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsTotalizerCustomSql}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
-                            <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Button Tag="CustomSql" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                                 <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                             </Button>
                         </StackPanel>
@@ -196,7 +196,7 @@
                                 <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                             </ctrl:ClearableTextBox.InputBindings>
                         </ctrl:ClearableTextBox>
-                        <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                        <Button Grid.Column="2" Tag="Number" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
                         <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Number" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
@@ -218,7 +218,7 @@
                                 <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                             </ctrl:ClearableTextBox.InputBindings>
                         </ctrl:ClearableTextBox>
-                        <Button Grid.Column="2" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                        <Button Grid.Column="2" Tag="Description" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                             <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                         </Button>
                         <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Description" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
@@ -260,7 +260,7 @@
                         <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsFieldCustomSql}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
-                            <Button Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
+                            <Button Tag="CustomSql" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                                 <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                             </Button>
                         </StackPanel>

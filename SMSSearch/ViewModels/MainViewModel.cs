@@ -113,7 +113,7 @@ namespace SMS_Search.ViewModels
              // Add to history
              if (criteria.Type != SearchType.Table && !string.IsNullOrWhiteSpace(criteria.Value))
              {
-                 _historyService.AddQuery(SearchVm.SelectedMode.ToString(), criteria.Value);
+                 _historyService.AddQuery($"{criteria.Mode}_{criteria.Type}", criteria.Value);
              }
 
              await ResultsVm.ExecuteSearchAsync(criteria);
