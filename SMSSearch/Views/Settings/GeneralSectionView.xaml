@@ -60,6 +60,17 @@
             </StackPanel>
         </GroupBox>
 
+        <GroupBox Header="Notifications" Margin="0,10,0,0">
+             <StackPanel Margin="5">
+                 <ctrl:SettingControl Header="Toast Timeout (Seconds)" IsSaved="{Binding ToastTimeout.IsSaved}">
+                     <StackPanel Orientation="Horizontal">
+                        <TextBox Text="{Binding ToastTimeout.Value, UpdateSourceTrigger=PropertyChanged}" Width="50" Margin="0,0,5,0" />
+                        <TextBlock Text="(0 = Manual Close)" VerticalAlignment="Center" Foreground="Gray" />
+                     </StackPanel>
+                 </ctrl:SettingControl>
+             </StackPanel>
+        </GroupBox>
+
         <GroupBox Header="Data Export" Margin="0,10,0,0">
              <StackPanel Margin="5">
                 <ctrl:SettingControl Header="Copy Delimiter" IsSaved="{Binding CopyDelimiter.IsSaved}">

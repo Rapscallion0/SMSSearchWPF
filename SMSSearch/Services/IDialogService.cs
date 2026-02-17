@@ -11,6 +11,6 @@ namespace SMS_Search.Services
         string? OpenFileDialog(string filter);
         string? SaveFileDialog(string filter, string defaultName = "");
         string? PickColor(string? defaultColor = null);
-        void ShowToast(string message, string title, ToastType type = ToastType.Info);
+        void ShowToast(string message, string title, ToastType type = ToastType.Info, string? details = null);
     }
 }
