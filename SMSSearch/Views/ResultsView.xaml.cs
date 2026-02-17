@@ -10,7 +10,9 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using SMS_Search.ViewModels;
 using SMS_Search.Data;
+using SMS_Search.Services;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace SMS_Search.Views
 {
@@ -264,7 +266,15 @@ namespace SMS_Search.Views
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show("Failed to copy: " + ex.Message);
+                var dialogService = (System.Windows.Application.Current as App)?.Services.GetService<IDialogService>();
+                if (dialogService != null)
+                {
+                    dialogService.ShowError("Failed to copy: " + ex.Message, "Error");
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show("Failed to copy: " + ex.Message);
+                }
             }
         }
 

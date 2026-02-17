@@ -20,6 +20,7 @@ namespace SMS_Search.Views.Controls
         private CompletionWindow? _completionWindow;
         private IIntellisenseService? _intellisenseService;
         private ILoggerService? _logger;
+        private IDialogService? _dialogService;
 
         private IntellisenseLevel _currentLevel = IntellisenseLevel.Schema;
         private bool _isCycling = false;
@@ -34,6 +35,7 @@ namespace SMS_Search.Views.Controls
             {
                 _logger = app.Services.GetService<ILoggerService>();
                 _intellisenseService = app.Services.GetService<IIntellisenseService>();
+                _dialogService = app.Services.GetService<IDialogService>();
             }
 
             LoadHighlighting();
@@ -259,7 +261,7 @@ namespace SMS_Search.Views.Controls
                         {
                             var msg = $"Failed to get manifest resource stream for '{resourceName}'.";
                             _logger?.LogError(msg);
-                            System.Windows.MessageBox.Show(msg, "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            _dialogService?.ShowError(msg, "SQL Editor Error");
                         }
                     }
                 }
@@ -267,7 +269,7 @@ namespace SMS_Search.Views.Controls
                 {
                     var msg = $"Could not find SQL syntax highlighting resource (SQL.xshd).\nAvailable resources:\n{string.Join("\n", resourceNames)}";
                     _logger?.LogError(msg);
-                    System.Windows.MessageBox.Show("Could not find SQL syntax highlighting resource (SQL.xshd). Check logs for details.", "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    _dialogService?.ShowError("Could not find SQL syntax highlighting resource (SQL.xshd). Check logs for details.", "SQL Editor Error");
                 }
             }
             catch (Exception ex)
@@ -275,7 +277,7 @@ namespace SMS_Search.Views.Controls
                 var msg = $"Failed to load syntax highlighting: {ex.Message}";
                 _logger?.LogError(msg, ex);
                 System.Diagnostics.Debug.WriteLine(msg);
-                System.Windows.MessageBox.Show(msg, "SQL Editor Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _dialogService?.ShowError(msg, "SQL Editor Error");
             }
         }
     }

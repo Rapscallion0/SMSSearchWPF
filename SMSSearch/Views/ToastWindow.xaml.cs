@@ -78,7 +78,8 @@ namespace SMS_Search.Views
                  double toastHeight = this.ActualHeight > 0 ? this.ActualHeight : this.Height;
 
                  double targetLeft = mainWindow.Left + mainWindow.ActualWidth - toastWidth - 20;
-                 double targetTop = mainWindow.Top + mainWindow.ActualHeight - toastHeight - 20;
+                 // 50px bottom margin to avoid covering the status bar
+                 double targetTop = mainWindow.Top + mainWindow.ActualHeight - toastHeight - 50;
 
                  this.Left = targetLeft;
                  this.Top = targetTop;
