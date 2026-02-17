@@ -43,7 +43,6 @@ namespace SMS_Search.ViewModels
             BuildSqlCommand = new RelayCommand<string>(BuildSql);
             ShowHistoryCommand = new RelayCommand<System.Windows.Controls.Button>(ShowHistory);
             LoadCleanSqlRules();
-            LoadHistory();
             LoadFontSettings();
             LoadAnyMatchConfig();
 
@@ -209,13 +208,6 @@ namespace SMS_Search.ViewModels
                                        (SelectedMode == SearchMode.Totalizer && IsTotalizerCustomSql) ||
                                        (SelectedMode == SearchMode.Field && IsFieldCustomSql);
 
-        [ObservableProperty]
-        private ObservableCollection<string> _functionHistory = new();
-        [ObservableProperty]
-        private ObservableCollection<string> _totalizerHistory = new();
-        [ObservableProperty]
-        private ObservableCollection<string> _fieldHistory = new();
-
         private void LoadCleanSqlRules()
         {
              _cleanSqlRules.Clear();
@@ -238,25 +230,16 @@ namespace SMS_Search.ViewModels
              }
         }
 
-        private void LoadHistory()
-        {
-             FunctionHistory = new ObservableCollection<string>(_historyService.GetHistory("Function"));
-             TotalizerHistory = new ObservableCollection<string>(_historyService.GetHistory("Totalizer"));
-             FieldHistory = new ObservableCollection<string>(_historyService.GetHistory("Field"));
-        }
-
         private void ShowHistory(System.Windows.Controls.Button? btn)
         {
             if (btn == null) return;
+            string? tag = btn.Tag?.ToString();
+            if (string.IsNullOrEmpty(tag)) return;
+
+            string key = $"{SelectedMode}_{tag}";
+            var history = _historyService.GetHistory(key);
 
             var menu = new System.Windows.Controls.ContextMenu();
-            System.Collections.Generic.IEnumerable<string>? history = SelectedMode switch
-            {
-                SearchMode.Function => FunctionHistory,
-                SearchMode.Totalizer => TotalizerHistory,
-                SearchMode.Field => FieldHistory,
-                _ => null
-            };
 
             if (history != null)
             {
@@ -268,7 +251,27 @@ namespace SMS_Search.ViewModels
 
                     var mi = new System.Windows.Controls.MenuItem { Header = display, ToolTip = item };
                     string fullText = item;
-                    mi.Click += (s, e) => SetCurrentSearchText(fullText);
+                    mi.Click += (s, e) =>
+                    {
+                        if (SelectedMode == SearchMode.Function)
+                        {
+                            if (tag == "Number") { FunctionNumberText = fullText; IsFunctionNumber = true; }
+                            else if (tag == "Description") { FunctionDescriptionText = fullText; IsFunctionDescription = true; }
+                            else if (tag == "CustomSql") { FunctionSqlText = fullText; IsFunctionCustomSql = true; }
+                        }
+                        else if (SelectedMode == SearchMode.Totalizer)
+                        {
+                            if (tag == "Number") { TotalizerNumberText = fullText; IsTotalizerNumber = true; }
+                            else if (tag == "Description") { TotalizerDescriptionText = fullText; IsTotalizerDescription = true; }
+                            else if (tag == "CustomSql") { TotalizerSqlText = fullText; IsTotalizerCustomSql = true; }
+                        }
+                        else if (SelectedMode == SearchMode.Field)
+                        {
+                            if (tag == "Number") { FieldNumberText = fullText; IsFieldNumber = true; }
+                            else if (tag == "Description") { FieldDescriptionText = fullText; IsFieldDescription = true; }
+                            else if (tag == "CustomSql") { FieldSqlText = fullText; IsFieldCustomSql = true; }
+                        }
+                    };
                     menu.Items.Add(mi);
                 }
 
@@ -278,9 +281,8 @@ namespace SMS_Search.ViewModels
                     var clear = new System.Windows.Controls.MenuItem { Header = "Clear History" };
                     clear.Click += (s, e) =>
                     {
-                        _logger.LogInfo($"Clearing history for mode: {SelectedMode}");
-                        _historyService.ClearHistory(SelectedMode.ToString());
-                        LoadHistory();
+                        _logger.LogInfo($"Clearing history for key: {key}");
+                        _historyService.ClearHistory(key);
                     };
                     menu.Items.Add(clear);
                 }
@@ -292,28 +294,6 @@ namespace SMS_Search.ViewModels
                 menu.PlacementTarget = btn;
                 menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
                 menu.IsOpen = true;
-            }
-        }
-
-        private void SetCurrentSearchText(string value)
-        {
-            if (SelectedMode == SearchMode.Function)
-            {
-                if (IsFunctionCustomSql) FunctionSqlText = value;
-                else if (IsFunctionNumber) FunctionNumberText = value;
-                else if (IsFunctionDescription) FunctionDescriptionText = value;
-            }
-            else if (SelectedMode == SearchMode.Totalizer)
-            {
-                if (IsTotalizerCustomSql) TotalizerSqlText = value;
-                else if (IsTotalizerNumber) TotalizerNumberText = value;
-                else if (IsTotalizerDescription) TotalizerDescriptionText = value;
-            }
-            else if (SelectedMode == SearchMode.Field)
-            {
-                if (IsFieldCustomSql) FieldSqlText = value;
-                else if (IsFieldNumber) FieldNumberText = value;
-                else if (IsFieldDescription) FieldDescriptionText = value;
             }
         }
 
