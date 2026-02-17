@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
+using SMS_Search.Services;
 
 namespace SMS_Search.Utils
 {
@@ -23,6 +24,13 @@ namespace SMS_Search.Utils
         private const string RepoOwner = "Rapscallion0";
         private const string RepoName = "SMS-Search";
         private const string GitHubApiUrl = "https://api.github.com/repos/" + RepoOwner + "/" + RepoName + "/releases/latest";
+
+        private readonly IDialogService _dialogService;
+
+        public UpdateChecker(IDialogService dialogService)
+        {
+            _dialogService = dialogService;
+        }
 
         public async Task<UpdateInfo> CheckForUpdatesAsync()
         {
@@ -103,7 +111,7 @@ namespace SMS_Search.Utils
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show("No download URL found for the new version.", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    _dialogService.ShowError("No download URL found for the new version.", "Update Error");
                 }
                 return;
             }
@@ -152,7 +160,7 @@ namespace SMS_Search.Utils
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show("Update failed: " + ex.Message, "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _dialogService.ShowError("Update failed: " + ex.Message, "Update Error");
             }
         }
     }

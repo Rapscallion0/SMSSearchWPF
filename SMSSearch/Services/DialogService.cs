@@ -18,12 +18,12 @@ namespace SMS_Search.Services
 
         public void ShowMessage(string message, string title)
         {
-            System.Windows.MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+            ShowToast(message, title, ToastType.Info);
         }
 
         public void ShowError(string message, string title)
         {
-            System.Windows.MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowToast(message, title, ToastType.Error);
         }
 
         public bool ShowConfirmation(string message, string title)
