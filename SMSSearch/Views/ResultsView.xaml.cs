@@ -174,7 +174,7 @@ namespace SMS_Search.Views
                 var val = GetCellValue(cellInfo.Item, cellInfo.Column);
                 if (val != null)
                 {
-                    txtFilter.Text = val.ToString();
+                    txtFilter.Text = val.ToString() ?? "";
                 }
             }
         }
