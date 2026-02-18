@@ -74,6 +74,15 @@ namespace SMS_Search.ViewModels.Settings
                 defaultTab,
                 v => v.ToString());
 
+            // Default Table Action
+            var defaultActionStr = repository.GetValue("GENERAL", "DEFAULT_TABLE_ACTION");
+            DefaultTableAction defaultAction;
+            if (!Enum.TryParse(defaultActionStr, out defaultAction)) defaultAction = DefaultTableAction.QueryFields;
+            DefaultTableAction = new ObservableSetting<DefaultTableAction>(
+                repository, "GENERAL", "DEFAULT_TABLE_ACTION",
+                defaultAction,
+                v => v.ToString());
+
             // Remember Size
             var rememberSizeStr = repository.GetValue("GENERAL", "MAIN_REMEMBER_SIZE");
             RememberSize = new ObservableSetting<bool>(
@@ -120,12 +129,14 @@ namespace SMS_Search.ViewModels.Settings
         public ObservableSetting<StartupLocationMode> UnarchiveStartupLocation { get; }
         public ObservableSetting<bool> RememberSize { get; }
         public ObservableSetting<DefaultSearchTabMode> DefaultSearchTab { get; }
+        public ObservableSetting<DefaultTableAction> DefaultTableAction { get; }
         public ObservableSetting<string> CopyDelimiter { get; }
         public ObservableSetting<string> CustomDelimiter { get; }
         public ObservableSetting<int> ToastTimeout { get; }
 
         public IEnumerable<StartupLocationMode> StartupLocationModes => Enum.GetValues<StartupLocationMode>();
         public IEnumerable<DefaultSearchTabMode> SearchModes => Enum.GetValues<DefaultSearchTabMode>();
+        public IEnumerable<DefaultTableAction> TableActions => Enum.GetValues<DefaultTableAction>();
 
         [ObservableProperty]
         private bool _isCustomDelimiterVisible;
@@ -158,6 +169,9 @@ namespace SMS_Search.ViewModels.Settings
              if ("Tab".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Toast".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Notification".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Query".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Fields".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Records".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
 
              return false;
         }

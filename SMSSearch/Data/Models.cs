@@ -11,6 +11,13 @@ namespace SMS_Search.Data
         [System.ComponentModel.Description("Last open tab")]
         Last
     }
+    public enum DefaultTableAction
+    {
+        [System.ComponentModel.Description("Query Fields")]
+        QueryFields,
+        [System.ComponentModel.Description("Query Records")]
+        QueryRecords
+    }
     public enum SearchType { Number, Description, CustomSql, Table }
     public enum StartupLocationMode
     {

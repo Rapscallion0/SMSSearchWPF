@@ -51,6 +51,16 @@
                     </ComboBox>
                 </ctrl:SettingControl>
 
+                <ctrl:SettingControl Header="Default Table Action" IsSaved="{Binding DefaultTableAction.IsSaved}">
+                    <ComboBox ItemsSource="{Binding TableActions}" SelectedItem="{Binding DefaultTableAction.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </ctrl:SettingControl>
+
                 <ctrl:SettingControl Header="Check for Updates" IsSaved="{Binding CheckUpdate.IsSaved}">
                     <CheckBox IsChecked="{Binding CheckUpdate.Value}" Content="Automatically check for updates on startup" />
                 </ctrl:SettingControl>
