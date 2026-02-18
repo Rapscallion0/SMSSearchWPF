@@ -212,7 +212,7 @@ namespace SMS_Search.ViewModels
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsLastTransactionVisible))]
-        private string _selectedTable = "";
+        private string? _selectedTable;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsLastTransactionVisible))]
