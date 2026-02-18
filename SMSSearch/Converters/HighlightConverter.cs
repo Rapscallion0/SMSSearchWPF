@@ -34,58 +34,59 @@ namespace SMS_Search.Converters
 
                 string? cellText = null;
 
-                // Priority: Check values[5] (Row) and values[4] (Column) first for robust data binding
-                // This ensures we highlight based on actual data, solving virtualization issues where UI content might be stale
+                // Priority: Check UI Content (values[0]) first for performance.
+                // Accessing VirtualRow properties involves dictionary lookups which are slow during scrolling.
+                // Assuming WPF binding has updated the content correctly.
 
-                // Optimized path for VirtualRow to avoid TypeDescriptor overhead
-                if (values.Length >= 6 && values[5] is VirtualRow vRow)
+                if (values[0] is System.Windows.Controls.TextBlock tb)
                 {
-                    if (values[4] is DataGridColumn col)
+                    cellText = tb.Text;
+                }
+                else if (values[0] is string s)
+                {
+                    cellText = s;
+                }
+                else if (values[0] != null && !(values[0] is System.Windows.Controls.CheckBox) && values[0] != System.Windows.DependencyProperty.UnsetValue)
+                {
+                    cellText = values[0].ToString();
+                }
+
+                // Fallback to Row/Column data if UI content is not available
+                if (cellText == null)
+                {
+                    // Optimized path for VirtualRow to avoid TypeDescriptor overhead
+                    if (values.Length >= 6 && values[5] is VirtualRow vRow)
+                    {
+                        if (values[4] is DataGridColumn col)
+                        {
+                            string? propName = col.SortMemberPath;
+                            if (!string.IsNullOrEmpty(propName))
+                            {
+                                // Direct property access bypassing TypeDescriptor
+                                var props = vRow.GetProperties();
+                                var prop = props[propName];
+                                if (prop != null)
+                                {
+                                    var val = prop.GetValue(vRow);
+                                    if (val != null) cellText = val.ToString();
+                                }
+                            }
+                        }
+                    }
+                    else if (values.Length >= 6 && values[4] is DataGridColumn col && values[5] != null && values[5] != System.Windows.DependencyProperty.UnsetValue)
                     {
                         string? propName = col.SortMemberPath;
                         if (!string.IsNullOrEmpty(propName))
                         {
-                            // Direct property access bypassing TypeDescriptor
-                            var props = vRow.GetProperties();
+                            // Using TypeDescriptor works for both POCO and CustomTypeDescriptor (like VirtualRow)
+                            var props = TypeDescriptor.GetProperties(values[5]);
                             var prop = props[propName];
                             if (prop != null)
                             {
-                                var val = prop.GetValue(vRow);
+                                var val = prop.GetValue(values[5]);
                                 if (val != null) cellText = val.ToString();
                             }
                         }
-                    }
-                }
-                else if (values.Length >= 6 && values[4] is DataGridColumn col && values[5] != null && values[5] != System.Windows.DependencyProperty.UnsetValue)
-                {
-                    string? propName = col.SortMemberPath;
-                    if (!string.IsNullOrEmpty(propName))
-                    {
-                        // Using TypeDescriptor works for both POCO and CustomTypeDescriptor (like VirtualRow)
-                        var props = TypeDescriptor.GetProperties(values[5]);
-                        var prop = props[propName];
-                        if (prop != null)
-                        {
-                            var val = prop.GetValue(values[5]);
-                            if (val != null) cellText = val.ToString();
-                        }
-                    }
-                }
-
-                // Fallback to UI element content if needed or if data binding failed
-                if (cellText == null)
-                {
-                    if (values[0] is System.Windows.Controls.TextBlock tb)
-                    {
-                        cellText = tb.Text;
-                    }
-                    else if (values[0] is string s)
-                    {
-                        cellText = s;
-                    }
-                    else if (values[0] != null && !(values[0] is System.Windows.Controls.CheckBox) && values[0] != System.Windows.DependencyProperty.UnsetValue)
-                    {
-                        cellText = values[0].ToString();
                     }
                 }
 
