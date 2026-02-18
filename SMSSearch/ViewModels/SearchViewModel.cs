@@ -46,9 +46,19 @@ namespace SMS_Search.ViewModels
             LoadFontSettings();
             LoadAnyMatchConfig();
 
-            if (System.Enum.TryParse(_configService.GetValue("GENERAL", "DEFAULT_TAB"), out SearchMode tabMode))
+            if (System.Enum.TryParse(_configService.GetValue("GENERAL", "DEFAULT_TAB"), out DefaultSearchTabMode tabMode))
             {
-                SelectedMode = tabMode;
+                if (tabMode == DefaultSearchTabMode.Last)
+                {
+                    if (System.Enum.TryParse(_configService.GetValue("MAIN", "LAST_TAB"), out SearchMode lastMode))
+                    {
+                        SelectedMode = lastMode;
+                    }
+                }
+                else
+                {
+                    SelectedMode = (SearchMode)tabMode;
+                }
             }
 
             WeakReferenceMessenger.Default.Register<SqlFontSettingsChangedMessage>(this, (r, m) =>

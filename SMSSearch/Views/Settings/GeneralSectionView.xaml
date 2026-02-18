@@ -19,13 +19,16 @@
         <GroupBox Header="Startup">
             <StackPanel Margin="5">
                 <ctrl:SettingControl Header="Application startup location" IsSaved="{Binding MainStartupLocation.IsSaved}">
-                    <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding MainStartupLocation.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
+                    <StackPanel>
+                        <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding MainStartupLocation.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <CheckBox IsChecked="{Binding RememberSize.Value}" Content="Remember size" Margin="0,5,0,0"/>
+                    </StackPanel>
                 </ctrl:SettingControl>
 
                 <ctrl:SettingControl Header="Target startup location" IsSaved="{Binding UnarchiveStartupLocation.IsSaved}">
@@ -39,7 +42,13 @@
                 </ctrl:SettingControl>
 
                 <ctrl:SettingControl Header="Default Search Tab" IsSaved="{Binding DefaultSearchTab.IsSaved}">
-                    <ComboBox ItemsSource="{Binding SearchModes}" SelectedItem="{Binding DefaultSearchTab.Value}" PreviewMouseWheel="OnPreviewMouseWheel" />
+                    <ComboBox ItemsSource="{Binding SearchModes}" SelectedItem="{Binding DefaultSearchTab.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </ctrl:SettingControl>
 
                 <ctrl:SettingControl Header="Check for Updates" IsSaved="{Binding CheckUpdate.IsSaved}">

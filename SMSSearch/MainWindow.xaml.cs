@@ -30,6 +30,20 @@ namespace SMS_Search
         {
             base.OnSourceInitialized(e);
 
+            // Restore Split Position
+            if (double.TryParse(_config.GetValue("MAIN", "SEARCH_HEIGHT"), out double h))
+            {
+                SearchRow.Height = new GridLength(h);
+            }
+
+            // Restore Size
+            bool rememberSize = _config.GetValue("GENERAL", "MAIN_REMEMBER_SIZE") == "1";
+            if (rememberSize)
+            {
+                if (double.TryParse(_config.GetValue("MAIN", "LAST_W"), out double w)) Width = w;
+                if (double.TryParse(_config.GetValue("MAIN", "LAST_H"), out double hVal)) Height = hVal;
+            }
+
             if (Enum.TryParse(_config.GetValue("GENERAL", "MAIN_STARTUP_LOCATION"), out StartupLocationMode mode))
             {
                 // good
@@ -52,10 +66,19 @@ namespace SMS_Search
         {
             base.OnClosing(e);
 
+            _config.SetValue("MAIN", "SEARCH_HEIGHT", SearchRow.Height.Value.ToString());
+            _config.SetValue("MAIN", "LAST_TAB", _viewModel.SearchVm.SelectedMode.ToString());
+
             if (WindowState == WindowState.Normal)
             {
                 _config.SetValue("MAIN", "LAST_X", Left.ToString());
                 _config.SetValue("MAIN", "LAST_Y", Top.ToString());
+
+                if (_config.GetValue("GENERAL", "MAIN_REMEMBER_SIZE") == "1")
+                {
+                    _config.SetValue("MAIN", "LAST_W", ActualWidth.ToString());
+                    _config.SetValue("MAIN", "LAST_H", ActualHeight.ToString());
+                }
                 _config.Save();
             }
         }
