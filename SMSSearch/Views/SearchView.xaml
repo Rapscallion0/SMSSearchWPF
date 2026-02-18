@@ -249,7 +249,7 @@
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="234,5,0,10" HorizontalAlignment="Right" Width="309" VerticalAlignment="Bottom">
                         <RadioButton Content="Query Fields" IsChecked="{Binding ShowFields}" GroupName="FldAction"/>
                         <RadioButton Content="Query Records" IsChecked="{Binding ShowRecords}" GroupName="FldAction" Margin="10,0,0,0"/>
-                        <CheckBox Content="Last Transaction" IsChecked="{Binding LastTransaction}" Margin="10,0,0,0" Visibility="{Binding ShowFields, Converter={StaticResource BoolToCollapsed}}"/>
+                        <CheckBox Content="Last Transaction" IsChecked="{Binding LastTransaction}" Margin="10,0,0,0" Visibility="{Binding IsLastTransactionVisible, Converter={StaticResource BoolToVis}}"/>
                     </StackPanel>
 
                     <!-- Custom SQL -->
