@@ -467,6 +467,8 @@ namespace SMS_Search.ViewModels
 
         private async Task LoadTablesAsync()
         {
+            if (Tables.Count > 0) return;
+
             try
             {
                  var server = _configService.GetValue("CONNECTION", "SERVER") ?? "";
