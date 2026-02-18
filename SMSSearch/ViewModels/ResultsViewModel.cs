@@ -43,24 +43,6 @@ namespace SMS_Search.ViewModels
             bool showRowNumbers = _configService.GetValue("GENERAL", "SHOW_ROW_NUMBERS") == "1";
             HeadersVisibility = showRowNumbers ? DataGridHeadersVisibility.All : DataGridHeadersVisibility.Column;
 
-            // Register for message
-            WeakReferenceMessenger.Default.Register<RowNumberVisibilityChangedMessage>(this, (r, m) =>
-            {
-                HeadersVisibility = m.Value ? DataGridHeadersVisibility.All : DataGridHeadersVisibility.Column;
-            });
-
-            WeakReferenceMessenger.Default.Register<HighlightConfigurationChangedMessage>(this, (r, m) =>
-            {
-                IsHighlightEnabled = m.Value.IsHighlightEnabled;
-                UpdateHighlightColor(m.Value.HighlightColor);
-                UpdateFilterNavigationVisibility();
-                // Re-apply filter/highlight logic if there is text
-                if (!string.IsNullOrEmpty(FilterText))
-                {
-                    ApplyFilterCommand.Execute(FilterText);
-                }
-            });
-
             IsHighlightEnabled = _configService.GetValue("GENERAL", "HIGHLIGHT_MATCHES") == "1";
             UpdateFilterNavigationVisibility();
             UpdateHighlightColor(_configService.GetValue("GENERAL", "HIGHLIGHT_COLOR"));
@@ -86,6 +68,24 @@ namespace SMS_Search.ViewModels
             ExportSelectedCsvCommand = new RelayCommand<System.Collections.IList>(_ => { });
             FilterBySelectionCommand = new RelayCommand<string>(FilterBySelection);
             CopyRowCommand = new RelayCommand<IList>(CopyRow);
+
+            // Register for message
+            WeakReferenceMessenger.Default.Register<RowNumberVisibilityChangedMessage>(this, (r, m) =>
+            {
+                HeadersVisibility = m.Value ? DataGridHeadersVisibility.All : DataGridHeadersVisibility.Column;
+            });
+
+            WeakReferenceMessenger.Default.Register<HighlightConfigurationChangedMessage>(this, (r, m) =>
+            {
+                IsHighlightEnabled = m.Value.IsHighlightEnabled;
+                UpdateHighlightColor(m.Value.HighlightColor);
+                UpdateFilterNavigationVisibility();
+                // Re-apply filter/highlight logic if there is text
+                if (!string.IsNullOrEmpty(FilterText))
+                {
+                    ApplyFilterCommand.Execute(FilterText);
+                }
+            });
         }
 
         [ObservableProperty]
