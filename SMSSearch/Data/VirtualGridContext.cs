@@ -25,7 +25,7 @@ namespace SMS_Search.Data
         private Dictionary<int, DataRow> _cache;
         private HashSet<int> _pagesBeingFetched;
         private Dictionary<int, TaskCompletionSource<bool>> _pageCompletionSources;
-        private const int PageSize = 100;
+        private const int PageSize = 1000;
         private int _version = 0;
 
         public string? SortColumn { get; private set; }
@@ -238,6 +238,24 @@ namespace SMS_Search.Data
 
         public object? GetValue(int rowIndex, int colIndex)
         {
+            // Prefetch next page logic
+            int pageIndex = rowIndex / PageSize;
+            int offsetInPage = rowIndex % PageSize;
+
+            // If we are past 70% of the current page, check if we should load the next page
+            if (offsetInPage > (PageSize * 0.7))
+            {
+                int nextPageRowIndex = (pageIndex + 1) * PageSize;
+                if (nextPageRowIndex < TotalCount)
+                {
+                    // Check if the first row of the next page is already loaded
+                    if (!_cache.ContainsKey(nextPageRowIndex))
+                    {
+                        RequestPage(nextPageRowIndex);
+                    }
+                }
+            }
+
             if (_cache.TryGetValue(rowIndex, out DataRow? row))
             {
                 if (row != null && colIndex >= 0 && colIndex < row.Table.Columns.Count)

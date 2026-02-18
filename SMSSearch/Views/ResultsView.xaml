@@ -82,6 +82,12 @@
                   GridLinesVisibility="All"
                   AlternatingRowBackground="#F8F8F8"
                   FrozenColumnCount="0"
+                  EnableRowVirtualization="True"
+                  VirtualizingStackPanel.IsVirtualizing="True"
+                  VirtualizingStackPanel.VirtualizationMode="Recycling"
+                  VirtualizingStackPanel.ScrollUnit="Pixel"
+                  VirtualizingStackPanel.CacheLength="1,1"
+                  VirtualizingStackPanel.CacheLengthUnit="Page"
                   SelectionChanged="resultsGrid_SelectionChanged"
                   CurrentCellChanged="resultsGrid_CurrentCellChanged"
                   LoadingRow="resultsGrid_LoadingRow">
