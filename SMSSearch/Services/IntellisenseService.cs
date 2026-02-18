@@ -56,6 +56,10 @@ namespace SMS_Search.Services
         public bool FunctionalEnabled { get; set; } = true;
         public bool FullEnabled { get; set; } = true;
 
+        public bool StandardAutoEnabled { get; set; } = true;
+        public bool FunctionalAutoEnabled { get; set; } = true;
+        public bool FullAutoEnabled { get; set; } = true;
+
         public IntellisenseService(IDataRepository repository, ILoggerService logger, IConfigService configService)
         {
             _repository = repository;
@@ -94,6 +98,11 @@ namespace SMS_Search.Services
             StandardEnabled = GetBoolSetting("INTELLISENSE_STANDARD", true);
             FunctionalEnabled = GetBoolSetting("INTELLISENSE_FUNCTIONAL", true);
             FullEnabled = GetBoolSetting("INTELLISENSE_FULL", true);
+
+            // Load Level Auto Settings
+            StandardAutoEnabled = GetBoolSetting("INTELLISENSE_STANDARD_AUTO", true);
+            FunctionalAutoEnabled = GetBoolSetting("INTELLISENSE_FUNCTIONAL_AUTO", true);
+            FullAutoEnabled = GetBoolSetting("INTELLISENSE_FULL_AUTO", true);
         }
 
         private bool GetBoolSetting(string key, bool defaultValue)
@@ -266,7 +275,8 @@ namespace SMS_Search.Services
                 }
 
                 // Add Keywords based on Level AND configuration
-                if (level >= IntellisenseLevel.Standard && StandardEnabled)
+                // Include if level is explicitly requested OR if Auto-Trigger is enabled for that level
+                if (StandardEnabled && (level >= IntellisenseLevel.Standard || StandardAutoEnabled))
                 {
                     foreach (var kw in _keywords)
                     {
@@ -275,7 +285,7 @@ namespace SMS_Search.Services
                     }
                 }
 
-                if (level >= IntellisenseLevel.Functional && FunctionalEnabled)
+                if (FunctionalEnabled && (level >= IntellisenseLevel.Functional || FunctionalAutoEnabled))
                 {
                     foreach (var kw in _functionalKeywords)
                     {
@@ -284,7 +294,7 @@ namespace SMS_Search.Services
                     }
                 }
 
-                if (level >= IntellisenseLevel.Full && FullEnabled)
+                if (FullEnabled && (level >= IntellisenseLevel.Full || FullAutoEnabled))
                 {
                     foreach (var kw in _adminKeywords)
                     {
