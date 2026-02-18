@@ -36,6 +36,12 @@ namespace SMS_Search.Views.Controls
                 _logger = app.Services.GetService<ILoggerService>();
                 _intellisenseService = app.Services.GetService<IIntellisenseService>();
                 _dialogService = app.Services.GetService<IDialogService>();
+
+                // Initialize current level from service default
+                if (_intellisenseService != null)
+                {
+                    _currentLevel = _intellisenseService.DefaultLevel;
+                }
             }
 
             LoadHighlighting();
@@ -70,7 +76,7 @@ namespace SMS_Search.Views.Controls
                 {
                     // Auto-trigger always tries to show completion.
                     // If window is already open, ShowCompletion returns early.
-                    // If window is not open, it uses the current level (which is reset to Schema on close).
+                    // If window is not open, it uses the current level (which is reset to default on close).
                     ShowCompletion();
                 }
             }
@@ -89,10 +95,14 @@ namespace SMS_Search.Views.Controls
                     _completionWindow.Close();
                     _isCycling = false;
 
-                    // Cycle: Schema -> Standard -> Functional -> Full -> Schema
+                    // Cycle: Schema -> Standard -> Functional -> Full -> Default
                     if (_currentLevel >= IntellisenseLevel.Full)
                     {
-                        _currentLevel = IntellisenseLevel.Schema;
+                         // Reset to user's preferred default level
+                         if (_intellisenseService != null)
+                             _currentLevel = _intellisenseService.DefaultLevel;
+                         else
+                             _currentLevel = IntellisenseLevel.Schema;
                     }
                     else
                     {
@@ -103,9 +113,12 @@ namespace SMS_Search.Views.Controls
                 }
                 else
                 {
-                    // Manual trigger when closed starts at default (Schema)
-                    // Note: If previously closed, it was reset to Schema.
-                    _currentLevel = IntellisenseLevel.Schema;
+                    // Manual trigger when closed starts at default
+                    // Note: If previously closed, it was reset to default.
+                    if (_intellisenseService != null)
+                         _currentLevel = _intellisenseService.DefaultLevel;
+                    else
+                         _currentLevel = IntellisenseLevel.Schema;
                 }
 
                 ShowCompletion();
@@ -167,7 +180,11 @@ namespace SMS_Search.Views.Controls
                     _completionWindow = null;
                     if (!_isCycling)
                     {
-                        _currentLevel = IntellisenseLevel.Schema;
+                        // Reset to default level on close
+                        if (_intellisenseService != null)
+                            _currentLevel = _intellisenseService.DefaultLevel;
+                        else
+                            _currentLevel = IntellisenseLevel.Schema;
                     }
                 };
             }

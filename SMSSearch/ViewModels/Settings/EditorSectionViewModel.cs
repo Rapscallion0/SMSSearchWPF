@@ -2,6 +2,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using SMS_Search.Services;
 using SMS_Search.Utils;
+using System;
+using System.Collections.Generic;
 using System.Windows.Controls;
 
 namespace SMS_Search.ViewModels.Settings
@@ -46,6 +48,24 @@ namespace SMS_Search.ViewModels.Settings
                 if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
                 {
                     _intellisenseService.AutoTriggerEnabled = AutoTriggerIntellisense.Value;
+                }
+            };
+
+            // Default IntelliSense Level
+            var defaultLevelStr = repository.GetValue("GENERAL", "INTELLISENSE_DEFAULT_LEVEL");
+            IntellisenseLevel defaultLevel;
+            if (!Enum.TryParse(defaultLevelStr, out defaultLevel)) defaultLevel = IntellisenseLevel.Schema;
+
+            DefaultIntellisenseLevel = new ObservableSetting<IntellisenseLevel>(
+                repository, "GENERAL", "INTELLISENSE_DEFAULT_LEVEL",
+                defaultLevel,
+                v => v.ToString());
+
+            DefaultIntellisenseLevel.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<IntellisenseLevel>.Value))
+                {
+                    _intellisenseService.DefaultLevel = DefaultIntellisenseLevel.Value;
                 }
             };
 
@@ -99,9 +119,12 @@ namespace SMS_Search.ViewModels.Settings
 
         public ObservableSetting<bool> EnableIntellisense { get; }
         public ObservableSetting<bool> AutoTriggerIntellisense { get; }
+        public ObservableSetting<IntellisenseLevel> DefaultIntellisenseLevel { get; }
         public ObservableSetting<bool> SelectCustomSqlOnBuild { get; }
         public ObservableSetting<string> SqlFontFamily { get; }
         public ObservableSetting<int> SqlFontSize { get; }
+
+        public IEnumerable<IntellisenseLevel> IntellisenseLevels => Enum.GetValues<IntellisenseLevel>();
 
         public override bool Matches(string query)
         {

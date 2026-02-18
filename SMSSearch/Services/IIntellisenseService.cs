@@ -16,6 +16,7 @@ namespace SMS_Search.Services
         bool IsEnabled { get; set; }
         bool IsReady { get; }
         bool AutoTriggerEnabled { get; set; }
+        IntellisenseLevel DefaultLevel { get; set; }
         Task InitializeAsync(string server, string database, string? user, string? pass);
         IEnumerable<CompletionItem> GetCompletions(string text, int caretOffset, IntellisenseLevel level);
     }

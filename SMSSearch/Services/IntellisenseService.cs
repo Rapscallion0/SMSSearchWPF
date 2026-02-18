@@ -51,6 +51,7 @@ namespace SMS_Search.Services
         public bool IsEnabled { get; set; } = true;
         public bool IsReady { get; private set; } = false;
         public bool AutoTriggerEnabled { get; set; } = true;
+        public IntellisenseLevel DefaultLevel { get; set; } = IntellisenseLevel.Schema;
 
         public IntellisenseService(IDataRepository repository, ILoggerService logger, IConfigService configService)
         {
@@ -84,6 +85,17 @@ namespace SMS_Search.Services
             else
             {
                 AutoTriggerEnabled = true; // Default
+            }
+
+            // Load Default Level Setting
+            var defaultLevelStr = _configService.GetValue("GENERAL", "INTELLISENSE_DEFAULT_LEVEL");
+            if (defaultLevelStr != null && Enum.TryParse(defaultLevelStr, out IntellisenseLevel lvl))
+            {
+                DefaultLevel = lvl;
+            }
+            else
+            {
+                DefaultLevel = IntellisenseLevel.Schema;
             }
         }
 
@@ -127,6 +139,8 @@ namespace SMS_Search.Services
             // We want to find if we are in a "Table.Column" context
             // 1. Skip current identifier characters backwards
             int pos = caretOffset - 1;
+            int identifierEnd = pos;
+
             while (pos >= 0)
             {
                 char c = text[pos];
@@ -134,6 +148,14 @@ namespace SMS_Search.Services
                     pos--;
                 else
                     break;
+            }
+
+            // 'pos' is the char BEFORE the start of identifier
+            int identifierStart = pos + 1;
+            string currentWord = "";
+            if (identifierStart <= identifierEnd)
+            {
+                currentWord = text.Substring(identifierStart, identifierEnd - identifierStart + 1);
             }
 
             // Now 'pos' is at the character before the current identifier (or at -1)
@@ -176,7 +198,10 @@ namespace SMS_Search.Services
                  {
                      foreach (var col in columns)
                      {
-                         results.Add(new CompletionItem { Text = col, Description = $"Column in {parentIdentifier}", Type = "Column", Priority = 2.0 });
+                         if (string.IsNullOrEmpty(currentWord) || col.StartsWith(currentWord, StringComparison.OrdinalIgnoreCase))
+                         {
+                             results.Add(new CompletionItem { Text = col, Description = $"Column in {parentIdentifier}", Type = "Column", Priority = 2.0 });
+                         }
                      }
                  }
             }
@@ -209,7 +234,8 @@ namespace SMS_Search.Services
                 {
                     foreach (var kw in _keywords)
                     {
-                        results.Add(new CompletionItem { Text = kw, Description = "Keyword", Type = "Keyword", Priority = 0.5 });
+                        if (string.IsNullOrEmpty(currentWord) || kw.StartsWith(currentWord, StringComparison.OrdinalIgnoreCase))
+                            results.Add(new CompletionItem { Text = kw, Description = "Keyword", Type = "Keyword", Priority = 0.5 });
                     }
                 }
 
@@ -217,7 +243,8 @@ namespace SMS_Search.Services
                 {
                     foreach (var kw in _functionalKeywords)
                     {
-                        results.Add(new CompletionItem { Text = kw, Description = "Function", Type = "Function", Priority = 0.6 });
+                        if (string.IsNullOrEmpty(currentWord) || kw.StartsWith(currentWord, StringComparison.OrdinalIgnoreCase))
+                            results.Add(new CompletionItem { Text = kw, Description = "Function", Type = "Function", Priority = 0.6 });
                     }
                 }
 
@@ -225,7 +252,8 @@ namespace SMS_Search.Services
                 {
                     foreach (var kw in _adminKeywords)
                     {
-                        results.Add(new CompletionItem { Text = kw, Description = "Admin/DCL", Type = "Admin", Priority = 0.4 });
+                        if (string.IsNullOrEmpty(currentWord) || kw.StartsWith(currentWord, StringComparison.OrdinalIgnoreCase))
+                            results.Add(new CompletionItem { Text = kw, Description = "Admin/DCL", Type = "Admin", Priority = 0.4 });
                     }
                 }
 
@@ -233,16 +261,23 @@ namespace SMS_Search.Services
                 foreach (var kvp in schema)
                 {
                     string table = kvp.Key;
-                    // Boost priority if table is already in query (maybe user wants to type it again?)
-                    double priority = mentionedTables.Contains(table) ? 1.5 : 1.0;
-                    results.Add(new CompletionItem { Text = table, Description = "Table", Type = "Table", Priority = priority });
+
+                    if (string.IsNullOrEmpty(currentWord) || table.StartsWith(currentWord, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Boost priority if table is already in query (maybe user wants to type it again?)
+                        double priority = mentionedTables.Contains(table) ? 1.5 : 1.0;
+                        results.Add(new CompletionItem { Text = table, Description = "Table", Type = "Table", Priority = priority });
+                    }
 
                     // Add Columns if table is in context (context-aware prioritization)
                     if (mentionedTables.Contains(table))
                     {
                         foreach (var col in kvp.Value)
                         {
-                            results.Add(new CompletionItem { Text = col, Description = $"Column ({table})", Type = "Column", Priority = 1.2 });
+                            if (string.IsNullOrEmpty(currentWord) || col.StartsWith(currentWord, StringComparison.OrdinalIgnoreCase))
+                            {
+                                results.Add(new CompletionItem { Text = col, Description = $"Column ({table})", Type = "Column", Priority = 1.2 });
+                            }
                         }
                     }
                 }
@@ -264,6 +299,7 @@ namespace SMS_Search.Services
 
             // Note: AvalonEdit filters the list based on what the user has already typed in the current word.
             // We return a broad set, and the UI handles the filtering.
+            // Update: We now pre-filter here to avoid empty popups if nothing matches.
 
             return results.OrderByDescending(x => x.Priority).ThenBy(x => x.Text);
         }
