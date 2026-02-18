@@ -15,7 +15,7 @@
     </Window.InputBindings>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="310" MinHeight="310"/>
+            <RowDefinition x:Name="SearchRow" Height="310" MinHeight="310"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>

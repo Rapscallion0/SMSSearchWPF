@@ -67,12 +67,19 @@ namespace SMS_Search.ViewModels.Settings
 
             // Default Search Tab
             var defaultTabStr = repository.GetValue("GENERAL", "DEFAULT_TAB");
-            SearchMode defaultTab;
-            if (!Enum.TryParse(defaultTabStr, out defaultTab)) defaultTab = SearchMode.Function;
-            DefaultSearchTab = new ObservableSetting<SearchMode>(
+            DefaultSearchTabMode defaultTab;
+            if (!Enum.TryParse(defaultTabStr, out defaultTab)) defaultTab = DefaultSearchTabMode.Function;
+            DefaultSearchTab = new ObservableSetting<DefaultSearchTabMode>(
                 repository, "GENERAL", "DEFAULT_TAB",
                 defaultTab,
                 v => v.ToString());
+
+            // Remember Size
+            var rememberSizeStr = repository.GetValue("GENERAL", "MAIN_REMEMBER_SIZE");
+            RememberSize = new ObservableSetting<bool>(
+                repository, "GENERAL", "MAIN_REMEMBER_SIZE",
+                rememberSizeStr == "1",
+                v => v ? "1" : "0");
 
             // Copy Delimiter
             var copyDelimStr = repository.GetValue("GENERAL", "COPY_DELIMITER");
@@ -111,13 +118,14 @@ namespace SMS_Search.ViewModels.Settings
         public ObservableSetting<bool> CheckUpdate { get; }
         public ObservableSetting<StartupLocationMode> MainStartupLocation { get; }
         public ObservableSetting<StartupLocationMode> UnarchiveStartupLocation { get; }
-        public ObservableSetting<SearchMode> DefaultSearchTab { get; }
+        public ObservableSetting<bool> RememberSize { get; }
+        public ObservableSetting<DefaultSearchTabMode> DefaultSearchTab { get; }
         public ObservableSetting<string> CopyDelimiter { get; }
         public ObservableSetting<string> CustomDelimiter { get; }
         public ObservableSetting<int> ToastTimeout { get; }
 
         public IEnumerable<StartupLocationMode> StartupLocationModes => Enum.GetValues<StartupLocationMode>();
-        public IEnumerable<SearchMode> SearchModes => Enum.GetValues<SearchMode>();
+        public IEnumerable<DefaultSearchTabMode> SearchModes => Enum.GetValues<DefaultSearchTabMode>();
 
         [ObservableProperty]
         private bool _isCustomDelimiterVisible;

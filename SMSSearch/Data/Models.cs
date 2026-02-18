@@ -3,6 +3,14 @@ using Dapper;
 namespace SMS_Search.Data
 {
     public enum SearchMode { Function, Totalizer, Field }
+    public enum DefaultSearchTabMode
+    {
+        Function,
+        Totalizer,
+        Field,
+        [System.ComponentModel.Description("Last open tab")]
+        Last
+    }
     public enum SearchType { Number, Description, CustomSql, Table }
     public enum StartupLocationMode
     {
