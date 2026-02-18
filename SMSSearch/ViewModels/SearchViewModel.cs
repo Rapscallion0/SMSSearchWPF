@@ -48,6 +48,18 @@ namespace SMS_Search.ViewModels
             LoadFontSettings();
             LoadAnyMatchConfig();
 
+            if (System.Enum.TryParse(_configService.GetValue("GENERAL", "DEFAULT_TABLE_ACTION"), out DefaultTableAction tableAction))
+            {
+                if (tableAction == DefaultTableAction.QueryRecords)
+                {
+                    ShowRecords = true;
+                }
+                else
+                {
+                    ShowFields = true;
+                }
+            }
+
             if (System.Enum.TryParse(_configService.GetValue("GENERAL", "DEFAULT_TAB"), out DefaultSearchTabMode tabMode))
             {
                 if (tabMode == DefaultSearchTabMode.Last)
@@ -213,6 +225,7 @@ namespace SMS_Search.ViewModels
             {
                 ShowFields = false;
                 IsFieldTable = true;
+                WeakReferenceMessenger.Default.Send(new FocusTableMessage(true));
             }
         }
 
@@ -222,6 +235,7 @@ namespace SMS_Search.ViewModels
             {
                 ShowRecords = false;
                 IsFieldTable = true;
+                WeakReferenceMessenger.Default.Send(new FocusTableMessage(true));
             }
         }
 

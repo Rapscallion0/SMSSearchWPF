@@ -21,6 +21,14 @@ namespace SMS_Search.Views
             {
                 Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(FocusActiveSearchInput));
             });
+
+            CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.Register<SMS_Search.Utils.FocusTableMessage>(this, (r, m) =>
+            {
+                if (m.Value)
+                {
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(FocusTableCombo));
+                }
+            });
         }
 
         private void TypingTimer_Tick(object sender, EventArgs e)
