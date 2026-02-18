@@ -68,6 +68,31 @@ namespace SMS_Search.Views.Controls
         {
             if (_intellisenseService == null || !_intellisenseService.IsEnabled) return;
 
+            // Handle open window updates
+            if (_completionWindow != null)
+            {
+                // If dot is typed, close current window to allow context switch (e.g. Table -> Column)
+                if (e.Text == ".")
+                {
+                    _completionWindow.Close();
+                    // Fall through to allow ShowCompletion to open a new window for the new context
+                }
+                else
+                {
+                    // Check if current text still matches any completion
+                    // If no matches, close the window to avoid empty popup
+                    var text = Editor.Text;
+                    var offset = Editor.CaretOffset;
+                    var completions = _intellisenseService.GetCompletions(text, offset, _currentLevel);
+
+                    if (completions == null || !completions.Any())
+                    {
+                        _completionWindow.Close();
+                        return;
+                    }
+                }
+            }
+
             // If AutoTrigger is enabled, trigger on dot or letter/digit/underscore
             if (_intellisenseService.AutoTriggerEnabled)
             {
