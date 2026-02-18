@@ -112,6 +112,8 @@ namespace SMS_Search.ViewModels
         private string _functionDescriptionText = "";
         [ObservableProperty]
         private string _functionSqlText = "";
+        [ObservableProperty]
+        private string _functionSqlSelectedText = "";
 
         // Totalizer Tab Inputs
         [ObservableProperty]
@@ -120,6 +122,8 @@ namespace SMS_Search.ViewModels
         private string _totalizerDescriptionText = "";
         [ObservableProperty]
         private string _totalizerSqlText = "";
+        [ObservableProperty]
+        private string _totalizerSqlSelectedText = "";
 
         // Field Tab Inputs
         [ObservableProperty]
@@ -128,6 +132,8 @@ namespace SMS_Search.ViewModels
         private string _fieldDescriptionText = "";
         [ObservableProperty]
         private string _fieldSqlText = "";
+        [ObservableProperty]
+        private string _fieldSqlSelectedText = "";
 
         [ObservableProperty]
         private string _sqlFontFamily = "Consolas";
@@ -480,7 +486,7 @@ namespace SMS_Search.ViewModels
                 else if (IsFunctionCustomSql)
                 {
                     criteria.Type = SearchType.CustomSql;
-                    criteria.Value = FunctionSqlText;
+                    criteria.Value = !string.IsNullOrEmpty(FunctionSqlSelectedText) ? FunctionSqlSelectedText : FunctionSqlText;
                 }
             }
             else if (SelectedMode == SearchMode.Totalizer)
@@ -498,7 +504,7 @@ namespace SMS_Search.ViewModels
                 else if (IsTotalizerCustomSql)
                 {
                     criteria.Type = SearchType.CustomSql;
-                    criteria.Value = TotalizerSqlText;
+                    criteria.Value = !string.IsNullOrEmpty(TotalizerSqlSelectedText) ? TotalizerSqlSelectedText : TotalizerSqlText;
                 }
             }
             else if (SelectedMode == SearchMode.Field)
@@ -516,7 +522,7 @@ namespace SMS_Search.ViewModels
                 else if (IsFieldCustomSql)
                 {
                     criteria.Type = SearchType.CustomSql;
-                    criteria.Value = FieldSqlText;
+                    criteria.Value = !string.IsNullOrEmpty(FieldSqlSelectedText) ? FieldSqlSelectedText : FieldSqlText;
                 }
                 else if (IsFieldTable)
                 {
