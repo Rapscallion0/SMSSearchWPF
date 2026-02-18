@@ -24,19 +24,19 @@ namespace SMS_Search.Views
                 {
                     if (vm.IsFunctionNumber) FocusAndSelect(FunctionNumberBox, force: true);
                     else if (vm.IsFunctionDescription) FocusAndSelect(FunctionDescriptionBox, force: true);
-                    else if (vm.IsFunctionCustomSql) FocusAndSelectSql(FunctionSqlEditor, force: true);
+                    else if (vm.IsFunctionCustomSql) FocusAndSelectSql(FunctionSqlEditor, force: true, selectAll: false);
                 }
                 else if (vm.SelectedMode == SMS_Search.Data.SearchMode.Totalizer)
                 {
                     if (vm.IsTotalizerNumber) FocusAndSelect(TotalizerNumberBox, force: true);
                     else if (vm.IsTotalizerDescription) FocusAndSelect(TotalizerDescriptionBox, force: true);
-                    else if (vm.IsTotalizerCustomSql) FocusAndSelectSql(TotalizerSqlEditor, force: true);
+                    else if (vm.IsTotalizerCustomSql) FocusAndSelectSql(TotalizerSqlEditor, force: true, selectAll: false);
                 }
                 else if (vm.SelectedMode == SMS_Search.Data.SearchMode.Field)
                 {
                     if (vm.IsFieldNumber) FocusAndSelect(FieldNumberBox, force: true);
                     else if (vm.IsFieldDescription) FocusAndSelect(FieldDescriptionBox, force: true);
-                    else if (vm.IsFieldCustomSql) FocusAndSelectSql(FieldSqlEditor, force: true);
+                    else if (vm.IsFieldCustomSql) FocusAndSelectSql(FieldSqlEditor, force: true, selectAll: false);
                     else if (vm.IsFieldTable) FocusTableCombo();
                 }
             }
@@ -107,14 +107,17 @@ namespace SMS_Search.Views
             }
         }
 
-        private void FocusAndSelectSql(SMS_Search.Views.Controls.SqlEditor editor, bool force = false)
+        private void FocusAndSelectSql(SMS_Search.Views.Controls.SqlEditor editor, bool force = false, bool selectAll = true)
         {
             if (editor != null && editor.Visibility == System.Windows.Visibility.Visible)
             {
                 if (force || !editor.IsKeyboardFocusWithin)
                 {
                     editor.Focus();
-                    editor.SelectAll();
+                    if (selectAll)
+                    {
+                        editor.SelectAll();
+                    }
                 }
             }
         }
