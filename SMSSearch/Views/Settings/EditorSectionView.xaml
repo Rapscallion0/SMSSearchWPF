@@ -21,6 +21,24 @@
                               IsEnabled="{Binding EnableIntellisense.Value}"
                               Content="Automatically trigger IntelliSense while typing" />
                 </ctrl:SettingControl>
+
+                <ctrl:SettingControl Header="Default Level" IsSaved="{Binding DefaultIntellisenseLevel.IsSaved}">
+                    <ComboBox ItemsSource="{Binding IntellisenseLevels}"
+                              SelectedItem="{Binding DefaultIntellisenseLevel.Value}"
+                              IsEnabled="{Binding EnableIntellisense.Value}"
+                              Width="200" HorizontalAlignment="Left">
+                        <ComboBox.ToolTip>
+                            <ToolTip>
+                                <TextBlock>
+                                    <Run FontWeight="Bold">Schema:</Run> Tables &amp; Columns<LineBreak/>
+                                    <Run FontWeight="Bold">Standard:</Run> + Keywords (SELECT, FROM...)<LineBreak/>
+                                    <Run FontWeight="Bold">Functional:</Run> + SQL Functions (SUM, COUNT...)<LineBreak/>
+                                    <Run FontWeight="Bold">Full:</Run> + Admin/DCL (GRANT, BACKUP...)
+                                </TextBlock>
+                            </ToolTip>
+                        </ComboBox.ToolTip>
+                    </ComboBox>
+                </ctrl:SettingControl>
             </StackPanel>
         </GroupBox>
 
