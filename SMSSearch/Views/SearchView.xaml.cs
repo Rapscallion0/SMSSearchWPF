@@ -31,7 +31,7 @@ namespace SMS_Search.Views
             });
         }
 
-        private void TypingTimer_Tick(object sender, EventArgs e)
+        private void TypingTimer_Tick(object? sender, EventArgs e)
         {
             _typingTimer.Stop();
             if (DataContext is SearchViewModel vm)
@@ -78,7 +78,7 @@ namespace SMS_Search.Views
             }
         }
 
-        private void ComboBox_DropDownOpened(object sender, EventArgs e)
+        private void ComboBox_DropDownOpened(object? sender, EventArgs e)
         {
             if (DataContext is SearchViewModel vm)
             {
