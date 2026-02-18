@@ -211,9 +211,11 @@ namespace SMS_Search.ViewModels
         }
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsLastTransactionVisible))]
         private string _selectedTable = "";
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsLastTransactionVisible))]
         private bool _showFields = true;
 
         [ObservableProperty]
@@ -248,6 +250,21 @@ namespace SMS_Search.ViewModels
             {
                 IsFieldTable = true;
                 ShowRecords = true;
+                if (IsLastTransactionVisible)
+                {
+                    WeakReferenceMessenger.Default.Send(new FocusTableMessage(true));
+                }
+            }
+        }
+
+        public bool IsLastTransactionVisible
+        {
+            get
+            {
+                if (ShowFields) return false;
+                if (string.IsNullOrEmpty(SelectedTable)) return false;
+                return SelectedTable.StartsWith("SAL_", System.StringComparison.OrdinalIgnoreCase) ||
+                       SelectedTable.StartsWith("REC_", System.StringComparison.OrdinalIgnoreCase);
             }
         }
 
@@ -415,7 +432,7 @@ namespace SMS_Search.ViewModels
                 criteria.Type = SearchType.Table;
                 criteria.Value = SelectedTable;
                 criteria.ShowFields = ShowFields;
-                criteria.LastTransaction = LastTransaction;
+                criteria.LastTransaction = IsLastTransactionVisible && LastTransaction;
             }
             else
             {
@@ -567,7 +584,7 @@ namespace SMS_Search.ViewModels
                     criteria.Type = SearchType.Table;
                     criteria.Value = SelectedTable;
                     criteria.ShowFields = ShowFields;
-                    criteria.LastTransaction = LastTransaction;
+                    criteria.LastTransaction = IsLastTransactionVisible && LastTransaction;
                 }
             }
 
