@@ -8,13 +8,32 @@ namespace SMS_Search.Views
 {
     public partial class SearchView : System.Windows.Controls.UserControl
     {
+        private System.Windows.Threading.DispatcherTimer _typingTimer;
+
         public SearchView()
         {
             InitializeComponent();
+            _typingTimer = new System.Windows.Threading.DispatcherTimer();
+            _typingTimer.Interval = TimeSpan.FromMilliseconds(300);
+            _typingTimer.Tick += TypingTimer_Tick;
+
             CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.Register<SMS_Search.Utils.SearchExecutedMessage>(this, (r, m) =>
             {
                 Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(FocusActiveSearchInput));
             });
+        }
+
+        private void TypingTimer_Tick(object sender, EventArgs e)
+        {
+            _typingTimer.Stop();
+            if (DataContext is SearchViewModel vm)
+            {
+                vm.FilterTables(TableComboBox.Text);
+                if (TableComboBox.IsKeyboardFocusWithin)
+                {
+                    TableComboBox.IsDropDownOpen = true;
+                }
+            }
         }
 
         private void FocusActiveSearchInput()
@@ -188,11 +207,8 @@ namespace SMS_Search.Views
                 return;
             }
 
-            if (sender is ComboBox cmb && DataContext is SearchViewModel vm)
-            {
-                vm.FilterTables(cmb.Text);
-                cmb.IsDropDownOpen = true;
-            }
+            _typingTimer.Stop();
+            _typingTimer.Start();
         }
 
         private void TableComboBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
