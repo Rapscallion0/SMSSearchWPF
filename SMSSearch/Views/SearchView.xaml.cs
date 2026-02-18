@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Controls;
 using SMS_Search.ViewModels;
+using ComboBox = System.Windows.Controls.ComboBox;
 using CommunityToolkit.Mvvm.Messaging;
 
 namespace SMS_Search.Views
