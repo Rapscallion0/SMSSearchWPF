@@ -72,130 +72,144 @@ namespace SMS_Search
 
         protected override async void OnStartup(StartupEventArgs e)
         {
-            base.OnStartup(e);
-
-            var logger = Services.GetRequiredService<ILoggerService>();
-            var configService = Services.GetRequiredService<IConfigService>();
-
-            // Global Exception Handling
-            this.DispatcherUnhandledException += (s, args) =>
+            try
             {
-                logger.Log(LogLevel.Critical, $"Unhandled Dispatcher Exception: {args.Exception.Message}");
-                logger.LogError("Unhandled Dispatcher Exception", args.Exception);
-                // Optional: Notify user
-                // MessageBox.Show("An unexpected error occurred. See logs for details.", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                args.Handled = true; // Prevent immediate crash, but app might be unstable
-            };
+                base.OnStartup(e);
 
-            TaskScheduler.UnobservedTaskException += (s, args) =>
-            {
-                logger.Log(LogLevel.Critical, $"Unobserved Task Exception: {args.Exception.Message}");
-                logger.LogError("Unobserved Task Exception", args.Exception);
-                args.SetObserved();
-            };
+                // Service resolution might fail (e.g. LoggerService constructor)
+                var logger = Services.GetRequiredService<ILoggerService>();
+                var configService = Services.GetRequiredService<IConfigService>();
 
-            AppDomain.CurrentDomain.UnhandledException += (s, args) =>
-            {
-                var ex = args.ExceptionObject as Exception;
-                logger.Log(LogLevel.Critical, $"Unhandled AppDomain Exception: {ex?.Message ?? "Unknown Error"}");
-                if (ex != null) logger.LogError("Unhandled AppDomain Exception", ex);
-            };
-
-            // EULA Check
-            if (configService.GetValue("GENERAL", "EULA") != "1")
-            {
-                var eulaWindow = Services.GetRequiredService<EulaWindow>();
-                bool? result = eulaWindow.ShowDialog();
-                if (result != true)
+                // Global Exception Handling
+                this.DispatcherUnhandledException += (s, args) =>
                 {
-                    Shutdown();
-                    return;
-                }
-            }
+                    logger.Log(LogLevel.Critical, $"Unhandled Dispatcher Exception: {args.Exception.Message}");
+                    logger.LogError("Unhandled Dispatcher Exception", args.Exception);
+                    // Optional: Notify user
+                    // MessageBox.Show("An unexpected error occurred. See logs for details.", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    args.Handled = true; // Prevent immediate crash, but app might be unstable
+                };
 
-            // Update Check
-            if (configService.GetValue("GENERAL", "CHECKUPDATE") == "1")
-            {
-                var updateChecker = Services.GetRequiredService<UpdateChecker>();
-                var info = await updateChecker.CheckForUpdatesAsync();
-                if (info.IsNewer)
+                TaskScheduler.UnobservedTaskException += (s, args) =>
                 {
-                    var msg = $"There is an update available for download.\n\nCurrent Version: {System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version}\nNew Version: {info.Version}\n\nWould you like to update now?";
-                    if (System.Windows.MessageBox.Show(msg, "SMS Search Update", MessageBoxButton.YesNo, MessageBoxImage.Asterisk) == MessageBoxResult.Yes)
+                    logger.Log(LogLevel.Critical, $"Unobserved Task Exception: {args.Exception.Message}");
+                    logger.LogError("Unobserved Task Exception", args.Exception);
+                    args.SetObserved();
+                };
+
+                AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+                {
+                    var ex = args.ExceptionObject as Exception;
+                    logger.Log(LogLevel.Critical, $"Unhandled AppDomain Exception: {ex?.Message ?? "Unknown Error"}");
+                    if (ex != null) logger.LogError("Unhandled AppDomain Exception", ex);
+                };
+
+                // EULA Check
+                if (configService.GetValue("GENERAL", "EULA") != "1")
+                {
+                    var eulaWindow = Services.GetRequiredService<EulaWindow>();
+                    bool? result = eulaWindow.ShowDialog();
+                    if (result != true)
                     {
-                        await updateChecker.PerformUpdate(info);
-                        return; // Should have shut down in PerformUpdate, but just in case
+                        Shutdown();
+                        return;
                     }
                 }
-            }
 
-            logger.LogInfo("Application starting...");
-
-            bool isListener = false;
-            foreach (var arg in e.Args)
-            {
-                if (arg == "--listener")
+                // Update Check
+                if (configService.GetValue("GENERAL", "CHECKUPDATE") == "1")
                 {
-                    isListener = true;
-                    break;
-                }
-            }
-
-            if (isListener)
-            {
-                var hiddenWindow = new Window
-                {
-                    Title = "SMS_Search_Listener_Hidden_Window",
-                    Width = 0, Height = 0,
-                    WindowStyle = WindowStyle.None,
-                    ShowInTaskbar = false,
-                    Visibility = Visibility.Hidden
-                };
-                hiddenWindow.Show();
-                hiddenWindow.Hide();
-
-                var hotkeyService = Services.GetRequiredService<IHotkeyService>();
-                var config = Services.GetRequiredService<IConfigService>();
-
-                string? hotkeyStr = config.GetValue("LAUNCHER", "HOTKEY");
-                if (!string.IsNullOrEmpty(hotkeyStr))
-                {
-                    try
+                    var updateChecker = Services.GetRequiredService<UpdateChecker>();
+                    var info = await updateChecker.CheckForUpdatesAsync();
+                    if (info.IsNewer)
                     {
-                        var (key, modifiers) = HotkeyUtils.Parse(hotkeyStr);
-                        if (key != Key.None)
+                        var msg = $"There is an update available for download.\n\nCurrent Version: {System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version}\nNew Version: {info.Version}\n\nWould you like to update now?";
+                        if (System.Windows.MessageBox.Show(msg, "SMS Search Update", MessageBoxButton.YesNo, MessageBoxImage.Asterisk) == MessageBoxResult.Yes)
                         {
-                            var helper = new WindowInteropHelper(hiddenWindow);
-                            HwndSource.FromHwnd(helper.Handle).AddHook(hotkeyService.ProcessMessage);
-                            hotkeyService.Register(helper.Handle, key, modifiers, () =>
-                            {
-                                try
-                                {
-                                    string? fileName = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
-                                    if (fileName != null)
-                                    {
-                                        System.Diagnostics.Process.Start(fileName);
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    logger.LogError("Failed to launch application", ex);
-                                }
-                            });
+                            await updateChecker.PerformUpdate(info);
+                            return; // Should have shut down in PerformUpdate, but just in case
                         }
                     }
-                    catch (Exception ex)
+                }
+
+                logger.LogInfo("Application starting...");
+
+                bool isListener = false;
+                foreach (var arg in e.Args)
+                {
+                    if (arg == "--listener")
                     {
-                        logger.LogError("Error registering hotkey", ex);
+                        isListener = true;
+                        break;
                     }
                 }
 
-                logger.LogInfo("Listener mode started.");
+                if (isListener)
+                {
+                    var hiddenWindow = new Window
+                    {
+                        Title = "SMS_Search_Listener_Hidden_Window",
+                        Width = 0,
+                        Height = 0,
+                        WindowStyle = WindowStyle.None,
+                        ShowInTaskbar = false,
+                        Visibility = Visibility.Hidden
+                    };
+                    hiddenWindow.Show();
+                    hiddenWindow.Hide();
+
+                    var hotkeyService = Services.GetRequiredService<IHotkeyService>();
+                    var config = Services.GetRequiredService<IConfigService>();
+
+                    string? hotkeyStr = config.GetValue("LAUNCHER", "HOTKEY");
+                    if (!string.IsNullOrEmpty(hotkeyStr))
+                    {
+                        try
+                        {
+                            var (key, modifiers) = HotkeyUtils.Parse(hotkeyStr);
+                            if (key != Key.None)
+                            {
+                                var helper = new WindowInteropHelper(hiddenWindow);
+                                HwndSource.FromHwnd(helper.Handle).AddHook(hotkeyService.ProcessMessage);
+                                hotkeyService.Register(helper.Handle, key, modifiers, () =>
+                                {
+                                    try
+                                    {
+                                        string? fileName = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+                                        if (fileName != null)
+                                        {
+                                            System.Diagnostics.Process.Start(fileName);
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        logger.LogError("Failed to launch application", ex);
+                                    }
+                                });
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError("Error registering hotkey", ex);
+                        }
+                    }
+
+                    logger.LogInfo("Listener mode started.");
+                }
+                else
+                {
+                    var mainWindow = Services.GetRequiredService<MainWindow>();
+                    mainWindow.Show();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                var mainWindow = Services.GetRequiredService<MainWindow>();
-                mainWindow.Show();
+                // Handle any startup exceptions that occur within the WPF context (Async Void)
+                // This ensures we catch DI resolution failures, Window creation failures, etc.
+                SMS_Search.Program.HandleStartupException(ex);
+
+                // Force exit as the app is likely in a bad state
+                Environment.Exit(1);
             }
         }
     }
