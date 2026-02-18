@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Controls;
+using SMS_Search.Data;
 
 namespace SMS_Search.Converters
 {
@@ -35,7 +36,27 @@ namespace SMS_Search.Converters
 
                 // Priority: Check values[5] (Row) and values[4] (Column) first for robust data binding
                 // This ensures we highlight based on actual data, solving virtualization issues where UI content might be stale
-                if (values.Length >= 6 && values[4] is DataGridColumn col && values[5] != null && values[5] != System.Windows.DependencyProperty.UnsetValue)
+
+                // Optimized path for VirtualRow to avoid TypeDescriptor overhead
+                if (values.Length >= 6 && values[5] is VirtualRow vRow)
+                {
+                    if (values[4] is DataGridColumn col)
+                    {
+                        string? propName = col.SortMemberPath;
+                        if (!string.IsNullOrEmpty(propName))
+                        {
+                            // Direct property access bypassing TypeDescriptor
+                            var props = vRow.GetProperties();
+                            var prop = props[propName];
+                            if (prop != null)
+                            {
+                                var val = prop.GetValue(vRow);
+                                if (val != null) cellText = val.ToString();
+                            }
+                        }
+                    }
+                }
+                else if (values.Length >= 6 && values[4] is DataGridColumn col && values[5] != null && values[5] != System.Windows.DependencyProperty.UnsetValue)
                 {
                     string? propName = col.SortMemberPath;
                     if (!string.IsNullOrEmpty(propName))

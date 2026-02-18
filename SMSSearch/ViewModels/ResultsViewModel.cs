@@ -150,6 +150,7 @@ namespace SMS_Search.ViewModels
         private void Cancel()
         {
             _cts?.Cancel();
+            _refreshCts?.Cancel();
         }
 
         private void UpdateHighlightColor(string? colorString)
@@ -206,12 +207,21 @@ namespace SMS_Search.ViewModels
             HeadersUpdated?.Invoke(this, EventArgs.Empty);
         }
 
+        private CancellationTokenSource? _refreshCts;
+
         private void OnDataReady(object? sender, EventArgs e)
         {
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
             {
+                _refreshCts?.Cancel();
+                _refreshCts = new CancellationTokenSource();
+                var token = _refreshCts.Token;
+
                 try
                 {
+                    await Task.Delay(50, token);
+                    if (token.IsCancellationRequested) return;
+
                     if (SearchResults is VirtualizingCollection vc)
                     {
                         vc.Refresh();
@@ -225,6 +235,10 @@ namespace SMS_Search.ViewModels
                             StatusText = $"Found {TotalRecords} records";
                         }
                     }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Ignore
                 }
                 catch (Exception ex)
                 {
