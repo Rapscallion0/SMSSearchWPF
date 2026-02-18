@@ -38,7 +38,7 @@ namespace SMS_Search
             app.Run();
         }
 
-        private static void HandleStartupException(Exception ex)
+        public static void HandleStartupException(Exception ex)
         {
             string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "startup_error.log");
             string errorMsg = $"[{DateTime.Now}] Critical Startup Error:\n{ex}\n\n";
@@ -51,16 +51,29 @@ namespace SMS_Search
             }
             catch
             {
-                // Fallback to temp directory if we can't write to the application directory
+                // Fallback 1: LocalAppData
                 try
                 {
-                    logPath = Path.Combine(Path.GetTempPath(), "SMSSearch_startup_error.log");
+                    string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SMS Search");
+                    if (!Directory.Exists(appDataPath)) Directory.CreateDirectory(appDataPath);
+
+                    logPath = Path.Combine(appDataPath, "startup_error.log");
                     File.AppendAllText(logPath, errorMsg);
                     logWritten = true;
                 }
                 catch
                 {
-                    // If both fail, we can't log to file.
+                    // Fallback 2: Temp directory if we can't write to AppData
+                    try
+                    {
+                        logPath = Path.Combine(Path.GetTempPath(), "SMSSearch_startup_error.log");
+                        File.AppendAllText(logPath, errorMsg);
+                        logWritten = true;
+                    }
+                    catch
+                    {
+                        // If all fail, we can't log to file.
+                    }
                 }
             }
 
@@ -71,7 +84,15 @@ namespace SMS_Search
             }
 
             // Use WinForms MessageBox as it's less dependent on WPF infrastructure which might be broken
-            MessageBox.Show(userMessage, "SMS Search - Critical Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            try
+            {
+                MessageBox.Show(userMessage, "SMS Search - Critical Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch
+            {
+                // Absolute last resort: write to console if attached (unlikely in WinExe)
+                // or just die silently if we can't show UI.
+            }
         }
     }
 }
