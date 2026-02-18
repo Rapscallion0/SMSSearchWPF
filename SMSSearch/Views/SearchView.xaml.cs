@@ -36,7 +36,27 @@ namespace SMS_Search.Views
             _typingTimer.Stop();
             if (DataContext is SearchViewModel vm)
             {
-                vm.FilterTables(TableComboBox.Text);
+                string text = TableComboBox.Text;
+                vm.FilterTables(text);
+
+                // If the user typed an exact match, select it.
+                // If not, clear selection so text isn't reverted/overwritten.
+                var match = System.Linq.Enumerable.FirstOrDefault(vm.Tables, t => t.Equals(text, StringComparison.OrdinalIgnoreCase));
+                if (match != null)
+                {
+                    if (vm.SelectedTable != match)
+                    {
+                        vm.SelectedTable = match;
+                    }
+                }
+                else
+                {
+                    if (vm.SelectedTable != null)
+                    {
+                        vm.SelectedTable = null;
+                    }
+                }
+
                 if (TableComboBox.IsKeyboardFocusWithin)
                 {
                     TableComboBox.IsDropDownOpen = true;
