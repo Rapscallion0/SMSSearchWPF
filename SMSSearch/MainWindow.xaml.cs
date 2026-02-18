@@ -30,16 +30,17 @@ namespace SMS_Search
         {
             base.OnSourceInitialized(e);
 
-            // Restore Split Position
-            if (double.TryParse(_config.GetValue("MAIN", "SEARCH_HEIGHT"), out double h))
-            {
-                SearchRow.Height = new GridLength(h);
-            }
-
-            // Restore Size
             bool rememberSize = _config.GetValue("GENERAL", "MAIN_REMEMBER_SIZE") == "1";
+
             if (rememberSize)
             {
+                // Restore Split Position
+                if (double.TryParse(_config.GetValue("MAIN", "SEARCH_HEIGHT"), out double h))
+                {
+                    SearchRow.Height = new GridLength(h);
+                }
+
+                // Restore Size
                 if (double.TryParse(_config.GetValue("MAIN", "LAST_W"), out double w)) Width = w;
                 if (double.TryParse(_config.GetValue("MAIN", "LAST_H"), out double hVal)) Height = hVal;
             }
@@ -66,21 +67,33 @@ namespace SMS_Search
         {
             base.OnClosing(e);
 
-            _config.SetValue("MAIN", "SEARCH_HEIGHT", SearchRow.Height.Value.ToString());
             _config.SetValue("MAIN", "LAST_TAB", _viewModel.SearchVm.SelectedMode.ToString());
+
+            bool rememberSize = _config.GetValue("GENERAL", "MAIN_REMEMBER_SIZE") == "1";
+
+            if (rememberSize)
+            {
+                _config.SetValue("MAIN", "SEARCH_HEIGHT", SearchRow.Height.Value.ToString());
+            }
+            else
+            {
+                _config.RemoveValue("MAIN", "SEARCH_HEIGHT");
+                _config.RemoveValue("MAIN", "LAST_W");
+                _config.RemoveValue("MAIN", "LAST_H");
+            }
 
             if (WindowState == WindowState.Normal)
             {
                 _config.SetValue("MAIN", "LAST_X", Left.ToString());
                 _config.SetValue("MAIN", "LAST_Y", Top.ToString());
 
-                if (_config.GetValue("GENERAL", "MAIN_REMEMBER_SIZE") == "1")
+                if (rememberSize)
                 {
                     _config.SetValue("MAIN", "LAST_W", ActualWidth.ToString());
                     _config.SetValue("MAIN", "LAST_H", ActualHeight.ToString());
                 }
-                _config.Save();
             }
+            _config.Save();
         }
 
         protected override void OnClosed(EventArgs e)
