@@ -96,6 +96,51 @@ namespace SMS_Search.ViewModels.Settings
                 }
             };
 
+            // Standard IntelliSense Auto
+            var standardAutoStr = repository.GetValue("GENERAL", "INTELLISENSE_STANDARD_AUTO");
+            StandardIntellisenseAuto = new ObservableSetting<bool>(
+                repository, "GENERAL", "INTELLISENSE_STANDARD_AUTO",
+                standardAutoStr != "0", // Default true
+                v => v ? "1" : "0");
+
+            StandardIntellisenseAuto.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
+                {
+                    _intellisenseService.StandardAutoEnabled = StandardIntellisenseAuto.Value;
+                }
+            };
+
+            // Functional IntelliSense Auto
+            var functionalAutoStr = repository.GetValue("GENERAL", "INTELLISENSE_FUNCTIONAL_AUTO");
+            FunctionalIntellisenseAuto = new ObservableSetting<bool>(
+                repository, "GENERAL", "INTELLISENSE_FUNCTIONAL_AUTO",
+                functionalAutoStr != "0", // Default true
+                v => v ? "1" : "0");
+
+            FunctionalIntellisenseAuto.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
+                {
+                    _intellisenseService.FunctionalAutoEnabled = FunctionalIntellisenseAuto.Value;
+                }
+            };
+
+            // Full IntelliSense Auto
+            var fullAutoStr = repository.GetValue("GENERAL", "INTELLISENSE_FULL_AUTO");
+            FullIntellisenseAuto = new ObservableSetting<bool>(
+                repository, "GENERAL", "INTELLISENSE_FULL_AUTO",
+                fullAutoStr != "0", // Default true
+                v => v ? "1" : "0");
+
+            FullIntellisenseAuto.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
+                {
+                    _intellisenseService.FullAutoEnabled = FullIntellisenseAuto.Value;
+                }
+            };
+
             // Select Custom SQL on Build
             var selectCustomSqlStr = repository.GetValue("GENERAL", "SELECT_CUSTOM_SQL_ON_BUILD");
             SelectCustomSqlOnBuild = new ObservableSetting<bool>(
@@ -150,6 +195,10 @@ namespace SMS_Search.ViewModels.Settings
         public ObservableSetting<bool> StandardIntellisenseEnabled { get; }
         public ObservableSetting<bool> FunctionalIntellisenseEnabled { get; }
         public ObservableSetting<bool> FullIntellisenseEnabled { get; }
+
+        public ObservableSetting<bool> StandardIntellisenseAuto { get; }
+        public ObservableSetting<bool> FunctionalIntellisenseAuto { get; }
+        public ObservableSetting<bool> FullIntellisenseAuto { get; }
 
         public ObservableSetting<bool> SelectCustomSqlOnBuild { get; }
         public ObservableSetting<string> SqlFontFamily { get; }

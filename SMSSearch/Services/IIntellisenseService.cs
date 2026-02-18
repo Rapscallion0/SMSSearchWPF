@@ -21,6 +21,10 @@ namespace SMS_Search.Services
         bool FunctionalEnabled { get; set; }
         bool FullEnabled { get; set; }
 
+        bool StandardAutoEnabled { get; set; }
+        bool FunctionalAutoEnabled { get; set; }
+        bool FullAutoEnabled { get; set; }
+
         Task InitializeAsync(string server, string database, string? user, string? pass);
         IEnumerable<CompletionItem> GetCompletions(string text, int caretOffset, IntellisenseLevel level);
 
