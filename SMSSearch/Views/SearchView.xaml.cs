@@ -174,5 +174,38 @@ namespace SMS_Search.Views
         {
             if (DataContext is SearchViewModel vm && !vm.IsFieldCustomSql) vm.IsFieldCustomSql = true;
         }
+
+        private void TableComboBox_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Up || e.Key == System.Windows.Input.Key.Down ||
+                e.Key == System.Windows.Input.Key.Left || e.Key == System.Windows.Input.Key.Right ||
+                e.Key == System.Windows.Input.Key.Home || e.Key == System.Windows.Input.Key.End ||
+                e.Key == System.Windows.Input.Key.PageUp || e.Key == System.Windows.Input.Key.PageDown ||
+                e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Tab ||
+                e.Key == System.Windows.Input.Key.Escape)
+            {
+                return;
+            }
+
+            if (sender is ComboBox cmb && DataContext is SearchViewModel vm)
+            {
+                vm.FilterTables(cmb.Text);
+                cmb.IsDropDownOpen = true;
+            }
+        }
+
+        private void TableComboBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Tab)
+            {
+                if (sender is ComboBox cmb)
+                {
+                    if (cmb.SelectedItem == null && cmb.Items.Count > 0)
+                    {
+                        cmb.SelectedItem = cmb.Items[0];
+                    }
+                }
+            }
+        }
     }
 }

@@ -5,7 +5,9 @@ using SMS_Search.Data;
 using SMS_Search.Services;
 using SMS_Search.Utils;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Threading.Tasks;
+using System.Windows.Data;
 
 namespace SMS_Search.ViewModels
 {
@@ -68,6 +70,8 @@ namespace SMS_Search.ViewModels
             });
 
             InitializeIntellisense();
+
+            TablesView = CollectionViewSource.GetDefaultView(Tables);
         }
 
         private void InitializeIntellisense()
@@ -175,6 +179,24 @@ namespace SMS_Search.ViewModels
 
         [ObservableProperty]
         private ObservableCollection<string> _tables = new ObservableCollection<string>();
+
+        public ICollectionView TablesView { get; private set; }
+
+        public void FilterTables(string searchText)
+        {
+            if (TablesView == null) return;
+
+            TablesView.Filter = (obj) =>
+            {
+                if (string.IsNullOrEmpty(searchText)) return true;
+                if (obj is string str)
+                {
+                    return str.IndexOf(searchText, System.StringComparison.OrdinalIgnoreCase) >= 0;
+                }
+                return false;
+            };
+            TablesView.Refresh();
+        }
 
         [ObservableProperty]
         private string _selectedTable = "";
