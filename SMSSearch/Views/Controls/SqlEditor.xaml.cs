@@ -49,6 +49,12 @@ namespace SMS_Search.Views.Controls
             Editor.TextArea.TextEntered += TextArea_TextEntered;
             Editor.TextArea.TextEntering += TextArea_TextEntering;
             Editor.TextArea.KeyDown += TextArea_KeyDown;
+            Editor.TextArea.SelectionChanged += TextArea_SelectionChanged;
+        }
+
+        private void TextArea_SelectionChanged(object? sender, EventArgs e)
+        {
+            SelectedText = Editor.SelectedText;
         }
 
         private void TextArea_TextEntering(object sender, TextCompositionEventArgs e)
@@ -201,6 +207,16 @@ namespace SMS_Search.Views.Controls
         {
             get { return (string)GetValue(TextProperty); }
             set { SetValue(TextProperty, value); }
+        }
+
+        public static readonly DependencyProperty SelectedTextProperty =
+            DependencyProperty.Register("SelectedText", typeof(string), typeof(SqlEditor),
+                new FrameworkPropertyMetadata(string.Empty, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+        public string SelectedText
+        {
+            get { return (string)GetValue(SelectedTextProperty); }
+            set { SetValue(SelectedTextProperty, value); }
         }
 
         public static readonly DependencyProperty EditorFontFamilyProperty =

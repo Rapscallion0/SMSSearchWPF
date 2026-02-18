@@ -88,7 +88,7 @@
                     </Grid>
 
                     <!-- SQL Editor -->
-                    <ctrl:SqlEditor Grid.Row="3" x:Name="FunctionSqlEditor" Text="{Binding FunctionSqlText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="FunctionSqlEditor_GotFocus"/>
+                    <ctrl:SqlEditor Grid.Row="3" x:Name="FunctionSqlEditor" Text="{Binding FunctionSqlText, UpdateSourceTrigger=PropertyChanged}" SelectedText="{Binding FunctionSqlSelectedText, Mode=OneWayToSource}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="FunctionSqlEditor_GotFocus"/>
 
                     <!-- Any Match removed -->
                 </Grid>
@@ -164,7 +164,7 @@
                     </Grid>
 
                     <!-- SQL Editor -->
-                    <ctrl:SqlEditor Grid.Row="3" x:Name="TotalizerSqlEditor" Text="{Binding TotalizerSqlText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="TotalizerSqlEditor_GotFocus"/>
+                    <ctrl:SqlEditor Grid.Row="3" x:Name="TotalizerSqlEditor" Text="{Binding TotalizerSqlText, UpdateSourceTrigger=PropertyChanged}" SelectedText="{Binding TotalizerSqlSelectedText, Mode=OneWayToSource}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="TotalizerSqlEditor_GotFocus"/>
 
                     <!-- Any Match removed -->
                 </Grid>
@@ -267,7 +267,7 @@
                     </Grid>
 
                     <!-- SQL Editor -->
-                    <ctrl:SqlEditor Grid.Row="5" x:Name="FieldSqlEditor" Text="{Binding FieldSqlText, UpdateSourceTrigger=PropertyChanged}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="FieldSqlEditor_GotFocus"/>
+                    <ctrl:SqlEditor Grid.Row="5" x:Name="FieldSqlEditor" Text="{Binding FieldSqlText, UpdateSourceTrigger=PropertyChanged}" SelectedText="{Binding FieldSqlSelectedText, Mode=OneWayToSource}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="FieldSqlEditor_GotFocus"/>
 
                     <!-- Any Match removed -->
                 </Grid>
