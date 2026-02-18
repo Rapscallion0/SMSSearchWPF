@@ -22,22 +22,42 @@
                               Content="Automatically trigger IntelliSense while typing" />
                 </ctrl:SettingControl>
 
-                <ctrl:SettingControl Header="Default Level" IsSaved="{Binding DefaultIntellisenseLevel.IsSaved}">
-                    <ComboBox ItemsSource="{Binding IntellisenseLevels}"
-                              SelectedItem="{Binding DefaultIntellisenseLevel.Value}"
-                              IsEnabled="{Binding EnableIntellisense.Value}"
-                              Width="200" HorizontalAlignment="Left">
-                        <ComboBox.ToolTip>
-                            <ToolTip>
-                                <TextBlock>
-                                    <Run FontWeight="Bold">Schema:</Run> Tables &amp; Columns<LineBreak/>
-                                    <Run FontWeight="Bold">Standard:</Run> + Keywords (SELECT, FROM...)<LineBreak/>
-                                    <Run FontWeight="Bold">Functional:</Run> + SQL Functions (SUM, COUNT...)<LineBreak/>
-                                    <Run FontWeight="Bold">Full:</Run> + Admin/DCL (GRANT, BACKUP...)
-                                </TextBlock>
-                            </ToolTip>
-                        </ComboBox.ToolTip>
-                    </ComboBox>
+                <TextBlock Text="Enabled Levels:" Margin="0,10,0,5" FontWeight="SemiBold" />
+
+                <!-- Schema (Always On) -->
+                <StackPanel Orientation="Horizontal" Margin="20,2,0,2">
+                    <CheckBox IsChecked="True" IsEnabled="False" Content="Schema" Width="100"/>
+                    <Control Template="{StaticResource Icon_Info}" Width="16" Height="16" Margin="5,0,0,0" ToolTip="Tables and Columns (Always enabled)"/>
+                </StackPanel>
+
+                <!-- Standard -->
+                <ctrl:SettingControl IsSaved="{Binding StandardIntellisenseEnabled.IsSaved}" Margin="20,2,0,2">
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding StandardIntellisenseEnabled.Value}"
+                                  IsEnabled="{Binding EnableIntellisense.Value}"
+                                  Content="Standard" Width="100"/>
+                        <Control Template="{StaticResource Icon_Info}" Width="16" Height="16" Margin="5,0,0,0" ToolTip="Basic SQL Keywords (SELECT, FROM...)"/>
+                    </StackPanel>
+                </ctrl:SettingControl>
+
+                <!-- Functional -->
+                <ctrl:SettingControl IsSaved="{Binding FunctionalIntellisenseEnabled.IsSaved}" Margin="20,2,0,2">
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding FunctionalIntellisenseEnabled.Value}"
+                                  IsEnabled="{Binding EnableIntellisense.Value}"
+                                  Content="Functional" Width="100"/>
+                        <Control Template="{StaticResource Icon_Info}" Width="16" Height="16" Margin="5,0,0,0" ToolTip="SQL Functions (SUM, COUNT...)"/>
+                    </StackPanel>
+                </ctrl:SettingControl>
+
+                <!-- Full -->
+                <ctrl:SettingControl IsSaved="{Binding FullIntellisenseEnabled.IsSaved}" Margin="20,2,0,2">
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding FullIntellisenseEnabled.Value}"
+                                  IsEnabled="{Binding EnableIntellisense.Value}"
+                                  Content="Full" Width="100"/>
+                        <Control Template="{StaticResource Icon_Info}" Width="16" Height="16" Margin="5,0,0,0" ToolTip="Admin/DCL commands (GRANT, BACKUP...)"/>
+                    </StackPanel>
                 </ctrl:SettingControl>
             </StackPanel>
         </GroupBox>

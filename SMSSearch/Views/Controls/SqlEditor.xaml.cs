@@ -40,7 +40,7 @@ namespace SMS_Search.Views.Controls
                 // Initialize current level from service default
                 if (_intellisenseService != null)
                 {
-                    _currentLevel = _intellisenseService.DefaultLevel;
+                    _currentLevel = _intellisenseService.GetInitialLevel();
                 }
             }
 
@@ -95,28 +95,27 @@ namespace SMS_Search.Views.Controls
                     _completionWindow.Close();
                     _isCycling = false;
 
-                    // Cycle: Schema -> Standard -> Functional -> Full -> Default
-                    if (_currentLevel >= IntellisenseLevel.Full)
+                    // Cycle to next enabled level
+                    if (_intellisenseService != null)
                     {
-                         // Reset to user's preferred default level
-                         if (_intellisenseService != null)
-                             _currentLevel = _intellisenseService.DefaultLevel;
-                         else
-                             _currentLevel = IntellisenseLevel.Schema;
+                        _currentLevel = _intellisenseService.GetNextLevel(_currentLevel);
                     }
                     else
                     {
-                        _currentLevel++;
+                        if (_currentLevel >= IntellisenseLevel.Full)
+                            _currentLevel = IntellisenseLevel.Schema;
+                        else
+                            _currentLevel++;
                     }
 
                     _logger?.LogDebug($"Intellisense: Cycling to level {_currentLevel}");
                 }
                 else
                 {
-                    // Manual trigger when closed starts at default
+                    // Manual trigger when closed starts at initial/default
                     // Note: If previously closed, it was reset to default.
                     if (_intellisenseService != null)
-                         _currentLevel = _intellisenseService.DefaultLevel;
+                         _currentLevel = _intellisenseService.GetInitialLevel();
                     else
                          _currentLevel = IntellisenseLevel.Schema;
                 }
@@ -182,7 +181,7 @@ namespace SMS_Search.Views.Controls
                     {
                         // Reset to default level on close
                         if (_intellisenseService != null)
-                            _currentLevel = _intellisenseService.DefaultLevel;
+                            _currentLevel = _intellisenseService.GetInitialLevel();
                         else
                             _currentLevel = IntellisenseLevel.Schema;
                     }

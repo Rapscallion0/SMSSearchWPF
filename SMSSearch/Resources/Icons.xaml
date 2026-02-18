@@ -366,4 +366,12 @@
             </Grid>
         </Viewbox>
     </ControlTemplate>
+
+    <!-- Info Icon -->
+    <StreamGeometry x:Key="Geometry_Info">M11,9H13V7H11M11,20H13V11H11M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z</StreamGeometry>
+    <ControlTemplate x:Key="Icon_Info" TargetType="Control">
+        <Viewbox>
+            <Path Fill="#FF607D8B" Data="{StaticResource Geometry_Info}" />
+        </Viewbox>
+    </ControlTemplate>
 </ResourceDictionary>

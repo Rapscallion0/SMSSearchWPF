@@ -51,21 +51,48 @@ namespace SMS_Search.ViewModels.Settings
                 }
             };
 
-            // Default IntelliSense Level
-            var defaultLevelStr = repository.GetValue("GENERAL", "INTELLISENSE_DEFAULT_LEVEL");
-            IntellisenseLevel defaultLevel;
-            if (!Enum.TryParse(defaultLevelStr, out defaultLevel)) defaultLevel = IntellisenseLevel.Schema;
+            // Standard IntelliSense
+            var standardStr = repository.GetValue("GENERAL", "INTELLISENSE_STANDARD");
+            StandardIntellisenseEnabled = new ObservableSetting<bool>(
+                repository, "GENERAL", "INTELLISENSE_STANDARD",
+                standardStr != "0", // Default true
+                v => v ? "1" : "0");
 
-            DefaultIntellisenseLevel = new ObservableSetting<IntellisenseLevel>(
-                repository, "GENERAL", "INTELLISENSE_DEFAULT_LEVEL",
-                defaultLevel,
-                v => v.ToString());
-
-            DefaultIntellisenseLevel.PropertyChanged += (s, e) =>
+            StandardIntellisenseEnabled.PropertyChanged += (s, e) =>
             {
-                if (e.PropertyName == nameof(ObservableSetting<IntellisenseLevel>.Value))
+                if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
                 {
-                    _intellisenseService.DefaultLevel = DefaultIntellisenseLevel.Value;
+                    _intellisenseService.StandardEnabled = StandardIntellisenseEnabled.Value;
+                }
+            };
+
+            // Functional IntelliSense
+            var functionalStr = repository.GetValue("GENERAL", "INTELLISENSE_FUNCTIONAL");
+            FunctionalIntellisenseEnabled = new ObservableSetting<bool>(
+                repository, "GENERAL", "INTELLISENSE_FUNCTIONAL",
+                functionalStr != "0", // Default true
+                v => v ? "1" : "0");
+
+            FunctionalIntellisenseEnabled.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
+                {
+                    _intellisenseService.FunctionalEnabled = FunctionalIntellisenseEnabled.Value;
+                }
+            };
+
+            // Full IntelliSense
+            var fullStr = repository.GetValue("GENERAL", "INTELLISENSE_FULL");
+            FullIntellisenseEnabled = new ObservableSetting<bool>(
+                repository, "GENERAL", "INTELLISENSE_FULL",
+                fullStr != "0", // Default true
+                v => v ? "1" : "0");
+
+            FullIntellisenseEnabled.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
+                {
+                    _intellisenseService.FullEnabled = FullIntellisenseEnabled.Value;
                 }
             };
 
@@ -119,12 +146,14 @@ namespace SMS_Search.ViewModels.Settings
 
         public ObservableSetting<bool> EnableIntellisense { get; }
         public ObservableSetting<bool> AutoTriggerIntellisense { get; }
-        public ObservableSetting<IntellisenseLevel> DefaultIntellisenseLevel { get; }
+
+        public ObservableSetting<bool> StandardIntellisenseEnabled { get; }
+        public ObservableSetting<bool> FunctionalIntellisenseEnabled { get; }
+        public ObservableSetting<bool> FullIntellisenseEnabled { get; }
+
         public ObservableSetting<bool> SelectCustomSqlOnBuild { get; }
         public ObservableSetting<string> SqlFontFamily { get; }
         public ObservableSetting<int> SqlFontSize { get; }
-
-        public IEnumerable<IntellisenseLevel> IntellisenseLevels => Enum.GetValues<IntellisenseLevel>();
 
         public override bool Matches(string query)
         {

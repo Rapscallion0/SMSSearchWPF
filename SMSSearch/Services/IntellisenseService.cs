@@ -51,7 +51,10 @@ namespace SMS_Search.Services
         public bool IsEnabled { get; set; } = true;
         public bool IsReady { get; private set; } = false;
         public bool AutoTriggerEnabled { get; set; } = true;
-        public IntellisenseLevel DefaultLevel { get; set; } = IntellisenseLevel.Schema;
+
+        public bool StandardEnabled { get; set; } = true;
+        public bool FunctionalEnabled { get; set; } = true;
+        public bool FullEnabled { get; set; } = true;
 
         public IntellisenseService(IDataRepository repository, ILoggerService logger, IConfigService configService)
         {
@@ -87,15 +90,48 @@ namespace SMS_Search.Services
                 AutoTriggerEnabled = true; // Default
             }
 
-            // Load Default Level Setting
-            var defaultLevelStr = _configService.GetValue("GENERAL", "INTELLISENSE_DEFAULT_LEVEL");
-            if (defaultLevelStr != null && Enum.TryParse(defaultLevelStr, out IntellisenseLevel lvl))
+            // Load Level Settings
+            StandardEnabled = GetBoolSetting("INTELLISENSE_STANDARD", true);
+            FunctionalEnabled = GetBoolSetting("INTELLISENSE_FUNCTIONAL", true);
+            FullEnabled = GetBoolSetting("INTELLISENSE_FULL", true);
+        }
+
+        private bool GetBoolSetting(string key, bool defaultValue)
+        {
+            var val = _configService.GetValue("GENERAL", key);
+            if (val == "1") return true;
+            if (val == "0") return false;
+            return defaultValue;
+        }
+
+        public IntellisenseLevel GetInitialLevel()
+        {
+            return IntellisenseLevel.Schema;
+        }
+
+        public IntellisenseLevel GetNextLevel(IntellisenseLevel current)
+        {
+            int start = (int)current;
+            for (int i = 1; i <= 3; i++)
             {
-                DefaultLevel = lvl;
+                int next = (start + i) % 4;
+                if (IsLevelEnabled((IntellisenseLevel)next))
+                {
+                    return (IntellisenseLevel)next;
+                }
             }
-            else
+            return IntellisenseLevel.Schema;
+        }
+
+        private bool IsLevelEnabled(IntellisenseLevel level)
+        {
+            switch (level)
             {
-                DefaultLevel = IntellisenseLevel.Schema;
+                case IntellisenseLevel.Schema: return true; // Always enabled if intellisense is on
+                case IntellisenseLevel.Standard: return StandardEnabled;
+                case IntellisenseLevel.Functional: return FunctionalEnabled;
+                case IntellisenseLevel.Full: return FullEnabled;
+                default: return false;
             }
         }
 
@@ -229,8 +265,8 @@ namespace SMS_Search.Services
                     }
                 }
 
-                // Add Keywords based on Level
-                if (level >= IntellisenseLevel.Standard)
+                // Add Keywords based on Level AND configuration
+                if (level >= IntellisenseLevel.Standard && StandardEnabled)
                 {
                     foreach (var kw in _keywords)
                     {
@@ -239,7 +275,7 @@ namespace SMS_Search.Services
                     }
                 }
 
-                if (level >= IntellisenseLevel.Functional)
+                if (level >= IntellisenseLevel.Functional && FunctionalEnabled)
                 {
                     foreach (var kw in _functionalKeywords)
                     {
@@ -248,7 +284,7 @@ namespace SMS_Search.Services
                     }
                 }
 
-                if (level >= IntellisenseLevel.Full)
+                if (level >= IntellisenseLevel.Full && FullEnabled)
                 {
                     foreach (var kw in _adminKeywords)
                     {
