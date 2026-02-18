@@ -215,16 +215,6 @@ namespace SMS_Search.Views
                 return;
             }
 
-            if (sender is ComboBox cmb && DataContext is SearchViewModel vm)
-            {
-                string currentText = cmb.Text ?? "";
-                string selectedText = vm.SelectedTable ?? "";
-
-                if (!string.Equals(currentText, selectedText, StringComparison.OrdinalIgnoreCase))
-                {
-                    cmb.SelectedItem = null;
-                }
-            }
 
             _typingTimer.Stop();
             _typingTimer.Start();
