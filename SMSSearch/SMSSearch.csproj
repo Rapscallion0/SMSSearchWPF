@@ -13,6 +13,10 @@
     <AssemblyVersion>3.0.0.26041</AssemblyVersion>
     <FileVersion>3.0.0.26041</FileVersion>
     <ApplicationIcon>Resources\SMS Search.ico</ApplicationIcon>
+    <AssemblyName>SMS Search</AssemblyName>
+    <Product>SMS Search</Product>
+    <Title>SMS Search</Title>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
