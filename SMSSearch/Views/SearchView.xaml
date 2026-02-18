@@ -234,7 +234,8 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Table" Tag="Table" IsChecked="{Binding IsFieldTable}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="1" x:Name="TableComboBox" ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" Height="25" DropDownOpened="ComboBox_DropDownOpened" GotFocus="ComboBox_GotFocus" Margin="0,0,5,0">
+                        <ComboBox Grid.Column="1" x:Name="TableComboBox" ItemsSource="{Binding TablesView}" SelectedItem="{Binding SelectedTable}" Height="25" DropDownOpened="ComboBox_DropDownOpened" GotFocus="ComboBox_GotFocus" Margin="0,0,5,0"
+                                  IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True" KeyUp="TableComboBox_KeyUp" PreviewKeyDown="TableComboBox_PreviewKeyDown">
                             <ComboBox.InputBindings>
                                 <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                             </ComboBox.InputBindings>
