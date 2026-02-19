@@ -29,7 +29,7 @@ namespace SMS_Search
             var services = new ServiceCollection();
 
             services.AddSingleton<IConfigService>(provider =>
-                new ConfigManager(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SMSSearch_settings.json")));
+                new ConfigManager(PathHelper.GetSettingsPath()));
 
             services.AddSingleton<ISettingsRepository, SettingsRepository>();
 
