@@ -9,7 +9,7 @@ namespace SMS_Search.Utils
 
         /// <summary>
         /// Gets the best directory for storing application data (settings, logs).
-        /// Prioritizes the application's base directory if it is writable (for portability).
+        /// Prioritizes the application's base directory (where the .exe is) if it is writable (for portability).
         /// Falls back to LocalAppData if the base directory is read-only.
         /// </summary>
         public static string GetApplicationDirectory()
@@ -17,7 +17,26 @@ namespace SMS_Search.Utils
             if (_appDirectory != null)
                 return _appDirectory;
 
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string baseDir;
+            try
+            {
+                // Crucial for SingleFile: AppDomain.CurrentDomain.BaseDirectory returns the temp extraction folder.
+                // We want the directory where the user actually ran the .exe from.
+                var processModule = System.Diagnostics.Process.GetCurrentProcess().MainModule;
+                if (processModule?.FileName != null)
+                {
+                    baseDir = Path.GetDirectoryName(processModule.FileName) ?? AppDomain.CurrentDomain.BaseDirectory;
+                }
+                else
+                {
+                    baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                }
+            }
+            catch
+            {
+                // Fallback if we can't get the process module for some reason
+                baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            }
 
             // Check if we can write to the base directory
             if (IsDirectoryWritable(baseDir))
