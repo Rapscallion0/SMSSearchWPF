@@ -10,6 +10,14 @@ namespace SMS_Search
         [STAThread]
         public static void Main(string[] args)
         {
+            // Immediate boot logging to confirm execution start
+            try
+            {
+                string bootLog = Path.Combine(Path.GetTempPath(), "SMSSearch_Boot.log");
+                File.AppendAllText(bootLog, $"[{DateTime.Now}] SMS Search process starting...\n");
+            }
+            catch { /* Best effort */ }
+
             // Set up a global exception handler for very early failures before Main body executes fully
             AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
             {
