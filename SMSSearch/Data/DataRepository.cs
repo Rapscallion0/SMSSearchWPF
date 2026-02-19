@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,11 +28,11 @@ namespace SMS_Search.Data
         {
             if (string.IsNullOrEmpty(user))
             {
-                return $"Integrated Security=SSPI;Persist Security Info=False;Initial Catalog={database};Data Source={server}";
+                return $"Integrated Security=SSPI;Persist Security Info=False;Initial Catalog={database};Data Source={server};Encrypt=False";
             }
             else
             {
-                return $"Data Source={server};Initial Catalog={database};User ID={user};Password={pass};Persist Security Info=False;";
+                return $"Data Source={server};Initial Catalog={database};User ID={user};Password={pass};Persist Security Info=False;Encrypt=False";
             }
         }
 
