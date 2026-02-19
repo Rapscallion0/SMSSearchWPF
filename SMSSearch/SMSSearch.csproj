@@ -19,6 +19,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <StartupObject>SMS_Search.Program</StartupObject>
   </PropertyGroup>
 
