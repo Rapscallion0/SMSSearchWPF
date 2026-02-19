@@ -11,12 +11,23 @@ namespace SMS_Search
         public static void Main(string[] args)
         {
             // Immediate boot logging to confirm execution start
+            // Use the actual EXE directory to ensure visibility
+            string logDir = GetBestLogDir();
             try
             {
-                string bootLog = Path.Combine(Path.GetTempPath(), "SMSSearch_Boot.log");
+                string bootLog = Path.Combine(logDir, "SMSSearch_Boot.log");
                 File.AppendAllText(bootLog, $"[{DateTime.Now}] SMS Search process starting...\n");
             }
-            catch { /* Best effort */ }
+            catch
+            {
+                 // Fallback to temp if we can't write to exe dir
+                 try
+                 {
+                     string bootLog = Path.Combine(Path.GetTempPath(), "SMSSearch_Boot.log");
+                     File.AppendAllText(bootLog, $"[{DateTime.Now}] SMS Search process starting (Temp fallback)...\n");
+                 }
+                 catch {}
+            }
 
             // Set up a global exception handler for very early failures before Main body executes fully
             AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
@@ -46,9 +57,24 @@ namespace SMS_Search
             app.Run();
         }
 
+        private static string GetBestLogDir()
+        {
+            try
+            {
+                var processModule = System.Diagnostics.Process.GetCurrentProcess().MainModule;
+                if (processModule?.FileName != null)
+                {
+                    return Path.GetDirectoryName(processModule.FileName) ?? AppDomain.CurrentDomain.BaseDirectory;
+                }
+            }
+            catch {}
+            return AppDomain.CurrentDomain.BaseDirectory;
+        }
+
         public static void HandleStartupException(Exception ex)
         {
-            string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "startup_error.log");
+            string bestDir = GetBestLogDir();
+            string logPath = Path.Combine(bestDir, "startup_error.log");
             string errorMsg = $"[{DateTime.Now}] Critical Startup Error:\n{ex}\n\n";
             bool logWritten = false;
 
