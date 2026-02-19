@@ -13,7 +13,7 @@ if %errorlevel% neq 0 (
 echo.
 echo Publishing...
 echo This may take a moment.
-dotnet publish SMSSearch/SMSSearch.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true -o ./Publish
+dotnet publish SMSSearch/SMSSearch.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=false -p:IncludeAllContentForSelfExtract=false -o ./Publish
 
 if %errorlevel% neq 0 (
     echo Publish failed!

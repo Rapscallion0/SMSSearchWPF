@@ -17,8 +17,8 @@
     <Product>SMS Search</Product>
     <Title>SMS Search</Title>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
     <StartupObject>SMS_Search.Program</StartupObject>
   </PropertyGroup>
 
