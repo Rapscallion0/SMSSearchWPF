@@ -40,56 +40,8 @@ namespace SMS_Search.Utils
         {
             _configService = configService;
             // Initialize with a safe default, will be refined in ApplyConfig or helper
-            _logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+            _logDirectory = PathHelper.GetLogDirectory();
             ApplyConfig();
-        }
-
-        private string ResolveLogDirectory()
-        {
-            // 1. Try Base Directory
-            string localLogs = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
-            if (TryCreateAndWrite(localLogs))
-            {
-                return localLogs;
-            }
-
-            // 2. Try LocalAppData
-            string appDataLogs = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SMS Search", "logs");
-            if (TryCreateAndWrite(appDataLogs))
-            {
-                return appDataLogs;
-            }
-
-            // 3. Fallback to Temp
-            string tempLogs = Path.Combine(Path.GetTempPath(), "SMS Search", "logs");
-            if (TryCreateAndWrite(tempLogs))
-            {
-                return tempLogs;
-            }
-
-            // If all else fails, return localLogs and let Serilog fail/complain later, or return null?
-            return localLogs;
-        }
-
-        private bool TryCreateAndWrite(string path)
-        {
-            try
-            {
-                if (!Directory.Exists(path))
-                {
-                    Directory.CreateDirectory(path);
-                }
-
-                // Verify write permission
-                string testFile = Path.Combine(path, $".write_test_{Guid.NewGuid()}");
-                File.WriteAllText(testFile, "test");
-                File.Delete(testFile);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         public void ApplyConfig()
@@ -97,7 +49,7 @@ namespace SMS_Search.Utils
             try
             {
                 // Resolve directory first
-                _logDirectory = ResolveLogDirectory();
+                _logDirectory = PathHelper.GetLogDirectory();
 
                 // Read settings
                 string? enabledStr = _configService.GetValue("LOGGING", "ENABLED");
