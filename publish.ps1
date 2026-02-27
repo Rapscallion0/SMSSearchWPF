@@ -56,6 +56,33 @@ if ($response -eq 'Y' -or $response -eq 'y') {
     Write-Host "Publish Successful!" -ForegroundColor Green
     Write-Host "Executable is located in the 'Publish' folder."
     Write-Host ""
+
+    $uploadResponse = Read-Host "Do you want to upload SMS Search.exe (zipped) to GitHub? [Y/N]"
+    if ($uploadResponse -eq 'Y' -or $uploadResponse -eq 'y') {
+        Write-Host "Zipping Executable..."
+        $zipPath = ".\Publish\SMS_Search.zip"
+        if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+        Compress-Archive -Path ".\Publish\SMS Search.exe" -DestinationPath $zipPath
+
+        $version = "Unknown"
+        if (Test-Path "SMSSearch/SMSSearch.csproj") {
+            [xml]$csproj = Get-Content "SMSSearch/SMSSearch.csproj"
+            $versionNode = $csproj.Project.PropertyGroup | Where-Object { $_.AssemblyVersion }
+            if ($versionNode) {
+                $version = $versionNode.AssemblyVersion
+            }
+        }
+
+        Write-Host "Uploading v$version to GitHub..."
+        gh release create "v$version" $zipPath --title "v$version" --generate-notes
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "GitHub upload failed!" -ForegroundColor Red
+        } else {
+            Write-Host "GitHub upload successful!" -ForegroundColor Green
+        }
+        Write-Host ""
+    }
+
     Invoke-Item "Publish"
 } else {
     Write-Host "Skipping publish step. Standard build artifacts are in bin/$Configuration/net10.0-windows/"
