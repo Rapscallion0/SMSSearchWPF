@@ -6,7 +6,9 @@
         SizeToContent="Height"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
-        Opacity="0.95">
+        Opacity="0.95"
+        MouseEnter="Window_MouseEnter"
+        MouseLeave="Window_MouseLeave">
     <Border CornerRadius="5" BorderThickness="2" Background="#252526" BorderBrush="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=BorderBrush}">
         <Grid Margin="10">
             <Grid.RowDefinitions>

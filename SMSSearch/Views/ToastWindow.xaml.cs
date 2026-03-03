@@ -122,6 +122,23 @@ namespace SMS_Search.Views
             }
         }
 
+        private void Window_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (_closeTimer != null)
+            {
+                _closeTimer.Stop();
+            }
+        }
+
+        private void Window_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (_closeTimer != null)
+            {
+                // Restarting the timer resets the interval automatically
+                _closeTimer.Start();
+            }
+        }
+
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
             base.OnRenderSizeChanged(sizeInfo);
