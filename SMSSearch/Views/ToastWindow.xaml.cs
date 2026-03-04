@@ -84,7 +84,7 @@ namespace SMS_Search.Views
             UpdateAllToastPositions(false);
         }
 
-        private static void UpdateAllToastPositions(bool animateNewest)
+        public static void UpdateAllToastPositions(bool animateNewest)
         {
             if (_activeToasts.Count == 0) return;
 
