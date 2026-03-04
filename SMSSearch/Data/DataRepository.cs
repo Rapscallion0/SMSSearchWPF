@@ -88,15 +88,28 @@ namespace SMS_Search.Data
             string finalSql = ApplyFilter(sql, filter);
             string countSql = $"SELECT COUNT(*) FROM ({finalSql}) AS _CountQ";
 
-            // LogQuery("GetQueryCountAsync", countSql, parameters); // Superseded by Info log below
-
             try
             {
                 using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
                 {
                     await conn.OpenAsync(cancellationToken);
                     var cmdDef = new CommandDefinition(countSql, parameters, cancellationToken: cancellationToken);
-                    int count = await conn.ExecuteScalarAsync<int>(cmdDef);
+
+                    int count = 0;
+                    try
+                    {
+                        count = await conn.ExecuteScalarAsync<int>(cmdDef);
+                    }
+                    catch (SqlException ex) when (ex.Number == 1033)
+                    {
+                        // 1033: The ORDER BY clause is invalid in views, inline functions, derived tables, subqueries...
+                        // This means the user provided an ORDER BY clause in their query.
+                        // We can bypass this by executing the query as-is and wrapping it with an OFFSET.
+                        string offsetSql = $"SELECT COUNT(*) FROM ({finalSql} OFFSET 0 ROWS) AS _CountQ";
+                        var offsetCmdDef = new CommandDefinition(offsetSql, parameters, cancellationToken: cancellationToken);
+                        count = await conn.ExecuteScalarAsync<int>(offsetCmdDef);
+                        countSql = offsetSql; // Update for logging
+                    }
 
                     string paramLog = GetParamString(parameters);
                     _logger.LogInfo($"Query Executed. SQL: {countSql} | Params: {paramLog} | Results: {count}");
@@ -138,7 +151,22 @@ namespace SMS_Search.Data
             {
                 await conn.OpenAsync(cancellationToken);
                 var cmdDef = new CommandDefinition(pageSql, parameters, cancellationToken: cancellationToken);
-                using (var reader = await conn.ExecuteReaderAsync(cmdDef))
+                DbDataReader reader;
+                try
+                {
+                    reader = await conn.ExecuteReaderAsync(cmdDef);
+                }
+                catch (SqlException ex) when (ex.Number == 1033)
+                {
+                    string offsetPageSql = $@"
+                        SELECT * FROM ({finalSql} OFFSET 0 ROWS) AS _PageQ
+                        ORDER BY {orderBy}
+                        OFFSET {offset} ROWS FETCH NEXT {limit} ROWS ONLY";
+                    var offsetCmdDef = new CommandDefinition(offsetPageSql, parameters, cancellationToken: cancellationToken);
+                    reader = await conn.ExecuteReaderAsync(offsetCmdDef);
+                }
+
+                using (reader)
                 {
                     var dt = new DataTable();
                     dt.Load(reader);
@@ -157,7 +185,22 @@ namespace SMS_Search.Data
             {
                 await conn.OpenAsync(cancellationToken);
                 var cmdDef = new CommandDefinition(schemaSql, parameters, cancellationToken: cancellationToken);
-                using (var reader = await conn.ExecuteReaderAsync(cmdDef))
+
+                DbDataReader reader;
+                try
+                {
+                    reader = await conn.ExecuteReaderAsync(cmdDef);
+                }
+                catch (SqlException ex) when (ex.Number == 1033)
+                {
+                    // Fallback using SET FMTONLY ON which ignores the derived table restriction
+                    // We don't wrap the query at all.
+                    string fmtSql = $"SET FMTONLY ON;\n{sql}\nSET FMTONLY OFF;";
+                    var fmtCmdDef = new CommandDefinition(fmtSql, parameters, cancellationToken: cancellationToken);
+                    reader = await conn.ExecuteReaderAsync(fmtCmdDef);
+                }
+
+                using (reader)
                 {
                     var typeMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                     for (int i = 0; i < reader.FieldCount; i++)
@@ -335,7 +378,18 @@ namespace SMS_Search.Data
             {
                 await conn.OpenAsync(cancellationToken);
                 var cmdDef = new CommandDefinition(countSql, parameters, cancellationToken: cancellationToken);
-                var result = await conn.ExecuteScalarAsync<object>(cmdDef);
+                object? result;
+                try
+                {
+                    result = await conn.ExecuteScalarAsync<object>(cmdDef);
+                }
+                catch (SqlException ex) when (ex.Number == 1033)
+                {
+                    string offsetSql = $"SELECT COUNT(*) FROM ({finalSql} OFFSET 0 ROWS) AS _CountQ WHERE ({whereExpression})";
+                    var offsetCmdDef = new CommandDefinition(offsetSql, parameters, cancellationToken: cancellationToken);
+                    result = await conn.ExecuteScalarAsync<object>(offsetCmdDef);
+                }
+
                 if (result == null || result == DBNull.Value) return 0;
                 return Convert.ToInt64(result);
             }
@@ -392,7 +446,25 @@ namespace SMS_Search.Data
             {
                 await conn.OpenAsync(cancellationToken);
                 var cmdDef = new CommandDefinition(countSql, parameters, cancellationToken: cancellationToken);
-                var result = await conn.ExecuteScalarAsync<object>(cmdDef);
+                object? result;
+                try
+                {
+                    result = await conn.ExecuteScalarAsync<object>(cmdDef);
+                }
+                catch (SqlException ex) when (ex.Number == 1033)
+                {
+                    string offsetSql = $@"
+                        SELECT COUNT(*)
+                        FROM (
+                            SELECT * FROM ({finalSql} OFFSET 0 ROWS) AS _Base
+                            ORDER BY {orderBy}
+                            OFFSET 0 ROWS FETCH NEXT {limitRowIndex} ROWS ONLY
+                        ) AS _Preceding
+                        WHERE ({whereExpression})";
+                    var offsetCmdDef = new CommandDefinition(offsetSql, parameters, cancellationToken: cancellationToken);
+                    result = await conn.ExecuteScalarAsync<object>(offsetCmdDef);
+                }
+
                 if (result == null || result == DBNull.Value) return 0;
                 return Convert.ToInt64(result);
             }
@@ -452,7 +524,26 @@ namespace SMS_Search.Data
             {
                 await conn.OpenAsync(cancellationToken);
                 var cmdDef = new CommandDefinition(query, parameters, cancellationToken: cancellationToken);
-                var result = await conn.ExecuteScalarAsync<object>(cmdDef);
+                object? result;
+                try
+                {
+                    result = await conn.ExecuteScalarAsync<object>(cmdDef);
+                }
+                catch (SqlException ex) when (ex.Number == 1033)
+                {
+                    string offsetSql = $@"
+                        SELECT TOP 1 RowNum
+                        FROM (
+                            SELECT ROW_NUMBER() OVER (ORDER BY {orderBy}) - 1 as RowNum, *
+                            FROM ({finalSql} OFFSET 0 ROWS) AS _Base
+                        ) AS _Ordered
+                        WHERE RowNum {comparison} {startRowIndex}
+                        AND ({searchExpression})
+                        ORDER BY RowNum {orderDirection}";
+                    var offsetCmdDef = new CommandDefinition(offsetSql, parameters, cancellationToken: cancellationToken);
+                    result = await conn.ExecuteScalarAsync<object>(offsetCmdDef);
+                }
+
                 if (result == null || result == DBNull.Value) return -1;
                 return Convert.ToInt32(result);
             }
