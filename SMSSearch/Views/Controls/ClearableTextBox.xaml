@@ -24,7 +24,7 @@
         <TextBlock Text="{Binding PrefixText, ElementName=Root}"
                    VerticalAlignment="Center"
                    Margin="4,0,0,0"
-                   Foreground="Gray"
+                   FontWeight="Bold"
                    IsHitTestVisible="False"
                    Visibility="{Binding PrefixText, ElementName=Root, Converter={StaticResource StringToVisibilityConverter}}"/>
 
