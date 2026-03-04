@@ -90,7 +90,7 @@
                   VirtualizingStackPanel.CacheLength="10,10"
                   VirtualizingStackPanel.CacheLengthUnit="Item"
                   SelectionChanged="resultsGrid_SelectionChanged"
-                  CurrentCellChanged="resultsGrid_CurrentCellChanged"
+                  CurrentCellChanged="resultsGrid_CurrentCellChanged" Sorting="resultsGrid_Sorting"
                   LoadingRow="resultsGrid_LoadingRow">
 
             <DataGrid.ColumnHeaderStyle>

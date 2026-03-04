@@ -166,6 +166,28 @@ namespace SMS_Search.Views
             }
         }
 
+        private void resultsGrid_Sorting(object sender, DataGridSortingEventArgs e)
+        {
+            e.Handled = true;
+            if (DataContext is ResultsViewModel vm)
+            {
+                string? sortPath = e.Column.SortMemberPath;
+                if (!string.IsNullOrEmpty(sortPath))
+                {
+                    var currentDir = e.Column.SortDirection;
+                    foreach (var col in resultsGrid.Columns)
+                    {
+                        col.SortDirection = null;
+                    }
+                    e.Column.SortDirection = currentDir == System.ComponentModel.ListSortDirection.Ascending ? System.ComponentModel.ListSortDirection.Descending : System.ComponentModel.ListSortDirection.Ascending;
+                    if (vm.SortCommand.CanExecute(sortPath))
+                    {
+                        vm.SortCommand.Execute(sortPath);
+                    }
+                }
+            }
+        }
+
         private void FilterBySelection()
         {
             if (resultsGrid.SelectedCells.Count > 0)

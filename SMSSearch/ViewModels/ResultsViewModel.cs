@@ -60,6 +60,7 @@ namespace SMS_Search.ViewModels
 
             ApplyFilterCommand = new AsyncRelayCommand<string>(ApplyFilterAsync);
             FindNextCommand = new AsyncRelayCommand(() => FindMatchAsync(true));
+            SortCommand = new AsyncRelayCommand<string>(SortAsync);
             FindPreviousCommand = new AsyncRelayCommand(() => FindMatchAsync(false));
             CancelCommand = new RelayCommand(Cancel);
 
@@ -129,6 +130,7 @@ namespace SMS_Search.ViewModels
 
         public IAsyncRelayCommand<string> ApplyFilterCommand { get; }
         public IAsyncRelayCommand FindNextCommand { get; }
+        public IAsyncRelayCommand<string> SortCommand { get; }
         public IAsyncRelayCommand FindPreviousCommand { get; }
         public IRelayCommand CancelCommand { get; }
 
@@ -321,6 +323,40 @@ namespace SMS_Search.ViewModels
                 _cts = null;
             }
         }
+        public async Task SortAsync(string? columnName)
+        {
+            if (string.IsNullOrEmpty(columnName)) return;
+
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            var token = _cts.Token;
+
+            try
+            {
+                IsBusy = true;
+                await _gridContext.ApplySortAsync(columnName, token);
+
+                if (_lastSchema != null)
+                {
+                    SearchResults = new VirtualizingCollection(_gridContext, _lastSchema);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInfo("Sort cancelled.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to apply sort", ex);
+                var dialogService = (System.Windows.Application.Current as App)?.Services.GetService(typeof(IDialogService)) as IDialogService;
+                dialogService?.ShowError($"Failed to sort: {ex.Message}", "Error");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
 
         public async Task ApplyFilterAsync(string? filterText)
         {

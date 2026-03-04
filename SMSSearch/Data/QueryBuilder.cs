@@ -38,6 +38,7 @@ GROUP BY
     COL.scale,
     COL.is_nullable,
     TAB.create_date";
+        private const string FieldSelectOrderBy = @" ORDER BY TRY_CAST(SUBSTRING(COL.name, 2, LEN(COL.name)) AS INT) ASC";
 
         public QueryBuilder(string fctFields, string tlzFields)
         {
@@ -58,7 +59,7 @@ GROUP BY
                     string fldNum = "F" + value;
                     HandleWildcards(ref fldNum, out string op);
 
-                    sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} WHERE col.name {op} @Val {FieldSelectGroupBy}";
+                    sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} WHERE col.name {op} @Val {FieldSelectGroupBy}{FieldSelectOrderBy}";
                     p.Add("Val", fldNum);
                 }
                 else if (criteria.Type == SearchType.Description)
@@ -67,7 +68,7 @@ GROUP BY
                     if (criteria.AnyMatch) desc = $"*{desc}*";
                     HandleWildcards(ref desc, out string op);
 
-                    sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} WHERE RBF.F1454 {op} @Val {FieldSelectGroupBy}";
+                    sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} WHERE RBF.F1454 {op} @Val {FieldSelectGroupBy}{FieldSelectOrderBy}";
                     p.Add("Val", desc);
                 }
                 else if (criteria.Type == SearchType.Table)
@@ -77,7 +78,7 @@ GROUP BY
                         string table = value;
                         HandleWildcards(ref table, out string op);
 
-                        sql = $"{FieldSelectBase} AND RBF.F1452 {op} @Table {FieldSelectJoinPKey} WHERE TAB.name {op} @Table {FieldSelectGroupBy}";
+                        sql = $"{FieldSelectBase} AND RBF.F1452 {op} @Table {FieldSelectJoinPKey} WHERE TAB.name {op} @Table {FieldSelectGroupBy}{FieldSelectOrderBy}";
                         p.Add("Table", table);
                     }
                     else
