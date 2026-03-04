@@ -345,13 +345,19 @@ namespace SMS_Search.Data
              if (!string.IsNullOrEmpty(SortColumn))
              {
                 string safeCol = SortColumn.Replace("[", "").Replace("]", "");
+                string orderByExpr = $"[{safeCol}] {SortDirection}";
+                if (safeCol.Equals("Field", StringComparison.OrdinalIgnoreCase))
+                {
+                    orderByExpr = $"TRY_CAST(SUBSTRING([{safeCol}], 2, LEN([{safeCol}])) AS INT) {SortDirection}, [{safeCol}] {SortDirection}";
+                }
+
                 if (string.IsNullOrWhiteSpace(FilterText))
                 {
-                    finalSql = $"SELECT * FROM ({finalSql}) AS _SortQ ORDER BY [{safeCol}] {SortDirection}";
+                    finalSql = $"SELECT * FROM ({finalSql}) AS _SortQ ORDER BY {orderByExpr}";
                 }
                 else
                 {
-                    finalSql += $" ORDER BY [{safeCol}] {SortDirection}";
+                    finalSql += $" ORDER BY {orderByExpr}";
                 }
              }
              return finalSql;

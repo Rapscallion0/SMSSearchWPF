@@ -18,12 +18,19 @@
                  IsReadOnly="{Binding IsReadOnly, ElementName=Root}"
                  MaxLength="{Binding MaxLength, ElementName=Root}"
                  VerticalContentAlignment="Center"
-                 Padding="2,0,20,0"
+                 Padding="{Binding TextBoxPadding, ElementName=Root}"
                  PreviewMouseWheel="OnPreviewMouseWheel"/>
+
+        <TextBlock Text="{Binding PrefixText, ElementName=Root}"
+                   VerticalAlignment="Center"
+                   Margin="4,0,0,0"
+                   Foreground="Gray"
+                   IsHitTestVisible="False"
+                   Visibility="{Binding PrefixText, ElementName=Root, Converter={StaticResource StringToVisibilityConverter}}"/>
 
         <TextBlock Text="{Binding Placeholder, ElementName=Root}"
                    VerticalAlignment="Center"
-                   Margin="4,0,20,0"
+                   Margin="{Binding PlaceholderMargin, ElementName=Root}"
                    Foreground="Gray"
                    IsHitTestVisible="False"
                    Visibility="{Binding Text, ElementName=Root, Converter={StaticResource StringToVisibilityConverterInverted}}"/>
