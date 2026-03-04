@@ -17,7 +17,7 @@
     </UserControl.Resources>
 
     <Grid>
-        <TabControl SelectedIndex="{Binding SelectedMode, Mode=TwoWay, Converter={StaticResource EnumToIntConverter}}">
+        <TabControl SelectedIndex="{Binding SelectedMode, Mode=TwoWay, Converter={StaticResource EnumToIntConverter}}" SelectionChanged="TabControl_SelectionChanged">
             <TabItem Header="Function">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
