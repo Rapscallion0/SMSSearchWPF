@@ -24,6 +24,19 @@ namespace SMS_Search
             DataContext = viewModel;
             viewModel.RequestOpenSettings += OnRequestOpenSettings;
             viewModel.RequestToggleUnarchiveWindow += OnRequestToggleUnarchiveWindow;
+
+            this.SizeChanged += MainWindow_SizeChanged;
+            this.LocationChanged += MainWindow_LocationChanged;
+        }
+
+        private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            ToastWindow.UpdateAllToastPositions(false);
+        }
+
+        private void MainWindow_LocationChanged(object? sender, EventArgs e)
+        {
+            ToastWindow.UpdateAllToastPositions(false);
         }
 
         protected override void OnSourceInitialized(EventArgs e)
