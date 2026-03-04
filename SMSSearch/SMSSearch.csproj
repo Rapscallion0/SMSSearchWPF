@@ -52,7 +52,7 @@
     <EmbeddedResource Include="Resources\SQL.xshd" />
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="Build" Condition="'$(IsPublishing)' == ''">
+  <Target Name="PostBuild" AfterTargets="Build" Condition="'$(IsPublishing)' == '' AND '$(OS)' == 'Windows_NT'">
     <Exec Command="powershell.exe -Command &quot;Start-Process powershell.exe -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File &quot;&quot;$(MSBuildProjectDirectory)\..\publish.ps1&quot;&quot; -Configuration $(Configuration) -FromVS'&quot;" />
   </Target>
 
