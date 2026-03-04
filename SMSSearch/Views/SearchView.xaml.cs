@@ -64,6 +64,14 @@ namespace SMS_Search.Views
             }
         }
 
+        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.OriginalSource == sender)
+            {
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(FocusActiveSearchInput));
+            }
+        }
+
         private void FocusActiveSearchInput()
         {
             if (DataContext is SearchViewModel vm)
