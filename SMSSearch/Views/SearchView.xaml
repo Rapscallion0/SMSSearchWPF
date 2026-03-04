@@ -191,7 +191,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsFieldNumber}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldNumberBox" Text="{Binding FieldNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldNumberBox_GotFocus" Placeholder="Search... (* ?)">
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldNumberBox" Text="{Binding FieldNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldNumberBox_GotFocus" Placeholder="Search... (* ?)" PrefixText="F">
                             <ctrl:ClearableTextBox.InputBindings>
                                 <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                             </ctrl:ClearableTextBox.InputBindings>

@@ -67,6 +67,52 @@ namespace SMS_Search.Views.Controls
             set { SetValue(PlaceholderProperty, value); }
         }
 
+        public static readonly DependencyProperty PrefixTextProperty =
+            DependencyProperty.Register("PrefixText", typeof(string), typeof(ClearableTextBox), new PropertyMetadata(string.Empty, OnPrefixTextChanged));
+
+        public string PrefixText
+        {
+            get { return (string)GetValue(PrefixTextProperty); }
+            set { SetValue(PrefixTextProperty, value); }
+        }
+
+        public static readonly DependencyProperty TextBoxPaddingProperty =
+            DependencyProperty.Register("TextBoxPadding", typeof(Thickness), typeof(ClearableTextBox), new PropertyMetadata(new Thickness(2, 0, 20, 0)));
+
+        public Thickness TextBoxPadding
+        {
+            get { return (Thickness)GetValue(TextBoxPaddingProperty); }
+            set { SetValue(TextBoxPaddingProperty, value); }
+        }
+
+        public static readonly DependencyProperty PlaceholderMarginProperty =
+            DependencyProperty.Register("PlaceholderMargin", typeof(Thickness), typeof(ClearableTextBox), new PropertyMetadata(new Thickness(4, 0, 20, 0)));
+
+        public Thickness PlaceholderMargin
+        {
+            get { return (Thickness)GetValue(PlaceholderMarginProperty); }
+            set { SetValue(PlaceholderMarginProperty, value); }
+        }
+
+        private static void OnPrefixTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ClearableTextBox ctb)
+            {
+                if (!string.IsNullOrEmpty(ctb.PrefixText))
+                {
+                    // Assuming character width of ~7 pixels for Prefix text plus 6 padding
+                    double offset = ctb.PrefixText.Length * 7 + 6;
+                    ctb.TextBoxPadding = new Thickness(offset, 0, 20, 0);
+                    ctb.PlaceholderMargin = new Thickness(offset + 2, 0, 20, 0);
+                }
+                else
+                {
+                    ctb.TextBoxPadding = new Thickness(2, 0, 20, 0);
+                    ctb.PlaceholderMargin = new Thickness(4, 0, 20, 0);
+                }
+            }
+        }
+
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             if (ClearCommand == null)

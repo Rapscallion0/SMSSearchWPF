@@ -119,7 +119,14 @@ namespace SMS_Search.Data
             if (!string.IsNullOrEmpty(sortCol))
             {
                 string safeCol = sortCol.Replace("[", "").Replace("]", "");
-                orderBy = $"[{safeCol}] {sortDir}";
+                if (safeCol.Equals("Field", StringComparison.OrdinalIgnoreCase))
+                {
+                    orderBy = $"TRY_CAST(SUBSTRING([{safeCol}], 2, LEN([{safeCol}])) AS INT) {sortDir}, [{safeCol}] {sortDir}";
+                }
+                else
+                {
+                    orderBy = $"[{safeCol}] {sortDir}";
+                }
             }
 
             string pageSql = $@"
@@ -362,7 +369,14 @@ namespace SMS_Search.Data
             if (!string.IsNullOrEmpty(sortCol))
             {
                 string safeCol = sortCol.Replace("[", "").Replace("]", "");
-                orderBy = $"[{safeCol}] {sortDir}";
+                if (safeCol.Equals("Field", StringComparison.OrdinalIgnoreCase))
+                {
+                    orderBy = $"TRY_CAST(SUBSTRING([{safeCol}], 2, LEN([{safeCol}])) AS INT) {sortDir}, [{safeCol}] {sortDir}";
+                }
+                else
+                {
+                    orderBy = $"[{safeCol}] {sortDir}";
+                }
             }
 
             string countSql = $@"
@@ -411,7 +425,14 @@ namespace SMS_Search.Data
             if (!string.IsNullOrEmpty(sortCol))
             {
                 string safeCol = sortCol.Replace("[", "").Replace("]", "");
-                orderBy = $"[{safeCol}] {sortDir}";
+                if (safeCol.Equals("Field", StringComparison.OrdinalIgnoreCase))
+                {
+                    orderBy = $"TRY_CAST(SUBSTRING([{safeCol}], 2, LEN([{safeCol}])) AS INT) {sortDir}, [{safeCol}] {sortDir}";
+                }
+                else
+                {
+                    orderBy = $"[{safeCol}] {sortDir}";
+                }
             }
 
             string comparison = forward ? ">" : "<";
