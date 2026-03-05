@@ -25,7 +25,8 @@
                               ItemsSource="{Binding DatabasesView}" SelectedItem="{Binding Database.Value}"
                               IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True"
                               VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling"
-                              PreviewKeyDown="DatabaseComboBox_PreviewKeyDown" KeyUp="DatabaseComboBox_KeyUp" GotFocus="DatabaseComboBox_GotFocus">
+                              PreviewKeyDown="DatabaseComboBox_PreviewKeyDown" KeyUp="DatabaseComboBox_KeyUp" GotFocus="DatabaseComboBox_GotFocus"
+                              PreviewMouseDoubleClick="DatabaseComboBox_PreviewMouseDoubleClick" LostFocus="DatabaseComboBox_LostFocus">
                     </ComboBox>
                 </ctrl:SettingControl>
 
