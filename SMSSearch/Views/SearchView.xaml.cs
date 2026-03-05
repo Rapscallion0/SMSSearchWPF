@@ -31,6 +31,11 @@ namespace SMS_Search.Views
             });
         }
 
+        private void UserControl_Loaded(object sender, System.Windows.RoutedEventArgs e)
+        {
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(FocusActiveSearchInput));
+        }
+
         private void TypingTimer_Tick(object? sender, EventArgs e)
         {
             _typingTimer.Stop();

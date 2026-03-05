@@ -9,7 +9,8 @@
              xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SearchViewModel}"
-             d:DesignHeight="400" d:DesignWidth="569.031">
+             d:DesignHeight="400" d:DesignWidth="569.031"
+             Loaded="UserControl_Loaded">
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
         <conv:BoolToVisibilityConverter x:Key="BoolToCollapsed" Invert="True"/>
