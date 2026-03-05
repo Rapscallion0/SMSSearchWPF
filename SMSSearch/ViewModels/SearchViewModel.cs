@@ -121,6 +121,14 @@ namespace SMS_Search.ViewModels
         [NotifyPropertyChangedFor(nameof(IsCustomSqlMode))]
         private SearchMode _selectedMode;
 
+        partial void OnSelectedModeChanged(SearchMode value)
+        {
+            if (value == SearchMode.Field && LoadTablesCommand != null)
+            {
+                LoadTablesCommand.Execute(null);
+            }
+        }
+
         // Function Tab Inputs
         [ObservableProperty]
         private string _functionNumberText = "";
