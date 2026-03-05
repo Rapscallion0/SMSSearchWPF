@@ -8,7 +8,16 @@
         Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
         Opacity="0.95"
         MouseEnter="Window_MouseEnter"
-        MouseLeave="Window_MouseLeave">
+        MouseLeave="Window_MouseLeave"
+        ContextMenuOpening="Window_ContextMenuOpening">
+    <Window.ContextMenu>
+        <ContextMenu>
+            <MenuItem x:Name="menuCopyMessage" Header="Copy message" Click="CopyMessage_Click" />
+            <MenuItem x:Name="menuCopyAllMessages" Header="Copy all messages" Click="CopyAllMessages_Click" />
+            <Separator x:Name="menuSeparator" />
+            <MenuItem x:Name="menuCloseAllMessages" Header="Close all messages" Click="CloseAllMessages_Click" />
+        </ContextMenu>
+    </Window.ContextMenu>
     <Border CornerRadius="5" BorderThickness="2" Background="#252526" BorderBrush="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=BorderBrush}">
         <Grid Margin="10">
             <Grid.RowDefinitions>

@@ -166,7 +166,24 @@ namespace SMS_Search.Views
 
         private void btnClose_Click(object sender, RoutedEventArgs e)
         {
-            CloseToast();
+            if (System.Windows.Input.Keyboard.IsKeyDown(System.Windows.Input.Key.LeftCtrl) ||
+                System.Windows.Input.Keyboard.IsKeyDown(System.Windows.Input.Key.RightCtrl))
+            {
+                CloseAllToasts();
+            }
+            else
+            {
+                CloseToast();
+            }
+        }
+
+        private static void CloseAllToasts()
+        {
+            var toastsToClose = _activeToasts.ToList();
+            foreach (var toast in toastsToClose)
+            {
+                toast.CloseToast();
+            }
         }
 
         private void CloseToast()
@@ -228,6 +245,57 @@ namespace SMS_Search.Views
                     toast._closeTimer.Start();
                 }
             }
+        }
+
+        private void Window_ContextMenuOpening(object sender, System.Windows.Controls.ContextMenuEventArgs e)
+        {
+            bool showAll = _activeToasts.Count > 1;
+            menuCopyAllMessages.Visibility = showAll ? Visibility.Visible : Visibility.Collapsed;
+            menuSeparator.Visibility = showAll ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void CopyMessage_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Windows.Clipboard.SetText(GetMessageText());
+            }
+            catch (Exception)
+            {
+                // Ignore clipboard errors
+            }
+        }
+
+        private void CopyAllMessages_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var messages = _activeToasts.Select(t => t.GetMessageText());
+                string allText = string.Join(Environment.NewLine + "-----------------------" + Environment.NewLine, messages);
+                System.Windows.Clipboard.SetText(allText);
+            }
+            catch (Exception)
+            {
+                // Ignore clipboard errors
+            }
+        }
+
+        private void CloseAllMessages_Click(object sender, RoutedEventArgs e)
+        {
+            CloseAllToasts();
+        }
+
+        private string GetMessageText()
+        {
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(lblTitle.Text))
+                parts.Add(lblTitle.Text);
+            if (!string.IsNullOrWhiteSpace(lblMessage.Text))
+                parts.Add(lblMessage.Text);
+            if (!string.IsNullOrWhiteSpace(txtDetails.Text) && txtDetails.Text != "Details...")
+                parts.Add(txtDetails.Text);
+
+            return string.Join(Environment.NewLine, parts);
         }
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
