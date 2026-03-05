@@ -187,14 +187,6 @@ namespace SMS_Search.Views
             }
         }
 
-        private void ComboBox_DropDownOpened(object? sender, EventArgs e)
-        {
-            if (DataContext is SearchViewModel vm)
-            {
-                vm.LoadTablesCommand.Execute(null);
-            }
-        }
-
         private void SearchType_Checked(object sender, System.Windows.RoutedEventArgs e)
         {
             if (sender is System.Windows.Controls.RadioButton rb)
