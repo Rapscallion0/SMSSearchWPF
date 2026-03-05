@@ -164,18 +164,16 @@ namespace SMS_Search
             _typingTimer.Stop();
             if (DataContext is MainViewModel vm)
             {
-                string text = DatabaseComboBox.Text;
-                int caretIndex = text.Length;
-
                 var textBox = DatabaseComboBox.Template.FindName("PART_EditableTextBox", DatabaseComboBox) as System.Windows.Controls.TextBox;
+                if (textBox == null) return;
+
+                string text = textBox.Text;
+                int caretIndex = textBox.CaretIndex;
+
                 string actualTypedText = text;
-                if (textBox != null)
+                if (textBox.SelectionLength > 0 && textBox.SelectionStart + textBox.SelectionLength == text.Length)
                 {
-                    caretIndex = textBox.CaretIndex;
-                    if (textBox.SelectionLength > 0 && textBox.SelectionStart + textBox.SelectionLength == text.Length)
-                    {
-                        actualTypedText = text.Substring(0, textBox.SelectionStart);
-                    }
+                    actualTypedText = text.Substring(0, textBox.SelectionStart);
                 }
 
                 vm.FilterDatabases(actualTypedText);
@@ -200,17 +198,14 @@ namespace SMS_Search
                 if (startsWithMatch != null)
                 {
                     vm.SelectedDatabase = startsWithMatch;
+                    string remaining = startsWithMatch.Substring(actualTypedText.Length);
 
-                    if (textBox != null)
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                     {
-                        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
-                        {
-                            string remaining = startsWithMatch.Substring(actualTypedText.Length);
-                            textBox.Text = actualTypedText + remaining;
-                            textBox.SelectionStart = actualTypedText.Length;
-                            textBox.SelectionLength = remaining.Length;
-                        }));
-                    }
+                        textBox.Text = actualTypedText + remaining;
+                        textBox.SelectionStart = actualTypedText.Length;
+                        textBox.SelectionLength = remaining.Length;
+                    }));
                 }
                 else
                 {
@@ -220,6 +215,11 @@ namespace SMS_Search
                         if (vm.SelectedDatabase != exactMatch)
                         {
                             vm.SelectedDatabase = exactMatch;
+                            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                            {
+                                textBox.SelectionLength = 0;
+                                textBox.CaretIndex = textBox.Text.Length;
+                            }));
                         }
                     }
                     else
@@ -227,25 +227,17 @@ namespace SMS_Search
                         if (vm.SelectedDatabase != null)
                         {
                             vm.SelectedDatabase = null;
-
-                            DatabaseComboBox.Text = actualTypedText;
-                            if (textBox != null)
-                            {
-                                textBox.CaretIndex = caretIndex <= textBox.Text.Length ? caretIndex : textBox.Text.Length;
-                            }
                         }
-                    }
 
-                    if (DatabaseComboBox.IsKeyboardFocusWithin)
-                    {
-                        if (textBox != null)
+                        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                         {
-                            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                            if (textBox.Text != actualTypedText)
                             {
-                                textBox.SelectionLength = 0;
-                                textBox.CaretIndex = caretIndex <= textBox.Text.Length ? caretIndex : textBox.Text.Length;
-                            }));
-                        }
+                                textBox.Text = actualTypedText;
+                            }
+                            textBox.SelectionLength = 0;
+                            textBox.CaretIndex = Math.Min(caretIndex, textBox.Text.Length);
+                        }));
                     }
                 }
             }
@@ -347,9 +339,33 @@ namespace SMS_Search
             {
                 Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                 {
-                    textBox.SelectionLength = 0;
-                    textBox.CaretIndex = textBox.Text.Length;
+                    textBox.SelectAll();
                 }));
+            }
+        }
+
+        private void DatabaseComboBox_PreviewMouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var textBox = DatabaseComboBox.Template.FindName("PART_EditableTextBox", DatabaseComboBox) as System.Windows.Controls.TextBox;
+            if (textBox != null)
+            {
+                textBox.SelectAll();
+                e.Handled = true;
+            }
+        }
+
+        private void DatabaseComboBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                string text = DatabaseComboBox.Text;
+                if (!string.IsNullOrEmpty(text) && !vm.Databases.Contains(text))
+                {
+                    // If text is not empty and not in the list, revert to the last valid selection.
+                    // This relies on the view model preserving the last valid selection.
+                    // To do this simply, we will trigger a full update or reset the text.
+                    DatabaseComboBox.Text = vm.SelectedDatabase ?? "";
+                }
             }
         }
     }

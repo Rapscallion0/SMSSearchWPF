@@ -19,11 +19,6 @@ namespace SMS_Search.Views.Settings
             _typingTimer.Tick += TypingTimer_Tick;
         }
 
-        private System.Windows.Controls.ComboBox? GetDatabaseComboBox()
-        {
-            return FindVisualChild<System.Windows.Controls.ComboBox>(this);
-        }
-
         private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
             for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
@@ -44,23 +39,22 @@ namespace SMS_Search.Views.Settings
         private void TypingTimer_Tick(object? sender, EventArgs e)
         {
             _typingTimer.Stop();
-            var databaseComboBox = GetDatabaseComboBox();
-            if (databaseComboBox == null) return;
 
             if (DataContext is ConnectionSectionViewModel vm)
             {
-                string text = databaseComboBox.Text;
-                int caretIndex = text.Length;
+                var databaseComboBox = FindVisualChild<System.Windows.Controls.ComboBox>(this);
+                if (databaseComboBox == null) return;
 
                 var textBox = databaseComboBox.Template.FindName("PART_EditableTextBox", databaseComboBox) as System.Windows.Controls.TextBox;
+                if (textBox == null) return;
+
+                string text = textBox.Text;
+                int caretIndex = textBox.CaretIndex;
+
                 string actualTypedText = text;
-                if (textBox != null)
+                if (textBox.SelectionLength > 0 && textBox.SelectionStart + textBox.SelectionLength == text.Length)
                 {
-                    caretIndex = textBox.CaretIndex;
-                    if (textBox.SelectionLength > 0 && textBox.SelectionStart + textBox.SelectionLength == text.Length)
-                    {
-                        actualTypedText = text.Substring(0, textBox.SelectionStart);
-                    }
+                    actualTypedText = text.Substring(0, textBox.SelectionStart);
                 }
 
                 vm.FilterDatabases(actualTypedText);
@@ -85,17 +79,14 @@ namespace SMS_Search.Views.Settings
                 if (startsWithMatch != null)
                 {
                     vm.Database.Value = startsWithMatch;
+                    string remaining = startsWithMatch.Substring(actualTypedText.Length);
 
-                    if (textBox != null)
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                     {
-                        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
-                        {
-                            string remaining = startsWithMatch.Substring(actualTypedText.Length);
-                            textBox.Text = actualTypedText + remaining;
-                            textBox.SelectionStart = actualTypedText.Length;
-                            textBox.SelectionLength = remaining.Length;
-                        }));
-                    }
+                        textBox.Text = actualTypedText + remaining;
+                        textBox.SelectionStart = actualTypedText.Length;
+                        textBox.SelectionLength = remaining.Length;
+                    }));
                 }
                 else
                 {
@@ -105,6 +96,11 @@ namespace SMS_Search.Views.Settings
                         if (vm.Database.Value != exactMatch)
                         {
                             vm.Database.Value = exactMatch;
+                            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                            {
+                                textBox.SelectionLength = 0;
+                                textBox.CaretIndex = textBox.Text.Length;
+                            }));
                         }
                     }
                     else
@@ -112,25 +108,17 @@ namespace SMS_Search.Views.Settings
                         if (vm.Database.Value != null)
                         {
                             vm.Database.Value = actualTypedText;
-
-                            databaseComboBox.Text = actualTypedText;
-                            if (textBox != null)
-                            {
-                                textBox.CaretIndex = caretIndex <= textBox.Text.Length ? caretIndex : textBox.Text.Length;
-                            }
                         }
-                    }
 
-                    if (databaseComboBox.IsKeyboardFocusWithin)
-                    {
-                        if (textBox != null)
+                        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                         {
-                            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                            if (textBox.Text != actualTypedText)
                             {
-                                textBox.SelectionLength = 0;
-                                textBox.CaretIndex = caretIndex <= textBox.Text.Length ? caretIndex : textBox.Text.Length;
-                            }));
-                        }
+                                textBox.Text = actualTypedText;
+                            }
+                            textBox.SelectionLength = 0;
+                            textBox.CaretIndex = Math.Min(caretIndex, textBox.Text.Length);
+                        }));
                     }
                 }
             }
@@ -227,17 +215,41 @@ namespace SMS_Search.Views.Settings
 
         private void DatabaseComboBox_GotFocus(object sender, RoutedEventArgs e)
         {
-            var databaseComboBox = GetDatabaseComboBox();
-            if (databaseComboBox == null) return;
-
-            var textBox = databaseComboBox.Template.FindName("PART_EditableTextBox", databaseComboBox) as System.Windows.Controls.TextBox;
-            if (textBox != null)
+            if (sender is System.Windows.Controls.ComboBox cmb)
             {
-                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                var textBox = cmb.Template.FindName("PART_EditableTextBox", cmb) as System.Windows.Controls.TextBox;
+                if (textBox != null)
                 {
-                    textBox.SelectionLength = 0;
-                    textBox.CaretIndex = textBox.Text.Length;
-                }));
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                    {
+                        textBox.SelectAll();
+                    }));
+                }
+            }
+        }
+
+        private void DatabaseComboBox_PreviewMouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is System.Windows.Controls.ComboBox cmb)
+            {
+                var textBox = cmb.Template.FindName("PART_EditableTextBox", cmb) as System.Windows.Controls.TextBox;
+                if (textBox != null)
+                {
+                    textBox.SelectAll();
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void DatabaseComboBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.ComboBox cmb && DataContext is ConnectionSectionViewModel vm)
+            {
+                string text = cmb.Text;
+                if (!string.IsNullOrEmpty(text) && !vm.Databases.Contains(text))
+                {
+                    cmb.Text = vm.Database.Value ?? "";
+                }
             }
         }
     }
