@@ -1,9 +1,15 @@
 using System;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using SMS_Search.Data;
 using SMS_Search.Services;
 using SMS_Search.Utils;
 
@@ -12,14 +18,18 @@ namespace SMS_Search.ViewModels.Settings
     public partial class ConnectionSectionViewModel : SettingsSectionViewModel
     {
         private readonly ISettingsRepository _repository;
+        private readonly IDataRepository _dataRepository;
+        private readonly ILoggerService _logger;
         private CancellationTokenSource? _passwordCts;
 
         public override string Title => "Connection";
         public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_Connection");
 
-        public ConnectionSectionViewModel(ISettingsRepository repository)
+        public ConnectionSectionViewModel(ISettingsRepository repository, IDataRepository dataRepository, ILoggerService logger)
         {
             _repository = repository;
+            _dataRepository = dataRepository;
+            _logger = logger;
 
             Server = new ObservableSetting<string>(repository, "CONNECTION", "SERVER",
                 repository.GetValue("CONNECTION", "SERVER") ?? "");
@@ -29,6 +39,30 @@ namespace SMS_Search.ViewModels.Settings
 
             User = new ObservableSetting<string>(repository, "CONNECTION", "SQLUSER",
                 repository.GetValue("CONNECTION", "SQLUSER") ?? "");
+
+            DatabasesView = CollectionViewSource.GetDefaultView(Databases);
+
+            LoadDatabasesCommand = new AsyncRelayCommand(LoadDatabasesAsync);
+
+            // Re-load databases if server/user/pass change
+            Server.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == "Value")
+                {
+                    _ = LoadDatabasesCommand.ExecuteAsync(null);
+                    WeakReferenceMessenger.Default.Send(new ConnectionSettingsChangedMessage(true));
+                }
+            };
+            User.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == "Value")
+                {
+                    _ = LoadDatabasesCommand.ExecuteAsync(null);
+                    WeakReferenceMessenger.Default.Send(new ConnectionSettingsChangedMessage(true));
+                }
+            };
+
+            _ = LoadDatabasesCommand.ExecuteAsync(null);
         }
 
         public ObservableSetting<string> Server { get; }
@@ -43,6 +77,11 @@ namespace SMS_Search.ViewModels.Settings
 
         [ObservableProperty]
         private bool _isPasswordSaving;
+
+        [ObservableProperty]
+        private ObservableCollection<string> _databases = new ObservableCollection<string>();
+
+        public ICollectionView DatabasesView { get; private set; }
 
         partial void OnPasswordChanged(string value)
         {
@@ -71,10 +110,92 @@ namespace SMS_Search.ViewModels.Settings
                 IsPasswordSaving = false;
                 IsPasswordSaved = true;
 
+                // Password changed, reload databases
+                _ = LoadDatabasesCommand.ExecuteAsync(null);
+                WeakReferenceMessenger.Default.Send(new ConnectionSettingsChangedMessage(true));
+
                 await Task.Delay(2000, token);
                 IsPasswordSaved = false;
             }
             catch (OperationCanceledException) { }
+        }
+
+        public IAsyncRelayCommand LoadDatabasesCommand { get; }
+
+        public async Task LoadDatabasesAsync()
+        {
+            try
+            {
+                 var server = Server.Value ?? "";
+                 var user = User.Value ?? "";
+                 var pass = _repository.GetValue("CONNECTION", "SQLPASSWORD");
+                 string? decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+
+                 if (string.IsNullOrEmpty(server)) return;
+
+                 var databases = await _dataRepository.GetDatabasesAsync(server, user, decryptedPass);
+                 Databases.Clear();
+                 foreach(var db in databases) Databases.Add(db);
+                 _logger.LogInfo($"Loaded {Databases.Count} databases for settings view.");
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError("Failed to load databases in settings", ex);
+            }
+        }
+
+        public void FilterDatabases(string searchText)
+        {
+            if (DatabasesView == null) return;
+
+            if (DatabasesView is System.Windows.Data.ListCollectionView lcv)
+            {
+                lcv.CustomSort = new DatabaseSortComparer(searchText);
+            }
+
+            DatabasesView.Filter = (obj) =>
+            {
+                if (string.IsNullOrEmpty(searchText)) return true;
+                if (obj is string str)
+                {
+                    return str.IndexOf(searchText, System.StringComparison.OrdinalIgnoreCase) >= 0;
+                }
+                return false;
+            };
+            DatabasesView.Refresh();
+        }
+
+        private class DatabaseSortComparer : System.Collections.IComparer
+        {
+            private readonly string _searchText;
+
+            public DatabaseSortComparer(string searchText)
+            {
+                _searchText = searchText;
+            }
+
+            public int Compare(object? x, object? y)
+            {
+                string? strX = x as string;
+                string? strY = y as string;
+
+                if (strX == null && strY == null) return 0;
+                if (strX == null) return -1;
+                if (strY == null) return 1;
+
+                if (string.IsNullOrEmpty(_searchText))
+                {
+                    return string.Compare(strX, strY, System.StringComparison.OrdinalIgnoreCase);
+                }
+
+                bool xStarts = strX.StartsWith(_searchText, System.StringComparison.OrdinalIgnoreCase);
+                bool yStarts = strY.StartsWith(_searchText, System.StringComparison.OrdinalIgnoreCase);
+
+                if (xStarts && !yStarts) return -1;
+                if (!xStarts && yStarts) return 1;
+
+                return string.Compare(strX, strY, System.StringComparison.OrdinalIgnoreCase);
+            }
         }
 
         public override bool Matches(string query)

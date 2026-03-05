@@ -15,10 +15,17 @@ namespace SMS_Search
         private readonly MainViewModel _viewModel;
         private readonly IConfigService _config;
         private UnarchiveWindow? _unarchiveWindow;
+        private System.Windows.Threading.DispatcherTimer _typingTimer;
+        private string _lastTypedText = "";
+        private bool _isDeleting = false;
 
         public MainWindow(MainViewModel viewModel, IConfigService config)
         {
             InitializeComponent();
+            _typingTimer = new System.Windows.Threading.DispatcherTimer();
+            _typingTimer.Interval = TimeSpan.FromMilliseconds(300);
+            _typingTimer.Tick += TypingTimer_Tick;
+
             _viewModel = viewModel;
             _config = config;
             DataContext = viewModel;
@@ -149,6 +156,200 @@ namespace SMS_Search
             finally
             {
                 MaskOverlay.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void TypingTimer_Tick(object? sender, EventArgs e)
+        {
+            _typingTimer.Stop();
+            if (DataContext is MainViewModel vm)
+            {
+                string text = DatabaseComboBox.Text;
+                int caretIndex = text.Length;
+
+                var textBox = DatabaseComboBox.Template.FindName("PART_EditableTextBox", DatabaseComboBox) as System.Windows.Controls.TextBox;
+                string actualTypedText = text;
+                if (textBox != null)
+                {
+                    caretIndex = textBox.CaretIndex;
+                    if (textBox.SelectionLength > 0 && textBox.SelectionStart + textBox.SelectionLength == text.Length)
+                    {
+                        actualTypedText = text.Substring(0, textBox.SelectionStart);
+                    }
+                }
+
+                vm.FilterDatabases(actualTypedText);
+
+                bool isTypingForward = !_isDeleting && actualTypedText.Length > _lastTypedText.Length && actualTypedText.StartsWith(_lastTypedText, StringComparison.OrdinalIgnoreCase);
+                _lastTypedText = actualTypedText;
+                _isDeleting = false;
+
+                string? startsWithMatch = null;
+                if (isTypingForward && !string.IsNullOrEmpty(actualTypedText))
+                {
+                    foreach (var item in vm.DatabasesView)
+                    {
+                        if (item is string str && str.StartsWith(actualTypedText, StringComparison.OrdinalIgnoreCase))
+                        {
+                            startsWithMatch = str;
+                            break;
+                        }
+                    }
+                }
+
+                if (startsWithMatch != null)
+                {
+                    vm.SelectedDatabase = startsWithMatch;
+
+                    if (textBox != null)
+                    {
+                        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                        {
+                            string remaining = startsWithMatch.Substring(actualTypedText.Length);
+                            textBox.Text = actualTypedText + remaining;
+                            textBox.SelectionStart = actualTypedText.Length;
+                            textBox.SelectionLength = remaining.Length;
+                        }));
+                    }
+                }
+                else
+                {
+                    var exactMatch = System.Linq.Enumerable.FirstOrDefault(vm.Databases, t => t.Equals(actualTypedText, StringComparison.OrdinalIgnoreCase));
+                    if (exactMatch != null)
+                    {
+                        if (vm.SelectedDatabase != exactMatch)
+                        {
+                            vm.SelectedDatabase = exactMatch;
+                        }
+                    }
+                    else
+                    {
+                        if (vm.SelectedDatabase != null)
+                        {
+                            vm.SelectedDatabase = null;
+
+                            DatabaseComboBox.Text = actualTypedText;
+                            if (textBox != null)
+                            {
+                                textBox.CaretIndex = caretIndex <= textBox.Text.Length ? caretIndex : textBox.Text.Length;
+                            }
+                        }
+                    }
+
+                    if (DatabaseComboBox.IsKeyboardFocusWithin)
+                    {
+                        if (textBox != null)
+                        {
+                            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                            {
+                                textBox.SelectionLength = 0;
+                                textBox.CaretIndex = caretIndex <= textBox.Text.Length ? caretIndex : textBox.Text.Length;
+                            }));
+                        }
+                    }
+                }
+            }
+        }
+
+        private void DatabaseComboBox_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Up || e.Key == System.Windows.Input.Key.Down ||
+                e.Key == System.Windows.Input.Key.Left || e.Key == System.Windows.Input.Key.Right ||
+                e.Key == System.Windows.Input.Key.Home || e.Key == System.Windows.Input.Key.End ||
+                e.Key == System.Windows.Input.Key.PageUp || e.Key == System.Windows.Input.Key.PageDown ||
+                e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Tab ||
+                e.Key == System.Windows.Input.Key.Escape)
+            {
+                return;
+            }
+
+            _isDeleting = e.Key == System.Windows.Input.Key.Back || e.Key == System.Windows.Input.Key.Delete;
+
+            _typingTimer.Stop();
+            _typingTimer.Start();
+        }
+
+        private void DatabaseComboBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Tab)
+            {
+                if (sender is System.Windows.Controls.ComboBox cmb)
+                {
+                    if (cmb.SelectedItem == null && cmb.Items.Count > 0)
+                    {
+                        cmb.SelectedItem = cmb.Items[0];
+                    }
+                }
+            }
+            else if (e.Key == System.Windows.Input.Key.Up || e.Key == System.Windows.Input.Key.Down)
+            {
+                if (sender is System.Windows.Controls.ComboBox cmb && cmb.IsEditable)
+                {
+                    if (cmb.Items.Count > 0)
+                    {
+                        int currentIndex = cmb.SelectedIndex;
+
+                        if (currentIndex == -1 && !string.IsNullOrEmpty(cmb.Text))
+                        {
+                            var match = System.Linq.Enumerable.FirstOrDefault(cmb.Items.Cast<string>(), i => i.StartsWith(cmb.Text, StringComparison.OrdinalIgnoreCase) || i.IndexOf(cmb.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+                            if (match != null)
+                            {
+                                currentIndex = cmb.Items.IndexOf(match);
+                            }
+                        }
+
+                        if (e.Key == System.Windows.Input.Key.Down)
+                        {
+                            currentIndex++;
+                            if (currentIndex >= cmb.Items.Count)
+                                currentIndex = cmb.Items.Count - 1;
+                        }
+                        else if (e.Key == System.Windows.Input.Key.Up)
+                        {
+                            currentIndex--;
+                            if (currentIndex < 0)
+                                currentIndex = 0;
+                        }
+
+                        cmb.SelectedIndex = currentIndex;
+
+                        var textBox = cmb.Template.FindName("PART_EditableTextBox", cmb) as System.Windows.Controls.TextBox;
+                        if (textBox != null && cmb.SelectedItem is string selectedStr)
+                        {
+                            string typedText = _lastTypedText;
+
+                            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                            {
+                                if (!string.IsNullOrEmpty(typedText) && selectedStr.StartsWith(typedText, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    textBox.Text = typedText + selectedStr.Substring(typedText.Length);
+                                    textBox.SelectionStart = typedText.Length;
+                                    textBox.SelectionLength = selectedStr.Length - typedText.Length;
+                                }
+                                else
+                                {
+                                    textBox.Text = selectedStr;
+                                    textBox.SelectAll();
+                                }
+                            }));
+                        }
+
+                        e.Handled = true;
+                    }
+                }
+            }
+        }
+
+        private void DatabaseComboBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            var textBox = DatabaseComboBox.Template.FindName("PART_EditableTextBox", DatabaseComboBox) as System.Windows.Controls.TextBox;
+            if (textBox != null)
+            {
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                {
+                    textBox.SelectionLength = 0;
+                    textBox.CaretIndex = textBox.Text.Length;
+                }));
             }
         }
     }

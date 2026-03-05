@@ -21,7 +21,12 @@
                 </ctrl:SettingControl>
 
                 <ctrl:SettingControl Header="Database" IsSaved="{Binding Database.IsSaved}">
-                    <ctrl:ClearableTextBox Text="{Binding Database.Value, UpdateSourceTrigger=PropertyChanged}" />
+                    <ComboBox Height="25" VerticalAlignment="Center"
+                              ItemsSource="{Binding DatabasesView}" SelectedItem="{Binding Database.Value}"
+                              IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True"
+                              VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling"
+                              PreviewKeyDown="DatabaseComboBox_PreviewKeyDown" KeyUp="DatabaseComboBox_KeyUp" GotFocus="DatabaseComboBox_GotFocus">
+                    </ComboBox>
                 </ctrl:SettingControl>
 
                 <ctrl:SettingControl Header="SQL User" IsSaved="{Binding User.IsSaved}">
