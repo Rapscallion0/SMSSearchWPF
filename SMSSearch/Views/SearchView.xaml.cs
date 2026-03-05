@@ -65,6 +65,17 @@ namespace SMS_Search.Views
                 if (TableComboBox.IsKeyboardFocusWithin)
                 {
                     TableComboBox.IsDropDownOpen = true;
+
+                    // Prevent WPF from auto-selecting text when IsDropDownOpen becomes true
+                    var textBox = TableComboBox.Template.FindName("PART_EditableTextBox", TableComboBox) as System.Windows.Controls.TextBox;
+                    if (textBox != null)
+                    {
+                        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                        {
+                            textBox.SelectionLength = 0;
+                            textBox.CaretIndex = textBox.Text.Length;
+                        }));
+                    }
                 }
             }
         }
@@ -219,6 +230,21 @@ namespace SMS_Search.Views
         private void ComboBox_GotFocus(object sender, System.Windows.RoutedEventArgs e)
         {
              if (DataContext is SearchViewModel vm && !vm.IsFieldTable) vm.IsFieldTable = true;
+
+             if (!TableComboBox.IsDropDownOpen)
+             {
+                 TableComboBox.IsDropDownOpen = true;
+
+                 var textBox = TableComboBox.Template.FindName("PART_EditableTextBox", TableComboBox) as System.Windows.Controls.TextBox;
+                 if (textBox != null)
+                 {
+                     Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                     {
+                         textBox.SelectionLength = 0;
+                         textBox.CaretIndex = textBox.Text.Length;
+                     }));
+                 }
+             }
         }
 
         private void FunctionSqlEditor_GotFocus(object sender, System.Windows.RoutedEventArgs e)
