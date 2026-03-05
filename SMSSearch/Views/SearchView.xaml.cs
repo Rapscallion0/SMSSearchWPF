@@ -311,6 +311,46 @@ namespace SMS_Search.Views
                     }
                 }
             }
+            else if (e.Key == System.Windows.Input.Key.Up || e.Key == System.Windows.Input.Key.Down)
+            {
+                if (sender is ComboBox cmb && cmb.IsEditable)
+                {
+                    if (cmb.Items.Count > 0)
+                    {
+                        if (!cmb.IsDropDownOpen)
+                        {
+                            cmb.IsDropDownOpen = true;
+                        }
+
+                        int currentIndex = cmb.SelectedIndex;
+                        if (e.Key == System.Windows.Input.Key.Down)
+                        {
+                            currentIndex++;
+                            if (currentIndex >= cmb.Items.Count)
+                                currentIndex = cmb.Items.Count - 1;
+                        }
+                        else if (e.Key == System.Windows.Input.Key.Up)
+                        {
+                            currentIndex--;
+                            if (currentIndex < 0)
+                                currentIndex = 0;
+                        }
+
+                        cmb.SelectedIndex = currentIndex;
+
+                        var textBox = cmb.Template.FindName("PART_EditableTextBox", cmb) as System.Windows.Controls.TextBox;
+                        if (textBox != null)
+                        {
+                            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                            {
+                                textBox.SelectAll();
+                            }));
+                        }
+
+                        e.Handled = true;
+                    }
+                }
+            }
         }
     }
 }
