@@ -198,6 +198,13 @@ namespace SMS_Search.ViewModels
         {
             if (TablesView == null) return;
 
+            // When applying filter, we also want to sort the items so that StartsWith items come first.
+            // ICollectionView Custom Sorting in WPF is done via CustomSort (ListCollectionView).
+            if (TablesView is System.Windows.Data.ListCollectionView lcv)
+            {
+                lcv.CustomSort = new TableSortComparer(searchText);
+            }
+
             TablesView.Filter = (obj) =>
             {
                 if (string.IsNullOrEmpty(searchText)) return true;
@@ -208,6 +215,40 @@ namespace SMS_Search.ViewModels
                 return false;
             };
             TablesView.Refresh();
+        }
+
+        private class TableSortComparer : System.Collections.IComparer
+        {
+            private readonly string _searchText;
+
+            public TableSortComparer(string searchText)
+            {
+                _searchText = searchText;
+            }
+
+            public int Compare(object? x, object? y)
+            {
+                string? strX = x as string;
+                string? strY = y as string;
+
+                if (strX == null && strY == null) return 0;
+                if (strX == null) return -1;
+                if (strY == null) return 1;
+
+                if (string.IsNullOrEmpty(_searchText))
+                {
+                    return string.Compare(strX, strY, System.StringComparison.OrdinalIgnoreCase);
+                }
+
+                bool xStarts = strX.StartsWith(_searchText, System.StringComparison.OrdinalIgnoreCase);
+                bool yStarts = strY.StartsWith(_searchText, System.StringComparison.OrdinalIgnoreCase);
+
+                if (xStarts && !yStarts) return -1;
+                if (!xStarts && yStarts) return 1;
+
+                // Both start with or neither start with, sort alphabetically
+                return string.Compare(strX, strY, System.StringComparison.OrdinalIgnoreCase);
+            }
         }
 
         [ObservableProperty]
