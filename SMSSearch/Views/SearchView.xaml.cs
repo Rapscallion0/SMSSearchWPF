@@ -36,65 +36,110 @@ namespace SMS_Search.Views
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(FocusActiveSearchInput));
         }
 
+        private string _lastTypedText = "";
+
         private void TypingTimer_Tick(object? sender, EventArgs e)
         {
             _typingTimer.Stop();
             if (DataContext is SearchViewModel vm)
             {
                 string text = TableComboBox.Text;
+                // If text comes in as POS_DEL and it has a selection, the user only actually typed POS_. We want the _lastTypedText tracking to reflect the actual typed text.
+                // We shouldn't rely on just the text, but let's grab the actual typed prefix if there's an active selection from a previous autocomplete.
                 int caretIndex = text.Length;
 
                 // Save caret position if possible
                 var textBox = TableComboBox.Template.FindName("PART_EditableTextBox", TableComboBox) as System.Windows.Controls.TextBox;
+                string actualTypedText = text;
                 if (textBox != null)
                 {
                     caretIndex = textBox.CaretIndex;
-                }
-
-                vm.FilterTables(text);
-
-                // If the user typed an exact match, select it.
-                // If not, clear selection so text isn't reverted/overwritten.
-                var match = System.Linq.Enumerable.FirstOrDefault(vm.Tables, t => t.Equals(text, StringComparison.OrdinalIgnoreCase));
-                if (match != null)
-                {
-                    if (vm.SelectedTable != match)
+                    if (textBox.SelectionLength > 0 && textBox.SelectionStart + textBox.SelectionLength == text.Length)
                     {
-                        vm.SelectedTable = match;
-
-                        // When SelectedTable updates, WPF might rewrite the text, changing casing and caret pos.
-                        // We will restore the caret after ensuring it matches.
+                        // The user has selected text at the end, meaning they only typed up to SelectionStart.
+                        actualTypedText = text.Substring(0, textBox.SelectionStart);
                     }
                 }
-                else
-                {
-                    if (vm.SelectedTable != null)
-                    {
-                        vm.SelectedTable = null;
 
-                        // Setting SelectedTable to null clears the text in the ComboBox.
-                        // Restore the typed text and caret position.
-                        TableComboBox.Text = text;
-                        if (textBox != null)
+                // Filter using actual typed text so we don't accidentally filter out everything if text was autocompleted
+                vm.FilterTables(actualTypedText);
+
+                // Only attempt autocomplete if the user is typing forward, not deleting
+                bool isTypingForward = !_isDeleting && actualTypedText.Length > _lastTypedText.Length && actualTypedText.StartsWith(_lastTypedText, StringComparison.OrdinalIgnoreCase);
+                _lastTypedText = actualTypedText;
+                _isDeleting = false;
+
+                // Look for a StartsWith match in the currently filtered view.
+                string? startsWithMatch = null;
+                if (isTypingForward && !string.IsNullOrEmpty(actualTypedText))
+                {
+                    foreach (var item in vm.TablesView)
+                    {
+                        if (item is string str && str.StartsWith(actualTypedText, StringComparison.OrdinalIgnoreCase))
                         {
-                            textBox.CaretIndex = caretIndex;
+                            startsWithMatch = str;
+                            break;
                         }
                     }
                 }
 
-                if (TableComboBox.IsKeyboardFocusWithin)
+                if (startsWithMatch != null)
                 {
-                    TableComboBox.IsDropDownOpen = true;
+                    // Found a match to autocomplete
+                    vm.SelectedTable = startsWithMatch;
 
-                    // Prevent WPF from auto-selecting text when IsDropDownOpen becomes true
+                    // The text in the combobox will now be the full matched table.
+                    // We need to preserve the originally typed case, append the rest of the match, and select the appended part.
                     if (textBox != null)
                     {
                         Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                         {
-                            textBox.SelectionLength = 0;
-                            // Ensure caret index is restored to its proper position, rather than strictly end
-                            textBox.CaretIndex = caretIndex <= textBox.Text.Length ? caretIndex : textBox.Text.Length;
+                            string remaining = startsWithMatch.Substring(actualTypedText.Length);
+                            textBox.Text = actualTypedText + remaining;
+                            textBox.SelectionStart = actualTypedText.Length;
+                            textBox.SelectionLength = remaining.Length;
                         }));
+                    }
+                }
+                else
+                {
+                    // No autocomplete match, check if it's an exact match
+                    var exactMatch = System.Linq.Enumerable.FirstOrDefault(vm.Tables, t => t.Equals(actualTypedText, StringComparison.OrdinalIgnoreCase));
+                    if (exactMatch != null)
+                    {
+                        if (vm.SelectedTable != exactMatch)
+                        {
+                            vm.SelectedTable = exactMatch;
+                        }
+                    }
+                    else
+                    {
+                        if (vm.SelectedTable != null)
+                        {
+                            vm.SelectedTable = null;
+
+                            // Setting SelectedTable to null clears the text in the ComboBox.
+                            // Restore the typed text and caret position.
+                            TableComboBox.Text = actualTypedText;
+                            if (textBox != null)
+                            {
+                                textBox.CaretIndex = caretIndex <= textBox.Text.Length ? caretIndex : textBox.Text.Length;
+                            }
+                        }
+                    }
+
+                    if (TableComboBox.IsKeyboardFocusWithin)
+                    {
+                        // Prevent WPF from auto-selecting text when IsDropDownOpen becomes true
+                        if (textBox != null)
+                        {
+                            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                            {
+                                textBox.SelectionLength = 0;
+                                // Ensure caret index is restored to its proper position, rather than strictly end
+                                textBox.CaretIndex = caretIndex <= textBox.Text.Length ? caretIndex : textBox.Text.Length;
+                            }));
+                        }
                     }
                 }
             }
@@ -251,19 +296,14 @@ namespace SMS_Search.Views
         {
              if (DataContext is SearchViewModel vm && !vm.IsFieldTable) vm.IsFieldTable = true;
 
-             if (!TableComboBox.IsDropDownOpen)
+             var textBox = TableComboBox.Template.FindName("PART_EditableTextBox", TableComboBox) as System.Windows.Controls.TextBox;
+             if (textBox != null)
              {
-                 TableComboBox.IsDropDownOpen = true;
-
-                 var textBox = TableComboBox.Template.FindName("PART_EditableTextBox", TableComboBox) as System.Windows.Controls.TextBox;
-                 if (textBox != null)
+                 Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                  {
-                     Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
-                     {
-                         textBox.SelectionLength = 0;
-                         textBox.CaretIndex = textBox.Text.Length;
-                     }));
-                 }
+                     textBox.SelectionLength = 0;
+                     textBox.CaretIndex = textBox.Text.Length;
+                 }));
              }
         }
 
@@ -282,6 +322,8 @@ namespace SMS_Search.Views
             if (DataContext is SearchViewModel vm && !vm.IsFieldCustomSql) vm.IsFieldCustomSql = true;
         }
 
+        private bool _isDeleting = false;
+
         private void TableComboBox_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == System.Windows.Input.Key.Up || e.Key == System.Windows.Input.Key.Down ||
@@ -294,6 +336,7 @@ namespace SMS_Search.Views
                 return;
             }
 
+            _isDeleting = e.Key == System.Windows.Input.Key.Back || e.Key == System.Windows.Input.Key.Delete;
 
             _typingTimer.Stop();
             _typingTimer.Start();
@@ -317,12 +360,24 @@ namespace SMS_Search.Views
                 {
                     if (cmb.Items.Count > 0)
                     {
-                        if (!cmb.IsDropDownOpen)
+                        int currentIndex = cmb.SelectedIndex;
+
+                        // If the text was just typed but no item selected, start at -1 so down goes to 0
+                        if (currentIndex == -1 && !string.IsNullOrEmpty(cmb.Text))
                         {
-                            cmb.IsDropDownOpen = true;
+                            var match = System.Linq.Enumerable.FirstOrDefault(cmb.Items.Cast<string>(), i => i.StartsWith(cmb.Text, StringComparison.OrdinalIgnoreCase) || i.IndexOf(cmb.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+                            if (match != null)
+                            {
+                                currentIndex = cmb.Items.IndexOf(match);
+                                // if we're going down from unselected but matching text, pressing down should just select that match (index)
+                                // wait, if we are at the exact match, it should be selected. If we are typed a prefix, we should just start cycling from 0.
+                            }
                         }
 
-                        int currentIndex = cmb.SelectedIndex;
+                        // Actually, if we're typing, the text might not exactly match an item yet,
+                        // but since we autocomplete StartsWith matches, cmb.SelectedIndex is usually already set if a StartsWith match exists.
+                        // However, if it's a "Contains" match, SelectedIndex might be -1.
+                        // Let's just cycle simply based on the current items.
                         if (e.Key == System.Windows.Input.Key.Down)
                         {
                             currentIndex++;
@@ -339,11 +394,25 @@ namespace SMS_Search.Views
                         cmb.SelectedIndex = currentIndex;
 
                         var textBox = cmb.Template.FindName("PART_EditableTextBox", cmb) as System.Windows.Controls.TextBox;
-                        if (textBox != null)
+                        if (textBox != null && cmb.SelectedItem is string selectedStr)
                         {
+                            string typedText = _lastTypedText;
+
                             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                             {
-                                textBox.SelectAll();
+                                // If the item starts with the originally typed text, we do inline autocomplete style selection
+                                if (!string.IsNullOrEmpty(typedText) && selectedStr.StartsWith(typedText, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    textBox.Text = typedText + selectedStr.Substring(typedText.Length);
+                                    textBox.SelectionStart = typedText.Length;
+                                    textBox.SelectionLength = selectedStr.Length - typedText.Length;
+                                }
+                                else
+                                {
+                                    // Otherwise, select the whole text
+                                    textBox.Text = selectedStr;
+                                    textBox.SelectAll();
+                                }
                             }));
                         }
 
