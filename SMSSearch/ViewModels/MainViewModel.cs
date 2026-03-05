@@ -1,6 +1,8 @@
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using System.Windows.Data;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -20,6 +22,7 @@ namespace SMS_Search.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private readonly ILoggerService _logger;
         private readonly IQueryHistoryService _historyService; // Restore history service dependency
+        private readonly IDataRepository _repository;
 
         public event Action? RequestOpenSettings;
         public event Action<bool>? RequestToggleUnarchiveWindow;
@@ -30,9 +33,11 @@ namespace SMS_Search.ViewModels
             IServiceProvider serviceProvider,
             ILoggerService logger,
             IQueryHistoryService historyService, // Inject it
+            IDataRepository repository,
             SearchViewModel searchViewModel,
             ResultsViewModel resultsViewModel)
         {
+            _repository = repository;
             _config = config;
             _dialogService = dialogService;
             _serviceProvider = serviceProvider;
@@ -45,6 +50,19 @@ namespace SMS_Search.ViewModels
             Title = $"SMS Search - V{version}";
 
             GregorianDate = DateTime.Today;
+
+            DatabasesView = CollectionViewSource.GetDefaultView(Databases);
+
+            LoadDatabasesCommand = new AsyncRelayCommand(LoadDatabasesAsync);
+
+            // Initial load of databases
+            SelectedDatabase = _config.GetValue("CONNECTION", "DATABASE");
+            _ = LoadDatabasesCommand.ExecuteAsync(null);
+
+            WeakReferenceMessenger.Default.Register<ConnectionSettingsChangedMessage>(this, (r, m) =>
+            {
+                _ = LoadDatabasesCommand.ExecuteAsync(null);
+            });
         }
 
         public string Title { get; }
@@ -57,6 +75,122 @@ namespace SMS_Search.ViewModels
 
         [ObservableProperty]
         private bool _isUnarchiveTargetVisible;
+
+        [ObservableProperty]
+        private ObservableCollection<string> _databases = new ObservableCollection<string>();
+
+        public ICollectionView DatabasesView { get; private set; }
+
+        [ObservableProperty]
+        private string? _selectedDatabase;
+
+        partial void OnSelectedDatabaseChanged(string? value)
+        {
+            // Update the connection string database for the repository logic to use this session database
+            // This does NOT save to settings, but is used by ResultsViewModel when executing a search
+            if (!string.IsNullOrEmpty(value) && _config.GetValue("CONNECTION", "DATABASE") != value)
+            {
+                // To safely pass this to ResultsVm without modifying settings on disk,
+                // we'll update it in memory via config service but not call Save.
+                _config.SetValue("CONNECTION", "DATABASE", value);
+
+                // Clear tables in SearchVm so it reloads for the new database
+                SearchVm.Tables.Clear();
+                SearchVm.SelectedTable = null;
+                if (SearchVm.SelectedMode == SearchMode.Field && SearchVm.LoadTablesCommand != null)
+                {
+                    SearchVm.LoadTablesCommand.Execute(null);
+                }
+            }
+        }
+
+        public IAsyncRelayCommand LoadDatabasesCommand { get; }
+
+        public async Task LoadDatabasesAsync()
+        {
+            try
+            {
+                 var server = _config.GetValue("CONNECTION", "SERVER") ?? "";
+                 var user = _config.GetValue("CONNECTION", "SQLUSER") ?? "";
+                 var pass = _config.GetValue("CONNECTION", "SQLPASSWORD");
+                 string? decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+
+                 if (string.IsNullOrEmpty(server)) return;
+
+                 var databases = await _repository.GetDatabasesAsync(server, user, decryptedPass);
+                 Databases.Clear();
+                 foreach(var db in databases) Databases.Add(db);
+                 _logger.LogInfo($"Loaded {Databases.Count} databases from server.");
+
+                 // If SelectedDatabase isn't in the list, set it to the first one or null
+                 if (!string.IsNullOrEmpty(SelectedDatabase) && !Databases.Contains(SelectedDatabase))
+                 {
+                     SelectedDatabase = Databases.Count > 0 ? Databases[0] : null;
+                 }
+                 else if (string.IsNullOrEmpty(SelectedDatabase) && Databases.Count > 0)
+                 {
+                     SelectedDatabase = Databases[0];
+                 }
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError("Failed to load databases", ex);
+            }
+        }
+
+        public void FilterDatabases(string searchText)
+        {
+            if (DatabasesView == null) return;
+
+            if (DatabasesView is System.Windows.Data.ListCollectionView lcv)
+            {
+                lcv.CustomSort = new DatabaseSortComparer(searchText);
+            }
+
+            DatabasesView.Filter = (obj) =>
+            {
+                if (string.IsNullOrEmpty(searchText)) return true;
+                if (obj is string str)
+                {
+                    return str.IndexOf(searchText, System.StringComparison.OrdinalIgnoreCase) >= 0;
+                }
+                return false;
+            };
+            DatabasesView.Refresh();
+        }
+
+        private class DatabaseSortComparer : System.Collections.IComparer
+        {
+            private readonly string _searchText;
+
+            public DatabaseSortComparer(string searchText)
+            {
+                _searchText = searchText;
+            }
+
+            public int Compare(object? x, object? y)
+            {
+                string? strX = x as string;
+                string? strY = y as string;
+
+                if (strX == null && strY == null) return 0;
+                if (strX == null) return -1;
+                if (strY == null) return 1;
+
+                if (string.IsNullOrEmpty(_searchText))
+                {
+                    return string.Compare(strX, strY, System.StringComparison.OrdinalIgnoreCase);
+                }
+
+                bool xStarts = strX.StartsWith(_searchText, System.StringComparison.OrdinalIgnoreCase);
+                bool yStarts = strY.StartsWith(_searchText, System.StringComparison.OrdinalIgnoreCase);
+
+                if (xStarts && !yStarts) return -1;
+                if (!xStarts && yStarts) return 1;
+
+                return string.Compare(strX, strY, System.StringComparison.OrdinalIgnoreCase);
+            }
+        }
 
         partial void OnIsUnarchiveTargetVisibleChanged(bool value)
         {

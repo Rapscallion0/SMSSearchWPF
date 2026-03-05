@@ -36,6 +36,13 @@
                     <TextBox Text="{Binding JulianDateText, UpdateSourceTrigger=PropertyChanged}" Width="60" MaxLength="7" VerticalContentAlignment="Center"/>
                     <TextBlock Text="Gregorian:" Margin="10,0,5,0" VerticalAlignment="Center"/>
                     <DatePicker SelectedDate="{Binding GregorianDate}" Width="100"/>
+                    <TextBlock Text="Database:" Margin="10,0,5,0" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="DatabaseComboBox" Width="150" Height="22" VerticalAlignment="Center"
+                              ItemsSource="{Binding DatabasesView}" SelectedItem="{Binding SelectedDatabase}"
+                              IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True"
+                              VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling"
+                              PreviewKeyDown="DatabaseComboBox_PreviewKeyDown" KeyUp="DatabaseComboBox_KeyUp" GotFocus="DatabaseComboBox_GotFocus">
+                    </ComboBox>
                 </StackPanel>
             </StatusBarItem>
             <StatusBarItem HorizontalAlignment="Right">
