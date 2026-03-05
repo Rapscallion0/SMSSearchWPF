@@ -15,7 +15,22 @@
                                WordWrap="True"
                                VerticalScrollBarVisibility="Auto"
                                HorizontalScrollBarVisibility="Auto"
-                               TextChanged="Editor_TextChanged"/>
+                               TextChanged="Editor_TextChanged">
+                <avalon:TextEditor.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Command="ApplicationCommands.Undo" Header="Undo"/>
+                        <MenuItem Command="ApplicationCommands.Redo" Header="Redo"/>
+                        <Separator/>
+                        <MenuItem Command="ApplicationCommands.Cut" Header="Cut"/>
+                        <MenuItem Command="ApplicationCommands.Copy" Header="Copy"/>
+                        <MenuItem Command="ApplicationCommands.Paste" Header="Paste"/>
+                        <MenuItem Command="ApplicationCommands.Delete" Header="Delete"/>
+                        <Separator/>
+                        <MenuItem Command="ApplicationCommands.SelectAll" Header="Select All"/>
+                        <MenuItem Header="Clear All" Click="ClearAll_Click"/>
+                    </ContextMenu>
+                </avalon:TextEditor.ContextMenu>
+            </avalon:TextEditor>
         </Border>
     </Grid>
 </UserControl>

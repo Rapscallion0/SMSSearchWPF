@@ -269,6 +269,11 @@ namespace SMS_Search.Views.Controls
             Editor.SelectAll();
         }
 
+        private void ClearAll_Click(object sender, RoutedEventArgs e)
+        {
+            Editor.Clear();
+        }
+
         private void LoadHighlighting()
         {
             try
