@@ -5,7 +5,7 @@
         Width="300"
         SizeToContent="Height"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
+        ShowInTaskbar="False" ResizeMode="NoResize"
         Opacity="0.95"
         MouseEnter="Window_MouseEnter"
         MouseLeave="Window_MouseLeave"

@@ -82,6 +82,13 @@ namespace SMS_Search.Services
                      }
 
                      var toast = new ToastWindow(message, title, type, timeout, details);
+
+                     var mainWindow = System.Windows.Application.Current.MainWindow;
+                     if (mainWindow != null && mainWindow.IsVisible)
+                     {
+                         toast.Owner = mainWindow;
+                     }
+
                      toast.Show();
                  });
             }
