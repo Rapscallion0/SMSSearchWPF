@@ -42,6 +42,15 @@ namespace SMS_Search.Views
             if (DataContext is SearchViewModel vm)
             {
                 string text = TableComboBox.Text;
+                int caretIndex = text.Length;
+
+                // Save caret position if possible
+                var textBox = TableComboBox.Template.FindName("PART_EditableTextBox", TableComboBox) as System.Windows.Controls.TextBox;
+                if (textBox != null)
+                {
+                    caretIndex = textBox.CaretIndex;
+                }
+
                 vm.FilterTables(text);
 
                 // If the user typed an exact match, select it.
@@ -52,6 +61,9 @@ namespace SMS_Search.Views
                     if (vm.SelectedTable != match)
                     {
                         vm.SelectedTable = match;
+
+                        // When SelectedTable updates, WPF might rewrite the text, changing casing and caret pos.
+                        // We will restore the caret after ensuring it matches.
                     }
                 }
                 else
@@ -59,6 +71,14 @@ namespace SMS_Search.Views
                     if (vm.SelectedTable != null)
                     {
                         vm.SelectedTable = null;
+
+                        // Setting SelectedTable to null clears the text in the ComboBox.
+                        // Restore the typed text and caret position.
+                        TableComboBox.Text = text;
+                        if (textBox != null)
+                        {
+                            textBox.CaretIndex = caretIndex;
+                        }
                     }
                 }
 
@@ -67,13 +87,13 @@ namespace SMS_Search.Views
                     TableComboBox.IsDropDownOpen = true;
 
                     // Prevent WPF from auto-selecting text when IsDropDownOpen becomes true
-                    var textBox = TableComboBox.Template.FindName("PART_EditableTextBox", TableComboBox) as System.Windows.Controls.TextBox;
                     if (textBox != null)
                     {
                         Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                         {
                             textBox.SelectionLength = 0;
-                            textBox.CaretIndex = textBox.Text.Length;
+                            // Ensure caret index is restored to its proper position, rather than strictly end
+                            textBox.CaretIndex = caretIndex <= textBox.Text.Length ? caretIndex : textBox.Text.Length;
                         }));
                     }
                 }
