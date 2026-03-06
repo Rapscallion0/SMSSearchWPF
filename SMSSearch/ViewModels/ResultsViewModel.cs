@@ -57,6 +57,7 @@ namespace SMS_Search.ViewModels
             ExportCsvCommand = new AsyncRelayCommand(ExportCsvAsync);
             ExportJsonCommand = new AsyncRelayCommand(ExportJsonAsync);
             ExportExcelCommand = new AsyncRelayCommand(ExportExcelAsync);
+            ExportXmlCommand = new AsyncRelayCommand(ExportXmlAsync);
 
             ApplyFilterCommand = new AsyncRelayCommand<string>(ApplyFilterAsync);
             FindNextCommand = new AsyncRelayCommand(() => FindMatchAsync(true));
@@ -66,7 +67,12 @@ namespace SMS_Search.ViewModels
 
             ToggleHeaderDescriptionCommand = new RelayCommand(() => ShowDescriptionHeaders = !ShowDescriptionHeaders);
             CopyInsertCommand = new RelayCommand<System.Collections.IList>(CopyAsSqlInsert);
-            ExportSelectedCsvCommand = new RelayCommand<System.Collections.IList>(_ => { });
+
+            ExportSelectedCsvCommand = new AsyncRelayCommand<System.Collections.IList>(ExportSelectedCsvAsync);
+            ExportSelectedJsonCommand = new AsyncRelayCommand<System.Collections.IList>(ExportSelectedJsonAsync);
+            ExportSelectedExcelCommand = new AsyncRelayCommand<System.Collections.IList>(ExportSelectedExcelAsync);
+            ExportSelectedXmlCommand = new AsyncRelayCommand<System.Collections.IList>(ExportSelectedXmlAsync);
+
             FilterBySelectionCommand = new RelayCommand<string>(FilterBySelection);
             CopyRowCommand = new RelayCommand<IList>(CopyRow);
 
@@ -134,6 +140,8 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         private string _headerToggleText = "Show Description";
 
+        public SearchCriteria? CurrentSearchCriteria { get; private set; }
+
         public event EventHandler<(int RowIndex, string ColumnName)>? ScrollToCellRequested;
         public event EventHandler? HeadersUpdated;
 
@@ -146,10 +154,16 @@ namespace SMS_Search.ViewModels
         public IAsyncRelayCommand ExportCsvCommand { get; }
         public IAsyncRelayCommand ExportJsonCommand { get; }
         public IAsyncRelayCommand ExportExcelCommand { get; }
+        public IAsyncRelayCommand ExportXmlCommand { get; }
 
         public IRelayCommand ToggleHeaderDescriptionCommand { get; }
         public IRelayCommand<System.Collections.IList> CopyInsertCommand { get; }
-        public IRelayCommand<System.Collections.IList> ExportSelectedCsvCommand { get; }
+
+        public IAsyncRelayCommand<System.Collections.IList> ExportSelectedCsvCommand { get; }
+        public IAsyncRelayCommand<System.Collections.IList> ExportSelectedJsonCommand { get; }
+        public IAsyncRelayCommand<System.Collections.IList> ExportSelectedExcelCommand { get; }
+        public IAsyncRelayCommand<System.Collections.IList> ExportSelectedXmlCommand { get; }
+
         public IRelayCommand<string> FilterBySelectionCommand { get; }
         public IRelayCommand<IList> CopyRowCommand { get; }
 
@@ -272,6 +286,8 @@ namespace SMS_Search.ViewModels
 
         public async Task ExecuteSearchAsync(SearchCriteria criteria)
         {
+            CurrentSearchCriteria = criteria;
+
             _cts?.Cancel();
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
@@ -627,6 +643,14 @@ namespace SMS_Search.ViewModels
             await PerformExportAsync(() => _gridContext.ExportToExcelXmlAsync(filename));
         }
 
+        private async Task ExportXmlAsync()
+        {
+            string? filename = _dialogService.SaveFileDialog("XML files (*.xml)|*.xml", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xml");
+            if (string.IsNullOrEmpty(filename)) return;
+            if (CurrentSearchCriteria == null) return;
+            await PerformExportAsync(() => _gridContext.ExportToXmlAsync(filename, CurrentSearchCriteria));
+        }
+
         private async Task PerformExportAsync(Func<Task> exportAction)
         {
             IsBusy = true;
@@ -655,6 +679,46 @@ namespace SMS_Search.ViewModels
             if (string.IsNullOrEmpty(text)) return;
             FilterText = text;
             ApplyFilterCommand.Execute(text);
+        }
+
+        private async Task ExportSelectedCsvAsync(System.Collections.IList? selectedItems)
+        {
+            if (selectedItems == null || selectedItems.Count == 0 || _lastSchema == null) return;
+            string? filename = _dialogService.SaveFileDialog("CSV files (*.csv)|*.csv", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+            if (string.IsNullOrEmpty(filename)) return;
+
+            var rows = selectedItems.Cast<VirtualRow>().ToList();
+            await PerformExportAsync(() => _gridContext.ExportRowsToCsvAsync(filename, rows));
+        }
+
+        private async Task ExportSelectedJsonAsync(System.Collections.IList? selectedItems)
+        {
+            if (selectedItems == null || selectedItems.Count == 0 || _lastSchema == null) return;
+            string? filename = _dialogService.SaveFileDialog("JSON files (*.json)|*.json", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.json");
+            if (string.IsNullOrEmpty(filename)) return;
+
+            var rows = selectedItems.Cast<VirtualRow>().ToList();
+            await PerformExportAsync(() => _gridContext.ExportRowsToJsonAsync(filename, rows));
+        }
+
+        private async Task ExportSelectedExcelAsync(System.Collections.IList? selectedItems)
+        {
+            if (selectedItems == null || selectedItems.Count == 0 || _lastSchema == null) return;
+            string? filename = _dialogService.SaveFileDialog("Excel XML (*.xml)|*.xml", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xml");
+            if (string.IsNullOrEmpty(filename)) return;
+
+            var rows = selectedItems.Cast<VirtualRow>().ToList();
+            await PerformExportAsync(() => _gridContext.ExportRowsToExcelXmlAsync(filename, rows));
+        }
+
+        private async Task ExportSelectedXmlAsync(System.Collections.IList? selectedItems)
+        {
+            if (selectedItems == null || selectedItems.Count == 0 || _lastSchema == null || CurrentSearchCriteria == null) return;
+            string? filename = _dialogService.SaveFileDialog("XML files (*.xml)|*.xml", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xml");
+            if (string.IsNullOrEmpty(filename)) return;
+
+            var rows = selectedItems.Cast<VirtualRow>().ToList();
+            await PerformExportAsync(() => _gridContext.ExportRowsToXmlAsync(filename, rows, CurrentSearchCriteria));
         }
 
         private void CopyRow(IList? selectedItems)

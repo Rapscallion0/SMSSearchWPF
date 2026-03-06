@@ -466,6 +466,79 @@ namespace SMS_Search.Data
              }
         }
 
+        public async Task ExportToXmlAsync(string filename, SearchCriteria criteria, CancellationToken cancellationToken = default)
+        {
+             string finalSql = BuildExportSql();
+             if (_server == null || _database == null) return;
+
+             string rootElement = "SearchResults";
+             string rootAttr = "";
+
+             if (criteria.Mode == SearchMode.Function)
+             {
+                 rootElement = "Function";
+                 if (!string.IsNullOrEmpty(criteria.Value))
+                     rootAttr = $" Number=\"{EscapeXml(criteria.Value)}\"";
+             }
+             else if (criteria.Mode == SearchMode.Totalizer)
+             {
+                 rootElement = "Totalizer";
+                 if (!string.IsNullOrEmpty(criteria.Value))
+                     rootAttr = $" Number=\"{EscapeXml(criteria.Value)}\"";
+             }
+             else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.CustomSql)
+             {
+                 rootElement = "CustomQuery";
+             }
+             else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.Table)
+             {
+                 rootElement = "Table";
+                 if (!string.IsNullOrEmpty(criteria.Value))
+                     rootAttr = $" Name=\"{EscapeXml(criteria.Value)}\"";
+             }
+
+             using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
+             {
+                 using (var writer = new StreamWriter(filename))
+                 {
+                     writer.WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+                     writer.WriteLine($"<{rootElement}{rootAttr}>");
+
+                     List<string> safeColNames = new List<string>();
+                     for (int i = 0; i < reader.FieldCount; i++)
+                     {
+                         safeColNames.Add(MakeValidXmlName(reader.GetName(i)));
+                     }
+
+                     while (await reader.ReadAsync(cancellationToken))
+                     {
+                         writer.WriteLine("  <Row>");
+                         for (int i = 0; i < reader.FieldCount; i++)
+                         {
+                             var val = reader.GetValue(i);
+                             if (val != DBNull.Value)
+                             {
+                                 string tag = safeColNames[i];
+                                 string? s = val.ToString();
+                                 writer.WriteLine($"    <{tag}>{EscapeXml(s ?? "")}</{tag}>");
+                             }
+                         }
+                         writer.WriteLine("  </Row>");
+                     }
+
+                     writer.WriteLine($"</{rootElement}>");
+                 }
+             }
+        }
+
+        private string MakeValidXmlName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return "Column";
+            string safeName = System.Text.RegularExpressions.Regex.Replace(name, @"[^\w_.-]", "_");
+            if (!char.IsLetter(safeName[0]) && safeName[0] != '_') safeName = "_" + safeName;
+            return safeName;
+        }
+
         public async Task ExportToExcelXmlAsync(string filename, Dictionary<string, string>? headerMap = null, CancellationToken cancellationToken = default)
         {
              string finalSql = BuildExportSql();
@@ -518,6 +591,193 @@ namespace SMS_Search.Data
                      writer.WriteLine("</Workbook>");
                  }
              }
+        }
+
+        public async Task ExportRowsToCsvAsync(string filename, List<VirtualRow> rows)
+        {
+             await Task.Run(() =>
+             {
+                 using (var writer = new StreamWriter(filename))
+                 {
+                     if (rows.Count > 0)
+                     {
+                         var row = rows[0];
+                         var props = row.GetProperties();
+                         for (int i = 0; i < props.Count; i++)
+                         {
+                             if (i > 0) writer.Write(",");
+                             writer.Write("\"" + props[i].Name.Replace("\"", "\"\"") + "\"");
+                         }
+                         writer.WriteLine();
+                     }
+
+                     foreach (var row in rows)
+                     {
+                         var props = row.GetProperties();
+                         for (int i = 0; i < props.Count; i++)
+                         {
+                             if (i > 0) writer.Write(",");
+                             var val = row.GetValue(i);
+                             string sVal = val == DBNull.Value ? "" : val?.ToString() ?? "";
+                             writer.Write("\"" + sVal.Replace("\"", "\"\"") + "\"");
+                         }
+                         writer.WriteLine();
+                     }
+                 }
+             });
+        }
+
+        public async Task ExportRowsToJsonAsync(string filename, List<VirtualRow> rows)
+        {
+             await Task.Run(() =>
+             {
+                 using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None))
+                 using (var writer = new Utf8JsonWriter(fs, new JsonWriterOptions { Indented = true }))
+                 {
+                     writer.WriteStartArray();
+                     foreach (var row in rows)
+                     {
+                         writer.WriteStartObject();
+                         var props = row.GetProperties();
+                         for (int i = 0; i < props.Count; i++)
+                         {
+                             string colName = props[i].Name;
+                             var val = row.GetValue(i);
+
+                             writer.WritePropertyName(colName);
+
+                             if (val == null || val == DBNull.Value) writer.WriteNullValue();
+                             else if (val is bool b) writer.WriteBooleanValue(b);
+                             else if (IsNumeric(val)) writer.WriteNumberValue(Convert.ToDecimal(val));
+                             else writer.WriteStringValue(val.ToString());
+                         }
+                         writer.WriteEndObject();
+                     }
+                     writer.WriteEndArray();
+                 }
+             });
+        }
+
+        public async Task ExportRowsToExcelXmlAsync(string filename, List<VirtualRow> rows)
+        {
+             await Task.Run(() =>
+             {
+                 using (var writer = new StreamWriter(filename))
+                 {
+                     writer.WriteLine("<?xml version=\"1.0\"?>");
+                     writer.WriteLine("<?mso-application progid=\"Excel.Sheet\"?>");
+                     writer.WriteLine("<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"");
+                     writer.WriteLine(" xmlns:o=\"urn:schemas-microsoft-com:office:office\"");
+                     writer.WriteLine(" xmlns:x=\"urn:schemas-microsoft-com:office:excel\"");
+                     writer.WriteLine(" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"");
+                     writer.WriteLine(" xmlns:html=\"http://www.w3.org/TR/REC-html40\">");
+                     writer.WriteLine(" <Worksheet ss:Name=\"Sheet1\">");
+                     writer.WriteLine("  <Table>");
+
+                     if (rows.Count > 0)
+                     {
+                         writer.WriteLine("   <Row>");
+                         var props = rows[0].GetProperties();
+                         for (int i = 0; i < props.Count; i++)
+                         {
+                             string colName = props[i].Name;
+                             writer.WriteLine($"    <Cell><Data ss:Type=\"String\">{EscapeXml(colName)}</Data></Cell>");
+                         }
+                         writer.WriteLine("   </Row>");
+                     }
+
+                     foreach (var row in rows)
+                     {
+                         writer.WriteLine("   <Row>");
+                         var props = row.GetProperties();
+                         for (int i = 0; i < props.Count; i++)
+                         {
+                             var val = row.GetValue(i);
+                             if (val == null || val == DBNull.Value)
+                             {
+                                 writer.WriteLine("    <Cell></Cell>");
+                             }
+                             else
+                             {
+                                 string? s = val.ToString();
+                                 writer.WriteLine($"    <Cell><Data ss:Type=\"String\">{EscapeXml(s ?? "")}</Data></Cell>");
+                             }
+                         }
+                         writer.WriteLine("   </Row>");
+                     }
+
+                     writer.WriteLine("  </Table>");
+                     writer.WriteLine(" </Worksheet>");
+                     writer.WriteLine("</Workbook>");
+                 }
+             });
+        }
+
+        public async Task ExportRowsToXmlAsync(string filename, List<VirtualRow> rows, SearchCriteria criteria)
+        {
+             await Task.Run(() =>
+             {
+                 string rootElement = "SearchResults";
+                 string rootAttr = "";
+
+                 if (criteria.Mode == SearchMode.Function)
+                 {
+                     rootElement = "Function";
+                     if (!string.IsNullOrEmpty(criteria.Value))
+                         rootAttr = $" Number=\"{EscapeXml(criteria.Value)}\"";
+                 }
+                 else if (criteria.Mode == SearchMode.Totalizer)
+                 {
+                     rootElement = "Totalizer";
+                     if (!string.IsNullOrEmpty(criteria.Value))
+                         rootAttr = $" Number=\"{EscapeXml(criteria.Value)}\"";
+                 }
+                 else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.CustomSql)
+                 {
+                     rootElement = "CustomQuery";
+                 }
+                 else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.Table)
+                 {
+                     rootElement = "Table";
+                     if (!string.IsNullOrEmpty(criteria.Value))
+                         rootAttr = $" Name=\"{EscapeXml(criteria.Value)}\"";
+                 }
+
+                 using (var writer = new StreamWriter(filename))
+                 {
+                     writer.WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+                     writer.WriteLine($"<{rootElement}{rootAttr}>");
+
+                     List<string> safeColNames = new List<string>();
+                     if (rows.Count > 0)
+                     {
+                         var props = rows[0].GetProperties();
+                         for (int i = 0; i < props.Count; i++)
+                         {
+                             safeColNames.Add(MakeValidXmlName(props[i].Name));
+                         }
+                     }
+
+                     foreach (var row in rows)
+                     {
+                         writer.WriteLine("  <Row>");
+                         var props = row.GetProperties();
+                         for (int i = 0; i < props.Count; i++)
+                         {
+                             var val = row.GetValue(i);
+                             if (val != null && val != DBNull.Value)
+                             {
+                                 string tag = safeColNames[i];
+                                 string? s = val.ToString();
+                                 writer.WriteLine($"    <{tag}>{EscapeXml(s ?? "")}</{tag}>");
+                             }
+                         }
+                         writer.WriteLine("  </Row>");
+                     }
+
+                     writer.WriteLine($"</{rootElement}>");
+                 }
+             });
         }
 
         private string EscapeXml(string s)
