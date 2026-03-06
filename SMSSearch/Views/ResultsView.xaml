@@ -56,10 +56,10 @@
                       CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             <Separator/>
             <MenuItem Header="Export Results">
-                <MenuItem Header="CSV" Command="{Binding PlacementTarget.Tag.ExportSelectedCsvCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                <MenuItem Header="JSON" Command="{Binding PlacementTarget.Tag.ExportSelectedJsonCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                <MenuItem Header="Excel" Command="{Binding PlacementTarget.Tag.ExportSelectedExcelCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                <MenuItem Header="XML" Command="{Binding PlacementTarget.Tag.ExportSelectedXmlCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                <MenuItem Header="CSV" Command="{Binding PlacementTarget.Tag.DataContext.ExportSelectedCsvCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                <MenuItem Header="JSON" Command="{Binding PlacementTarget.Tag.DataContext.ExportSelectedJsonCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                <MenuItem Header="Excel" Command="{Binding PlacementTarget.Tag.DataContext.ExportSelectedExcelCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                <MenuItem Header="XML" Command="{Binding PlacementTarget.Tag.DataContext.ExportSelectedXmlCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             </MenuItem>
         </ContextMenu>
 
@@ -72,10 +72,10 @@
                       Command="{Binding PlacementTarget.Tag.AdvancedCopyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             <Separator/>
             <MenuItem Header="Export Results (All)">
-                <MenuItem Header="CSV" Command="{Binding PlacementTarget.Tag.ExportCsvCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                <MenuItem Header="JSON" Command="{Binding PlacementTarget.Tag.ExportJsonCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                <MenuItem Header="Excel" Command="{Binding PlacementTarget.Tag.ExportExcelCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                <MenuItem Header="XML" Command="{Binding PlacementTarget.Tag.ExportXmlCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                <MenuItem Header="CSV" Command="{Binding PlacementTarget.Tag.DataContext.ExportCsvCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                <MenuItem Header="JSON" Command="{Binding PlacementTarget.Tag.DataContext.ExportJsonCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                <MenuItem Header="Excel" Command="{Binding PlacementTarget.Tag.DataContext.ExportExcelCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                <MenuItem Header="XML" Command="{Binding PlacementTarget.Tag.DataContext.ExportXmlCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             </MenuItem>
         </ContextMenu>
     </UserControl.Resources>
