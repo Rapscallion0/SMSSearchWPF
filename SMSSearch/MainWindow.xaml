@@ -29,25 +29,32 @@
 
         <views:ResultsView Grid.Row="2" DataContext="{Binding ResultsVm}" Margin="10,0,10,10"/>
 
-        <StatusBar Grid.Row="3">
+        <StatusBar Grid.Row="3" x:Name="MainStatusBar" SizeChanged="MainStatusBar_SizeChanged">
             <StatusBarItem>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Julian:" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                <StackPanel x:Name="LeftStatusPanel" Orientation="Horizontal">
+                    <TextBlock x:Name="JulianLabel" Text="Julian:" Margin="0,0,5,0" VerticalAlignment="Center"/>
                     <TextBox Text="{Binding JulianDateText, UpdateSourceTrigger=PropertyChanged}" Width="60" MaxLength="7" VerticalContentAlignment="Center"/>
-                    <TextBlock Text="Gregorian:" Margin="10,0,5,0" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="GregorianLabel" Text="Gregorian:" Margin="10,0,5,0" VerticalAlignment="Center"/>
                     <DatePicker SelectedDate="{Binding GregorianDate}" Width="100"/>
-                    <TextBlock Text="Database:" Margin="10,0,5,0" VerticalAlignment="Center"/>
-                    <ComboBox x:Name="DatabaseComboBox" Width="150" Height="22" VerticalAlignment="Center"
+
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="10,0,10,0"/>
+
+                    <TextBlock x:Name="DatabaseLabel" Text="Database:" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="DatabaseComboBox" MinWidth="150" Height="22" VerticalAlignment="Center"
                               ItemsSource="{Binding DatabasesView}" SelectedItem="{Binding SelectedDatabase}"
                               IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True"
                               VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling"
                               PreviewKeyDown="DatabaseComboBox_PreviewKeyDown" KeyUp="DatabaseComboBox_KeyUp" GotFocus="DatabaseComboBox_GotFocus"
                               PreviewMouseDoubleClick="DatabaseComboBox_PreviewMouseDoubleClick" LostFocus="DatabaseComboBox_LostFocus">
                     </ComboBox>
+
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="10,0,0,0"/>
                 </StackPanel>
             </StatusBarItem>
-            <StatusBarItem HorizontalAlignment="Right">
-                <StackPanel Orientation="Horizontal">
+            <StatusBarItem HorizontalAlignment="Right" x:Name="RightStatusItem">
+                <StackPanel x:Name="RightStatusPanel" Orientation="Horizontal">
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="0,0,10,0"/>
+
                     <Button Command="{Binding OpenSettingsCommand}"
                             Style="{StaticResource TransparentIconButtonStyle}" ToolTip="Settings" Margin="0,0,10,0">
                         <Control Template="{StaticResource Icon_Settings}"
