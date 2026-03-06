@@ -22,7 +22,7 @@ namespace SMS_Search.Utils
     public class UpdateChecker
     {
         private const string RepoOwner = "Rapscallion0";
-        private const string RepoName = "SMS-Search";
+        private const string RepoName = "SMSSearchWPF";
         private const string GitHubApiUrl = "https://api.github.com/repos/" + RepoOwner + "/" + RepoName + "/releases/latest";
 
         private readonly IDialogService _dialogService;
@@ -57,9 +57,10 @@ namespace SMS_Search.Utils
                             string versionStr = tagName.TrimStart('v', 'V');
                             if (Version.TryParse(versionStr, out Version? remoteVersion) && remoteVersion != null)
                             {
-                                Version? currentVersion = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version;
+                                string? exePath = Process.GetCurrentProcess().MainModule?.FileName;
+                                string? currentVersionStr = exePath != null ? FileVersionInfo.GetVersionInfo(exePath).FileVersion : null;
 
-                                if (currentVersion != null && remoteVersion > currentVersion)
+                                if (Version.TryParse(currentVersionStr, out Version? currentVersion) && currentVersion != null && remoteVersion > currentVersion)
                                 {
                                     string? downloadUrl = null;
                                     if (root.TryGetProperty("assets", out JsonElement assetsElement) && assetsElement.ValueKind == JsonValueKind.Array)
