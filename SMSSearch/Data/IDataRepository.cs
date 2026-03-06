@@ -21,7 +21,9 @@ namespace SMS_Search.Data
         Task<List<string>> GetColumnDescriptionsAsync(string server, string database, string? user, string? pass, IEnumerable<string> columnNames, CancellationToken cancellationToken = default);
         Task<Dictionary<string, List<string>>> GetDatabaseSchemaAsync(string server, string database, string? user, string? pass, CancellationToken cancellationToken = default);
         Task<long> GetTotalMatchCountAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string? filterText, Dictionary<string, string?> columnTypes, CancellationToken cancellationToken = default);
+        Task<long> GetTotalMatchedCellsCountAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string? filterText, Dictionary<string, string?> columnTypes, CancellationToken cancellationToken = default);
         Task<long> GetPrecedingMatchCountAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string? filterText, Dictionary<string, string?> columnTypes, int limitRowIndex, string? sortCol, string? sortDir, CancellationToken cancellationToken = default);
+        Task<long> GetPrecedingMatchedCellsCountAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string? filterText, Dictionary<string, string?> columnTypes, int limitRowIndex, string? sortCol, string? sortDir, CancellationToken cancellationToken = default);
         Task<int> GetMatchRowIndexAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string searchText, Dictionary<string, string?> columnTypes, int startRowIndex, string? sortCol, string? sortDir, bool forward, CancellationToken cancellationToken = default);
     }
 }

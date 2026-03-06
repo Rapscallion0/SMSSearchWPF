@@ -392,8 +392,9 @@ namespace SMS_Search.ViewModels
 
                  if (!string.IsNullOrEmpty(filterText))
                  {
-                     MatchStatusText = $"Found: {TotalRecords} matches";
-                     _logger.LogDebug($"Filter applied. Matches: {TotalRecords}");
+                     long matchedCells = await _gridContext.GetTotalMatchedCellsCountAsync(filterText, columns, token);
+                     MatchStatusText = $"Found: {TotalRecords} rows ({matchedCells} matches)";
+                     _logger.LogDebug($"Filter applied. Rows: {TotalRecords}, Matches: {matchedCells}");
                  }
                  else
                  {
@@ -475,7 +476,7 @@ namespace SMS_Search.ViewModels
                 // Current Row
                 for (int c = startCol + 1; c < colCount; c++)
                 {
-                    if (await CheckMatch(startRow, c)) { FoundMatch(startRow, c); return; }
+                    if (await CheckMatch(startRow, c)) { await FoundMatchAsync(startRow, c); return; }
                 }
 
                 // Next Rows
@@ -485,14 +486,14 @@ namespace SMS_Search.ViewModels
                     await _gridContext.WaitForRowAsync(r);
                     for (int c = 0; c < colCount; c++)
                     {
-                        if (await CheckMatch(r, c)) { FoundMatch(r, c); return; }
+                        if (await CheckMatch(r, c)) { await FoundMatchAsync(r, c); return; }
                     }
                 }
 
                 // Wrap around to start of startRow
                 for (int c = 0; c <= startCol; c++)
                 {
-                    if (await CheckMatch(startRow, c)) { FoundMatch(startRow, c); return; }
+                    if (await CheckMatch(startRow, c)) { await FoundMatchAsync(startRow, c); return; }
                 }
             }
             else
@@ -500,7 +501,7 @@ namespace SMS_Search.ViewModels
                 // Current Row
                 for (int c = startCol - 1; c >= 0; c--)
                 {
-                    if (await CheckMatch(startRow, c)) { FoundMatch(startRow, c); return; }
+                    if (await CheckMatch(startRow, c)) { await FoundMatchAsync(startRow, c); return; }
                 }
 
                 // Previous Rows
@@ -513,14 +514,14 @@ namespace SMS_Search.ViewModels
 
                     for (int c = colCount - 1; c >= 0; c--)
                     {
-                        if (await CheckMatch(r, c)) { FoundMatch(r, c); return; }
+                        if (await CheckMatch(r, c)) { await FoundMatchAsync(r, c); return; }
                     }
                 }
 
                 // Wrap around to end of startRow
                 for (int c = colCount - 1; c >= startCol; c--)
                 {
-                    if (await CheckMatch(startRow, c)) { FoundMatch(startRow, c); return; }
+                    if (await CheckMatch(startRow, c)) { await FoundMatchAsync(startRow, c); return; }
                 }
             }
         }
@@ -537,7 +538,7 @@ namespace SMS_Search.ViewModels
             return sVal.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        private void FoundMatch(int row, int col)
+        private async Task FoundMatchAsync(int row, int col)
         {
             _lastFoundRowIndex = row;
             _currentColumnIndex = col;
@@ -546,7 +547,35 @@ namespace SMS_Search.ViewModels
                 string colName = _lastSchema.Columns[col].ColumnName;
                 ScrollToCellRequested?.Invoke(this, (row, colName));
             }
-            MatchStatusText = $"Match {row + 1} of {TotalRecords}";
+
+            long totalMatches = 0;
+            if (SearchResults is VirtualizingCollection vc)
+            {
+                var columns = new List<string>();
+                var props = vc.GetItemProperties(null);
+                foreach(PropertyDescriptor p in props) columns.Add(p.Name);
+                totalMatches = await _gridContext.GetTotalMatchedCellsCountAsync(FilterText, columns, CancellationToken.None);
+            }
+
+            long currentMatchIndex = 0;
+            if (_lastSchema != null && SearchResults is VirtualizingCollection vc2)
+            {
+                var columns = new List<string>();
+                var props = vc2.GetItemProperties(null);
+                foreach(PropertyDescriptor p in props) columns.Add(p.Name);
+
+                long precedingMatches = await _gridContext.GetPrecedingMatchedCellsCountAsync(row, CancellationToken.None);
+
+                long matchesInCurrentRow = 0;
+                for (int c = 0; c <= col; c++)
+                {
+                     if (await CheckMatch(row, c)) matchesInCurrentRow++;
+                }
+
+                currentMatchIndex = precedingMatches + matchesInCurrentRow;
+            }
+
+            MatchStatusText = $"Match {currentMatchIndex} of {totalMatches}";
         }
 
         private async Task ExportCsvAsync()

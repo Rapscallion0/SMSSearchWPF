@@ -395,6 +395,142 @@ namespace SMS_Search.Data
             }
         }
 
+        public async Task<long> GetTotalMatchedCellsCountAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string? filterText, Dictionary<string, string?> columnTypes, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(filterText)) return 0;
+            string safeFilter = filterText.Replace("'", "''");
+
+            List<string> whereParts = new List<string>();
+            List<string> sumParts = new List<string>();
+
+            foreach (var kvp in columnTypes)
+            {
+                string col = kvp.Key;
+                string? type = kvp.Value;
+                string condition;
+
+                if (type != null && SafeStringTypes.Contains(type))
+                {
+                    condition = $"[{col}] LIKE '%{safeFilter}%'";
+                }
+                else
+                {
+                    condition = $"CAST([{col}] AS NVARCHAR(MAX)) LIKE '%{safeFilter}%'";
+                }
+
+                whereParts.Add(condition);
+                sumParts.Add($"(CASE WHEN {condition} THEN 1 ELSE 0 END)");
+            }
+            string whereExpression = string.Join(" OR ", whereParts);
+            string sumExpression = string.Join(" + ", sumParts);
+
+            string finalSql = ApplyFilter(sql, filterClause);
+            string countSql = $"SELECT SUM({sumExpression}) FROM ({finalSql}) AS _CountQ WHERE ({whereExpression})";
+
+            using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
+            {
+                await conn.OpenAsync(cancellationToken);
+                var cmdDef = new CommandDefinition(countSql, parameters, cancellationToken: cancellationToken);
+                object? result;
+                try
+                {
+                    result = await conn.ExecuteScalarAsync<object>(cmdDef);
+                }
+                catch (SqlException ex) when (ex.Number == 1033)
+                {
+                    string offsetSql = $"SELECT SUM({sumExpression}) FROM ({finalSql} OFFSET 0 ROWS) AS _CountQ WHERE ({whereExpression})";
+                    var offsetCmdDef = new CommandDefinition(offsetSql, parameters, cancellationToken: cancellationToken);
+                    result = await conn.ExecuteScalarAsync<object>(offsetCmdDef);
+                }
+
+                if (result == null || result == DBNull.Value) return 0;
+                return Convert.ToInt64(result);
+            }
+        }
+
+        public async Task<long> GetPrecedingMatchedCellsCountAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string? filterText, Dictionary<string, string?> columnTypes, int limitRowIndex, string? sortCol, string? sortDir, CancellationToken cancellationToken = default)
+        {
+            if (limitRowIndex <= 0) return 0;
+            if (string.IsNullOrWhiteSpace(filterText)) return 0;
+            string safeFilter = filterText.Replace("'", "''");
+
+            List<string> whereParts = new List<string>();
+            List<string> sumParts = new List<string>();
+
+            foreach (var kvp in columnTypes)
+            {
+                string col = kvp.Key;
+                string? type = kvp.Value;
+                string condition;
+
+                if (type != null && SafeStringTypes.Contains(type))
+                {
+                    condition = $"[{col}] LIKE '%{safeFilter}%'";
+                }
+                else
+                {
+                    condition = $"CAST([{col}] AS NVARCHAR(MAX)) LIKE '%{safeFilter}%'";
+                }
+
+                whereParts.Add(condition);
+                sumParts.Add($"(CASE WHEN {condition} THEN 1 ELSE 0 END)");
+            }
+            string whereExpression = string.Join(" OR ", whereParts);
+            string sumExpression = string.Join(" + ", sumParts);
+
+            string finalSql = ApplyFilter(sql, filterClause);
+
+            string orderBy = "(SELECT NULL)";
+            if (!string.IsNullOrEmpty(sortCol))
+            {
+                string safeCol = sortCol.Replace("[", "").Replace("]", "");
+                if (safeCol.Equals("Field", StringComparison.OrdinalIgnoreCase))
+                {
+                    orderBy = $"TRY_CAST(SUBSTRING([{safeCol}], 2, LEN([{safeCol}])) AS INT) {sortDir}, [{safeCol}] {sortDir}";
+                }
+                else
+                {
+                    orderBy = $"[{safeCol}] {sortDir}";
+                }
+            }
+
+            string countSql = $@"
+                SELECT SUM({sumExpression})
+                FROM (
+                    SELECT * FROM ({finalSql}) AS _Base
+                    ORDER BY {orderBy}
+                    OFFSET 0 ROWS FETCH NEXT {limitRowIndex} ROWS ONLY
+                ) AS _Preceding
+                WHERE ({whereExpression})";
+
+            using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
+            {
+                await conn.OpenAsync(cancellationToken);
+                var cmdDef = new CommandDefinition(countSql, parameters, cancellationToken: cancellationToken);
+                object? result;
+                try
+                {
+                    result = await conn.ExecuteScalarAsync<object>(cmdDef);
+                }
+                catch (SqlException ex) when (ex.Number == 1033)
+                {
+                    string offsetSql = $@"
+                        SELECT SUM({sumExpression})
+                        FROM (
+                            SELECT * FROM ({finalSql} OFFSET 0 ROWS) AS _Base
+                            ORDER BY {orderBy}
+                            OFFSET 0 ROWS FETCH NEXT {limitRowIndex} ROWS ONLY
+                        ) AS _Preceding
+                        WHERE ({whereExpression})";
+                    var offsetCmdDef = new CommandDefinition(offsetSql, parameters, cancellationToken: cancellationToken);
+                    result = await conn.ExecuteScalarAsync<object>(offsetCmdDef);
+                }
+
+                if (result == null || result == DBNull.Value) return 0;
+                return Convert.ToInt64(result);
+            }
+        }
+
         public async Task<long> GetPrecedingMatchCountAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string? filterText, Dictionary<string, string?> columnTypes, int limitRowIndex, string? sortCol, string? sortDir, CancellationToken cancellationToken = default)
         {
             if (limitRowIndex <= 0) return 0;
