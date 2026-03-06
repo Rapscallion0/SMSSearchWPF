@@ -625,7 +625,7 @@ namespace SMS_Search.ViewModels
             string? filename = _dialogService.SaveFileDialog("CSV files (*.csv)|*.csv", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
             if (string.IsNullOrEmpty(filename)) return;
             var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportToCsvAsync(filename, null, true, hidden), filename);
+            await PerformExportAsync(() => _gridContext.ExportToCsvAsync(filename, null, true, hidden), filename, "CSV");
         }
 
         private async Task ExportJsonAsync()
@@ -634,7 +634,7 @@ namespace SMS_Search.ViewModels
             if (string.IsNullOrEmpty(filename)) return;
             if (CurrentSearchCriteria == null) return;
             var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportToJsonAsync(filename, CurrentSearchCriteria, null, hidden), filename);
+            await PerformExportAsync(() => _gridContext.ExportToJsonAsync(filename, CurrentSearchCriteria, null, hidden), filename, "JSON");
         }
 
         private async Task ExportXmlAsync()
@@ -643,7 +643,7 @@ namespace SMS_Search.ViewModels
             if (string.IsNullOrEmpty(filename)) return;
             if (CurrentSearchCriteria == null) return;
             var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportToXmlAsync(filename, CurrentSearchCriteria, hidden), filename);
+            await PerformExportAsync(() => _gridContext.ExportToXmlAsync(filename, CurrentSearchCriteria, hidden), filename, "XML");
         }
 
         private HashSet<string>? CheckHiddenColumns()
@@ -659,21 +659,21 @@ namespace SMS_Search.ViewModels
             return null;
         }
 
-        private async Task PerformExportAsync(Func<Task> exportAction, string exportedFilePath)
+        private async Task PerformExportAsync(Func<Task<int>> exportAction, string exportedFilePath, string format)
         {
             IsBusy = true;
             StatusText = "Exporting...";
-            _logger.LogInfo("Starting export...");
+            _logger.LogInfo($"Starting {format} export to {exportedFilePath}...");
             try
             {
-                await exportAction();
-                _dialogService.ShowToast("Export successful", "Export", SMS_Search.Views.ToastType.Success, null, exportedFilePath);
-                _logger.LogInfo("Export successful.");
+                int rowCount = await exportAction();
+                _dialogService.ShowToast($"Successfully exported {rowCount} records to {format}", "Export", SMS_Search.Views.ToastType.Success, null, exportedFilePath);
+                _logger.LogInfo($"{format} export successful. {rowCount} rows exported.");
             }
             catch (Exception ex)
             {
                 _dialogService.ShowError(ex.Message, "Export Error");
-                _logger.LogError("Export failed", ex);
+                _logger.LogError($"{format} export failed", ex);
             }
             finally
             {
@@ -697,7 +697,7 @@ namespace SMS_Search.ViewModels
 
             var rows = selectedItems.Cast<VirtualRow>().ToList();
             var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportRowsToCsvAsync(filename, rows, hidden), filename);
+            await PerformExportAsync(() => _gridContext.ExportRowsToCsvAsync(filename, rows, hidden), filename, "CSV");
         }
 
         private async Task ExportSelectedJsonAsync(System.Collections.IList? selectedItems)
@@ -708,7 +708,7 @@ namespace SMS_Search.ViewModels
 
             var rows = selectedItems.Cast<VirtualRow>().ToList();
             var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportRowsToJsonAsync(filename, rows, CurrentSearchCriteria, hidden), filename);
+            await PerformExportAsync(() => _gridContext.ExportRowsToJsonAsync(filename, rows, CurrentSearchCriteria, hidden), filename, "JSON");
         }
 
         private async Task ExportSelectedXmlAsync(System.Collections.IList? selectedItems)
@@ -719,7 +719,7 @@ namespace SMS_Search.ViewModels
 
             var rows = selectedItems.Cast<VirtualRow>().ToList();
             var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportRowsToXmlAsync(filename, rows, CurrentSearchCriteria, hidden), filename);
+            await PerformExportAsync(() => _gridContext.ExportRowsToXmlAsync(filename, rows, CurrentSearchCriteria, hidden), filename, "XML");
         }
 
         private void CopyRow(IList? selectedItems)

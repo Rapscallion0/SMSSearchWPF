@@ -396,10 +396,11 @@ namespace SMS_Search.Data
              return finalSql;
         }
 
-        public async Task ExportToCsvAsync(string filename, Dictionary<string, string>? headerMap = null, bool includeHeaders = true, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
+        public async Task<int> ExportToCsvAsync(string filename, Dictionary<string, string>? headerMap = null, bool includeHeaders = true, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
         {
              string finalSql = BuildExportSql();
-             if (_server == null || _database == null) return;
+             if (_server == null || _database == null) return 0;
+             int rowCount = 0;
 
              using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
              {
@@ -424,6 +425,7 @@ namespace SMS_Search.Data
 
                      while (await reader.ReadAsync(cancellationToken))
                      {
+                         rowCount++;
                          bool first = true;
                          for (int i = 0; i < reader.FieldCount; i++)
                          {
@@ -441,12 +443,14 @@ namespace SMS_Search.Data
                      }
                  }
              }
+             return rowCount;
         }
 
-        public async Task ExportToJsonAsync(string filename, SearchCriteria criteria, Dictionary<string, string>? headerMap = null, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
+        public async Task<int> ExportToJsonAsync(string filename, SearchCriteria criteria, Dictionary<string, string>? headerMap = null, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
         {
              string finalSql = BuildExportSql();
-             if (_server == null || _database == null) return;
+             if (_server == null || _database == null) return 0;
+             int rowCount = 0;
 
              using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
              {
@@ -487,6 +491,7 @@ namespace SMS_Search.Data
                      writer.WriteStartArray();
                      while (await reader.ReadAsync(cancellationToken))
                      {
+                         rowCount++;
                          writer.WriteStartObject();
                          for (int i = 0; i < reader.FieldCount; i++)
                          {
@@ -510,12 +515,14 @@ namespace SMS_Search.Data
                      writer.WriteEndObject();
                  }
              }
+             return rowCount;
         }
 
-        public async Task ExportToXmlAsync(string filename, SearchCriteria criteria, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
+        public async Task<int> ExportToXmlAsync(string filename, SearchCriteria criteria, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
         {
              string finalSql = BuildExportSql();
-             if (_server == null || _database == null) return;
+             if (_server == null || _database == null) return 0;
+             int rowCount = 0;
 
              string rootElement = "SearchResults";
              string rootAttr = "";
@@ -565,6 +572,7 @@ namespace SMS_Search.Data
 
                      while (await reader.ReadAsync(cancellationToken))
                      {
+                         rowCount++;
                          writer.WriteLine("  <Row>");
                          for (int i = 0; i < reader.FieldCount; i++)
                          {
@@ -585,6 +593,7 @@ namespace SMS_Search.Data
                      writer.WriteLine($"</{rootElement}>");
                  }
              }
+             return rowCount;
         }
 
         private string MakeValidXmlName(string name)
@@ -595,8 +604,9 @@ namespace SMS_Search.Data
             return safeName;
         }
 
-        public async Task ExportRowsToCsvAsync(string filename, List<VirtualRow> rows, HashSet<string>? hiddenColumns = null)
+        public async Task<int> ExportRowsToCsvAsync(string filename, List<VirtualRow> rows, HashSet<string>? hiddenColumns = null)
         {
+             int rowCount = 0;
              await Task.Run(() =>
              {
                  using (var writer = new StreamWriter(filename))
@@ -620,6 +630,7 @@ namespace SMS_Search.Data
 
                      foreach (var row in rows)
                      {
+                         rowCount++;
                          var props = row.GetProperties();
                          bool first = true;
                          for (int i = 0; i < props.Count; i++)
@@ -637,10 +648,12 @@ namespace SMS_Search.Data
                      }
                  }
              });
+             return rowCount;
         }
 
-        public async Task ExportRowsToJsonAsync(string filename, List<VirtualRow> rows, SearchCriteria criteria, HashSet<string>? hiddenColumns = null)
+        public async Task<int> ExportRowsToJsonAsync(string filename, List<VirtualRow> rows, SearchCriteria criteria, HashSet<string>? hiddenColumns = null)
         {
+             int rowCount = 0;
              await Task.Run(() =>
              {
                  using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -680,6 +693,7 @@ namespace SMS_Search.Data
                      writer.WriteStartArray();
                      foreach (var row in rows)
                      {
+                         rowCount++;
                          writer.WriteStartObject();
                          var props = row.GetProperties();
                          for (int i = 0; i < props.Count; i++)
@@ -703,10 +717,12 @@ namespace SMS_Search.Data
                      writer.WriteEndObject();
                  }
              });
+             return rowCount;
         }
 
-        public async Task ExportRowsToXmlAsync(string filename, List<VirtualRow> rows, SearchCriteria criteria, HashSet<string>? hiddenColumns = null)
+        public async Task<int> ExportRowsToXmlAsync(string filename, List<VirtualRow> rows, SearchCriteria criteria, HashSet<string>? hiddenColumns = null)
         {
+             int rowCount = 0;
              await Task.Run(() =>
              {
                  string rootElement = "SearchResults";
@@ -759,6 +775,7 @@ namespace SMS_Search.Data
 
                      foreach (var row in rows)
                      {
+                         rowCount++;
                          writer.WriteLine("  <Row>");
                          var props = row.GetProperties();
                          for (int i = 0; i < props.Count; i++)
@@ -780,6 +797,7 @@ namespace SMS_Search.Data
                      writer.WriteLine($"</{rootElement}>");
                  }
              });
+             return rowCount;
         }
 
         private string EscapeXml(string s)
