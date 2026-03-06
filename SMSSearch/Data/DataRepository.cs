@@ -272,6 +272,38 @@ namespace SMS_Search.Data
             return $"SELECT * FROM ({sql}) AS _FilterQ WHERE {filter}";
         }
 
+        public async Task<IEnumerable<string>> GetServersAsync(CancellationToken cancellationToken = default)
+        {
+            return await Task.Run(() =>
+            {
+                var servers = new List<string>();
+                try
+                {
+                    var instance = Microsoft.Data.Sql.SqlDataSourceEnumerator.Instance;
+                    var table = instance.GetDataSources();
+                    foreach (System.Data.DataRow row in table.Rows)
+                    {
+                        string serverName = row["ServerName"]?.ToString() ?? "";
+                        string instanceName = row["InstanceName"]?.ToString() ?? "";
+
+                        if (string.IsNullOrEmpty(instanceName))
+                        {
+                            servers.Add(serverName);
+                        }
+                        else
+                        {
+                            servers.Add($"{serverName}\\{instanceName}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Error discovering SQL Servers", ex);
+                }
+                return servers.OrderBy(s => s).Distinct();
+            }, cancellationToken);
+        }
+
         public async Task<IEnumerable<string>> GetDatabasesAsync(string server, string? user, string? pass, CancellationToken cancellationToken = default)
         {
             using (var conn = new SqlConnection(GetConnectionString(server, "master", user, pass)))
