@@ -12,6 +12,7 @@ namespace SMS_Search.Utils
         private readonly string _section;
         private readonly string _key;
         private readonly Func<T, string> _serializer;
+        private readonly Func<T, bool>? _validator;
         private CancellationTokenSource? _debounceCts;
 
         [ObservableProperty]
@@ -28,13 +29,15 @@ namespace SMS_Search.Utils
             string section,
             string key,
             T initialValue,
-            Func<T, string>? serializer = null)
+            Func<T, string>? serializer = null,
+            Func<T, bool>? validator = null)
         {
             _repository = repository;
             _section = section;
             _key = key;
             _value = initialValue;
             _serializer = serializer ?? (v => v?.ToString() ?? "");
+            _validator = validator;
         }
 
         partial void OnValueChanged(T value)
@@ -53,6 +56,11 @@ namespace SMS_Search.Utils
                 // Debounce
                 await Task.Delay(500, token);
                 if (token.IsCancellationRequested) return;
+
+                if (_validator != null && !_validator(Value))
+                {
+                    return;
+                }
 
                 IsSaving = true;
                 IsSaved = false; // clear previous saved state if any

@@ -38,7 +38,13 @@ namespace SMS_Search.ViewModels.Settings
             Server = _repository.GetValue("CONNECTION", "SERVER") ?? "";
 
             Database = new ObservableSetting<string>(repository, "CONNECTION", "DATABASE",
-                repository.GetValue("CONNECTION", "DATABASE") ?? "");
+                repository.GetValue("CONNECTION", "DATABASE") ?? "",
+                validator: v =>
+                {
+                    bool isValid = !string.IsNullOrWhiteSpace(v) && Databases.Contains(v);
+                    IsDatabaseInvalid = !isValid;
+                    return isValid;
+                });
 
             User = new ObservableSetting<string>(repository, "CONNECTION", "SQLUSER",
                 repository.GetValue("CONNECTION", "SQLUSER") ?? "");
@@ -110,6 +116,14 @@ namespace SMS_Search.ViewModels.Settings
 
         private async Task SaveServerAsync(string value)
         {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                IsServerInvalid = true;
+                return;
+            }
+
+            IsServerInvalid = false;
+
             await _repository.SaveAsync("CONNECTION", "SERVER", value);
             IsServerSaved = true;
             _ = Task.Delay(2000).ContinueWith(_ => IsServerSaved = false);
