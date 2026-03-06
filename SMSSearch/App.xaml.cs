@@ -76,6 +76,9 @@ namespace SMS_Search
             {
                 base.OnStartup(e);
 
+                // Prevent application from exiting when EulaWindow or SettingsWindow closes
+                this.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
                 // Service resolution might fail (e.g. LoggerService constructor)
                 var logger = Services.GetRequiredService<ILoggerService>();
                 var configService = Services.GetRequiredService<IConfigService>();
@@ -113,6 +116,59 @@ namespace SMS_Search
                     {
                         Shutdown();
                         return;
+                    }
+                }
+
+                // Connection Check
+                while (true)
+                {
+                    string server = configService.GetValue("CONNECTION", "SERVER") ?? "";
+                    string database = configService.GetValue("CONNECTION", "DATABASE") ?? "";
+
+                    if (string.IsNullOrWhiteSpace(server) || string.IsNullOrWhiteSpace(database))
+                    {
+                        var dialogService = Services.GetRequiredService<IDialogService>();
+                        System.Windows.MessageBox.Show("Required connection settings (Server, Database) are missing or invalid. Please provide them to continue.", "Connection Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+                        var settingsWindow = Services.GetRequiredService<ModernSettingsWindow>();
+                        var settingsVm = settingsWindow.DataContext as ModernSettingsViewModel;
+
+                        // Force navigate to connection section
+                        if (settingsVm != null)
+                        {
+                            var connSection = System.Linq.Enumerable.FirstOrDefault(settingsVm.Sections, s => s is ConnectionSectionViewModel);
+                            if (connSection != null)
+                            {
+                                settingsVm.SelectedSection = connSection;
+                            }
+                        }
+
+                        settingsWindow.ShowDialog();
+
+                        // Re-check after window closes
+                        string newServer = configService.GetValue("CONNECTION", "SERVER") ?? "";
+                        string newDatabase = configService.GetValue("CONNECTION", "DATABASE") ?? "";
+
+                        if (string.IsNullOrWhiteSpace(newServer) || string.IsNullOrWhiteSpace(newDatabase))
+                        {
+                            var result = System.Windows.MessageBox.Show("Settings are still invalid. The application will close. Do you want to go back and fix them?", "Invalid Settings", MessageBoxButton.YesNo, MessageBoxImage.Error);
+                            if (result == MessageBoxResult.No)
+                            {
+                                Shutdown();
+                                return;
+                            }
+                            // Loop continues and opens settings again
+                        }
+                        else
+                        {
+                            // Valid settings provided
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        // Settings exist and are valid
+                        break;
                     }
                 }
 
@@ -199,6 +255,8 @@ namespace SMS_Search
                 else
                 {
                     var mainWindow = Services.GetRequiredService<MainWindow>();
+                    this.MainWindow = mainWindow;
+                    this.ShutdownMode = ShutdownMode.OnMainWindowClose;
                     mainWindow.Show();
                 }
             }

@@ -213,6 +213,82 @@ namespace SMS_Search.Views.Settings
             }
         }
 
+        private void ServerComboBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.ComboBox cmb)
+            {
+                var textBox = cmb.Template.FindName("PART_EditableTextBox", cmb) as System.Windows.Controls.TextBox;
+                if (textBox != null)
+                {
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                    {
+                        textBox.SelectAll();
+                    }));
+                }
+            }
+        }
+
+        private void ServerComboBox_PreviewMouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is System.Windows.Controls.ComboBox cmb)
+            {
+                var textBox = cmb.Template.FindName("PART_EditableTextBox", cmb) as System.Windows.Controls.TextBox;
+                if (textBox != null)
+                {
+                    textBox.SelectAll();
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void ServerComboBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            // Allow arbitrary text for server
+        }
+
+        private void ServerComboBox_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Up || e.Key == System.Windows.Input.Key.Down ||
+                e.Key == System.Windows.Input.Key.Left || e.Key == System.Windows.Input.Key.Right ||
+                e.Key == System.Windows.Input.Key.Home || e.Key == System.Windows.Input.Key.End ||
+                e.Key == System.Windows.Input.Key.PageUp || e.Key == System.Windows.Input.Key.PageDown ||
+                e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Tab ||
+                e.Key == System.Windows.Input.Key.Escape)
+            {
+                return;
+            }
+
+            // Could implement auto-complete logic for servers here if desired,
+            // but since servers are typically just a few and they can type whatever they want,
+            // we can just filter the view.
+
+            if (DataContext is ConnectionSectionViewModel vm)
+            {
+                if (sender is System.Windows.Controls.ComboBox cmb)
+                {
+                    var textBox = cmb.Template.FindName("PART_EditableTextBox", cmb) as System.Windows.Controls.TextBox;
+                    if (textBox != null)
+                    {
+                        vm.FilterServers(textBox.Text);
+                    }
+                }
+            }
+        }
+
+        private void ServerComboBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Tab)
+            {
+                if (sender is System.Windows.Controls.ComboBox cmb)
+                {
+                    if (cmb.SelectedItem == null && cmb.Items.Count > 0)
+                    {
+                        // Keep text as is instead of auto-selecting the first item for server
+                    }
+                }
+            }
+        }
+
         private void DatabaseComboBox_GotFocus(object sender, RoutedEventArgs e)
         {
             if (sender is System.Windows.Controls.ComboBox cmb)

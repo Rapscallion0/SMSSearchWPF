@@ -16,6 +16,7 @@ namespace SMS_Search.Data
         Task<DataTable> GetQueryPageAsync(string server, string database, string? user, string? pass, string sql, object? parameters, int offset, int limit, string? sortCol, string? sortDir, string? filter = null, CancellationToken cancellationToken = default);
         Task<DataTable> GetQuerySchemaAsync(string server, string database, string? user, string? pass, string sql, object? parameters, CancellationToken cancellationToken = default);
         Task<DbDataReader> GetQueryDataReaderAsync(string server, string database, string? user, string? pass, string sql, object? parameters, CancellationToken cancellationToken = default);
+        Task<IEnumerable<string>> GetServersAsync(CancellationToken cancellationToken = default);
         Task<IEnumerable<string>> GetDatabasesAsync(string server, string? user, string? pass, CancellationToken cancellationToken = default);
         Task<IEnumerable<string>> GetTablesAsync(string server, string database, string? user, string? pass, CancellationToken cancellationToken = default);
         Task<List<string>> GetColumnDescriptionsAsync(string server, string database, string? user, string? pass, IEnumerable<string> columnNames, CancellationToken cancellationToken = default);

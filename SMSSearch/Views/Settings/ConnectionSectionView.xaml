@@ -5,29 +5,89 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
              xmlns:vm="clr-namespace:SMS_Search.ViewModels.Settings"
+             xmlns:conv="clr-namespace:SMS_Search.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:ConnectionSectionViewModel}"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <conv:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+
+        <Style x:Key="InvalidBorderStyle" TargetType="Border">
+            <Setter Property="BorderBrush" Value="Red" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="5" Color="Red" ShadowDepth="0" Opacity="0.5"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsServerInvalid}" Value="True">
+                    <Setter Property="Opacity" Value="1" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsServerInvalid}" Value="False">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="InvalidDatabaseBorderStyle" TargetType="Border" BasedOn="{StaticResource InvalidBorderStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDatabaseInvalid}" Value="True">
+                    <Setter Property="Opacity" Value="1" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsDatabaseInvalid}" Value="False">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
     </UserControl.Resources>
 
     <StackPanel Margin="0,0,0,20">
 
         <GroupBox Header="Database Connection">
             <StackPanel Margin="5">
-                <ctrl:SettingControl Header="Server" IsSaved="{Binding Server.IsSaved}">
-                    <ctrl:ClearableTextBox Text="{Binding Server.Value, UpdateSourceTrigger=PropertyChanged}" />
+                <ctrl:SettingControl Header="Server" IsSaved="{Binding IsServerSaved}">
+                    <Grid>
+                        <ComboBox Height="25" VerticalAlignment="Center"
+                                  ItemsSource="{Binding ServersView}" Text="{Binding Server, UpdateSourceTrigger=LostFocus}"
+                                  IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True"
+                                  VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                  PreviewKeyDown="ServerComboBox_PreviewKeyDown" KeyUp="ServerComboBox_KeyUp" GotFocus="ServerComboBox_GotFocus"
+                                  PreviewMouseDoubleClick="ServerComboBox_PreviewMouseDoubleClick" LostFocus="ServerComboBox_LostFocus">
+                        </ComboBox>
+                        <Border Style="{StaticResource InvalidBorderStyle}" />
+                    </Grid>
                 </ctrl:SettingControl>
 
                 <ctrl:SettingControl Header="Database" IsSaved="{Binding Database.IsSaved}">
-                    <ComboBox Height="25" VerticalAlignment="Center"
-                              ItemsSource="{Binding DatabasesView}" SelectedItem="{Binding Database.Value}"
-                              IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True"
-                              VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling"
-                              PreviewKeyDown="DatabaseComboBox_PreviewKeyDown" KeyUp="DatabaseComboBox_KeyUp" GotFocus="DatabaseComboBox_GotFocus"
-                              PreviewMouseDoubleClick="DatabaseComboBox_PreviewMouseDoubleClick" LostFocus="DatabaseComboBox_LostFocus">
-                    </ComboBox>
+                    <Grid>
+                        <ComboBox Height="25" VerticalAlignment="Center"
+                                  ItemsSource="{Binding DatabasesView}" SelectedItem="{Binding Database.Value}"
+                                  IsEnabled="{Binding IsServerInvalid, Converter={StaticResource InverseBooleanConverter}, FallbackValue=True}"
+                                  IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True"
+                                  VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                  PreviewKeyDown="DatabaseComboBox_PreviewKeyDown" KeyUp="DatabaseComboBox_KeyUp" GotFocus="DatabaseComboBox_GotFocus"
+                                  PreviewMouseDoubleClick="DatabaseComboBox_PreviewMouseDoubleClick" LostFocus="DatabaseComboBox_LostFocus">
+                        </ComboBox>
+                        <Border Style="{StaticResource InvalidDatabaseBorderStyle}" />
+                    </Grid>
                 </ctrl:SettingControl>
 
                 <ctrl:SettingControl Header="SQL User" IsSaved="{Binding User.IsSaved}">
