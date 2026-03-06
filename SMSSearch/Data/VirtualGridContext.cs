@@ -443,7 +443,7 @@ namespace SMS_Search.Data
              }
         }
 
-        public async Task ExportToJsonAsync(string filename, Dictionary<string, string>? headerMap = null, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
+        public async Task ExportToJsonAsync(string filename, SearchCriteria criteria, Dictionary<string, string>? headerMap = null, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
         {
              string finalSql = BuildExportSql();
              if (_server == null || _database == null) return;
@@ -453,6 +453,34 @@ namespace SMS_Search.Data
                  using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None))
                  using (var writer = new Utf8JsonWriter(fs, new JsonWriterOptions { Indented = true }))
                  {
+                     writer.WriteStartObject();
+
+                     if (criteria.Mode == SearchMode.Function)
+                     {
+                         writer.WriteString("SearchType", "Function");
+                         if (!string.IsNullOrEmpty(criteria.Value))
+                             writer.WriteString("Number", criteria.Value);
+                     }
+                     else if (criteria.Mode == SearchMode.Totalizer)
+                     {
+                         writer.WriteString("SearchType", "Totalizer");
+                         if (!string.IsNullOrEmpty(criteria.Value))
+                             writer.WriteString("Number", criteria.Value);
+                     }
+                     else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.CustomSql)
+                     {
+                         writer.WriteString("SearchType", "CustomQuery");
+                         if (!string.IsNullOrEmpty(criteria.Value))
+                             writer.WriteString("Query", criteria.Value);
+                     }
+                     else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.Table)
+                     {
+                         writer.WriteString("SearchType", "Table");
+                         if (!string.IsNullOrEmpty(criteria.Value))
+                             writer.WriteString("Name", criteria.Value);
+                     }
+
+                     writer.WritePropertyName("Rows");
                      writer.WriteStartArray();
                      while (await reader.ReadAsync(cancellationToken))
                      {
@@ -475,6 +503,8 @@ namespace SMS_Search.Data
                          writer.WriteEndObject();
                      }
                      writer.WriteEndArray();
+
+                     writer.WriteEndObject();
                  }
              }
         }
@@ -601,13 +631,41 @@ namespace SMS_Search.Data
              });
         }
 
-        public async Task ExportRowsToJsonAsync(string filename, List<VirtualRow> rows, HashSet<string>? hiddenColumns = null)
+        public async Task ExportRowsToJsonAsync(string filename, List<VirtualRow> rows, SearchCriteria criteria, HashSet<string>? hiddenColumns = null)
         {
              await Task.Run(() =>
              {
                  using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None))
                  using (var writer = new Utf8JsonWriter(fs, new JsonWriterOptions { Indented = true }))
                  {
+                     writer.WriteStartObject();
+
+                     if (criteria.Mode == SearchMode.Function)
+                     {
+                         writer.WriteString("SearchType", "Function");
+                         if (!string.IsNullOrEmpty(criteria.Value))
+                             writer.WriteString("Number", criteria.Value);
+                     }
+                     else if (criteria.Mode == SearchMode.Totalizer)
+                     {
+                         writer.WriteString("SearchType", "Totalizer");
+                         if (!string.IsNullOrEmpty(criteria.Value))
+                             writer.WriteString("Number", criteria.Value);
+                     }
+                     else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.CustomSql)
+                     {
+                         writer.WriteString("SearchType", "CustomQuery");
+                         if (!string.IsNullOrEmpty(criteria.Value))
+                             writer.WriteString("Query", criteria.Value);
+                     }
+                     else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.Table)
+                     {
+                         writer.WriteString("SearchType", "Table");
+                         if (!string.IsNullOrEmpty(criteria.Value))
+                             writer.WriteString("Name", criteria.Value);
+                     }
+
+                     writer.WritePropertyName("Rows");
                      writer.WriteStartArray();
                      foreach (var row in rows)
                      {
@@ -630,6 +688,8 @@ namespace SMS_Search.Data
                          writer.WriteEndObject();
                      }
                      writer.WriteEndArray();
+
+                     writer.WriteEndObject();
                  }
              });
         }

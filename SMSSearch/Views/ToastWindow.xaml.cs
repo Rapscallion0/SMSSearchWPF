@@ -18,12 +18,34 @@ namespace SMS_Search.Views
         private bool _isDetailsExpanded = false;
         private bool _isClosing = false;
         private int _originalTimeoutSeconds;
+        private string? _filePath;
 
-        public ToastWindow(string message, string title, ToastType type, int timeoutSeconds, string? details)
+        public ToastWindow(string message, string title, ToastType type, int timeoutSeconds, string? details, string? filePath = null)
         {
             InitializeComponent();
 
             _originalTimeoutSeconds = timeoutSeconds + (_activeToasts.Count * 2);
+            _filePath = filePath;
+
+            if (!string.IsNullOrEmpty(_filePath) && System.IO.File.Exists(_filePath))
+            {
+                btnOpenFile.Visibility = Visibility.Visible;
+                btnOpenFolder.Visibility = Visibility.Visible;
+                rectSeparator.Visibility = Visibility.Visible;
+
+                // Determine file extension
+                string ext = System.IO.Path.GetExtension(_filePath).TrimStart('.').ToUpper();
+
+                // Get the template parts to set text overlay
+                btnOpenFile.Loaded += (s, e) =>
+                {
+                    if (btnOpenFile.Template.FindName("FileIconText", btnOpenFile) is System.Windows.Controls.TextBlock txt)
+                    {
+                        if (ext == "CSV" || ext == "JSON" || ext == "XML")
+                            txt.Text = ext;
+                    }
+                };
+            }
 
 
             lblMessage.Text = message;
@@ -277,6 +299,40 @@ namespace SMS_Search.Views
             catch (Exception)
             {
                 // Ignore clipboard errors
+            }
+        }
+
+        private void btnOpenFile_Click(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(_filePath) && System.IO.File.Exists(_filePath))
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = _filePath,
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Could not open file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void btnOpenFolder_Click(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(_filePath) && System.IO.File.Exists(_filePath))
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{_filePath}\"");
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Could not open folder: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
