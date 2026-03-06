@@ -41,6 +41,38 @@ namespace SMS_Search
             ToastWindow.UpdateAllToastPositions(false);
         }
 
+        private void MainStatusBar_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // First pass: show all to calculate needed space
+            DatabaseLabel.Visibility = Visibility.Visible;
+            JulianLabel.Visibility = Visibility.Visible;
+            GregorianLabel.Visibility = Visibility.Visible;
+
+            // Required space approximation based on layout elements
+            double rightPanelWidth = RightStatusItem.ActualWidth;
+
+            // Re-evaluate widths after making everything visible:
+            LeftStatusPanel.UpdateLayout();
+            MainStatusBar.UpdateLayout();
+
+            double totalNeededWidth = LeftStatusPanel.ActualWidth + rightPanelWidth + 20; // 20 for margin/padding buffer
+
+            if (MainStatusBar.ActualWidth < totalNeededWidth)
+            {
+                // Hide Database Label first
+                DatabaseLabel.Visibility = Visibility.Collapsed;
+                LeftStatusPanel.UpdateLayout();
+                totalNeededWidth = LeftStatusPanel.ActualWidth + rightPanelWidth + 20;
+
+                if (MainStatusBar.ActualWidth < totalNeededWidth)
+                {
+                    // If still not enough, hide Date labels
+                    JulianLabel.Visibility = Visibility.Collapsed;
+                    GregorianLabel.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
         private void MainWindow_LocationChanged(object? sender, EventArgs e)
         {
             ToastWindow.UpdateAllToastPositions(false);
