@@ -1,141 +1,84 @@
 param(
+    [ValidateSet("Release", "Debug")]
     [string]$Configuration = "Release",
     [switch]$FromVS
 )
 
+# --- Configuration ---
+$ProjectFile = "SMSSearch/SMSSearch.csproj"
+$PublishDir  = "./Publish"
+$ZipPath     = "$PublishDir/SMS_Search.zip"
+$ExeName     = "SMS Search.exe" 
+$ErrorActionPreference = "Stop"
+
 Set-Location $PSScriptRoot
 
-if (-not $FromVS) {
-    Write-Host "Building SMS Search ($Configuration)..."
-    Write-Host ""
-
-    Write-Host "Cleaning previous builds..."
-    dotnet clean SMSSearch/SMSSearch.csproj -c $Configuration -p:IsPublishing=true
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Clean failed!" -ForegroundColor Red
-        Read-Host "Press Enter to exit..."
-        exit $LASTEXITCODE
+# --- Helper Functions ---
+function Get-ProjectVersion {
+    if (Test-Path $ProjectFile) {
+        [xml]$csproj = Get-Content $ProjectFile
+        $version = $csproj.Project.PropertyGroup.AssemblyVersion | Select-Object -First 1
+        return $version.Replace("*", "0") 
     }
-
-    Write-Host ""
-    Write-Host "Building (Standard $Configuration)..."
-    # This creates the framework-dependent build in bin/$Configuration/net10.0-windows/
-    dotnet build SMSSearch/SMSSearch.csproj -c $Configuration -p:IsPublishing=true
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Build failed!" -ForegroundColor Red
-        Read-Host "Press Enter to exit..."
-        exit $LASTEXITCODE
-    }
-
-    Write-Host "Standard Build Successful." -ForegroundColor Green
-    Write-Host ""
-} else {
-    Write-Host "Build triggered from Visual Studio ($Configuration)."
-    Write-Host "Skipping clean and standard build steps."
-    Write-Host ""
+    return "0.0.0.0"
 }
-if ($Configuration -eq "Release") {
-    $bumpResponse = Read-Host "Do you want to create a Git Version Bump? [Y/N]"
-    if ($bumpResponse -eq 'Y' -or $bumpResponse -eq 'y') {
-        Write-Host ""
-        Write-Host "Creating Git Version Bump PR..."
 
-        $version = "Unknown"
-        if (Test-Path "SMSSearch/SMSSearch.csproj") {
-            [xml]$csproj = Get-Content "SMSSearch/SMSSearch.csproj"
-            $versionNode = $csproj.Project.PropertyGroup | Where-Object { $_.AssemblyVersion }
-            if ($versionNode) {
-                $version = $versionNode.AssemblyVersion
-            }
-        }
+# --- 1. Build Logic ---
+try {
+    if (-not $FromVS) {
+        Write-Host "--- SMS Search: $Configuration Build ---" -ForegroundColor Cyan
+        dotnet clean $ProjectFile -c $Configuration -p:IsPublishing=true
+        dotnet build $ProjectFile -c $Configuration -p:IsPublishing=true
+        Write-Host "Build Successful." -ForegroundColor Green
+    }
 
-        if ($version -ne "Unknown") {
-            $branchName = "chore/bump-version-$version"
-            $commitMessage = "Bump version to $version"
-
-            # Switch to new branch
-            git checkout -b $branchName
-
-            # Stage only .csproj
-            git add SMSSearch/SMSSearch.csproj
-
-            # Commit changes
-            git commit -m $commitMessage
-
-            # Push branch
-            git push -u origin $branchName
-
-            # Create PR
-            gh pr create --title $commitMessage --body "Automated version bump"
-
-            # Merge PR
+    # --- 2. Git Workflow (Release Only) ---
+    if ($Configuration -eq "Release") {
+        if ((Read-Host "Create Version Bump PR? [Y/N]") -eq 'y') {
+            $currentVersion = Get-ProjectVersion
+            $branch = "chore/version-$currentVersion"
+            
+            git checkout -b $branch
+            git add $ProjectFile
+            git commit -m "Build: Version $currentVersion"
+            git push -u origin $branch
+            gh pr create --title "Release v$currentVersion" --body "Automated build sync."
             gh pr merge --merge --delete-branch
-
-            # Switch back to main branch
             git checkout main
-
-            # Pull latest changes
             git pull origin main
-
-            Write-Host "Version bump PR created and merged successfully!" -ForegroundColor Green
-        } else {
-            Write-Host "Failed to read version from SMSSearch.csproj. Skipping version bump." -ForegroundColor Red
         }
-        Write-Host ""
-    }
-}
-
-$response = Read-Host "Do you want to create a Single File Bundle (Publish)? [Y/N]"
-if ($response -eq 'Y' -or $response -eq 'y') {
-    Write-Host ""
-    Write-Host "Publishing Single File Bundle ($Configuration)..."
-    Write-Host "This may take a moment."
-
-    # Explicitly using flags to ensure Single File output, regardless of some local defaults.
-    # The .csproj now includes <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-    # and <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    dotnet publish SMSSearch/SMSSearch.csproj -c $Configuration -r win-x64 --self-contained -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IsPublishing=true -o ./Publish
-
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Publish failed!" -ForegroundColor Red
-        Read-Host "Press Enter to exit..."
-        exit $LASTEXITCODE
     }
 
-    Write-Host ""
-    Write-Host "Publish Successful!" -ForegroundColor Green
-    Write-Host "Executable is located in the 'Publish' folder."
-    Write-Host ""
-
-    $uploadResponse = Read-Host "Do you want to upload SMS Search.exe (zipped) to GitHub? [Y/N]"
-    if ($uploadResponse -eq 'Y' -or $uploadResponse -eq 'y') {
-        Write-Host "Zipping Executable..."
-        $zipPath = ".\Publish\SMS_Search.zip"
-        if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-        Compress-Archive -Path ".\Publish\SMS Search.exe" -DestinationPath $zipPath
-
-        $version = "Unknown"
-        if (Test-Path "SMSSearch/SMSSearch.csproj") {
-            [xml]$csproj = Get-Content "SMSSearch/SMSSearch.csproj"
-            $versionNode = $csproj.Project.PropertyGroup | Where-Object { $_.AssemblyVersion }
-            if ($versionNode) {
-                $version = $versionNode.AssemblyVersion
+    # --- 3. Publishing (Release Only) ---
+    if ($Configuration -eq "Release") {
+        if ((Read-Host "Create Single File Bundle for Testing? [Y/N]") -eq 'y') {
+            Write-Host "Publishing to $PublishDir..." -ForegroundColor Yellow
+            dotnet publish $ProjectFile -c $Configuration -r win-x64 --self-contained `
+                -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IsPublishing=true -o $PublishDir
+            
+            Write-Host "Publish complete. Opening folder for testing..." -ForegroundColor Green
+            Invoke-Item $PublishDir
+            
+            # --- 4. GitHub Release (Delayed Step) ---
+            Write-Host "`n--- Deployment Step ---" -ForegroundColor Cyan
+            $upload = Read-Host "Testing finished? Upload to GitHub Release now? [Y/N]"
+            if ($upload -eq 'y') {
+                if (Test-Path $ZipPath) { Remove-Item $ZipPath -Force }
+                Compress-Archive -Path "$PublishDir/$ExeName" -DestinationPath $ZipPath
+                
+                $finalVersion = Get-ProjectVersion
+                Write-Host "Uploading v$finalVersion to GitHub..."
+                gh release create "v$finalVersion" $ZipPath --title "v$finalVersion" --generate-notes
+                Write-Host "Release Live!" -ForegroundColor Green
             }
         }
-
-        Write-Host "Uploading v$version to GitHub..."
-        gh release create "v$version" $zipPath --title "v$version" --generate-notes
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "GitHub upload failed!" -ForegroundColor Red
-        } else {
-            Write-Host "GitHub upload successful!" -ForegroundColor Green
-        }
-        Write-Host ""
     }
-
-    Invoke-Item "Publish"
-} else {
-    Write-Host "Skipping publish step. Standard build artifacts are in bin/$Configuration/net10.0-windows/"
+    else {
+        Write-Host "Debug build complete. Skipping Git and Publish steps." -ForegroundColor Gray
+    }
+}
+catch {
+    Write-Host "`n[ERROR] $($_.Exception.Message)" -ForegroundColor Red
 }
 
 Read-Host "Press Enter to exit..."
