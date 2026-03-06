@@ -25,6 +25,23 @@
             <MenuItem Header="Hide Column"
                       Command="{Binding PlacementTarget.Tag.HideColumnCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                       CommandParameter="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <MenuItem Header="Show Hidden Columns"
+                      Visibility="{Binding PlacementTarget.Tag.HasHiddenColumns, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}"
+                      ItemsSource="{Binding PlacementTarget.Tag.HiddenColumns, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                <MenuItem.ItemContainerStyle>
+                    <Style TargetType="MenuItem">
+                        <Setter Property="Header" Value="{Binding Header}" />
+                        <Setter Property="Command" Value="{Binding PlacementTarget.Tag.ShowColumnCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                        <Setter Property="CommandParameter" Value="{Binding}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsShowAll}" Value="True">
+                                <Setter Property="FontWeight" Value="Bold" />
+                                <Setter Property="Command" Value="{Binding PlacementTarget.Tag.ShowAllColumnsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </MenuItem.ItemContainerStyle>
+            </MenuItem>
             <MenuItem Header="Best Fit"
                       Command="{Binding PlacementTarget.Tag.BestFitCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                       CommandParameter="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>

@@ -396,7 +396,7 @@ namespace SMS_Search.Data
              return finalSql;
         }
 
-        public async Task ExportToCsvAsync(string filename, Dictionary<string, string>? headerMap = null, bool includeHeaders = true, CancellationToken cancellationToken = default)
+        public async Task ExportToCsvAsync(string filename, Dictionary<string, string>? headerMap = null, bool includeHeaders = true, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
         {
              string finalSql = BuildExportSql();
              if (_server == null || _database == null) return;
@@ -407,10 +407,15 @@ namespace SMS_Search.Data
                  {
                      if (includeHeaders)
                      {
+                         bool first = true;
                          for (int i = 0; i < reader.FieldCount; i++)
                          {
-                             if (i > 0) writer.Write(",");
                              string colName = reader.GetName(i);
+                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+
+                             if (!first) writer.Write(",");
+                             first = false;
+
                              string header = (headerMap != null && headerMap.ContainsKey(colName)) ? headerMap[colName] : colName;
                              writer.Write("\"" + header.Replace("\"", "\"\"") + "\"");
                          }
@@ -419,9 +424,15 @@ namespace SMS_Search.Data
 
                      while (await reader.ReadAsync(cancellationToken))
                      {
+                         bool first = true;
                          for (int i = 0; i < reader.FieldCount; i++)
                          {
-                             if (i > 0) writer.Write(",");
+                             string colName = reader.GetName(i);
+                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+
+                             if (!first) writer.Write(",");
+                             first = false;
+
                              var val = reader.GetValue(i);
                              string sVal = val == DBNull.Value ? "" : val.ToString() ?? "";
                              writer.Write("\"" + sVal.Replace("\"", "\"\"") + "\"");
@@ -432,7 +443,7 @@ namespace SMS_Search.Data
              }
         }
 
-        public async Task ExportToJsonAsync(string filename, Dictionary<string, string>? headerMap = null, CancellationToken cancellationToken = default)
+        public async Task ExportToJsonAsync(string filename, Dictionary<string, string>? headerMap = null, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
         {
              string finalSql = BuildExportSql();
              if (_server == null || _database == null) return;
@@ -449,6 +460,8 @@ namespace SMS_Search.Data
                          for (int i = 0; i < reader.FieldCount; i++)
                          {
                              string colName = reader.GetName(i);
+                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+
                              string header = (headerMap != null && headerMap.ContainsKey(colName)) ? headerMap[colName] : colName;
                              var val = reader.GetValue(i);
 
@@ -466,7 +479,7 @@ namespace SMS_Search.Data
              }
         }
 
-        public async Task ExportToXmlAsync(string filename, SearchCriteria criteria, CancellationToken cancellationToken = default)
+        public async Task ExportToXmlAsync(string filename, SearchCriteria criteria, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
         {
              string finalSql = BuildExportSql();
              if (_server == null || _database == null) return;
@@ -505,8 +518,10 @@ namespace SMS_Search.Data
                      writer.WriteLine($"<{rootElement}{rootAttr}>");
 
                      List<string> safeColNames = new List<string>();
+                     List<string> actualColNames = new List<string>();
                      for (int i = 0; i < reader.FieldCount; i++)
                      {
+                         actualColNames.Add(reader.GetName(i));
                          safeColNames.Add(MakeValidXmlName(reader.GetName(i)));
                      }
 
@@ -515,6 +530,9 @@ namespace SMS_Search.Data
                          writer.WriteLine("  <Row>");
                          for (int i = 0; i < reader.FieldCount; i++)
                          {
+                             string colName = actualColNames[i];
+                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+
                              var val = reader.GetValue(i);
                              if (val != DBNull.Value)
                              {
@@ -539,7 +557,7 @@ namespace SMS_Search.Data
             return safeName;
         }
 
-        public async Task ExportToExcelXmlAsync(string filename, Dictionary<string, string>? headerMap = null, CancellationToken cancellationToken = default)
+        public async Task ExportToExcelXmlAsync(string filename, Dictionary<string, string>? headerMap = null, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
         {
              string finalSql = BuildExportSql();
              if (_server == null || _database == null) return;
@@ -559,9 +577,13 @@ namespace SMS_Search.Data
                      writer.WriteLine("  <Table>");
 
                      writer.WriteLine("   <Row>");
+                     List<string> actualColNames = new List<string>();
                      for (int i = 0; i < reader.FieldCount; i++)
                      {
                          string colName = reader.GetName(i);
+                         actualColNames.Add(colName);
+                         if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+
                          string header = (headerMap != null && headerMap.ContainsKey(colName)) ? headerMap[colName] : colName;
                          writer.WriteLine($"    <Cell><Data ss:Type=\"String\">{EscapeXml(header)}</Data></Cell>");
                      }
@@ -572,6 +594,9 @@ namespace SMS_Search.Data
                          writer.WriteLine("   <Row>");
                          for (int i = 0; i < reader.FieldCount; i++)
                          {
+                             string colName = actualColNames[i];
+                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+
                              var val = reader.GetValue(i);
                              if (val == DBNull.Value)
                              {
@@ -593,7 +618,7 @@ namespace SMS_Search.Data
              }
         }
 
-        public async Task ExportRowsToCsvAsync(string filename, List<VirtualRow> rows)
+        public async Task ExportRowsToCsvAsync(string filename, List<VirtualRow> rows, HashSet<string>? hiddenColumns = null)
         {
              await Task.Run(() =>
              {
@@ -603,9 +628,14 @@ namespace SMS_Search.Data
                      {
                          var row = rows[0];
                          var props = row.GetProperties();
+                         bool first = true;
                          for (int i = 0; i < props.Count; i++)
                          {
-                             if (i > 0) writer.Write(",");
+                             if (hiddenColumns != null && hiddenColumns.Contains(props[i].Name)) continue;
+
+                             if (!first) writer.Write(",");
+                             first = false;
+
                              writer.Write("\"" + props[i].Name.Replace("\"", "\"\"") + "\"");
                          }
                          writer.WriteLine();
@@ -614,9 +644,14 @@ namespace SMS_Search.Data
                      foreach (var row in rows)
                      {
                          var props = row.GetProperties();
+                         bool first = true;
                          for (int i = 0; i < props.Count; i++)
                          {
-                             if (i > 0) writer.Write(",");
+                             if (hiddenColumns != null && hiddenColumns.Contains(props[i].Name)) continue;
+
+                             if (!first) writer.Write(",");
+                             first = false;
+
                              var val = row.GetValue(i);
                              string sVal = val == DBNull.Value ? "" : val?.ToString() ?? "";
                              writer.Write("\"" + sVal.Replace("\"", "\"\"") + "\"");
@@ -627,7 +662,7 @@ namespace SMS_Search.Data
              });
         }
 
-        public async Task ExportRowsToJsonAsync(string filename, List<VirtualRow> rows)
+        public async Task ExportRowsToJsonAsync(string filename, List<VirtualRow> rows, HashSet<string>? hiddenColumns = null)
         {
              await Task.Run(() =>
              {
@@ -642,6 +677,8 @@ namespace SMS_Search.Data
                          for (int i = 0; i < props.Count; i++)
                          {
                              string colName = props[i].Name;
+                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+
                              var val = row.GetValue(i);
 
                              writer.WritePropertyName(colName);
@@ -658,7 +695,7 @@ namespace SMS_Search.Data
              });
         }
 
-        public async Task ExportRowsToExcelXmlAsync(string filename, List<VirtualRow> rows)
+        public async Task ExportRowsToExcelXmlAsync(string filename, List<VirtualRow> rows, HashSet<string>? hiddenColumns = null)
         {
              await Task.Run(() =>
              {
@@ -681,6 +718,8 @@ namespace SMS_Search.Data
                          for (int i = 0; i < props.Count; i++)
                          {
                              string colName = props[i].Name;
+                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+
                              writer.WriteLine($"    <Cell><Data ss:Type=\"String\">{EscapeXml(colName)}</Data></Cell>");
                          }
                          writer.WriteLine("   </Row>");
@@ -692,6 +731,9 @@ namespace SMS_Search.Data
                          var props = row.GetProperties();
                          for (int i = 0; i < props.Count; i++)
                          {
+                             string colName = props[i].Name;
+                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+
                              var val = row.GetValue(i);
                              if (val == null || val == DBNull.Value)
                              {
@@ -713,7 +755,7 @@ namespace SMS_Search.Data
              });
         }
 
-        public async Task ExportRowsToXmlAsync(string filename, List<VirtualRow> rows, SearchCriteria criteria)
+        public async Task ExportRowsToXmlAsync(string filename, List<VirtualRow> rows, SearchCriteria criteria, HashSet<string>? hiddenColumns = null)
         {
              await Task.Run(() =>
              {
@@ -749,11 +791,13 @@ namespace SMS_Search.Data
                      writer.WriteLine($"<{rootElement}{rootAttr}>");
 
                      List<string> safeColNames = new List<string>();
+                     List<string> actualColNames = new List<string>();
                      if (rows.Count > 0)
                      {
                          var props = rows[0].GetProperties();
                          for (int i = 0; i < props.Count; i++)
                          {
+                             actualColNames.Add(props[i].Name);
                              safeColNames.Add(MakeValidXmlName(props[i].Name));
                          }
                      }
@@ -764,6 +808,9 @@ namespace SMS_Search.Data
                          var props = row.GetProperties();
                          for (int i = 0; i < props.Count; i++)
                          {
+                             string colName = actualColNames[i];
+                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+
                              var val = row.GetValue(i);
                              if (val != null && val != DBNull.Value)
                              {

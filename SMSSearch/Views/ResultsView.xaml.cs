@@ -22,7 +22,27 @@ namespace SMS_Search.Views
 
         public IRelayCommand<DataGridColumn> CopyColumnNameCommand { get; }
         public IRelayCommand<DataGridColumn> HideColumnCommand { get; }
+        public IRelayCommand<HiddenColumnItem> ShowColumnCommand { get; }
+        public IRelayCommand ShowAllColumnsCommand { get; }
         public IRelayCommand<DataGridColumn> BestFitCommand { get; }
+
+        public static readonly DependencyProperty HasHiddenColumnsProperty = DependencyProperty.Register(
+            "HasHiddenColumns", typeof(bool), typeof(ResultsView), new PropertyMetadata(false));
+
+        public bool HasHiddenColumns
+        {
+            get { return (bool)GetValue(HasHiddenColumnsProperty); }
+            set { SetValue(HasHiddenColumnsProperty, value); }
+        }
+
+        public static readonly DependencyProperty HiddenColumnsProperty = DependencyProperty.Register(
+            "HiddenColumns", typeof(System.Collections.ObjectModel.ObservableCollection<HiddenColumnItem>), typeof(ResultsView), new PropertyMetadata(null));
+
+        public System.Collections.ObjectModel.ObservableCollection<HiddenColumnItem> HiddenColumns
+        {
+            get { return (System.Collections.ObjectModel.ObservableCollection<HiddenColumnItem>)GetValue(HiddenColumnsProperty); }
+            set { SetValue(HiddenColumnsProperty, value); }
+        }
         public IRelayCommand FilterBySelectionCommand { get; }
         public IRelayCommand CopyWithHeadersCommand { get; }
         public IRelayCommand AdvancedCopyCommand { get; }
@@ -32,12 +52,15 @@ namespace SMS_Search.Views
         public ResultsView()
         {
             InitializeComponent();
+            HiddenColumns = new System.Collections.ObjectModel.ObservableCollection<HiddenColumnItem>();
             _debounceTimer = new DispatcherTimer();
             _debounceTimer.Interval = TimeSpan.FromMilliseconds(500);
             _debounceTimer.Tick += DebounceTimer_Tick;
 
             CopyColumnNameCommand = new RelayCommand<DataGridColumn>(CopyColumnName);
             HideColumnCommand = new RelayCommand<DataGridColumn>(HideColumn);
+            ShowColumnCommand = new RelayCommand<HiddenColumnItem>(ShowColumn);
+            ShowAllColumnsCommand = new RelayCommand(ShowAllColumns);
             BestFitCommand = new RelayCommand<DataGridColumn>(BestFit);
             FilterBySelectionCommand = new RelayCommand(FilterBySelection);
             CopyWithHeadersCommand = new RelayCommand(CopyWithHeaders);
@@ -361,6 +384,50 @@ namespace SMS_Search.Views
             if (col != null)
             {
                 col.Visibility = Visibility.Collapsed;
+                UpdateHiddenColumnsList();
+            }
+        }
+
+        private void ShowColumn(HiddenColumnItem? item)
+        {
+            if (item != null && item.Column != null)
+            {
+                item.Column.Visibility = Visibility.Visible;
+                UpdateHiddenColumnsList();
+            }
+        }
+
+        private void ShowAllColumns()
+        {
+            foreach (var col in resultsGrid.Columns)
+            {
+                col.Visibility = Visibility.Visible;
+            }
+            UpdateHiddenColumnsList();
+        }
+
+        private void UpdateHiddenColumnsList()
+        {
+            HiddenColumns.Clear();
+
+            var hiddenCols = resultsGrid.Columns.Where(c => c.Visibility == Visibility.Collapsed).ToList();
+            if (hiddenCols.Any())
+            {
+                HiddenColumns.Add(new HiddenColumnItem { Header = "Show All Hidden Columns", IsShowAll = true });
+                foreach (var col in hiddenCols)
+                {
+                    HiddenColumns.Add(new HiddenColumnItem { Header = col.Header?.ToString() ?? "Unknown", Column = col });
+                }
+                HasHiddenColumns = true;
+            }
+            else
+            {
+                HasHiddenColumns = false;
+            }
+
+            if (DataContext is ResultsViewModel vm)
+            {
+                vm.HiddenColumns = new HashSet<string>(hiddenCols.Select(c => c.SortMemberPath).Where(s => !string.IsNullOrEmpty(s))!);
             }
         }
 
@@ -376,5 +443,12 @@ namespace SMS_Search.Views
         {
             e.Row.Header = (e.Row.GetIndex() + 1).ToString();
         }
+    }
+
+    public class HiddenColumnItem
+    {
+        public string Header { get; set; } = "";
+        public DataGridColumn? Column { get; set; }
+        public bool IsShowAll { get; set; }
     }
 }
