@@ -35,7 +35,14 @@ namespace SMS_Search.ViewModels.Settings
             _logger = logger;
             _dialogService = dialogService;
 
-            Server = _repository.GetValue("CONNECTION", "SERVER") ?? "";
+            Server = new ObservableSetting<string>(repository, "CONNECTION", "SERVER",
+                repository.GetValue("CONNECTION", "SERVER") ?? "",
+                validator: v =>
+                {
+                    bool isValid = !string.IsNullOrWhiteSpace(v);
+                    IsServerInvalid = !isValid;
+                    return isValid;
+                });
 
             Database = new ObservableSetting<string>(repository, "CONNECTION", "DATABASE",
                 repository.GetValue("CONNECTION", "DATABASE") ?? "",
@@ -50,11 +57,17 @@ namespace SMS_Search.ViewModels.Settings
                 repository.GetValue("CONNECTION", "SQLUSER") ?? "");
 
             DatabasesView = CollectionViewSource.GetDefaultView(Databases);
-            ServersView = CollectionViewSource.GetDefaultView(Servers);
 
             LoadDatabasesCommand = new AsyncRelayCommand(LoadDatabasesAsync);
-            LoadServersCommand = new AsyncRelayCommand(LoadServersAsync);
 
+            Server.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == "Value")
+                {
+                    _ = LoadDatabasesCommand.ExecuteAsync(null);
+                    WeakReferenceMessenger.Default.Send(new ConnectionSettingsChangedMessage(true));
+                }
+            };
             User.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == "Value")
@@ -72,14 +85,7 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             _ = LoadDatabasesCommand.ExecuteAsync(null);
-            _ = LoadServersCommand.ExecuteAsync(null);
         }
-
-        [ObservableProperty]
-        private string _server = "";
-
-        [ObservableProperty]
-        private bool _isServerSaved;
 
         [ObservableProperty]
         private bool _isServerInvalid;
@@ -87,6 +93,7 @@ namespace SMS_Search.ViewModels.Settings
         [ObservableProperty]
         private bool _isDatabaseInvalid;
 
+        public ObservableSetting<string> Server { get; }
         public ObservableSetting<string> Database { get; }
         public ObservableSetting<string> User { get; }
 
@@ -102,60 +109,11 @@ namespace SMS_Search.ViewModels.Settings
         [ObservableProperty]
         private ObservableCollection<string> _databases = new ObservableCollection<string>();
 
-        [ObservableProperty]
-        private ObservableCollection<string> _servers = new ObservableCollection<string>();
-
         public ICollectionView DatabasesView { get; private set; }
-        public ICollectionView ServersView { get; private set; }
-
-        partial void OnServerChanged(string value)
-        {
-            // _repository.SaveAsync automatically sets the value as well
-            _ = SaveServerAsync(value);
-        }
-
-        private async Task SaveServerAsync(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                IsServerInvalid = true;
-                return;
-            }
-
-            IsServerInvalid = false;
-
-            await _repository.SaveAsync("CONNECTION", "SERVER", value);
-            IsServerSaved = true;
-            _ = Task.Delay(2000).ContinueWith(_ => IsServerSaved = false);
-
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                var historyString = _repository.GetValue("CONNECTION_HISTORY", "SERVERS") ?? "";
-                var historyList = new System.Collections.Generic.List<string>(historyString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
-
-                historyList.RemoveAll(s => s.Equals(value, StringComparison.OrdinalIgnoreCase));
-                historyList.Insert(0, value);
-
-                if (historyList.Count > 20)
-                {
-                    historyList = historyList.GetRange(0, 20);
-                }
-
-                await _repository.SaveAsync("CONNECTION_HISTORY", "SERVERS", string.Join(",", historyList));
-
-                if (!Servers.Contains(value))
-                {
-                    Servers.Insert(0, value);
-                }
-            }
-
-            _ = LoadDatabasesCommand.ExecuteAsync(null);
-            WeakReferenceMessenger.Default.Send(new ConnectionSettingsChangedMessage(true));
-        }
 
         private void UpdateValidationState()
         {
-            if (string.IsNullOrWhiteSpace(Server))
+            if (string.IsNullOrWhiteSpace(Server.Value))
             {
                 IsServerInvalid = true;
             }
@@ -209,35 +167,10 @@ namespace SMS_Search.ViewModels.Settings
         }
 
         public IAsyncRelayCommand LoadDatabasesCommand { get; }
-        public IAsyncRelayCommand LoadServersCommand { get; }
-
-        public async Task LoadServersAsync()
-        {
-            try
-            {
-                var historyString = _repository.GetValue("CONNECTION_HISTORY", "SERVERS") ?? "";
-                var historyList = new System.Collections.Generic.List<string>(historyString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
-
-                var servers = await _dataRepository.GetServersAsync();
-
-                var combinedServers = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                foreach (var h in historyList) combinedServers.Add(h);
-                foreach (var s in servers) combinedServers.Add(s);
-
-                Servers.Clear();
-                foreach (var server in combinedServers) Servers.Add(server);
-                _logger.LogInfo($"Discovered/Loaded {Servers.Count} SQL Servers.");
-            }
-            catch (System.Exception ex)
-            {
-                _logger.LogError("Failed to load SQL Servers", ex);
-            }
-        }
 
         public async Task LoadDatabasesAsync()
         {
-            var server = Server ?? "";
+            var server = Server.Value ?? "";
             try
             {
                  var user = User.Value ?? "";
@@ -271,22 +204,6 @@ namespace SMS_Search.ViewModels.Settings
                     _dialogService.ShowToast("Failed to connect to the SQL Server or retrieve databases. Please verify your credentials and server name.", "Connection Error", ToastType.Error);
                 }
             }
-        }
-
-        public void FilterServers(string searchText)
-        {
-            if (ServersView == null) return;
-
-            ServersView.Filter = (obj) =>
-            {
-                if (string.IsNullOrEmpty(searchText)) return true;
-                if (obj is string str)
-                {
-                    return str.IndexOf(searchText, System.StringComparison.OrdinalIgnoreCase) >= 0;
-                }
-                return false;
-            };
-            ServersView.Refresh();
         }
 
         public void FilterDatabases(string searchText)
