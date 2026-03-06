@@ -37,6 +37,7 @@ namespace SMS_Search.Views
         }
 
         private string _lastTypedText = "";
+        private string? _lastValidTable;
 
         private void TypingTimer_Tick(object? sender, EventArgs e)
         {
@@ -116,6 +117,11 @@ namespace SMS_Search.Views
                             }
                             textBox.SelectionLength = 0;
                             textBox.CaretIndex = Math.Min(caretIndex, textBox.Text.Length);
+
+                            if (string.IsNullOrEmpty(actualTypedText) && !TableComboBox.IsDropDownOpen)
+                            {
+                                TableComboBox.IsDropDownOpen = true;
+                            }
                         }));
                     }
                 }
@@ -263,7 +269,11 @@ namespace SMS_Search.Views
 
         private void ComboBox_GotFocus(object sender, System.Windows.RoutedEventArgs e)
         {
-             if (DataContext is SearchViewModel vm && !vm.IsFieldTable) vm.IsFieldTable = true;
+             if (DataContext is SearchViewModel vm)
+             {
+                 if (!vm.IsFieldTable) vm.IsFieldTable = true;
+                 _lastValidTable = vm.SelectedTable;
+             }
 
              var textBox = TableComboBox.Template.FindName("PART_EditableTextBox", TableComboBox) as System.Windows.Controls.TextBox;
              if (textBox != null)
@@ -290,9 +300,17 @@ namespace SMS_Search.Views
             if (DataContext is SearchViewModel vm)
             {
                 string text = TableComboBox.Text;
-                if (!string.IsNullOrEmpty(text) && !vm.Tables.Contains(text))
+                if (!vm.Tables.Contains(text))
                 {
-                    TableComboBox.Text = vm.SelectedTable ?? "";
+                    if (vm.SelectedTable != _lastValidTable)
+                    {
+                        vm.SelectedTable = _lastValidTable;
+                    }
+                    TableComboBox.Text = _lastValidTable ?? "";
+                }
+                else
+                {
+                    _lastValidTable = text;
                 }
             }
         }
