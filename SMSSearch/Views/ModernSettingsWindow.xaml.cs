@@ -88,6 +88,17 @@ namespace SMS_Search.Views
             _isSyncingScroll = true;
             try
             {
+                // If scrolled to the absolute bottom, select the last section
+                if (MainScrollViewer.ScrollableHeight > 0 && MainScrollViewer.VerticalOffset >= MainScrollViewer.ScrollableHeight - 1)
+                {
+                    if (SectionItemsControl.Items.Count > 0)
+                    {
+                        var lastItem = SectionItemsControl.Items[SectionItemsControl.Items.Count - 1];
+                        Sidebar.SelectedItem = lastItem;
+                        return;
+                    }
+                }
+
                 // Find the first visible item at the top
                 foreach (var item in SectionItemsControl.Items)
                 {
