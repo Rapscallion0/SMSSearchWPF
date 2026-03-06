@@ -17,14 +17,22 @@ namespace SMS_Search.ViewModels.Settings
     {
         private readonly ISettingsRepository _repository;
         private readonly IDialogService _dialogService;
+        private readonly UpdateChecker _updateChecker;
+
+        [ObservableProperty]
+        private string _updateStatusMessage = "";
+
+        [ObservableProperty]
+        private string? _updateStatusColor = null;
 
         public override string Title => "General";
         public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_General");
 
-        public GeneralSectionViewModel(ISettingsRepository repository, IDialogService dialogService)
+        public GeneralSectionViewModel(ISettingsRepository repository, IDialogService dialogService, UpdateChecker updateChecker)
         {
             _repository = repository;
             _dialogService = dialogService;
+            _updateChecker = updateChecker;
 
             // Always On Top
             var alwaysOnTopStr = repository.GetValue("GENERAL", "ALWAYSONTOP");
@@ -120,6 +128,73 @@ namespace SMS_Search.ViewModels.Settings
                 v => v.ToString());
 
             UpdateVisibility();
+
+            var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString();
+            UpdateStatusMessage = $"Your version: V{version}";
+
+            if (CheckUpdate.Value)
+            {
+                _ = CheckUpdateSilentAsync();
+            }
+        }
+
+        private async Task CheckUpdateSilentAsync()
+        {
+            try
+            {
+                var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString();
+                var info = await _updateChecker.CheckForUpdatesAsync();
+
+                if (info.IsNewer)
+                {
+                    UpdateStatusMessage = $"An updated version is available!\n\nYour version: V{version}\nAvailable: V{info.Version}";
+                    UpdateStatusColor = "Red";
+                }
+                else
+                {
+                    UpdateStatusMessage = $"Application is up to date: V{version}";
+                    UpdateStatusColor = "Green";
+                }
+            }
+            catch (Exception)
+            {
+                // Silent fail
+            }
+        }
+
+        [RelayCommand]
+        private async Task CheckUpdateAsync()
+        {
+            var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString();
+            try
+            {
+                var info = await _updateChecker.CheckForUpdatesAsync();
+
+                if (info.IsNewer)
+                {
+                    UpdateStatusMessage = $"An updated version is available!\n\nYour version: V{version}\nAvailable: V{info.Version}";
+                    UpdateStatusColor = "Red";
+                    _dialogService.ShowToast("An update is available!", "Update", ToastType.Info);
+
+                    var msg = $"There is an update available for download.\n\nCurrent Version: {version}\nNew Version: {info.Version}\n\nWould you like to update now?";
+                    if (_dialogService.ShowConfirmation(msg, "SMS Search Update"))
+                    {
+                        await _updateChecker.PerformUpdate(info);
+                    }
+                }
+                else
+                {
+                    UpdateStatusMessage = $"Application is up to date: V{version}";
+                    UpdateStatusColor = "Green";
+                    _dialogService.ShowToast("You are on the latest version.", "Update", ToastType.Success);
+                }
+            }
+            catch (Exception ex)
+            {
+                UpdateStatusMessage = $"Failed to check for updates.";
+                UpdateStatusColor = "Red";
+                _dialogService.ShowToast("Failed to check for updates: " + ex.Message, "Update Error", ToastType.Error);
+            }
         }
 
         public ObservableSetting<bool> AlwaysOnTop { get; }

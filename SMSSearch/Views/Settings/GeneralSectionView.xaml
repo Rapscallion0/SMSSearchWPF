@@ -62,7 +62,13 @@
                 </ctrl:SettingControl>
 
                 <ctrl:SettingControl Header="Check for Updates" IsSaved="{Binding CheckUpdate.IsSaved}">
-                    <CheckBox IsChecked="{Binding CheckUpdate.Value}" Content="Automatically check for updates on startup" />
+                    <StackPanel>
+                        <CheckBox IsChecked="{Binding CheckUpdate.Value}" Content="Automatically check for updates on startup" />
+                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                            <Button Content="Check Now" Command="{Binding CheckUpdateCommand}" Width="100" HorizontalAlignment="Left" />
+                            <TextBlock Text="{Binding UpdateStatusMessage}" Foreground="{Binding UpdateStatusColor}" Margin="10,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
                 </ctrl:SettingControl>
             </StackPanel>
         </GroupBox>
