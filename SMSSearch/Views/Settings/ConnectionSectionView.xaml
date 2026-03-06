@@ -26,33 +26,51 @@
             </Setter>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsServerInvalid}" Value="True">
-                    <Setter Property="Opacity" Value="1" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding IsServerInvalid}" Value="False">
                     <DataTrigger.EnterActions>
                         <BeginStoryboard>
                             <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1" />
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2" />
                             </Storyboard>
                         </BeginStoryboard>
                     </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:1" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.ExitActions>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="InvalidDatabaseBorderStyle" TargetType="Border" BasedOn="{StaticResource InvalidBorderStyle}">
+        <Style x:Key="InvalidDatabaseBorderStyle" TargetType="Border">
+            <Setter Property="BorderBrush" Value="Red" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="5" Color="Red" ShadowDepth="0" Opacity="0.5"/>
+                </Setter.Value>
+            </Setter>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsDatabaseInvalid}" Value="True">
-                    <Setter Property="Opacity" Value="1" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding IsDatabaseInvalid}" Value="False">
                     <DataTrigger.EnterActions>
                         <BeginStoryboard>
                             <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1" />
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2" />
                             </Storyboard>
                         </BeginStoryboard>
                     </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:1" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.ExitActions>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
