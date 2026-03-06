@@ -18,6 +18,7 @@ namespace SMS_Search
         private System.Windows.Threading.DispatcherTimer _typingTimer;
         private string _lastTypedText = "";
         private bool _isDeleting = false;
+        private string? _lastValidDatabase;
 
         public MainWindow(MainViewModel viewModel, IConfigService config)
         {
@@ -269,6 +270,11 @@ namespace SMS_Search
                             }
                             textBox.SelectionLength = 0;
                             textBox.CaretIndex = Math.Min(caretIndex, textBox.Text.Length);
+
+                            if (string.IsNullOrEmpty(actualTypedText) && !DatabaseComboBox.IsDropDownOpen)
+                            {
+                                DatabaseComboBox.IsDropDownOpen = true;
+                            }
                         }));
                     }
                 }
@@ -366,6 +372,11 @@ namespace SMS_Search
 
         private void DatabaseComboBox_GotFocus(object sender, RoutedEventArgs e)
         {
+            if (DataContext is MainViewModel vm)
+            {
+                _lastValidDatabase = vm.SelectedDatabase;
+            }
+
             var textBox = DatabaseComboBox.Template.FindName("PART_EditableTextBox", DatabaseComboBox) as System.Windows.Controls.TextBox;
             if (textBox != null)
             {
@@ -391,12 +402,18 @@ namespace SMS_Search
             if (DataContext is MainViewModel vm)
             {
                 string text = DatabaseComboBox.Text;
-                if (!string.IsNullOrEmpty(text) && !vm.Databases.Contains(text))
+                if (!vm.Databases.Contains(text))
                 {
-                    // If text is not empty and not in the list, revert to the last valid selection.
-                    // This relies on the view model preserving the last valid selection.
-                    // To do this simply, we will trigger a full update or reset the text.
-                    DatabaseComboBox.Text = vm.SelectedDatabase ?? "";
+                    // If text is empty or not in the list, revert to the last valid selection.
+                    if (vm.SelectedDatabase != _lastValidDatabase)
+                    {
+                        vm.SelectedDatabase = _lastValidDatabase;
+                    }
+                    DatabaseComboBox.Text = _lastValidDatabase ?? "";
+                }
+                else
+                {
+                    _lastValidDatabase = text;
                 }
             }
         }
