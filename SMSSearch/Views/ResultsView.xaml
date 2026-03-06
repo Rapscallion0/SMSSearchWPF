@@ -12,6 +12,7 @@
              PreviewKeyDown="UserControl_PreviewKeyDown">
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+        <conv:BoolToHiddenConverter x:Key="BoolToHidden"/>
         <conv:HighlightConverter x:Key="HighlightConverter"/>
 
         <ContextMenu x:Key="HeaderContextMenu">
@@ -64,9 +65,9 @@
                 <Button Content="Next" Command="{Binding FindNextCommand}" Padding="5,2" Visibility="{Binding IsFilterNavigationVisible, Converter={StaticResource BoolToVis}}"/>
             </StackPanel>
 
-            <TextBlock Text="Filter:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-            <controls:ClearableTextBox x:Name="txtFilter" Width="200" Text="{Binding FilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextChanged="txtFilter_TextChanged" ToolTip="Filter results (Ctrl+F)"/>
-            <TextBlock Text="{Binding MatchStatusText}" VerticalAlignment="Center" Margin="10,0,0,0" FontStyle="Italic" Foreground="Gray"/>
+            <TextBlock Text="Filter:" VerticalAlignment="Center" Margin="0,0,5,0" Visibility="{Binding IsFilterVisible, Converter={StaticResource BoolToHidden}}"/>
+            <controls:ClearableTextBox x:Name="txtFilter" Width="200" Text="{Binding FilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextChanged="txtFilter_TextChanged" ToolTip="Filter results (Ctrl+F)" Visibility="{Binding IsFilterVisible, Converter={StaticResource BoolToHidden}}"/>
+            <TextBlock Text="{Binding MatchStatusText}" VerticalAlignment="Center" Margin="10,0,0,0" FontStyle="Italic" Foreground="Gray" Visibility="{Binding IsFilterVisible, Converter={StaticResource BoolToHidden}}"/>
         </DockPanel>
 
         <DataGrid x:Name="resultsGrid" Grid.Row="1" 
