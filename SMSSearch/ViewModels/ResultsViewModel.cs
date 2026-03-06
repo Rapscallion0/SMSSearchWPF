@@ -128,6 +128,12 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         private bool _isFilterVisible;
 
+        [ObservableProperty]
+        private bool _isHeaderToggleEnabled = true;
+
+        [ObservableProperty]
+        private string _headerToggleText = "Show Description";
+
         public event EventHandler<(int RowIndex, string ColumnName)>? ScrollToCellRequested;
         public event EventHandler? HeadersUpdated;
 
@@ -175,6 +181,7 @@ namespace SMS_Search.ViewModels
 
         partial void OnShowDescriptionHeadersChanged(bool value)
         {
+             HeaderToggleText = value ? "Show Field #" : "Show Description";
              UpdateHeadersAsync();
         }
 
@@ -276,6 +283,19 @@ namespace SMS_Search.ViewModels
             _lastFoundRowIndex = -1;
 
             _logger.LogDebug($"ExecuteSearchAsync started. Criteria: {criteria.Value}");
+
+            // Determine if Header Toggle should be enabled
+            if (criteria.Mode == SearchMode.Field &&
+                (criteria.Type == SearchType.Number ||
+                 criteria.Type == SearchType.Description ||
+                 (criteria.Type == SearchType.Table && criteria.ShowFields)))
+            {
+                IsHeaderToggleEnabled = false;
+            }
+            else
+            {
+                IsHeaderToggleEnabled = true;
+            }
 
             // Set Table Name if applicable
             TableName = (criteria.Type == SearchType.Table && criteria.Value != null) ? criteria.Value : "ResultTable";

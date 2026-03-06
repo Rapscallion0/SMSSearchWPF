@@ -16,6 +16,9 @@
         <conv:HighlightConverter x:Key="HighlightConverter"/>
 
         <ContextMenu x:Key="HeaderContextMenu">
+            <MenuItem Header="{Binding PlacementTarget.Tag.HeaderToggleText, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      Command="{Binding PlacementTarget.Tag.ToggleHeaderDescriptionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      IsEnabled="{Binding PlacementTarget.Tag.IsHeaderToggleEnabled, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             <MenuItem Header="Copy Name"
                       Command="{Binding PlacementTarget.Tag.CopyColumnNameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                       CommandParameter="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
@@ -56,8 +59,6 @@
                 <Button Content="CSV" Command="{Binding ExportCsvCommand}" Margin="2,0" Padding="5,2" ToolTip="Export All to CSV"/>
                 <Button Content="JSON" Command="{Binding ExportJsonCommand}" Margin="2,0" Padding="5,2" ToolTip="Export All to JSON"/>
                 <Button Content="Excel" Command="{Binding ExportExcelCommand}" Margin="2,0" Padding="5,2" ToolTip="Export All to Excel XML"/>
-                <Separator Margin="5,0"/>
-                <ToggleButton Content="Desc Headers" Command="{Binding ToggleHeaderDescriptionCommand}" IsChecked="{Binding ShowDescriptionHeaders, Mode=OneWay}" Padding="5,2" ToolTip="Show Description instead of Field Name in Headers"/>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="10,0">
