@@ -88,4 +88,55 @@ if ($response -eq 'Y' -or $response -eq 'y') {
     Write-Host "Skipping publish step. Standard build artifacts are in bin/$Configuration/net10.0-windows/"
 }
 
+if ($Configuration -eq "Release") {
+    $bumpResponse = Read-Host "Do you want to create a Git Version Bump? [Y/N]"
+    if ($bumpResponse -eq 'Y' -or $bumpResponse -eq 'y') {
+        Write-Host ""
+        Write-Host "Creating Git Version Bump PR..."
+
+        $version = "Unknown"
+        if (Test-Path "SMSSearch/SMSSearch.csproj") {
+            [xml]$csproj = Get-Content "SMSSearch/SMSSearch.csproj"
+            $versionNode = $csproj.Project.PropertyGroup | Where-Object { $_.AssemblyVersion }
+            if ($versionNode) {
+                $version = $versionNode.AssemblyVersion
+            }
+        }
+
+        if ($version -ne "Unknown") {
+            $branchName = "chore/bump-version-$version"
+            $commitMessage = "Bump version to $version"
+
+            # Switch to new branch
+            git checkout -b $branchName
+
+            # Stage only .csproj
+            git add SMSSearch/SMSSearch.csproj
+
+            # Commit changes
+            git commit -m $commitMessage
+
+            # Push branch
+            git push -u origin $branchName
+
+            # Create PR
+            gh pr create --title $commitMessage --body "Automated version bump"
+
+            # Merge PR
+            gh pr merge --merge --delete-branch
+
+            # Switch back to main branch
+            git checkout main
+
+            # Pull latest changes
+            git pull origin main
+
+            Write-Host "Version bump PR created and merged successfully!" -ForegroundColor Green
+        } else {
+            Write-Host "Failed to read version from SMSSearch.csproj. Skipping version bump." -ForegroundColor Red
+        }
+        Write-Host ""
+    }
+}
+
 Read-Host "Press Enter to exit..."
