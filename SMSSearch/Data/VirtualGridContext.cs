@@ -140,6 +140,39 @@ namespace SMS_Search.Data
             return await _repo.GetTotalMatchCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, searchText, colTypes, cancellationToken);
         }
 
+        public async Task<long> GetTotalMatchedCellsCountAsync(string searchText, IEnumerable<string> columns, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(searchText) || columns == null) return 0;
+
+            var colTypes = new Dictionary<string, string?>();
+            foreach (var col in columns)
+            {
+                if (_columnSqlTypes.TryGetValue(col, out string? type)) colTypes[col] = type;
+                else colTypes[col] = null;
+            }
+
+            if (_server == null || _database == null || _baseSql == null) return 0;
+
+            return await _repo.GetTotalMatchedCellsCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, searchText, colTypes, cancellationToken);
+        }
+
+        public async Task<long> GetPrecedingMatchedCellsCountAsync(int limitRowIndex, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(_rawFilterText) || _filterColumns == null || _filterColumns.Count == 0 || limitRowIndex <= 0)
+                return 0;
+
+            var colTypes = new Dictionary<string, string?>();
+            foreach (var col in _filterColumns)
+            {
+                if (_columnSqlTypes.TryGetValue(col, out string? type)) colTypes[col] = type;
+                else colTypes[col] = null;
+            }
+
+            if (_server == null || _database == null || _baseSql == null) return 0;
+
+            return await _repo.GetPrecedingMatchedCellsCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, _rawFilterText, colTypes, limitRowIndex, SortColumn, SortDirection, cancellationToken);
+        }
+
         public async Task<long> GetPrecedingMatchCountAsync(int limitRowIndex, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(_rawFilterText) || _filterColumns == null || _filterColumns.Count == 0 || limitRowIndex <= 0)
