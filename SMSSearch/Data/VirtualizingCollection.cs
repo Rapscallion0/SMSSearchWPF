@@ -41,9 +41,34 @@ namespace SMS_Search.Data
 
         public object SyncRoot => this;
 
+        private const int MaxCacheSize = 1000;
+        private readonly Dictionary<int, VirtualRow> _rowCache = new Dictionary<int, VirtualRow>();
+        private readonly Queue<int> _cacheKeys = new Queue<int>();
+
         public object? this[int index]
         {
-            get => new VirtualRow(_context, index, _properties);
+            get
+            {
+                if (_rowCache.TryGetValue(index, out var cachedRow))
+                {
+                    return cachedRow;
+                }
+
+                var newRow = new VirtualRow(_context, index, _properties);
+
+                if (_rowCache.Count >= MaxCacheSize)
+                {
+                    if (_cacheKeys.TryDequeue(out var oldestKey))
+                    {
+                        _rowCache.Remove(oldestKey);
+                    }
+                }
+
+                _rowCache[index] = newRow;
+                _cacheKeys.Enqueue(index);
+
+                return newRow;
+            }
             set => throw new NotSupportedException();
         }
 
