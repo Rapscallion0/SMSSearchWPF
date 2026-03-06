@@ -467,17 +467,20 @@ namespace SMS_Search.Data
                          if (!string.IsNullOrEmpty(criteria.Value))
                              writer.WriteString("Number", criteria.Value);
                      }
-                     else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.CustomSql)
+                     else if (criteria.Mode == SearchMode.Field)
                      {
-                         writer.WriteString("SearchType", "CustomQuery");
+                         writer.WriteString("SearchType", "Field");
                          if (!string.IsNullOrEmpty(criteria.Value))
-                             writer.WriteString("Query", criteria.Value);
-                     }
-                     else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.Table)
-                     {
-                         writer.WriteString("SearchType", "Table");
-                         if (!string.IsNullOrEmpty(criteria.Value))
-                             writer.WriteString("Name", criteria.Value);
+                         {
+                             if (criteria.Type == SearchType.Number)
+                                 writer.WriteString("Number", criteria.Value);
+                             else if (criteria.Type == SearchType.Description)
+                                 writer.WriteString("Description", criteria.Value);
+                             else if (criteria.Type == SearchType.CustomSql)
+                                 writer.WriteString("SQL", criteria.Value);
+                             else if (criteria.Type == SearchType.Table)
+                                 writer.WriteString("Table", criteria.Value);
+                         }
                      }
 
                      writer.WritePropertyName("Rows");
@@ -519,25 +522,30 @@ namespace SMS_Search.Data
 
              if (criteria.Mode == SearchMode.Function)
              {
-                 rootElement = "Function";
+                 rootAttr = " SearchType=\"Function\"";
                  if (!string.IsNullOrEmpty(criteria.Value))
-                     rootAttr = $" Number=\"{EscapeXml(criteria.Value)}\"";
+                     rootAttr += $" Number=\"{EscapeXml(criteria.Value)}\"";
              }
              else if (criteria.Mode == SearchMode.Totalizer)
              {
-                 rootElement = "Totalizer";
+                 rootAttr = " SearchType=\"Totalizer\"";
                  if (!string.IsNullOrEmpty(criteria.Value))
-                     rootAttr = $" Number=\"{EscapeXml(criteria.Value)}\"";
+                     rootAttr += $" Number=\"{EscapeXml(criteria.Value)}\"";
              }
-             else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.CustomSql)
+             else if (criteria.Mode == SearchMode.Field)
              {
-                 rootElement = "CustomQuery";
-             }
-             else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.Table)
-             {
-                 rootElement = "Table";
+                 rootAttr = " SearchType=\"Field\"";
                  if (!string.IsNullOrEmpty(criteria.Value))
-                     rootAttr = $" Name=\"{EscapeXml(criteria.Value)}\"";
+                 {
+                     if (criteria.Type == SearchType.Number)
+                         rootAttr += $" Number=\"{EscapeXml(criteria.Value)}\"";
+                     else if (criteria.Type == SearchType.Description)
+                         rootAttr += $" Description=\"{EscapeXml(criteria.Value)}\"";
+                     else if (criteria.Type == SearchType.CustomSql)
+                         rootAttr += $" SQL=\"{EscapeXml(criteria.Value)}\"";
+                     else if (criteria.Type == SearchType.Table)
+                         rootAttr += $" Table=\"{EscapeXml(criteria.Value)}\"";
+                 }
              }
 
              using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
@@ -652,17 +660,20 @@ namespace SMS_Search.Data
                          if (!string.IsNullOrEmpty(criteria.Value))
                              writer.WriteString("Number", criteria.Value);
                      }
-                     else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.CustomSql)
+                     else if (criteria.Mode == SearchMode.Field)
                      {
-                         writer.WriteString("SearchType", "CustomQuery");
+                         writer.WriteString("SearchType", "Field");
                          if (!string.IsNullOrEmpty(criteria.Value))
-                             writer.WriteString("Query", criteria.Value);
-                     }
-                     else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.Table)
-                     {
-                         writer.WriteString("SearchType", "Table");
-                         if (!string.IsNullOrEmpty(criteria.Value))
-                             writer.WriteString("Name", criteria.Value);
+                         {
+                             if (criteria.Type == SearchType.Number)
+                                 writer.WriteString("Number", criteria.Value);
+                             else if (criteria.Type == SearchType.Description)
+                                 writer.WriteString("Description", criteria.Value);
+                             else if (criteria.Type == SearchType.CustomSql)
+                                 writer.WriteString("SQL", criteria.Value);
+                             else if (criteria.Type == SearchType.Table)
+                                 writer.WriteString("Table", criteria.Value);
+                         }
                      }
 
                      writer.WritePropertyName("Rows");
@@ -703,25 +714,30 @@ namespace SMS_Search.Data
 
                  if (criteria.Mode == SearchMode.Function)
                  {
-                     rootElement = "Function";
+                     rootAttr = " SearchType=\"Function\"";
                      if (!string.IsNullOrEmpty(criteria.Value))
-                         rootAttr = $" Number=\"{EscapeXml(criteria.Value)}\"";
+                         rootAttr += $" Number=\"{EscapeXml(criteria.Value)}\"";
                  }
                  else if (criteria.Mode == SearchMode.Totalizer)
                  {
-                     rootElement = "Totalizer";
+                     rootAttr = " SearchType=\"Totalizer\"";
                      if (!string.IsNullOrEmpty(criteria.Value))
-                         rootAttr = $" Number=\"{EscapeXml(criteria.Value)}\"";
+                         rootAttr += $" Number=\"{EscapeXml(criteria.Value)}\"";
                  }
-                 else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.CustomSql)
+                 else if (criteria.Mode == SearchMode.Field)
                  {
-                     rootElement = "CustomQuery";
-                 }
-                 else if (criteria.Mode == SearchMode.Field && criteria.Type == SearchType.Table)
-                 {
-                     rootElement = "Table";
+                     rootAttr = " SearchType=\"Field\"";
                      if (!string.IsNullOrEmpty(criteria.Value))
-                         rootAttr = $" Name=\"{EscapeXml(criteria.Value)}\"";
+                     {
+                         if (criteria.Type == SearchType.Number)
+                             rootAttr += $" Number=\"{EscapeXml(criteria.Value)}\"";
+                         else if (criteria.Type == SearchType.Description)
+                             rootAttr += $" Description=\"{EscapeXml(criteria.Value)}\"";
+                         else if (criteria.Type == SearchType.CustomSql)
+                             rootAttr += $" SQL=\"{EscapeXml(criteria.Value)}\"";
+                         else if (criteria.Type == SearchType.Table)
+                             rootAttr += $" Table=\"{EscapeXml(criteria.Value)}\"";
+                     }
                  }
 
                  using (var writer = new StreamWriter(filename))
