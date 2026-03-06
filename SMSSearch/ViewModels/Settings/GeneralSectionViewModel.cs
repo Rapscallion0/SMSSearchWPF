@@ -129,7 +129,8 @@ namespace SMS_Search.ViewModels.Settings
 
             UpdateVisibility();
 
-            var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString();
+            string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+            var version = exePath != null ? System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath).FileVersion : "Unknown";
             UpdateStatusMessage = $"Your version: V{version}";
 
             if (CheckUpdate.Value)
@@ -142,7 +143,8 @@ namespace SMS_Search.ViewModels.Settings
         {
             try
             {
-                var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString();
+                string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+                var version = exePath != null ? System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath).FileVersion : "Unknown";
                 var info = await _updateChecker.CheckForUpdatesAsync();
 
                 if (info.IsNewer)
@@ -165,7 +167,8 @@ namespace SMS_Search.ViewModels.Settings
         [RelayCommand]
         private async Task CheckUpdateAsync()
         {
-            var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString();
+            string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+            var version = exePath != null ? System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath).FileVersion : "Unknown";
             try
             {
                 var info = await _updateChecker.CheckForUpdatesAsync();
