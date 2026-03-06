@@ -115,25 +115,36 @@ namespace SMS_Search.Views
 
                 // Find column
                 var col = resultsGrid.Columns.FirstOrDefault(c => c.SortMemberPath == colName);
-                if (col != null)
-                {
-                    resultsGrid.SelectedCells.Clear();
-                    resultsGrid.SelectedItems.Clear();
 
-                    var cellInfo = new DataGridCellInfo(item, col);
-                    resultsGrid.CurrentCell = cellInfo;
-                    resultsGrid.SelectedCells.Add(cellInfo);
-                    resultsGrid.ScrollIntoView(item, col);
-                }
-                else
+                // Dispatch to allow the container to be generated if virtualized
+                Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                 {
-                    // Fallback to row selection if column not found
-                    resultsGrid.SelectedItems.Clear();
-                    resultsGrid.SelectedItems.Add(item);
-                }
+                    // Re-fetch the item to get the exact instance the grid is currently using
+                    if (resultsGrid.Items.Count > rowIndex)
+                    {
+                        var currentItem = resultsGrid.Items[rowIndex];
 
-                // Try to focus the grid so keyboard navigation works
-                resultsGrid.Focus();
+                        if (col != null)
+                        {
+                            resultsGrid.SelectedCells.Clear();
+                            resultsGrid.SelectedItems.Clear();
+
+                            var cellInfo = new DataGridCellInfo(currentItem, col);
+                            resultsGrid.CurrentCell = cellInfo;
+                            resultsGrid.SelectedCells.Add(cellInfo);
+                            resultsGrid.ScrollIntoView(currentItem, col);
+                        }
+                        else
+                        {
+                            // Fallback to row selection if column not found
+                            resultsGrid.SelectedItems.Clear();
+                            resultsGrid.SelectedItems.Add(currentItem);
+                        }
+                    }
+
+                    // Try to focus the grid so keyboard navigation works
+                    resultsGrid.Focus();
+                }));
             }
         }
 
