@@ -23,7 +23,7 @@ namespace SMS_Search.Views
                 var connSection = System.Linq.Enumerable.FirstOrDefault(vm.Sections, s => s is SMS_Search.ViewModels.Settings.ConnectionSectionViewModel) as SMS_Search.ViewModels.Settings.ConnectionSectionViewModel;
                 if (connSection != null)
                 {
-                    if (string.IsNullOrWhiteSpace(connSection.Server) || string.IsNullOrWhiteSpace(connSection.Database.Value))
+                    if (string.IsNullOrWhiteSpace(connSection.Server.Value) || string.IsNullOrWhiteSpace(connSection.Database.Value))
                     {
                         vm.SelectedSection = connSection;
 

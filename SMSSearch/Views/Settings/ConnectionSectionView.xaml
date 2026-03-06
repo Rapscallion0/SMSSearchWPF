@@ -81,15 +81,9 @@
 
         <GroupBox Header="Database Connection">
             <StackPanel Margin="5">
-                <ctrl:SettingControl Header="Server" IsSaved="{Binding IsServerSaved}">
+                <ctrl:SettingControl Header="Server" IsSaved="{Binding Server.IsSaved}">
                     <Grid>
-                        <ComboBox Height="25" VerticalAlignment="Center"
-                                  ItemsSource="{Binding ServersView}" Text="{Binding Server, UpdateSourceTrigger=LostFocus}"
-                                  IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True"
-                                  VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling"
-                                  PreviewKeyDown="ServerComboBox_PreviewKeyDown" KeyUp="ServerComboBox_KeyUp" GotFocus="ServerComboBox_GotFocus"
-                                  PreviewMouseDoubleClick="ServerComboBox_PreviewMouseDoubleClick" LostFocus="ServerComboBox_LostFocus">
-                        </ComboBox>
+                        <ctrl:ClearableTextBox Text="{Binding Server.Value, UpdateSourceTrigger=LostFocus}" />
                         <Border Style="{StaticResource InvalidBorderStyle}" />
                     </Grid>
                 </ctrl:SettingControl>
