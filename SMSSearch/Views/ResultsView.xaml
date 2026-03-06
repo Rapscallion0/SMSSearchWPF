@@ -16,9 +16,9 @@
         <conv:HighlightConverter x:Key="HighlightConverter"/>
 
         <ContextMenu x:Key="HeaderContextMenu">
-            <MenuItem Header="{Binding PlacementTarget.Tag.HeaderToggleText, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                      Command="{Binding PlacementTarget.Tag.ToggleHeaderDescriptionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                      IsEnabled="{Binding PlacementTarget.Tag.IsHeaderToggleEnabled, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <MenuItem Header="{Binding PlacementTarget.Tag.DataContext.HeaderToggleText, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      Command="{Binding PlacementTarget.Tag.DataContext.ToggleHeaderDescriptionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      IsEnabled="{Binding PlacementTarget.Tag.DataContext.IsHeaderToggleEnabled, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             <MenuItem Header="Copy Name"
                       Command="{Binding PlacementTarget.Tag.CopyColumnNameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                       CommandParameter="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
