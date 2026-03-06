@@ -125,6 +125,9 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         private bool _isFilterNavigationVisible;
 
+        [ObservableProperty]
+        private bool _isFilterVisible;
+
         public event EventHandler<(int RowIndex, string ColumnName)>? ScrollToCellRequested;
         public event EventHandler? HeadersUpdated;
 
@@ -431,6 +434,11 @@ namespace SMS_Search.ViewModels
             {
                 SetCurrentRowIndex(vRow.RowIndex);
             }
+        }
+
+        partial void OnTotalRecordsChanged(int value)
+        {
+            IsFilterVisible = value > 0;
         }
 
         private int _lastFoundRowIndex = -1;
