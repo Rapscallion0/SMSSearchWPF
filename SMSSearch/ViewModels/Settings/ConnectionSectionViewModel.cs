@@ -114,6 +114,27 @@ namespace SMS_Search.ViewModels.Settings
             IsServerSaved = true;
             _ = Task.Delay(2000).ContinueWith(_ => IsServerSaved = false);
 
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                var historyString = _repository.GetValue("CONNECTION_HISTORY", "SERVERS") ?? "";
+                var historyList = new System.Collections.Generic.List<string>(historyString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
+
+                historyList.RemoveAll(s => s.Equals(value, StringComparison.OrdinalIgnoreCase));
+                historyList.Insert(0, value);
+
+                if (historyList.Count > 20)
+                {
+                    historyList = historyList.GetRange(0, 20);
+                }
+
+                await _repository.SaveAsync("CONNECTION_HISTORY", "SERVERS", string.Join(",", historyList));
+
+                if (!Servers.Contains(value))
+                {
+                    Servers.Insert(0, value);
+                }
+            }
+
             _ = LoadDatabasesCommand.ExecuteAsync(null);
             WeakReferenceMessenger.Default.Send(new ConnectionSettingsChangedMessage(true));
         }
@@ -180,10 +201,19 @@ namespace SMS_Search.ViewModels.Settings
         {
             try
             {
+                var historyString = _repository.GetValue("CONNECTION_HISTORY", "SERVERS") ?? "";
+                var historyList = new System.Collections.Generic.List<string>(historyString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
+
                 var servers = await _dataRepository.GetServersAsync();
+
+                var combinedServers = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var h in historyList) combinedServers.Add(h);
+                foreach (var s in servers) combinedServers.Add(s);
+
                 Servers.Clear();
-                foreach (var server in servers) Servers.Add(server);
-                _logger.LogInfo($"Discovered {Servers.Count} SQL Servers.");
+                foreach (var server in combinedServers) Servers.Add(server);
+                _logger.LogInfo($"Discovered/Loaded {Servers.Count} SQL Servers.");
             }
             catch (System.Exception ex)
             {
