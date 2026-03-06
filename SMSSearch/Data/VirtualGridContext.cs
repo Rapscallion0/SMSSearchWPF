@@ -557,67 +557,6 @@ namespace SMS_Search.Data
             return safeName;
         }
 
-        public async Task ExportToExcelXmlAsync(string filename, Dictionary<string, string>? headerMap = null, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
-        {
-             string finalSql = BuildExportSql();
-             if (_server == null || _database == null) return;
-
-             using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
-             {
-                 using (var writer = new StreamWriter(filename))
-                 {
-                     writer.WriteLine("<?xml version=\"1.0\"?>");
-                     writer.WriteLine("<?mso-application progid=\"Excel.Sheet\"?>");
-                     writer.WriteLine("<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"");
-                     writer.WriteLine(" xmlns:o=\"urn:schemas-microsoft-com:office:office\"");
-                     writer.WriteLine(" xmlns:x=\"urn:schemas-microsoft-com:office:excel\"");
-                     writer.WriteLine(" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"");
-                     writer.WriteLine(" xmlns:html=\"http://www.w3.org/TR/REC-html40\">");
-                     writer.WriteLine(" <Worksheet ss:Name=\"Sheet1\">");
-                     writer.WriteLine("  <Table>");
-
-                     writer.WriteLine("   <Row>");
-                     List<string> actualColNames = new List<string>();
-                     for (int i = 0; i < reader.FieldCount; i++)
-                     {
-                         string colName = reader.GetName(i);
-                         actualColNames.Add(colName);
-                         if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
-
-                         string header = (headerMap != null && headerMap.ContainsKey(colName)) ? headerMap[colName] : colName;
-                         writer.WriteLine($"    <Cell><Data ss:Type=\"String\">{EscapeXml(header)}</Data></Cell>");
-                     }
-                     writer.WriteLine("   </Row>");
-
-                     while (await reader.ReadAsync(cancellationToken))
-                     {
-                         writer.WriteLine("   <Row>");
-                         for (int i = 0; i < reader.FieldCount; i++)
-                         {
-                             string colName = actualColNames[i];
-                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
-
-                             var val = reader.GetValue(i);
-                             if (val == DBNull.Value)
-                             {
-                                 writer.WriteLine("    <Cell></Cell>");
-                             }
-                             else
-                             {
-                                 string? s = val.ToString();
-                                 writer.WriteLine($"    <Cell><Data ss:Type=\"String\">{EscapeXml(s ?? "")}</Data></Cell>");
-                             }
-                         }
-                         writer.WriteLine("   </Row>");
-                     }
-
-                     writer.WriteLine("  </Table>");
-                     writer.WriteLine(" </Worksheet>");
-                     writer.WriteLine("</Workbook>");
-                 }
-             }
-        }
-
         public async Task ExportRowsToCsvAsync(string filename, List<VirtualRow> rows, HashSet<string>? hiddenColumns = null)
         {
              await Task.Run(() =>
@@ -691,66 +630,6 @@ namespace SMS_Search.Data
                          writer.WriteEndObject();
                      }
                      writer.WriteEndArray();
-                 }
-             });
-        }
-
-        public async Task ExportRowsToExcelXmlAsync(string filename, List<VirtualRow> rows, HashSet<string>? hiddenColumns = null)
-        {
-             await Task.Run(() =>
-             {
-                 using (var writer = new StreamWriter(filename))
-                 {
-                     writer.WriteLine("<?xml version=\"1.0\"?>");
-                     writer.WriteLine("<?mso-application progid=\"Excel.Sheet\"?>");
-                     writer.WriteLine("<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"");
-                     writer.WriteLine(" xmlns:o=\"urn:schemas-microsoft-com:office:office\"");
-                     writer.WriteLine(" xmlns:x=\"urn:schemas-microsoft-com:office:excel\"");
-                     writer.WriteLine(" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"");
-                     writer.WriteLine(" xmlns:html=\"http://www.w3.org/TR/REC-html40\">");
-                     writer.WriteLine(" <Worksheet ss:Name=\"Sheet1\">");
-                     writer.WriteLine("  <Table>");
-
-                     if (rows.Count > 0)
-                     {
-                         writer.WriteLine("   <Row>");
-                         var props = rows[0].GetProperties();
-                         for (int i = 0; i < props.Count; i++)
-                         {
-                             string colName = props[i].Name;
-                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
-
-                             writer.WriteLine($"    <Cell><Data ss:Type=\"String\">{EscapeXml(colName)}</Data></Cell>");
-                         }
-                         writer.WriteLine("   </Row>");
-                     }
-
-                     foreach (var row in rows)
-                     {
-                         writer.WriteLine("   <Row>");
-                         var props = row.GetProperties();
-                         for (int i = 0; i < props.Count; i++)
-                         {
-                             string colName = props[i].Name;
-                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
-
-                             var val = row.GetValue(i);
-                             if (val == null || val == DBNull.Value)
-                             {
-                                 writer.WriteLine("    <Cell></Cell>");
-                             }
-                             else
-                             {
-                                 string? s = val.ToString();
-                                 writer.WriteLine($"    <Cell><Data ss:Type=\"String\">{EscapeXml(s ?? "")}</Data></Cell>");
-                             }
-                         }
-                         writer.WriteLine("   </Row>");
-                     }
-
-                     writer.WriteLine("  </Table>");
-                     writer.WriteLine(" </Worksheet>");
-                     writer.WriteLine("</Workbook>");
                  }
              });
         }

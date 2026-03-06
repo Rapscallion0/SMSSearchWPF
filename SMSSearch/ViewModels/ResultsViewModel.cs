@@ -56,7 +56,6 @@ namespace SMS_Search.ViewModels
 
             ExportCsvCommand = new AsyncRelayCommand(ExportCsvAsync);
             ExportJsonCommand = new AsyncRelayCommand(ExportJsonAsync);
-            ExportExcelCommand = new AsyncRelayCommand(ExportExcelAsync);
             ExportXmlCommand = new AsyncRelayCommand(ExportXmlAsync);
 
             ApplyFilterCommand = new AsyncRelayCommand<string>(ApplyFilterAsync);
@@ -70,7 +69,6 @@ namespace SMS_Search.ViewModels
 
             ExportSelectedCsvCommand = new AsyncRelayCommand<System.Collections.IList>(ExportSelectedCsvAsync);
             ExportSelectedJsonCommand = new AsyncRelayCommand<System.Collections.IList>(ExportSelectedJsonAsync);
-            ExportSelectedExcelCommand = new AsyncRelayCommand<System.Collections.IList>(ExportSelectedExcelAsync);
             ExportSelectedXmlCommand = new AsyncRelayCommand<System.Collections.IList>(ExportSelectedXmlAsync);
 
             FilterBySelectionCommand = new RelayCommand<string>(FilterBySelection);
@@ -153,7 +151,6 @@ namespace SMS_Search.ViewModels
 
         public IAsyncRelayCommand ExportCsvCommand { get; }
         public IAsyncRelayCommand ExportJsonCommand { get; }
-        public IAsyncRelayCommand ExportExcelCommand { get; }
         public IAsyncRelayCommand ExportXmlCommand { get; }
 
         public IRelayCommand ToggleHeaderDescriptionCommand { get; }
@@ -161,7 +158,6 @@ namespace SMS_Search.ViewModels
 
         public IAsyncRelayCommand<System.Collections.IList> ExportSelectedCsvCommand { get; }
         public IAsyncRelayCommand<System.Collections.IList> ExportSelectedJsonCommand { get; }
-        public IAsyncRelayCommand<System.Collections.IList> ExportSelectedExcelCommand { get; }
         public IAsyncRelayCommand<System.Collections.IList> ExportSelectedXmlCommand { get; }
 
         public IRelayCommand<string> FilterBySelectionCommand { get; }
@@ -640,14 +636,6 @@ namespace SMS_Search.ViewModels
             await PerformExportAsync(() => _gridContext.ExportToJsonAsync(filename, null, hidden));
         }
 
-        private async Task ExportExcelAsync()
-        {
-            string? filename = _dialogService.SaveFileDialog("Excel XML (*.xml)|*.xml", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xml");
-            if (string.IsNullOrEmpty(filename)) return;
-            var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportToExcelXmlAsync(filename, null, hidden));
-        }
-
         private async Task ExportXmlAsync()
         {
             string? filename = _dialogService.SaveFileDialog("XML files (*.xml)|*.xml", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xml");
@@ -720,17 +708,6 @@ namespace SMS_Search.ViewModels
             var rows = selectedItems.Cast<VirtualRow>().ToList();
             var hidden = CheckHiddenColumns();
             await PerformExportAsync(() => _gridContext.ExportRowsToJsonAsync(filename, rows, hidden));
-        }
-
-        private async Task ExportSelectedExcelAsync(System.Collections.IList? selectedItems)
-        {
-            if (selectedItems == null || selectedItems.Count == 0 || _lastSchema == null) return;
-            string? filename = _dialogService.SaveFileDialog("Excel XML (*.xml)|*.xml", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xml");
-            if (string.IsNullOrEmpty(filename)) return;
-
-            var rows = selectedItems.Cast<VirtualRow>().ToList();
-            var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportRowsToExcelXmlAsync(filename, rows, hidden));
         }
 
         private async Task ExportSelectedXmlAsync(System.Collections.IList? selectedItems)
