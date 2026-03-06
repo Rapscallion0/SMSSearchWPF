@@ -10,6 +10,7 @@ $PublishDir  = "./Publish"
 $ZipPath     = "$PublishDir/SMS_Search.zip"
 $ExeName     = "SMS Search.exe" 
 $ErrorActionPreference = "Stop"
+$hasErrors   = $false
 
 Set-Location $PSScriptRoot
 
@@ -28,7 +29,11 @@ try {
     if (-not $FromVS) {
         Write-Host "--- SMS Search: $Configuration Build ---" -ForegroundColor Cyan
         dotnet clean $ProjectFile -c $Configuration -p:IsPublishing=true
+        if ($LASTEXITCODE -ne 0) { throw "dotnet clean failed with exit code $LASTEXITCODE" }
+
         dotnet build $ProjectFile -c $Configuration -p:IsPublishing=true
+        if ($LASTEXITCODE -ne 0) { throw "dotnet build failed with exit code $LASTEXITCODE" }
+
         Write-Host "Build Successful." -ForegroundColor Green
     }
 
@@ -55,6 +60,7 @@ try {
             Write-Host "Publishing to $PublishDir..." -ForegroundColor Yellow
             dotnet publish $ProjectFile -c $Configuration -r win-x64 --self-contained `
                 -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IsPublishing=true -o $PublishDir
+            if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE" }
             
             Write-Host "Publish complete. Opening folder for testing..." -ForegroundColor Green
             Invoke-Item $PublishDir
@@ -69,6 +75,7 @@ try {
                 $finalVersion = Get-ProjectVersion
                 Write-Host "Uploading v$finalVersion to GitHub..."
                 gh release create "v$finalVersion" $ZipPath --title "v$finalVersion" --generate-notes
+                if ($LASTEXITCODE -ne 0) { throw "gh release create failed with exit code $LASTEXITCODE" }
                 Write-Host "Release Live!" -ForegroundColor Green
             }
         }
@@ -78,7 +85,10 @@ try {
     }
 }
 catch {
+    $hasErrors = $true
     Write-Host "`n[ERROR] $($_.Exception.Message)" -ForegroundColor Red
 }
 
-Read-Host "Press Enter to exit..."
+if ($hasErrors) {
+    Read-Host "Press Enter to exit..."
+}
