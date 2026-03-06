@@ -4,16 +4,19 @@ using Microsoft.Win32;
 using SMS_Search.Views;
 using System.Drawing;
 using System.Windows.Forms;
+using SMS_Search.Utils;
 
 namespace SMS_Search.Services
 {
     public class DialogService : IDialogService
     {
         private readonly ISettingsRepository _settingsRepository;
+        private readonly ILoggerService _loggerService;
 
-        public DialogService(ISettingsRepository settingsRepository)
+        public DialogService(ISettingsRepository settingsRepository, ILoggerService loggerService)
         {
             _settingsRepository = settingsRepository;
+            _loggerService = loggerService;
         }
 
         public void ShowMessage(string message, string title)
@@ -23,7 +26,14 @@ namespace SMS_Search.Services
 
         public void ShowError(string message, string title)
         {
-            ShowToast(message, title, ToastType.Error);
+            string logPath = _loggerService.GetCurrentLogPath();
+            ShowToast(message, title, ToastType.Error, null, logPath);
+        }
+
+        public void ShowWarning(string message, string title)
+        {
+            string logPath = _loggerService.GetCurrentLogPath();
+            ShowToast(message, title, ToastType.Warning, null, logPath);
         }
 
         public bool ShowConfirmation(string message, string title)

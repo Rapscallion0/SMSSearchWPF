@@ -29,22 +29,34 @@ namespace SMS_Search.Views
 
             if (!string.IsNullOrEmpty(_filePath) && System.IO.File.Exists(_filePath))
             {
-                btnOpenFile.Visibility = Visibility.Visible;
                 btnOpenFolder.Visibility = Visibility.Visible;
                 rectSeparator.Visibility = Visibility.Visible;
 
-                // Determine file extension
-                string ext = System.IO.Path.GetExtension(_filePath).TrimStart('.').ToUpper();
+                // Check if it's a log file
+                bool isLogFile = (type == ToastType.Error || type == ToastType.Warning) &&
+                                 System.IO.Path.GetFileName(_filePath).StartsWith("SMSSearch_log", StringComparison.OrdinalIgnoreCase);
 
-                // Get the template parts to set text overlay
-                btnOpenFile.Loaded += (s, e) =>
+                if (isLogFile)
                 {
-                    if (btnOpenFile.Template.FindName("FileIconText", btnOpenFile) is System.Windows.Controls.TextBlock txt)
+                    btnOpenLog.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    btnOpenFile.Visibility = Visibility.Visible;
+
+                    // Determine file extension
+                    string ext = System.IO.Path.GetExtension(_filePath).TrimStart('.').ToUpper();
+
+                    // Get the template parts to set text overlay
+                    btnOpenFile.Loaded += (s, e) =>
                     {
-                        if (ext == "CSV" || ext == "JSON" || ext == "XML")
-                            txt.Text = ext;
-                    }
-                };
+                        if (btnOpenFile.Template.FindName("FileIconText", btnOpenFile) is System.Windows.Controls.TextBlock txt)
+                        {
+                            if (ext == "CSV" || ext == "JSON" || ext == "XML")
+                                txt.Text = ext;
+                        }
+                    };
+                }
             }
 
 
