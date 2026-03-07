@@ -97,6 +97,11 @@ namespace SMS_Search.ViewModels.Settings
         public ObservableSetting<string> Database { get; }
         public ObservableSetting<string> User { get; }
 
+        public string GetSavedDatabase()
+        {
+            return _repository.GetValue("CONNECTION", "DATABASE") ?? "";
+        }
+
         [ObservableProperty]
         private string _password = "";
 
