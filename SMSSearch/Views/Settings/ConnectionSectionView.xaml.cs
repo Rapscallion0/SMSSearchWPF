@@ -248,7 +248,15 @@ namespace SMS_Search.Views.Settings
                 string text = cmb.Text;
                 if (!string.IsNullOrEmpty(text) && !vm.Databases.Contains(text))
                 {
-                    cmb.Text = vm.Database.Value ?? "";
+                    string savedDb = vm.GetSavedDatabase();
+                    if (!string.IsNullOrEmpty(savedDb) && vm.Databases.Contains(savedDb))
+                    {
+                        cmb.Text = savedDb;
+                    }
+                    else
+                    {
+                        cmb.Text = "";
+                    }
                 }
             }
         }

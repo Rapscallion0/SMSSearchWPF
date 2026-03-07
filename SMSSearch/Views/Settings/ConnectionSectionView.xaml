@@ -91,7 +91,7 @@
                 <ctrl:SettingControl Header="Database" IsSaved="{Binding Database.IsSaved}">
                     <Grid>
                         <ComboBox Height="25" VerticalAlignment="Center"
-                                  ItemsSource="{Binding DatabasesView}" SelectedItem="{Binding Database.Value}"
+                                  ItemsSource="{Binding DatabasesView}" Text="{Binding Database.Value, UpdateSourceTrigger=PropertyChanged}"
                                   IsEnabled="{Binding IsServerInvalid, Converter={StaticResource InverseBooleanConverter}, FallbackValue=True}"
                                   IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True"
                                   VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling"
