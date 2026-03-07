@@ -111,9 +111,21 @@ namespace SMS_Search.ViewModels
             try
             {
                  var server = _config.GetValue("CONNECTION", "SERVER") ?? "";
-                 var user = _config.GetValue("CONNECTION", "SQLUSER") ?? "";
-                 var pass = _config.GetValue("CONNECTION", "SQLPASSWORD");
-                 string? decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+                 string user = "";
+                 string? decryptedPass = null;
+
+                 bool isWindowsAuth = true;
+                 if (bool.TryParse(_config.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b))
+                 {
+                     isWindowsAuth = b;
+                 }
+
+                 if (!isWindowsAuth)
+                 {
+                     user = _config.GetValue("CONNECTION", "SQLUSER") ?? "";
+                     var pass = _config.GetValue("CONNECTION", "SQLPASSWORD");
+                     decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+                 }
 
                  if (string.IsNullOrEmpty(server)) return;
 

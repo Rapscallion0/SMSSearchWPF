@@ -35,6 +35,9 @@ namespace SMS_Search.ViewModels.Settings
             _logger = logger;
             _dialogService = dialogService;
 
+            WindowsAuth = new ObservableSetting<bool>(repository, "CONNECTION", "WINDOWSAUTH",
+                bool.TryParse(repository.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b) ? b : true);
+
             Server = new ObservableSetting<string>(repository, "CONNECTION", "SERVER",
                 repository.GetValue("CONNECTION", "SERVER") ?? "",
                 validator: v =>
@@ -60,6 +63,14 @@ namespace SMS_Search.ViewModels.Settings
 
             LoadDatabasesCommand = new AsyncRelayCommand(LoadDatabasesAsync);
 
+            WindowsAuth.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == "Value")
+                {
+                    _ = LoadDatabasesCommand.ExecuteAsync(null);
+                    WeakReferenceMessenger.Default.Send(new ConnectionSettingsChangedMessage(true));
+                }
+            };
             Server.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == "Value")
@@ -93,6 +104,7 @@ namespace SMS_Search.ViewModels.Settings
         [ObservableProperty]
         private bool _isDatabaseInvalid;
 
+        public ObservableSetting<bool> WindowsAuth { get; }
         public ObservableSetting<string> Server { get; }
         public ObservableSetting<string> Database { get; }
         public ObservableSetting<string> User { get; }
