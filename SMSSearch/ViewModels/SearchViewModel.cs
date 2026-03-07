@@ -90,9 +90,22 @@ namespace SMS_Search.ViewModels
         {
             var server = _configService.GetValue("CONNECTION", "SERVER") ?? "";
             var database = _configService.GetValue("CONNECTION", "DATABASE") ?? "";
-            var user = _configService.GetValue("CONNECTION", "SQLUSER") ?? "";
-            var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
-            string? decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+
+            string user = "";
+            string? decryptedPass = null;
+
+            bool isWindowsAuth = true;
+            if (bool.TryParse(_configService.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b))
+            {
+                isWindowsAuth = b;
+            }
+
+            if (!isWindowsAuth)
+            {
+                user = _configService.GetValue("CONNECTION", "SQLUSER") ?? "";
+                var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
+                decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+            }
 
             // Fire and forget
             Task.Run(() => _intellisenseService.InitializeAsync(server, database, user, decryptedPass));
@@ -553,9 +566,21 @@ namespace SMS_Search.ViewModels
             {
                  var server = _configService.GetValue("CONNECTION", "SERVER") ?? "";
                  var database = _configService.GetValue("CONNECTION", "DATABASE") ?? "";
-                 var user = _configService.GetValue("CONNECTION", "SQLUSER") ?? "";
-                 var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
-                 string? decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+                 string user = "";
+                 string? decryptedPass = null;
+
+                 bool isWindowsAuth = true;
+                 if (bool.TryParse(_configService.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b))
+                 {
+                     isWindowsAuth = b;
+                 }
+
+                 if (!isWindowsAuth)
+                 {
+                     user = _configService.GetValue("CONNECTION", "SQLUSER") ?? "";
+                     var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
+                     decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+                 }
 
                  var tables = await _repository.GetTablesAsync(server, database, user, decryptedPass);
                  Tables.Clear();

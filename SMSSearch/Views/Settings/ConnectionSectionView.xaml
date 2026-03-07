@@ -81,6 +81,10 @@
 
         <GroupBox Header="Database Connection">
             <StackPanel Margin="5">
+                <ctrl:SettingControl Header="Windows Authentication" IsSaved="{Binding WindowsAuth.IsSaved}">
+                    <CheckBox IsChecked="{Binding WindowsAuth.Value, Mode=TwoWay}" VerticalAlignment="Center" />
+                </ctrl:SettingControl>
+
                 <ctrl:SettingControl Header="Server" IsSaved="{Binding Server.IsSaved}">
                     <Grid>
                         <ctrl:ClearableTextBox Text="{Binding Server.Value, UpdateSourceTrigger=LostFocus}" />
@@ -102,15 +106,13 @@
                     </Grid>
                 </ctrl:SettingControl>
 
-                <ctrl:SettingControl Header="SQL User" IsSaved="{Binding User.IsSaved}">
+                <ctrl:SettingControl Header="SQL User" IsSaved="{Binding User.IsSaved}" IsEnabled="{Binding WindowsAuth.Value, Converter={StaticResource InverseBooleanConverter}}">
                     <ctrl:ClearableTextBox Text="{Binding User.Value, UpdateSourceTrigger=PropertyChanged}" />
                 </ctrl:SettingControl>
 
-                <ctrl:SettingControl Header="SQL Password" IsSaved="{Binding IsPasswordSaved}">
+                <ctrl:SettingControl Header="SQL Password" IsSaved="{Binding IsPasswordSaved}" IsEnabled="{Binding WindowsAuth.Value, Converter={StaticResource InverseBooleanConverter}}">
                     <StackPanel>
-                        <ctrl:ClearablePasswordBox Password="{Binding Password, Mode=TwoWay}" />
-                        <TextBlock Text="Leave blank to keep existing password."
-                                   FontStyle="Italic" Foreground="Gray" Margin="0,5,0,0" FontSize="11"/>
+                        <ctrl:ClearablePasswordBox Password="{Binding Password, Mode=TwoWay}" ShowEyeIcon="{Binding IsEditingPassword}" />
                     </StackPanel>
                 </ctrl:SettingControl>
 
