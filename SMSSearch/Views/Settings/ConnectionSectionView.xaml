@@ -81,10 +81,6 @@
 
         <GroupBox Header="Database Connection">
             <StackPanel Margin="5">
-                <ctrl:SettingControl Header="Windows Authentication" IsSaved="{Binding WindowsAuth.IsSaved}">
-                    <CheckBox IsChecked="{Binding WindowsAuth.Value, Mode=TwoWay}" VerticalAlignment="Center" />
-                </ctrl:SettingControl>
-
                 <ctrl:SettingControl Header="Server" IsSaved="{Binding Server.IsSaved}">
                     <Grid>
                         <ctrl:ClearableTextBox Text="{Binding Server.Value, UpdateSourceTrigger=LostFocus}" />
@@ -104,6 +100,10 @@
                         </ComboBox>
                         <Border Style="{StaticResource InvalidDatabaseBorderStyle}" />
                     </Grid>
+                </ctrl:SettingControl>
+
+                <ctrl:SettingControl Header="Windows Authentication" IsSaved="{Binding WindowsAuth.IsSaved}">
+                    <CheckBox IsChecked="{Binding WindowsAuth.Value, Mode=TwoWay}" VerticalAlignment="Center" />
                 </ctrl:SettingControl>
 
                 <ctrl:SettingControl Header="SQL User" IsSaved="{Binding User.IsSaved}" IsEnabled="{Binding WindowsAuth.Value, Converter={StaticResource InverseBooleanConverter}}">
