@@ -190,9 +190,9 @@ namespace SMS_Search.ViewModels.Settings
             var server = Server.Value ?? "";
             try
             {
-                 var user = User.Value ?? "";
-                 var pass = _repository.GetValue("CONNECTION", "SQLPASSWORD");
-                 string? decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+                 var user = WindowsAuth.Value ? null : (User.Value ?? "");
+                 var pass = WindowsAuth.Value ? null : _repository.GetValue("CONNECTION", "SQLPASSWORD");
+                 string? decryptedPass = (!WindowsAuth.Value && !string.IsNullOrEmpty(pass)) ? GeneralUtils.Decrypt(pass) : null;
 
                  if (string.IsNullOrEmpty(server))
                  {

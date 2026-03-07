@@ -21,9 +21,19 @@
         <!-- Header -->
         <TextBlock Text="{Binding Header, RelativeSource={RelativeSource AncestorType=local:SettingControl}}"
                    FontWeight="SemiBold"
-                   Foreground="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"
                    Margin="0,0,0,5"
-                   Visibility="{Binding Header, RelativeSource={RelativeSource AncestorType=local:SettingControl}, Converter={StaticResource StringToVisibilityConverter}, FallbackValue=Collapsed}" />
+                   Visibility="{Binding Header, RelativeSource={RelativeSource AncestorType=local:SettingControl}, Converter={StaticResource StringToVisibilityConverter}, FallbackValue=Collapsed}">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=local:SettingControl}}" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
