@@ -457,6 +457,53 @@ namespace SMS_Search.ViewModels
                  }
              }
 
+             // Apply Formatting if enabled
+             if (_configService.GetValue("CLEAN_SQL", "BEAUTIFY_SQL") != "0")
+             {
+                 try
+                 {
+                     int indentSpaces = int.TryParse(_configService.GetValue("CLEAN_SQL", "INDENT_STRING_SPACES"), out int val) ? val : 2;
+                     string indentStr = new string(' ', indentSpaces);
+
+                     // TSqlStandardFormatterOptions doesn't seem to be public or easily configurable through a properties object in this version
+                     // However, SqlFormattingManager takes several parameters in its constructor.
+                     // The typical constructor for SqlFormattingManager is (bool expandCommaLists, bool expandBooleanExpressions, bool expandCaseExpressions, bool expandBetweenConditions, bool expandInLists, bool breakJoinOnSections, bool uppercaseKeywords, bool colorize, string indentString, bool keywordStandardization)
+
+                     bool expandCommaLists = _configService.GetValue("CLEAN_SQL", "EXPAND_COMMA_LISTS") != null ? _configService.GetValue("CLEAN_SQL", "EXPAND_COMMA_LISTS") == "1" : true;
+                     bool expandBooleanExpressions = _configService.GetValue("CLEAN_SQL", "EXPAND_BOOLEAN_EXPRESSIONS") != null ? _configService.GetValue("CLEAN_SQL", "EXPAND_BOOLEAN_EXPRESSIONS") == "1" : true;
+                     bool expandCaseExpressions = _configService.GetValue("CLEAN_SQL", "EXPAND_CASE_EXPRESSIONS") != null ? _configService.GetValue("CLEAN_SQL", "EXPAND_CASE_EXPRESSIONS") == "1" : true;
+                     bool expandBetweenConditions = _configService.GetValue("CLEAN_SQL", "EXPAND_BETWEEN_CONDITIONS") != null ? _configService.GetValue("CLEAN_SQL", "EXPAND_BETWEEN_CONDITIONS") == "1" : true;
+                     bool expandInLists = _configService.GetValue("CLEAN_SQL", "EXPAND_IN_LISTS") != null ? _configService.GetValue("CLEAN_SQL", "EXPAND_IN_LISTS") == "1" : true;
+                     bool breakJoinOnSections = _configService.GetValue("CLEAN_SQL", "BREAK_JOIN_ON_SECTIONS") != null ? _configService.GetValue("CLEAN_SQL", "BREAK_JOIN_ON_SECTIONS") == "1" : false;
+                     bool uppercaseKeywords = _configService.GetValue("CLEAN_SQL", "UPPERCASE_KEYWORDS") != null ? _configService.GetValue("CLEAN_SQL", "UPPERCASE_KEYWORDS") == "1" : true;
+                     bool keywordStandardization = _configService.GetValue("CLEAN_SQL", "KEYWORD_STANDARDIZATION") != null ? _configService.GetValue("CLEAN_SQL", "KEYWORD_STANDARDIZATION") == "1" : false;
+
+                     // Ensure we are passing correct types. We'll use the constructor parameters
+                     var treeFormatter = new PoorMansTSqlFormatterLib.Formatters.TSqlStandardFormatter(
+                         indentString: indentStr,
+                         spacesPerTab: indentSpaces,
+                         maxLineWidth: 999,
+                         expandCommaLists: expandCommaLists,
+                         trailingCommas: false,
+                         spaceAfterExpandedComma: true,
+                         expandBooleanExpressions: expandBooleanExpressions,
+                         expandCaseStatements: expandCaseExpressions,
+                         expandBetweenConditions: expandBetweenConditions,
+                         breakJoinOnSections: breakJoinOnSections,
+                         uppercaseKeywords: uppercaseKeywords,
+                         htmlColoring: false,
+                         keywordStandardization: keywordStandardization
+                     );
+                     var formatter = new PoorMansTSqlFormatterLib.SqlFormattingManager(treeFormatter);
+
+                     cleaned = formatter.Format(cleaned);
+                 }
+                 catch (System.Exception ex)
+                 {
+                     _logger.LogError("Failed to format SQL using PoorMansTSqlFormatter", ex);
+                 }
+             }
+
              if (SelectedMode == SearchMode.Function) FunctionSqlText = cleaned;
              else if (SelectedMode == SearchMode.Totalizer) TotalizerSqlText = cleaned;
              else if (SelectedMode == SearchMode.Field) FieldSqlText = cleaned;

@@ -68,14 +68,60 @@
         </Style>
     </UserControl.Resources>
 
-    <GroupBox Header="Text Cleaning Rules" Margin="0,0,0,20">
-        <StackPanel Margin="5">
-            <DockPanel LastChildFill="False" Margin="0,0,0,10">
-                 <StackPanel Orientation="Horizontal" Visibility="{Binding IsSaving, Converter={StaticResource BooleanToVisibilityConverter}}">
-                      <TextBlock Text="Saving..." Foreground="Blue" VerticalAlignment="Center" />
-                 </StackPanel>
-                 <Button DockPanel.Dock="Right" Content="Restore Defaults" Command="{Binding RestoreDefaultsCommand}" Padding="10,5" />
-            </DockPanel>
+    <StackPanel>
+        <GroupBox Header="SQL Formatting Options" Margin="0,0,0,20">
+            <StackPanel Margin="5">
+                <ctrl:SettingControl Header="Beautify SQL" IsSaved="{Binding BeautifySql.IsSaved}">
+                    <CheckBox Content="Automatically format and beautify SQL queries after cleaning" IsChecked="{Binding BeautifySql.Value}" />
+                </ctrl:SettingControl>
+
+                <StackPanel Visibility="{Binding BeautifySql.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ctrl:SettingControl Header="Indent Spaces" IsSaved="{Binding IndentStringSpaces.IsSaved}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox Text="{Binding IndentStringSpaces.Value, UpdateSourceTrigger=LostFocus}" Width="60" VerticalContentAlignment="Center" />
+                            <TextBlock Text="Number of spaces to use for indentation" Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" />
+                        </StackPanel>
+                    </ctrl:SettingControl>
+
+                    <ctrl:SettingControl Header="Expand Comma Lists" IsSaved="{Binding ExpandCommaLists.IsSaved}">
+                        <CheckBox Content="Place comma-separated items on new lines" IsChecked="{Binding ExpandCommaLists.Value}" />
+                    </ctrl:SettingControl>
+
+                    <ctrl:SettingControl Header="Expand Boolean Expressions" IsSaved="{Binding ExpandBooleanExpressions.IsSaved}">
+                        <CheckBox Content="Place boolean expressions (AND/OR) on new lines" IsChecked="{Binding ExpandBooleanExpressions.Value}" />
+                    </ctrl:SettingControl>
+
+                    <ctrl:SettingControl Header="Expand CASE Expressions" IsSaved="{Binding ExpandCaseExpressions.IsSaved}">
+                        <CheckBox Content="Place WHEN/THEN clauses in CASE statements on new lines" IsChecked="{Binding ExpandCaseExpressions.Value}" />
+                    </ctrl:SettingControl>
+
+                    <ctrl:SettingControl Header="Expand BETWEEN Conditions" IsSaved="{Binding ExpandBetweenConditions.IsSaved}">
+                        <CheckBox Content="Place AND clauses in BETWEEN conditions on new lines" IsChecked="{Binding ExpandBetweenConditions.Value}" />
+                    </ctrl:SettingControl>
+
+                    <ctrl:SettingControl Header="Break Join ON Sections" IsSaved="{Binding BreakJoinOnSections.IsSaved}">
+                        <CheckBox Content="Place ON conditions for JOINs on new lines" IsChecked="{Binding BreakJoinOnSections.Value}" />
+                    </ctrl:SettingControl>
+
+                    <ctrl:SettingControl Header="Uppercase Keywords" IsSaved="{Binding UppercaseKeywords.IsSaved}">
+                        <CheckBox Content="Convert SQL keywords to uppercase" IsChecked="{Binding UppercaseKeywords.Value}" />
+                    </ctrl:SettingControl>
+
+                    <ctrl:SettingControl Header="Keyword Standardization" IsSaved="{Binding EnableKeywordStandardization.IsSaved}">
+                        <CheckBox Content="Standardize SQL keywords (e.g. converting LEFT JOIN to LEFT OUTER JOIN)" IsChecked="{Binding EnableKeywordStandardization.Value}" />
+                    </ctrl:SettingControl>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Text Cleaning Rules" Margin="0,0,0,20">
+            <StackPanel Margin="5">
+                <DockPanel LastChildFill="False" Margin="0,0,0,10">
+                     <StackPanel Orientation="Horizontal" Visibility="{Binding IsSaving, Converter={StaticResource BooleanToVisibilityConverter}}">
+                          <TextBlock Text="Saving..." Foreground="Blue" VerticalAlignment="Center" />
+                     </StackPanel>
+                     <Button DockPanel.Dock="Right" Content="Restore Defaults" Command="{Binding RestoreDefaultsCommand}" Padding="10,5" />
+                </DockPanel>
 
              <DataGrid ItemsSource="{Binding Rules}" SelectedItem="{Binding SelectedRule, Converter={StaticResource IgnoreNewItemPlaceholderConverter}}"
                        AutoGenerateColumns="False"
@@ -167,6 +213,7 @@
                        </DataGridTemplateColumn>
                   </DataGrid.Columns>
              </DataGrid>
-        </StackPanel>
-    </GroupBox>
+            </StackPanel>
+        </GroupBox>
+    </StackPanel>
 </UserControl>
