@@ -116,14 +116,6 @@
             </StackPanel>
         </GroupBox>
 
-        <GroupBox Header="Behavior" Margin="0,0,0,10">
-             <StackPanel Margin="5">
-                 <ctrl:SettingControl Header="Build SQL Action" IsSaved="{Binding SelectCustomSqlOnBuild.IsSaved}">
-                    <CheckBox IsChecked="{Binding SelectCustomSqlOnBuild.Value}" Content="Switch to Custom SQL tab when building query" />
-                </ctrl:SettingControl>
-             </StackPanel>
-        </GroupBox>
-
         <GroupBox Header="Appearance" Margin="0,0,0,10">
             <StackPanel Margin="5">
                 <ctrl:SettingControl Header="Font Family" IsSaved="{Binding SqlFontFamily.IsSaved}">

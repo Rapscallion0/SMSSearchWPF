@@ -25,6 +25,7 @@ namespace SMS_Search.ViewModels.Settings
         public ModernSettingsViewModel(
             GeneralSectionViewModel general,
             ConnectionSectionViewModel connection,
+            SearchSectionViewModel search,
             ResultsSectionViewModel results,
             EditorSectionViewModel editor,
             CleanSqlSectionViewModel cleanSql,
@@ -35,6 +36,7 @@ namespace SMS_Search.ViewModels.Settings
             {
                 general,
                 connection,
+                search,
                 results,
                 editor,
                 cleanSql,
