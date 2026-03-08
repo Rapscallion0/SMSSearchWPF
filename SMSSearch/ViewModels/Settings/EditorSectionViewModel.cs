@@ -141,13 +141,6 @@ namespace SMS_Search.ViewModels.Settings
                 }
             };
 
-            // Select Custom SQL on Build
-            var selectCustomSqlStr = repository.GetValue("GENERAL", "SELECT_CUSTOM_SQL_ON_BUILD");
-            SelectCustomSqlOnBuild = new ObservableSetting<bool>(
-                repository, "GENERAL", "SELECT_CUSTOM_SQL_ON_BUILD",
-                selectCustomSqlStr != "0", // Default true
-                v => v ? "1" : "0");
-
             // Sql Font Family
             string? font = repository.GetValue("GENERAL", "SQL_FONT_FAMILY");
             if (string.IsNullOrEmpty(font)) font = "Consolas";
@@ -200,7 +193,6 @@ namespace SMS_Search.ViewModels.Settings
         public ObservableSetting<bool> FunctionalIntellisenseAuto { get; }
         public ObservableSetting<bool> FullIntellisenseAuto { get; }
 
-        public ObservableSetting<bool> SelectCustomSqlOnBuild { get; }
         public ObservableSetting<string> SqlFontFamily { get; }
         public ObservableSetting<int> SqlFontSize { get; }
 
