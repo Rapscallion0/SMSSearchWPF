@@ -495,7 +495,7 @@ namespace SMS_Search.ViewModels
                     spacesPerTab: indentSpaces,
                     maxLineWidth: 999,
                     expandCommaLists: expandCommaLists,
-                    trailingCommas: false,
+                    trailingCommas: expandCommaLists,
                     spaceAfterExpandedComma: true,
                     expandBooleanExpressions: expandBooleanExpressions,
                     expandCaseStatements: expandCaseExpressions,
