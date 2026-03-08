@@ -219,7 +219,7 @@ namespace SMS_Search.Views
             }
         }
 
-        private void FocusAndSelectSql(SMS_Search.Views.Controls.SqlEditor editor, bool force = false, bool selectAll = true)
+        private void FocusAndSelectSql(SMS_Search.Views.Controls.SqlEditor editor, bool force = false, bool selectAll = false)
         {
             if (editor != null && editor.Visibility == System.Windows.Visibility.Visible)
             {
