@@ -61,31 +61,31 @@ namespace SMS_Search.ViewModels.Settings
         private bool _isSaving;
 
         [ObservableProperty]
-        private ObservableSetting<bool> _beautifySql;
+        private ObservableSetting<bool> _beautifySql = null!;
 
         [ObservableProperty]
-        private ObservableSetting<int> _indentStringSpaces;
+        private ObservableSetting<int> _indentStringSpaces = null!;
 
         [ObservableProperty]
-        private ObservableSetting<bool> _expandCommaLists;
+        private ObservableSetting<bool> _expandCommaLists = null!;
 
         [ObservableProperty]
-        private ObservableSetting<bool> _expandBooleanExpressions;
+        private ObservableSetting<bool> _expandBooleanExpressions = null!;
 
         [ObservableProperty]
-        private ObservableSetting<bool> _expandCaseExpressions;
+        private ObservableSetting<bool> _expandCaseExpressions = null!;
 
         [ObservableProperty]
-        private ObservableSetting<bool> _expandBetweenConditions;
+        private ObservableSetting<bool> _expandBetweenConditions = null!;
 
         [ObservableProperty]
-        private ObservableSetting<bool> _breakJoinOnSections;
+        private ObservableSetting<bool> _breakJoinOnSections = null!;
 
         [ObservableProperty]
-        private ObservableSetting<bool> _uppercaseKeywords;
+        private ObservableSetting<bool> _uppercaseKeywords = null!;
 
         [ObservableProperty]
-        private ObservableSetting<bool> _enableKeywordStandardization;
+        private ObservableSetting<bool> _enableKeywordStandardization = null!;
 
         public CleanSqlSectionViewModel(ISettingsRepository repository, ILoggerService logger)
         {
