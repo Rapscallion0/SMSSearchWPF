@@ -60,6 +60,33 @@ namespace SMS_Search.ViewModels.Settings
         [ObservableProperty]
         private bool _isSaving;
 
+        [ObservableProperty]
+        private ObservableSetting<bool> _beautifySql;
+
+        [ObservableProperty]
+        private ObservableSetting<int> _indentStringSpaces;
+
+        [ObservableProperty]
+        private ObservableSetting<bool> _expandCommaLists;
+
+        [ObservableProperty]
+        private ObservableSetting<bool> _expandBooleanExpressions;
+
+        [ObservableProperty]
+        private ObservableSetting<bool> _expandCaseExpressions;
+
+        [ObservableProperty]
+        private ObservableSetting<bool> _expandBetweenConditions;
+
+        [ObservableProperty]
+        private ObservableSetting<bool> _breakJoinOnSections;
+
+        [ObservableProperty]
+        private ObservableSetting<bool> _uppercaseKeywords;
+
+        [ObservableProperty]
+        private ObservableSetting<bool> _enableKeywordStandardization;
+
         public CleanSqlSectionViewModel(ISettingsRepository repository, ILoggerService logger)
         {
             _repository = repository;
@@ -75,6 +102,34 @@ namespace SMS_Search.ViewModels.Settings
             _isLoading = true;
             try
             {
+                // Formatter Options
+                bool beautifyDefault = _repository.GetValue("CLEAN_SQL", "BEAUTIFY_SQL") != "0"; // Default true
+                BeautifySql = new ObservableSetting<bool>(_repository, "CLEAN_SQL", "BEAUTIFY_SQL", beautifyDefault, v => v ? "1" : "0");
+
+                int indentSpacesDefault = int.TryParse(_repository.GetValue("CLEAN_SQL", "INDENT_STRING_SPACES"), out int val) ? val : 2;
+                IndentStringSpaces = new ObservableSetting<int>(_repository, "CLEAN_SQL", "INDENT_STRING_SPACES", indentSpacesDefault, v => v.ToString(), v => v >= 0);
+
+                bool expandCommaListsDefault = _repository.GetValue("CLEAN_SQL", "EXPAND_COMMA_LISTS") != null ? _repository.GetValue("CLEAN_SQL", "EXPAND_COMMA_LISTS") == "1" : true;
+                ExpandCommaLists = new ObservableSetting<bool>(_repository, "CLEAN_SQL", "EXPAND_COMMA_LISTS", expandCommaListsDefault, v => v ? "1" : "0");
+
+                bool expandBooleanExpressionsDefault = _repository.GetValue("CLEAN_SQL", "EXPAND_BOOLEAN_EXPRESSIONS") != null ? _repository.GetValue("CLEAN_SQL", "EXPAND_BOOLEAN_EXPRESSIONS") == "1" : true;
+                ExpandBooleanExpressions = new ObservableSetting<bool>(_repository, "CLEAN_SQL", "EXPAND_BOOLEAN_EXPRESSIONS", expandBooleanExpressionsDefault, v => v ? "1" : "0");
+
+                bool expandCaseExpressionsDefault = _repository.GetValue("CLEAN_SQL", "EXPAND_CASE_EXPRESSIONS") != null ? _repository.GetValue("CLEAN_SQL", "EXPAND_CASE_EXPRESSIONS") == "1" : true;
+                ExpandCaseExpressions = new ObservableSetting<bool>(_repository, "CLEAN_SQL", "EXPAND_CASE_EXPRESSIONS", expandCaseExpressionsDefault, v => v ? "1" : "0");
+
+                bool expandBetweenConditionsDefault = _repository.GetValue("CLEAN_SQL", "EXPAND_BETWEEN_CONDITIONS") != null ? _repository.GetValue("CLEAN_SQL", "EXPAND_BETWEEN_CONDITIONS") == "1" : true;
+                ExpandBetweenConditions = new ObservableSetting<bool>(_repository, "CLEAN_SQL", "EXPAND_BETWEEN_CONDITIONS", expandBetweenConditionsDefault, v => v ? "1" : "0");
+
+                bool breakJoinOnSectionsDefault = _repository.GetValue("CLEAN_SQL", "BREAK_JOIN_ON_SECTIONS") != null ? _repository.GetValue("CLEAN_SQL", "BREAK_JOIN_ON_SECTIONS") == "1" : false;
+                BreakJoinOnSections = new ObservableSetting<bool>(_repository, "CLEAN_SQL", "BREAK_JOIN_ON_SECTIONS", breakJoinOnSectionsDefault, v => v ? "1" : "0");
+
+                bool uppercaseKeywordsDefault = _repository.GetValue("CLEAN_SQL", "UPPERCASE_KEYWORDS") != null ? _repository.GetValue("CLEAN_SQL", "UPPERCASE_KEYWORDS") == "1" : true;
+                UppercaseKeywords = new ObservableSetting<bool>(_repository, "CLEAN_SQL", "UPPERCASE_KEYWORDS", uppercaseKeywordsDefault, v => v ? "1" : "0");
+
+                bool keywordStandardizationDefault = _repository.GetValue("CLEAN_SQL", "KEYWORD_STANDARDIZATION") != null ? _repository.GetValue("CLEAN_SQL", "KEYWORD_STANDARDIZATION") == "1" : false;
+                EnableKeywordStandardization = new ObservableSetting<bool>(_repository, "CLEAN_SQL", "KEYWORD_STANDARDIZATION", keywordStandardizationDefault, v => v ? "1" : "0");
+
                 Rules.Clear();
                 string? countStr = _repository.GetValue("CLEAN_SQL", "Count");
                 if (int.TryParse(countStr, out int count) && count > 0)
@@ -254,6 +309,11 @@ namespace SMS_Search.ViewModels.Settings
              if ("Rule".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Pattern".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Replace".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Beautify".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Uppercase".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Keyword".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Expand".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Indent".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
 
              return false;
         }
