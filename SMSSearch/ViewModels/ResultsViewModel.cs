@@ -47,6 +47,11 @@ namespace SMS_Search.ViewModels
             UpdateFilterNavigationVisibility();
             UpdateHighlightColor(_configService.GetValue("GENERAL", "HIGHLIGHT_COLOR"));
 
+            if (int.TryParse(_configService.GetValue("GENERAL", "HORIZONTAL_SCROLL_SPEED"), out int speed))
+            {
+                _horizontalScrollSpeed = speed;
+            }
+
             string fctFields = _configService.GetValue("QUERY", "FUNCTION") ?? "";
             string tlzFields = _configService.GetValue("QUERY", "TOTALIZER") ?? "";
             _queryBuilder = new QueryBuilder(fctFields, tlzFields);
@@ -91,7 +96,16 @@ namespace SMS_Search.ViewModels
                     ApplyFilterCommand.Execute(FilterText);
                 }
             });
+
+            WeakReferenceMessenger.Default.Register<HorizontalScrollSpeedChangedMessage>(this, (r, m) =>
+            {
+                _horizontalScrollSpeed = m.Speed;
+                OnPropertyChanged(nameof(HorizontalScrollSpeed));
+            });
         }
+
+        public int HorizontalScrollSpeed => _horizontalScrollSpeed;
+        private int _horizontalScrollSpeed = 16;
 
         [ObservableProperty]
         private IList? _searchResults;
