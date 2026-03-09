@@ -11,7 +11,7 @@ using System.Windows.Data;
 
 namespace SMS_Search.ViewModels
 {
-    public partial class SearchViewModel : ObservableObject
+    public partial class SearchViewModel : ObservableObject, IDisposable
     {
         private readonly IDataRepository _repository;
         private readonly IDialogService _dialogService;
@@ -84,6 +84,11 @@ namespace SMS_Search.ViewModels
             InitializeIntellisense();
 
             TablesView = CollectionViewSource.GetDefaultView(Tables);
+        }
+
+        public void Dispose()
+        {
+            WeakReferenceMessenger.Default.UnregisterAll(this);
         }
 
         private void InitializeIntellisense()

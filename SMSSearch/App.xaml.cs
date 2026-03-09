@@ -71,6 +71,24 @@ namespace SMS_Search
             return services.BuildServiceProvider();
         }
 
+        protected override void OnExit(ExitEventArgs e)
+        {
+            try
+            {
+                var logger = Services.GetService<ILoggerService>();
+                logger?.Dispose();
+
+                var hotkeyService = Services.GetService<IHotkeyService>();
+                if (hotkeyService is IDisposable disposableHotkey)
+                {
+                    disposableHotkey.Dispose();
+                }
+            }
+            catch { }
+
+            base.OnExit(e);
+        }
+
         protected override async void OnStartup(StartupEventArgs e)
         {
             try

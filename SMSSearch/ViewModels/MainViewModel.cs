@@ -15,7 +15,7 @@ using SMS_Search.Utils;
 
 namespace SMS_Search.ViewModels
 {
-    public partial class MainViewModel : ObservableObject
+    public partial class MainViewModel : ObservableObject, IDisposable
     {
         private readonly IConfigService _config;
         private readonly IDialogService _dialogService;
@@ -63,6 +63,13 @@ namespace SMS_Search.ViewModels
             {
                 _ = LoadDatabasesCommand.ExecuteAsync(null);
             });
+        }
+
+        public void Dispose()
+        {
+            WeakReferenceMessenger.Default.UnregisterAll(this);
+            if (SearchVm is IDisposable searchDisposable) searchDisposable.Dispose();
+            if (ResultsVm is IDisposable resultsDisposable) resultsDisposable.Dispose();
         }
 
         public string Title { get; }

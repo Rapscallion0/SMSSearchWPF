@@ -251,7 +251,8 @@ namespace SMS_Search.Data
             var conn = new SqlConnection(GetConnectionString(server, database, user, pass));
             await conn.OpenAsync(cancellationToken);
 
-            using (var cmd = new SqlCommand(sql, conn))
+            var cmd = new SqlCommand(sql, conn);
+            try
             {
                 if (parameters is DynamicParameters dp)
                 {
@@ -263,6 +264,12 @@ namespace SMS_Search.Data
                 }
 
                 return await cmd.ExecuteReaderAsync(CommandBehavior.CloseConnection, cancellationToken);
+            }
+            catch
+            {
+                cmd.Dispose();
+                conn.Dispose();
+                throw;
             }
         }
 
