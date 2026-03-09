@@ -452,12 +452,20 @@ namespace SMS_Search.Data
              if (_server == null || _database == null) return 0;
              int rowCount = 0;
 
+             int exportRecordCount = 0;
+             if (_baseSql != null)
+             {
+                 exportRecordCount = await _repo.GetQueryCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, cancellationToken);
+             }
+
              using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
              {
                  using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None))
                  using (var writer = new Utf8JsonWriter(fs, new JsonWriterOptions { Indented = true }))
                  {
                      writer.WriteStartObject();
+
+                     writer.WriteNumber("RecordCount", exportRecordCount);
 
                      if (criteria.Mode == SearchMode.Function)
                      {
@@ -524,8 +532,14 @@ namespace SMS_Search.Data
              if (_server == null || _database == null) return 0;
              int rowCount = 0;
 
+             int exportRecordCount = 0;
+             if (_baseSql != null)
+             {
+                 exportRecordCount = await _repo.GetQueryCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, cancellationToken);
+             }
+
              string rootElement = "SearchResults";
-             string rootAttr = "";
+             string rootAttr = $" RecordCount=\"{exportRecordCount}\"";
 
              if (criteria.Mode == SearchMode.Function)
              {
@@ -661,6 +675,8 @@ namespace SMS_Search.Data
                  {
                      writer.WriteStartObject();
 
+                     writer.WriteNumber("RecordCount", rows.Count);
+
                      if (criteria.Mode == SearchMode.Function)
                      {
                          writer.WriteString("SearchType", "Function");
@@ -726,7 +742,7 @@ namespace SMS_Search.Data
              await Task.Run(() =>
              {
                  string rootElement = "SearchResults";
-                 string rootAttr = "";
+                 string rootAttr = $" RecordCount=\"{rows.Count}\"";
 
                  if (criteria.Mode == SearchMode.Function)
                  {
