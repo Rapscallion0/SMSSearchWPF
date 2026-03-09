@@ -645,6 +645,80 @@ namespace SMS_Search.Data
             }
         }
 
+        public async Task<List<string>> GetAllMatchesAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string searchText, Dictionary<string, string?> columnTypes, CancellationToken cancellationToken = default)
+        {
+            var results = new List<string>();
+            if (string.IsNullOrWhiteSpace(searchText)) return results;
+
+            string finalSql = ApplyFilter(sql, filterClause);
+
+            using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
+            {
+                await conn.OpenAsync(cancellationToken);
+                var cmd = new SqlCommand(finalSql, conn);
+                if (parameters is DynamicParameters dp)
+                {
+                    foreach (var name in dp.ParameterNames)
+                    {
+                        var val = dp.Get<object>(name);
+                        cmd.Parameters.AddWithValue(name, val ?? DBNull.Value);
+                    }
+                }
+
+                try
+                {
+                    using (var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess, cancellationToken))
+                    {
+                        while (await reader.ReadAsync(cancellationToken))
+                        {
+                            for (int i = 0; i < reader.FieldCount; i++)
+                            {
+                                string colName = reader.GetName(i);
+                                if (!columnTypes.ContainsKey(colName)) continue;
+
+                                var val = reader.GetValue(i);
+                                if (val != DBNull.Value)
+                                {
+                                    string sVal = val.ToString() ?? "";
+                                    if (sVal.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0)
+                                    {
+                                        results.Add(sVal);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (SqlException ex) when (ex.Number == 1033)
+                {
+                    cmd.CommandText = $"SELECT * FROM ({finalSql} OFFSET 0 ROWS) AS _Base";
+                    using (var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess, cancellationToken))
+                    {
+                        while (await reader.ReadAsync(cancellationToken))
+                        {
+                            for (int i = 0; i < reader.FieldCount; i++)
+                            {
+                                string colName = reader.GetName(i);
+                                if (!columnTypes.ContainsKey(colName)) continue;
+
+                                var val = reader.GetValue(i);
+                                if (val != DBNull.Value)
+                                {
+                                    string sVal = val.ToString() ?? "";
+                                    if (sVal.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0)
+                                    {
+                                        results.Add(sVal);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return results;
+        }
+
         public async Task<int> GetMatchRowIndexAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string searchText, Dictionary<string, string?> columnTypes, int startRowIndex, string? sortCol, string? sortDir, bool forward, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(searchText)) return -1;
