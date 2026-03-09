@@ -89,6 +89,24 @@ namespace SMS_Search.ViewModels.Settings
                 repository, "GENERAL", "AUTO_RESIZE_LIMIT",
                 limit,
                 v => v.ToString());
+
+            // Horizontal Scroll Speed
+            int scrollSpeed = 16;
+            if (int.TryParse(repository.GetValue("GENERAL", "HORIZONTAL_SCROLL_SPEED"), out int s))
+                scrollSpeed = s;
+
+            HorizontalScrollSpeed = new ObservableSetting<int>(
+                repository, "GENERAL", "HORIZONTAL_SCROLL_SPEED",
+                scrollSpeed,
+                v => v.ToString());
+
+            HorizontalScrollSpeed.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<int>.Value))
+                {
+                    WeakReferenceMessenger.Default.Send(new HorizontalScrollSpeedChangedMessage(HorizontalScrollSpeed.Value));
+                }
+            };
         }
 
         private void SendHighlightMessage()
@@ -113,6 +131,7 @@ namespace SMS_Search.ViewModels.Settings
         public ObservableSetting<bool> ResizeColumns { get; }
         public ObservableSetting<bool> DescriptionColumns { get; }
         public ObservableSetting<int> AutoResizeLimit { get; }
+        public ObservableSetting<int> HorizontalScrollSpeed { get; }
 
         public override bool Matches(string query)
         {
@@ -123,6 +142,7 @@ namespace SMS_Search.ViewModels.Settings
              if ("Color".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Resize".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Row".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Scroll".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
 
              return false;
         }

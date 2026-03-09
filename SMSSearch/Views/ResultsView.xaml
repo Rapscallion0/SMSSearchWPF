@@ -120,7 +120,8 @@
                   VirtualizingStackPanel.CacheLengthUnit="Item"
                   SelectionChanged="resultsGrid_SelectionChanged"
                   CurrentCellChanged="resultsGrid_CurrentCellChanged" Sorting="resultsGrid_Sorting"
-                  LoadingRow="resultsGrid_LoadingRow">
+                  LoadingRow="resultsGrid_LoadingRow"
+                  PreviewMouseWheel="resultsGrid_PreviewMouseWheel">
 
             <DataGrid.ColumnHeaderStyle>
                 <Style TargetType="DataGridColumnHeader">

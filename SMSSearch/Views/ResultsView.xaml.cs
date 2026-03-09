@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Threading;
+using System.Windows.Interop;
 using SMS_Search.ViewModels;
 using SMS_Search.Data;
 using SMS_Search.Services;
@@ -50,6 +51,10 @@ namespace SMS_Search.Views
         public IRelayCommand CopyRowCommand { get; }
         public IRelayCommand CopyInsertCommand { get; }
 
+        private const int WM_MOUSEHWHEEL = 0x020E;
+        private HwndSource? _hwndSource;
+        private ScrollViewer? _cachedScrollViewer;
+
         public ResultsView()
         {
             InitializeComponent();
@@ -71,6 +76,59 @@ namespace SMS_Search.Views
 
             this.DataContextChanged += ResultsView_DataContextChanged;
             resultsGrid.AutoGeneratingColumn += resultsGrid_AutoGeneratingColumn;
+            this.Loaded += ResultsView_Loaded;
+            this.Unloaded += ResultsView_Unloaded;
+        }
+
+        private void ResultsView_Loaded(object sender, RoutedEventArgs e)
+        {
+            _hwndSource = PresentationSource.FromVisual(this) as HwndSource;
+            _hwndSource?.AddHook(WndProc);
+        }
+
+        private void ResultsView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            _hwndSource?.RemoveHook(WndProc);
+            _hwndSource = null;
+        }
+
+        private ScrollViewer? GetCachedScrollViewer()
+        {
+            if (_cachedScrollViewer == null)
+            {
+                _cachedScrollViewer = GetVisualChild<ScrollViewer>(resultsGrid);
+            }
+            return _cachedScrollViewer;
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == WM_MOUSEHWHEEL)
+            {
+                // Is the mouse over this control?
+                var pt = Mouse.PrimaryDevice.GetPosition(resultsGrid);
+                if (pt.X >= 0 && pt.X <= resultsGrid.ActualWidth &&
+                    pt.Y >= 0 && pt.Y <= resultsGrid.ActualHeight)
+                {
+                    // HIWORD of wParam contains the wheel delta
+                    short wheelDelta = unchecked((short)((long)wParam >> 16));
+
+                    var scrollViewer = GetCachedScrollViewer();
+                    if (scrollViewer != null && DataContext is ResultsViewModel vm)
+                    {
+                        int multiplier = vm.HorizontalScrollSpeed;
+
+                        // WM_MOUSEHWHEEL positive value indicates the wheel was rotated to the right
+                        // Standard wheelDelta is 120. Convert to lines and multiply by pixel speed.
+                        double lines = wheelDelta / 120.0;
+                        double pixelChange = lines * 3 * multiplier;
+
+                        scrollViewer.ScrollToHorizontalOffset(scrollViewer.HorizontalOffset + pixelChange);
+                        handled = true;
+                    }
+                }
+            }
+            return IntPtr.Zero;
         }
 
         private void ResultsView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -111,7 +169,7 @@ namespace SMS_Search.Views
         {
             if (DataContext is ResultsViewModel vm)
             {
-                ScrollViewer? scrollViewer = GetVisualChild<ScrollViewer>(resultsGrid);
+                ScrollViewer? scrollViewer = GetCachedScrollViewer();
                 double targetAbsoluteX = 0;
                 DataGridColumn? targetCol = null;
 
@@ -492,6 +550,25 @@ namespace SMS_Search.Views
         private void resultsGrid_LoadingRow(object sender, DataGridRowEventArgs e)
         {
             e.Row.Header = (e.Row.GetIndex() + 1).ToString();
+        }
+
+        private void resultsGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            {
+                var scrollViewer = GetCachedScrollViewer();
+                if (scrollViewer != null && DataContext is ResultsViewModel vm)
+                {
+                    int multiplier = vm.HorizontalScrollSpeed;
+
+                    // Standard delta is usually 120. Convert delta into lines, then multiply by pixel speed.
+                    double lines = e.Delta / 120.0;
+                    double pixelChange = lines * 3 * multiplier;
+
+                    scrollViewer.ScrollToHorizontalOffset(scrollViewer.HorizontalOffset - pixelChange);
+                    e.Handled = true;
+                }
+            }
         }
     }
 
