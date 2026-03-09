@@ -1,0 +1,84 @@
+--- SMSSearch/Views/ResultsView.xaml.cs
++++ SMSSearch/Views/ResultsView.xaml.cs
+@@ -10,6 +10,7 @@
+ using System.Windows.Threading;
+ using SMS_Search.ViewModels;
+ using SMS_Search.Data;
+ using SMS_Search.Services;
+ using CommunityToolkit.Mvvm.Input;
+ using Microsoft.Extensions.DependencyInjection;
++using System.Windows.Media;
+
+ namespace SMS_Search.Views
+ {
+@@ -87,17 +88,44 @@
+             }
+         }
+
+-        private void Vm_HeadersUpdated(object? sender, EventArgs e)
++        private static T? GetVisualChild<T>(DependencyObject parent) where T : Visual
++        {
++            T? child = default(T);
++            int numVisuals = VisualTreeHelper.GetChildrenCount(parent);
++            for (int i = 0; i < numVisuals; i++)
++            {
++                Visual v = (Visual)VisualTreeHelper.GetChild(parent, i);
++                child = v as T;
++                if (child == null)
++                {
++                    child = GetVisualChild<T>(v);
++                }
++                if (child != null)
++                {
++                    break;
++                }
++            }
++            return child;
++        }
++
++        private void Vm_HeadersUpdated(object? sender, string? toggledColumnName)
+         {
+             if (DataContext is ResultsViewModel vm)
+             {
++                ScrollViewer? scrollViewer = GetVisualChild<ScrollViewer>(resultsGrid);
++                double targetAbsoluteX = 0;
++                DataGridColumn? targetCol = null;
++
++                if (!string.IsNullOrEmpty(toggledColumnName) && scrollViewer != null)
++                {
++                    targetCol = resultsGrid.Columns.FirstOrDefault(c => c.SortMemberPath == toggledColumnName);
++                    if (targetCol != null && targetCol.Visibility == Visibility.Visible)
++                    {
++                        // Calculate current absolute X of target column
++                        var precedingCols = resultsGrid.Columns
++                            .Where(c => c.Visibility == Visibility.Visible && c.DisplayIndex < targetCol.DisplayIndex);
++                        targetAbsoluteX = precedingCols.Sum(c => c.ActualWidth);
++                    }
++                }
++
+                 foreach (var col in resultsGrid.Columns)
+                 {
+                     string? key = col.SortMemberPath;
+@@ -106,6 +134,22 @@
+                         col.Header = header;
+                     }
+                 }
++
++                if (targetCol != null && scrollViewer != null)
++                {
++                    // Force layout update so ActualWidth is recalculated based on new headers
++                    resultsGrid.UpdateLayout();
++
++                    // Calculate new absolute X
++                    var precedingCols = resultsGrid.Columns
++                        .Where(c => c.Visibility == Visibility.Visible && c.DisplayIndex < targetCol.DisplayIndex);
++                    double newAbsoluteX = precedingCols.Sum(c => c.ActualWidth);
++
++                    // Scroll so the target column remains at its relative visual position
++                    double viewPortRelativeX = targetAbsoluteX - scrollViewer.HorizontalOffset;
++                    double newOffset = newAbsoluteX - viewPortRelativeX;
++
++                    scrollViewer.ScrollToHorizontalOffset(newOffset);
++                }
+             }
+         }
