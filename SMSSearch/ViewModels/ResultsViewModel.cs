@@ -16,7 +16,7 @@ using System.Windows.Media;
 
 namespace SMS_Search.ViewModels
 {
-    public partial class ResultsViewModel : ObservableObject
+    public partial class ResultsViewModel : ObservableObject, IDisposable
     {
         private readonly VirtualGridContext _gridContext;
         private readonly ILoggerService _logger;
@@ -102,6 +102,16 @@ namespace SMS_Search.ViewModels
                 _horizontalScrollSpeed = m.Speed;
                 OnPropertyChanged(nameof(HorizontalScrollSpeed));
             });
+        }
+
+        public void Dispose()
+        {
+            Cancel();
+            _gridContext.DataReady -= OnDataReady;
+            _gridContext.LoadError -= OnLoadError;
+            WeakReferenceMessenger.Default.UnregisterAll(this);
+            _cts?.Dispose();
+            _refreshCts?.Dispose();
         }
 
         public int HorizontalScrollSpeed => _horizontalScrollSpeed;
