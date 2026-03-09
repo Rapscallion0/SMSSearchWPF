@@ -133,6 +133,8 @@
                        Background="White"
                        RowHeaderStyle="{StaticResource RowHeaderStyle}"
                        CanUserSortColumns="False"
+                       PreviewMouseWheel="DataGrid_PreviewMouseWheel"
+                       RowEditEnding="DataGrid_RowEditEnding"
                        MinHeight="200">
 
                   <DataGrid.Columns>
