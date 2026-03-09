@@ -465,8 +465,6 @@ namespace SMS_Search.Data
                  {
                      writer.WriteStartObject();
 
-                     writer.WriteNumber("RecordCount", exportRecordCount);
-
                      if (criteria.Mode == SearchMode.Function)
                      {
                          writer.WriteString("SearchType", "Function");
@@ -494,6 +492,8 @@ namespace SMS_Search.Data
                                  writer.WriteString("Table", criteria.Value);
                          }
                      }
+
+                     writer.WriteNumber("RecordCount", exportRecordCount);
 
                      writer.WritePropertyName("Rows");
                      writer.WriteStartArray();
@@ -539,23 +539,23 @@ namespace SMS_Search.Data
              }
 
              string rootElement = "SearchResults";
-             string rootAttr = $" RecordCount=\"{exportRecordCount}\"";
+             string rootAttr = "";
 
              if (criteria.Mode == SearchMode.Function)
              {
-                 rootAttr = " SearchType=\"Function\"";
+                 rootAttr += " SearchType=\"Function\"";
                  if (!string.IsNullOrEmpty(criteria.Value))
                      rootAttr += $" Number=\"{EscapeXml(criteria.Value)}\"";
              }
              else if (criteria.Mode == SearchMode.Totalizer)
              {
-                 rootAttr = " SearchType=\"Totalizer\"";
+                 rootAttr += " SearchType=\"Totalizer\"";
                  if (!string.IsNullOrEmpty(criteria.Value))
                      rootAttr += $" Number=\"{EscapeXml(criteria.Value)}\"";
              }
              else if (criteria.Mode == SearchMode.Field)
              {
-                 rootAttr = " SearchType=\"Field\"";
+                 rootAttr += " SearchType=\"Field\"";
                  if (!string.IsNullOrEmpty(criteria.Value))
                  {
                      if (criteria.Type == SearchType.Number)
@@ -568,6 +568,8 @@ namespace SMS_Search.Data
                          rootAttr += $" Table=\"{EscapeXml(criteria.Value)}\"";
                  }
              }
+
+             rootAttr += $" RecordCount=\"{exportRecordCount}\"";
 
              using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
              {
@@ -675,8 +677,6 @@ namespace SMS_Search.Data
                  {
                      writer.WriteStartObject();
 
-                     writer.WriteNumber("RecordCount", rows.Count);
-
                      if (criteria.Mode == SearchMode.Function)
                      {
                          writer.WriteString("SearchType", "Function");
@@ -704,6 +704,8 @@ namespace SMS_Search.Data
                                  writer.WriteString("Table", criteria.Value);
                          }
                      }
+
+                     writer.WriteNumber("RecordCount", rows.Count);
 
                      writer.WritePropertyName("Rows");
                      writer.WriteStartArray();
@@ -742,23 +744,23 @@ namespace SMS_Search.Data
              await Task.Run(() =>
              {
                  string rootElement = "SearchResults";
-                 string rootAttr = $" RecordCount=\"{rows.Count}\"";
+                 string rootAttr = "";
 
                  if (criteria.Mode == SearchMode.Function)
                  {
-                     rootAttr = " SearchType=\"Function\"";
+                     rootAttr += " SearchType=\"Function\"";
                      if (!string.IsNullOrEmpty(criteria.Value))
                          rootAttr += $" Number=\"{EscapeXml(criteria.Value)}\"";
                  }
                  else if (criteria.Mode == SearchMode.Totalizer)
                  {
-                     rootAttr = " SearchType=\"Totalizer\"";
+                     rootAttr += " SearchType=\"Totalizer\"";
                      if (!string.IsNullOrEmpty(criteria.Value))
                          rootAttr += $" Number=\"{EscapeXml(criteria.Value)}\"";
                  }
                  else if (criteria.Mode == SearchMode.Field)
                  {
-                     rootAttr = " SearchType=\"Field\"";
+                     rootAttr += " SearchType=\"Field\"";
                      if (!string.IsNullOrEmpty(criteria.Value))
                      {
                          if (criteria.Type == SearchType.Number)
@@ -771,6 +773,8 @@ namespace SMS_Search.Data
                              rootAttr += $" Table=\"{EscapeXml(criteria.Value)}\"";
                      }
                  }
+
+                 rootAttr += $" RecordCount=\"{rows.Count}\"";
 
                  using (var writer = new StreamWriter(filename))
                  {

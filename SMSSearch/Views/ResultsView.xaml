@@ -55,7 +55,7 @@
                       Command="{Binding PlacementTarget.Tag.DataContext.CopyInsertCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                       CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             <Separator/>
-            <MenuItem Header="Export Results">
+            <MenuItem Header="Export Selected Rows">
                 <MenuItem Header="CSV" Command="{Binding PlacementTarget.Tag.DataContext.ExportSelectedCsvCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                 <MenuItem Header="JSON" Command="{Binding PlacementTarget.Tag.DataContext.ExportSelectedJsonCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                 <MenuItem Header="XML" Command="{Binding PlacementTarget.Tag.DataContext.ExportSelectedXmlCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
