@@ -1,0 +1,9 @@
+--- SMSSearch/Views/ResultsView.xaml.cs
++++ SMSSearch/Views/ResultsView.xaml.cs
+@@ -10,6 +10,7 @@
+ using SMS_Search.ViewModels;
+ using SMS_Search.Data;
+ using SMS_Search.Services;
+ using CommunityToolkit.Mvvm.Input;
+ using Microsoft.Extensions.DependencyInjection;
++using System.Windows.Media;

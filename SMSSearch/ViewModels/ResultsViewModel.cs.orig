@@ -64,7 +64,7 @@ namespace SMS_Search.ViewModels
             FindPreviousCommand = new AsyncRelayCommand(() => FindMatchAsync(false));
             CancelCommand = new RelayCommand(Cancel);
 
-            ToggleHeaderDescriptionCommand = new RelayCommand<string>(c => { _toggledColumnName = c; ShowDescriptionHeaders = !ShowDescriptionHeaders; });
+            ToggleHeaderDescriptionCommand = new RelayCommand(() => ShowDescriptionHeaders = !ShowDescriptionHeaders);
             CopyInsertCommand = new RelayCommand<System.Collections.IList>(CopyAsSqlInsert);
 
             ExportSelectedCsvCommand = new AsyncRelayCommand<System.Collections.IList>(ExportSelectedCsvAsync);
@@ -138,12 +138,10 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         private string _headerToggleText = "Show Description";
 
-        private string? _toggledColumnName;
-
         public SearchCriteria? CurrentSearchCriteria { get; private set; }
 
         public event EventHandler<(int RowIndex, string ColumnName)>? ScrollToCellRequested;
-        public event EventHandler<string?>? HeadersUpdated;
+        public event EventHandler? HeadersUpdated;
 
         public IAsyncRelayCommand<string> ApplyFilterCommand { get; }
         public IAsyncRelayCommand FindNextCommand { get; }
@@ -155,7 +153,7 @@ namespace SMS_Search.ViewModels
         public IAsyncRelayCommand ExportJsonCommand { get; }
         public IAsyncRelayCommand ExportXmlCommand { get; }
 
-        public IRelayCommand<string> ToggleHeaderDescriptionCommand { get; }
+        public IRelayCommand ToggleHeaderDescriptionCommand { get; }
         public IRelayCommand<System.Collections.IList> CopyInsertCommand { get; }
 
         public IAsyncRelayCommand<System.Collections.IList> ExportSelectedCsvCommand { get; }
@@ -230,8 +228,7 @@ namespace SMS_Search.ViewModels
                  foreach(var name in colNames) ColumnHeaders[name] = name;
             }
 
-            HeadersUpdated?.Invoke(this, _toggledColumnName);
-            _toggledColumnName = null;
+            HeadersUpdated?.Invoke(this, EventArgs.Empty);
         }
 
         private CancellationTokenSource? _refreshCts;
