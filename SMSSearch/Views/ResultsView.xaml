@@ -105,6 +105,7 @@
                   SelectionUnit="CellOrRowHeader"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
+                  CanUserResizeRows="False"
                   HeadersVisibility="{Binding HeadersVisibility}"
                   GridLinesVisibility="All"
                   AlternatingRowBackground="#F8F8F8"
