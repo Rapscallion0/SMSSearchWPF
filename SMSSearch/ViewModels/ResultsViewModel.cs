@@ -78,6 +78,7 @@ namespace SMS_Search.ViewModels
 
             FilterBySelectionCommand = new RelayCommand<string>(FilterBySelection);
             CopyRowCommand = new RelayCommand<IList>(CopyRow);
+            CopyAllMatchesCommand = new AsyncRelayCommand(CopyAllMatchesAsync, CanCopyAllMatches);
 
             // Register for message
             WeakReferenceMessenger.Default.Register<RowNumberVisibilityChangedMessage>(this, (r, m) =>
@@ -133,6 +134,7 @@ namespace SMS_Search.ViewModels
         private string _filterText = "";
 
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(CopyAllMatchesCommand))]
         private string _matchStatusText = "";
 
         [ObservableProperty]
@@ -188,6 +190,7 @@ namespace SMS_Search.ViewModels
 
         public IRelayCommand<string> FilterBySelectionCommand { get; }
         public IRelayCommand<IList> CopyRowCommand { get; }
+        public IAsyncRelayCommand CopyAllMatchesCommand { get; }
 
         // Dictionary mapping Column Name -> Header Text (Description or Name)
         public Dictionary<string, string> ColumnHeaders { get; private set; } = new Dictionary<string, string>();
@@ -847,6 +850,53 @@ namespace SMS_Search.ViewModels
             return value is sbyte || value is byte || value is short || value is ushort ||
                    value is int || value is uint || value is long || value is ulong ||
                    value is float || value is double || value is decimal;
+        }
+
+        private bool CanCopyAllMatches()
+        {
+            return !string.IsNullOrEmpty(FilterText) && !string.IsNullOrEmpty(MatchStatusText) && TotalRecords > 0;
+        }
+
+        private async Task CopyAllMatchesAsync()
+        {
+            if (!CanCopyAllMatches()) return;
+
+            IsBusy = true;
+            StatusText = "Copying matches...";
+
+            try
+            {
+                var columns = new List<string>();
+                if (SearchResults is VirtualizingCollection vc)
+                {
+                    var props = vc.GetItemProperties(null);
+                    foreach (PropertyDescriptor p in props) columns.Add(p.Name);
+                }
+
+                if (columns.Count == 0) return;
+
+                var matches = await _gridContext.GetAllMatchesAsync(FilterText, columns, CancellationToken.None);
+                if (matches.Count > 0)
+                {
+                    _clipboardService.SetText(string.Join(Environment.NewLine, matches));
+                    _dialogService.ShowToast($"Successfully copied {matches.Count} matches to clipboard", "Copy Matches", SMS_Search.Views.ToastType.Success);
+                    _logger.LogInfo($"Copied {matches.Count} matches to clipboard.");
+                }
+                else
+                {
+                    _dialogService.ShowMessage("No matches found to copy.", "Copy Matches");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to copy all matches", ex);
+                _dialogService.ShowError($"Failed to copy matches: {ex.Message}", "Copy Error");
+            }
+            finally
+            {
+                IsBusy = false;
+                StatusText = $"Found {TotalRecords} records";
+            }
         }
     }
 }

@@ -833,6 +833,22 @@ namespace SMS_Search.Data
                    value is float || value is double || value is decimal;
         }
 
+        public async Task<List<string>> GetAllMatchesAsync(string searchText, IEnumerable<string> searchColumns, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(searchText) || searchColumns == null) return new List<string>();
+
+            var colTypes = new Dictionary<string, string?>();
+            foreach (var col in searchColumns)
+            {
+                if (_columnSqlTypes.TryGetValue(col, out string? type)) colTypes[col] = type;
+                else colTypes[col] = null;
+            }
+
+            if (_server == null || _database == null || _baseSql == null) return new List<string>();
+
+            return await _repo.GetAllMatchesAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, searchText, colTypes, cancellationToken);
+        }
+
         public async Task<int> FindMatchRowAsync(string searchText, IEnumerable<string> searchColumns, int startRowIndex, bool forward, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(searchText) || searchColumns == null) return -1;

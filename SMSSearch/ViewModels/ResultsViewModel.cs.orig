@@ -16,7 +16,7 @@ using System.Windows.Media;
 
 namespace SMS_Search.ViewModels
 {
-    public partial class ResultsViewModel : ObservableObject
+    public partial class ResultsViewModel : ObservableObject, IDisposable
     {
         private readonly VirtualGridContext _gridContext;
         private readonly ILoggerService _logger;
@@ -47,6 +47,11 @@ namespace SMS_Search.ViewModels
             UpdateFilterNavigationVisibility();
             UpdateHighlightColor(_configService.GetValue("GENERAL", "HIGHLIGHT_COLOR"));
 
+            if (int.TryParse(_configService.GetValue("GENERAL", "HORIZONTAL_SCROLL_SPEED"), out int speed))
+            {
+                _horizontalScrollSpeed = speed;
+            }
+
             string fctFields = _configService.GetValue("QUERY", "FUNCTION") ?? "";
             string tlzFields = _configService.GetValue("QUERY", "TOTALIZER") ?? "";
             _queryBuilder = new QueryBuilder(fctFields, tlzFields);
@@ -64,7 +69,7 @@ namespace SMS_Search.ViewModels
             FindPreviousCommand = new AsyncRelayCommand(() => FindMatchAsync(false));
             CancelCommand = new RelayCommand(Cancel);
 
-            ToggleHeaderDescriptionCommand = new RelayCommand(() => ShowDescriptionHeaders = !ShowDescriptionHeaders);
+            ToggleHeaderDescriptionCommand = new RelayCommand<string>(c => { _toggledColumnName = c; ShowDescriptionHeaders = !ShowDescriptionHeaders; });
             CopyInsertCommand = new RelayCommand<System.Collections.IList>(CopyAsSqlInsert);
 
             ExportSelectedCsvCommand = new AsyncRelayCommand<System.Collections.IList>(ExportSelectedCsvAsync);
@@ -91,7 +96,26 @@ namespace SMS_Search.ViewModels
                     ApplyFilterCommand.Execute(FilterText);
                 }
             });
+
+            WeakReferenceMessenger.Default.Register<HorizontalScrollSpeedChangedMessage>(this, (r, m) =>
+            {
+                _horizontalScrollSpeed = m.Speed;
+                OnPropertyChanged(nameof(HorizontalScrollSpeed));
+            });
         }
+
+        public void Dispose()
+        {
+            Cancel();
+            _gridContext.DataReady -= OnDataReady;
+            _gridContext.LoadError -= OnLoadError;
+            WeakReferenceMessenger.Default.UnregisterAll(this);
+            _cts?.Dispose();
+            _refreshCts?.Dispose();
+        }
+
+        public int HorizontalScrollSpeed => _horizontalScrollSpeed;
+        private int _horizontalScrollSpeed = 16;
 
         [ObservableProperty]
         private IList? _searchResults;
@@ -138,10 +162,12 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         private string _headerToggleText = "Show Description";
 
+        private string? _toggledColumnName;
+
         public SearchCriteria? CurrentSearchCriteria { get; private set; }
 
         public event EventHandler<(int RowIndex, string ColumnName)>? ScrollToCellRequested;
-        public event EventHandler? HeadersUpdated;
+        public event EventHandler<string?>? HeadersUpdated;
 
         public IAsyncRelayCommand<string> ApplyFilterCommand { get; }
         public IAsyncRelayCommand FindNextCommand { get; }
@@ -153,7 +179,7 @@ namespace SMS_Search.ViewModels
         public IAsyncRelayCommand ExportJsonCommand { get; }
         public IAsyncRelayCommand ExportXmlCommand { get; }
 
-        public IRelayCommand ToggleHeaderDescriptionCommand { get; }
+        public IRelayCommand<string> ToggleHeaderDescriptionCommand { get; }
         public IRelayCommand<System.Collections.IList> CopyInsertCommand { get; }
 
         public IAsyncRelayCommand<System.Collections.IList> ExportSelectedCsvCommand { get; }
@@ -162,6 +188,7 @@ namespace SMS_Search.ViewModels
 
         public IRelayCommand<string> FilterBySelectionCommand { get; }
         public IRelayCommand<IList> CopyRowCommand { get; }
+        public IAsyncRelayCommand CopyAllMatchesCommand { get; }
 
         // Dictionary mapping Column Name -> Header Text (Description or Name)
         public Dictionary<string, string> ColumnHeaders { get; private set; } = new Dictionary<string, string>();
@@ -228,7 +255,8 @@ namespace SMS_Search.ViewModels
                  foreach(var name in colNames) ColumnHeaders[name] = name;
             }
 
-            HeadersUpdated?.Invoke(this, EventArgs.Empty);
+            HeadersUpdated?.Invoke(this, _toggledColumnName);
+            _toggledColumnName = null;
         }
 
         private CancellationTokenSource? _refreshCts;
@@ -820,6 +848,53 @@ namespace SMS_Search.ViewModels
             return value is sbyte || value is byte || value is short || value is ushort ||
                    value is int || value is uint || value is long || value is ulong ||
                    value is float || value is double || value is decimal;
+        }
+
+        private bool CanCopyAllMatches()
+        {
+            return !string.IsNullOrEmpty(FilterText) && !string.IsNullOrEmpty(MatchStatusText) && TotalRecords > 0;
+        }
+
+        private async Task CopyAllMatchesAsync()
+        {
+            if (!CanCopyAllMatches()) return;
+
+            IsBusy = true;
+            StatusText = "Copying matches...";
+
+            try
+            {
+                var columns = new List<string>();
+                if (SearchResults is VirtualizingCollection vc)
+                {
+                    var props = vc.GetItemProperties(null);
+                    foreach (PropertyDescriptor p in props) columns.Add(p.Name);
+                }
+
+                if (columns.Count == 0) return;
+
+                var matches = await _gridContext.GetAllMatchesAsync(FilterText, columns, CancellationToken.None);
+                if (matches.Count > 0)
+                {
+                    _clipboardService.SetText(string.Join(Environment.NewLine, matches));
+                    _dialogService.ShowToast($"Successfully copied {matches.Count} matches to clipboard", "Copy Matches", SMS_Search.Views.ToastType.Success);
+                    _logger.LogInfo($"Copied {matches.Count} matches to clipboard.");
+                }
+                else
+                {
+                    _dialogService.ShowMessage("No matches found to copy.", "Copy Matches");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to copy all matches", ex);
+                _dialogService.ShowError($"Failed to copy matches: {ex.Message}", "Copy Error");
+            }
+            finally
+            {
+                IsBusy = false;
+                StatusText = $"Found {TotalRecords} records";
+            }
         }
     }
 }

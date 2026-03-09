@@ -70,6 +70,9 @@
                       Command="{Binding PlacementTarget.Tag.CopyWithHeadersCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             <MenuItem Header="Advanced Copy"
                       Command="{Binding PlacementTarget.Tag.AdvancedCopyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <MenuItem Header="Copy all matches"
+                      Command="{Binding PlacementTarget.Tag.DataContext.CopyAllMatchesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      Visibility="{Binding PlacementTarget.Tag.DataContext.CopyAllMatchesCommand.CanExecute, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}"/>
             <Separator/>
             <MenuItem Header="Export Results (All)">
                 <MenuItem Header="CSV" Command="{Binding PlacementTarget.Tag.DataContext.ExportCsvCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
