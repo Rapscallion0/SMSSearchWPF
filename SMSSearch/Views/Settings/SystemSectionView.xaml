@@ -30,8 +30,22 @@
                 <ctrl:SettingControl Header="Current Log File" IsSaved="False">
                      <StackPanel Orientation="Vertical">
                          <TextBox Text="{Binding CurrentLogFile, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" TextWrapping="Wrap" Margin="0,0,0,5"/>
-                         <Button Content="Open Log File" Command="{Binding OpenLogFileCommand}" HorizontalAlignment="Left" Padding="10,5"/>
+                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                             <Button Content="Open Log File" Command="{Binding OpenLogFileCommand}" Padding="10,5" Margin="0,0,10,0"/>
+                             <Button Content="Open Log Folder" Command="{Binding OpenLogFolderCommand}" Padding="10,5"/>
+                         </StackPanel>
                      </StackPanel>
+                </ctrl:SettingControl>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Settings" Margin="0,10,0,0">
+            <StackPanel Margin="5">
+                <ctrl:SettingControl Header="Setting File Path" IsSaved="False">
+                    <StackPanel Orientation="Vertical">
+                        <TextBox Text="{Binding CurrentSettingsFile, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                        <Button Content="Open Setting File" Command="{Binding OpenSettingsFileCommand}" HorizontalAlignment="Left" Padding="10,5"/>
+                    </StackPanel>
                 </ctrl:SettingControl>
             </StackPanel>
         </GroupBox>

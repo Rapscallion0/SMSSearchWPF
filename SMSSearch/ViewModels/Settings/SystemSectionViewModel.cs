@@ -24,6 +24,9 @@ namespace SMS_Search.ViewModels.Settings
         [ObservableProperty]
         private string _currentLogFile = "";
 
+        [ObservableProperty]
+        private string _currentSettingsFile = "";
+
         public SystemSectionViewModel(
             ISettingsRepository repository,
             ILoggerService loggerService,
@@ -86,6 +89,7 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             UpdateCurrentLogFile();
+            CurrentSettingsFile = PathHelper.GetSettingsPath();
         }
 
         private void UpdateCurrentLogFile()
@@ -146,6 +150,63 @@ namespace SMS_Search.ViewModels.Settings
             {
                 _loggerService.LogError("Failed to open log file", ex);
                 _dialogService.ShowToast("Failed to open log file.", "Error", ToastType.Error);
+            }
+        }
+
+        [RelayCommand]
+        private void OpenLogFolder()
+        {
+            try
+            {
+                string path = CurrentLogFile;
+                string? dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+                {
+                    new Process
+                    {
+                        StartInfo = new ProcessStartInfo(dir)
+                        {
+                            UseShellExecute = true
+                        }
+                    }.Start();
+                }
+                else
+                {
+                    _dialogService.ShowToast("Log directory not found.", "Error", ToastType.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                _loggerService.LogError("Failed to open log folder", ex);
+                _dialogService.ShowToast("Failed to open log folder.", "Error", ToastType.Error);
+            }
+        }
+
+        [RelayCommand]
+        private void OpenSettingsFile()
+        {
+            try
+            {
+                string path = CurrentSettingsFile;
+                if (File.Exists(path))
+                {
+                    new Process
+                    {
+                        StartInfo = new ProcessStartInfo(path)
+                        {
+                            UseShellExecute = true
+                        }
+                    }.Start();
+                }
+                else
+                {
+                    _dialogService.ShowToast("Settings file not found.", "Error", ToastType.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                _loggerService.LogError("Failed to open settings file", ex);
+                _dialogService.ShowToast("Failed to open settings file.", "Error", ToastType.Error);
             }
         }
 
