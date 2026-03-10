@@ -38,6 +38,12 @@ namespace SMS_Search.ViewModels.Settings
         [ObservableProperty]
         private bool _isSaving;
 
+        [ObservableProperty]
+        private bool _isFunctionSaved;
+
+        [ObservableProperty]
+        private bool _isTotalizerSaved;
+
         public ObservableSetting<bool> SelectCustomSqlOnBuild { get; }
 
         public SearchSectionViewModel(
@@ -163,10 +169,14 @@ namespace SMS_Search.ViewModels.Settings
                 await _repository.SaveAsync();
 
                 IsSaved = true;
+                IsFunctionSaved = true;
+                IsTotalizerSaved = true;
 
                 // Flash success state
                 await Task.Delay(2000);
                 IsSaved = false;
+                IsFunctionSaved = false;
+                IsTotalizerSaved = false;
             }
             finally
             {
