@@ -83,7 +83,8 @@
                                        Margin="10" />
 
                 <ListBox x:Name="Sidebar" Grid.Row="1" ItemsSource="{Binding Sections}" SelectedItem="{Binding SelectedSection}"
-                         BorderThickness="0" Background="Transparent" SelectionChanged="Sidebar_SelectionChanged">
+                         BorderThickness="0" Background="Transparent" SelectionChanged="Sidebar_SelectionChanged"
+                         PreviewMouseLeftButtonUp="Sidebar_PreviewMouseLeftButtonUp">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">

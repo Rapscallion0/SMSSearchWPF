@@ -53,22 +53,57 @@ namespace SMS_Search.Views
         private void Sidebar_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_isSyncingScroll) return;
+            ScrollToSection(Sidebar.SelectedItem);
+        }
+
+        private void Sidebar_PreviewMouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource is DependencyObject dp)
+            {
+                // Find the ListBoxItem that was clicked
+                var item = FindParent<ListBoxItem>(dp);
+                if (item != null && item.DataContext != null)
+                {
+                    // If it's already the selected item, SelectionChanged won't fire, so manually scroll
+                    if (Sidebar.SelectedItem == item.DataContext)
+                    {
+                        ScrollToSection(item.DataContext);
+                    }
+                }
+            }
+        }
+
+        private static T? FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            DependencyObject parentObject = VisualTreeHelper.GetParent(child);
+
+            if (parentObject == null) return null;
+
+            if (parentObject is T parent)
+            {
+                return parent;
+            }
+            else
+            {
+                return FindParent<T>(parentObject);
+            }
+        }
+
+        private void ScrollToSection(object section)
+        {
+            if (section == null) return;
 
             _isSyncingSelection = true;
             try
             {
-                var section = Sidebar.SelectedItem;
-                if (section != null)
+                var container = SectionItemsControl.ItemContainerGenerator.ContainerFromItem(section) as FrameworkElement;
+                if (container != null)
                 {
-                    var container = SectionItemsControl.ItemContainerGenerator.ContainerFromItem(section) as FrameworkElement;
-                    if (container != null)
-                    {
-                        var transform = container.TransformToVisual(MainScrollViewer);
-                        var position = transform.Transform(new System.Windows.Point(0, 0));
+                    var transform = container.TransformToVisual(MainScrollViewer);
+                    var position = transform.Transform(new System.Windows.Point(0, 0));
 
-                        // Scroll to position with padding
-                        MainScrollViewer.ScrollToVerticalOffset(MainScrollViewer.VerticalOffset + position.Y - 20);
-                    }
+                    // Scroll to position with padding
+                    MainScrollViewer.ScrollToVerticalOffset(MainScrollViewer.VerticalOffset + position.Y - 20);
                 }
             }
             catch (Exception)
