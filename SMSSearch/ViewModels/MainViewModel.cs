@@ -24,6 +24,9 @@ namespace SMS_Search.ViewModels
         private readonly IQueryHistoryService _historyService; // Restore history service dependency
         private readonly IDataRepository _repository;
 
+        private System.Windows.Threading.DispatcherTimer? _dateRolloverTimer;
+        private DateTime _lastKnownDate;
+
         public event Action? RequestOpenSettings;
         public event Action<bool>? RequestToggleUnarchiveWindow;
 
@@ -49,7 +52,15 @@ namespace SMS_Search.ViewModels
             var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version;
             Title = $"SMS Search - V{version}";
 
-            GregorianDate = DateTime.Today;
+            _lastKnownDate = DateTime.Today;
+            GregorianDate = _lastKnownDate;
+
+            _dateRolloverTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMinutes(1)
+            };
+            _dateRolloverTimer.Tick += DateRolloverTimer_Tick;
+            _dateRolloverTimer.Start();
 
             DatabasesView = CollectionViewSource.GetDefaultView(Databases);
 
@@ -65,8 +76,29 @@ namespace SMS_Search.ViewModels
             });
         }
 
+        private void DateRolloverTimer_Tick(object? sender, EventArgs e)
+        {
+            var today = DateTime.Today;
+            if (today > _lastKnownDate)
+            {
+                if (GregorianDate.HasValue && GregorianDate.Value.Date == _lastKnownDate.Date)
+                {
+                    _logger.LogInfo($"Midnight rollover detected. Updating GregorianDate from {_lastKnownDate:yyyy-MM-dd} to {today:yyyy-MM-dd}.");
+                    GregorianDate = today;
+                }
+                _lastKnownDate = today;
+            }
+        }
+
         public void Dispose()
         {
+            if (_dateRolloverTimer != null)
+            {
+                _dateRolloverTimer.Stop();
+                _dateRolloverTimer.Tick -= DateRolloverTimer_Tick;
+                _dateRolloverTimer = null;
+            }
+
             WeakReferenceMessenger.Default.UnregisterAll(this);
             if (SearchVm is IDisposable searchDisposable) searchDisposable.Dispose();
             if (ResultsVm is IDisposable resultsDisposable) resultsDisposable.Dispose();
