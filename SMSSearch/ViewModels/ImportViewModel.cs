@@ -27,10 +27,12 @@ namespace SMS_Search.ViewModels
             _config = config;
             _mainViewModel = mainViewModel;
 
-            TargetDatabaseName = "DBUSER_";
+            TargetDatabaseSuffix = "";
             SwitchToDatabaseAfterImport = true;
             SelectedFiles = new ObservableCollection<string>();
             Databases = new ObservableCollection<string>();
+            TargetDatabases = new ObservableCollection<string>();
+            CanChangeTemplateDatabase = true;
 
             // When the import overlay is shown, load databases
             _mainViewModel.PropertyChanged += async (s, e) =>
@@ -43,10 +45,18 @@ namespace SMS_Search.ViewModels
         }
 
         [ObservableProperty]
-        private string _targetDatabaseName;
+        private string _targetDatabaseSuffix;
+
+        partial void OnTargetDatabaseSuffixChanged(string value)
+        {
+            UpdateTemplateDatabaseState();
+        }
 
         [ObservableProperty]
         private string? _templateDatabaseName;
+
+        [ObservableProperty]
+        private bool _canChangeTemplateDatabase;
 
         [ObservableProperty]
         private bool _switchToDatabaseAfterImport;
@@ -65,6 +75,25 @@ namespace SMS_Search.ViewModels
 
         public ObservableCollection<string> SelectedFiles { get; }
         public ObservableCollection<string> Databases { get; }
+        public ObservableCollection<string> TargetDatabases { get; }
+
+        private void UpdateTemplateDatabaseState()
+        {
+            string fullTargetDbName = "DBUSER_" + (TargetDatabaseSuffix ?? "");
+
+            // If the target database already exists, enforce it as the template and disable changes
+            if (Databases.Contains(fullTargetDbName, StringComparer.OrdinalIgnoreCase))
+            {
+                // Find the actual cased name from the list
+                string actualDbName = Databases.First(d => d.Equals(fullTargetDbName, StringComparison.OrdinalIgnoreCase));
+                TemplateDatabaseName = actualDbName;
+                CanChangeTemplateDatabase = false;
+            }
+            else
+            {
+                CanChangeTemplateDatabase = true;
+            }
+        }
 
         private async Task LoadDatabasesAsync()
         {
@@ -89,7 +118,15 @@ namespace SMS_Search.ViewModels
 
                 var dbs = await _repository.GetDatabasesAsync(server, user, decryptedPass);
                 Databases.Clear();
-                foreach (var db in dbs) Databases.Add(db);
+                TargetDatabases.Clear();
+                foreach (var db in dbs)
+                {
+                    Databases.Add(db);
+                    if (db.StartsWith("dbUser_", StringComparison.OrdinalIgnoreCase) && db.Length > 7)
+                    {
+                        TargetDatabases.Add(db.Substring(7));
+                    }
+                }
 
                 // Auto-select the currently active database as the template
                 if (!string.IsNullOrEmpty(_mainViewModel.SelectedDatabase) && Databases.Contains(_mainViewModel.SelectedDatabase))
@@ -100,6 +137,8 @@ namespace SMS_Search.ViewModels
                 {
                     TemplateDatabaseName = Databases[0];
                 }
+
+                UpdateTemplateDatabaseState();
             }
             catch (Exception ex)
             {
@@ -146,11 +185,13 @@ namespace SMS_Search.ViewModels
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(TargetDatabaseName))
+            if (string.IsNullOrWhiteSpace(TargetDatabaseSuffix))
             {
-                _dialogService.ShowMessage("Please enter a new database name.", "Import");
+                _dialogService.ShowMessage("Please enter a target database suffix.", "Import");
                 return;
             }
+
+            string fullTargetDbName = "DBUSER_" + TargetDatabaseSuffix;
 
             if (string.IsNullOrWhiteSpace(TemplateDatabaseName))
             {
@@ -181,7 +222,7 @@ namespace SMS_Search.ViewModels
 
                 // Call the actual logic (which we will implement next in DataRepository)
                 // For now, let's just create a shell method in DataRepository to handle this.
-                await _repository.PerformImportProcessAsync(server, user, decryptedPass, TargetDatabaseName, TemplateDatabaseName, SelectedFiles.ToList(),
+                await _repository.PerformImportProcessAsync(server, user, decryptedPass, fullTargetDbName, TemplateDatabaseName, SelectedFiles.ToList(),
                     progress => {
                         App.Current.Dispatcher.Invoke(() => {
                             if (progress.IsIndeterminate)
@@ -195,6 +236,9 @@ namespace SMS_Search.ViewModels
                             }
                             ProgressStatusText = progress.Message;
                         });
+                    },
+                    tableName => {
+                        return Task.FromResult(_dialogService.ShowTableExistsPrompt(tableName));
                     });
 
                 _dialogService.ShowToast("Import completed successfully.", "Import", Views.ToastType.Success);
@@ -207,7 +251,7 @@ namespace SMS_Search.ViewModels
 
                 if (SwitchToDatabaseAfterImport)
                 {
-                    _mainViewModel.SelectedDatabase = TargetDatabaseName;
+                    _mainViewModel.SelectedDatabase = fullTargetDbName;
                 }
             }
             catch (Exception ex)
