@@ -719,7 +719,7 @@ namespace SMS_Search.Data
             return results;
         }
 
-        public async Task PerformImportProcessAsync(string server, string? user, string? pass, string targetDatabase, string templateDatabase, List<string> sqlFiles, Action<ViewModels.ImportProgressInfo> progressCallback, CancellationToken cancellationToken = default)
+        public async Task PerformImportProcessAsync(string server, string? user, string? pass, string targetDatabase, string templateDatabase, List<string> sqlFiles, Action<ViewModels.ImportProgressInfo> progressCallback, Func<string, Task<Services.ExistingTableAction>> tableExistsPromptCallback, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -795,6 +795,9 @@ namespace SMS_Search.Data
                 }
 
                 // 3. Process each SQL file
+                bool skipAll = false;
+                bool recreateAll = false;
+
                 foreach (var file in sqlFiles)
                 {
                     string fileName = System.IO.Path.GetFileName(file);
@@ -809,6 +812,7 @@ namespace SMS_Search.Data
 
                     // Parse the file
                     var parsed = ParseSqlImportFile(fileContent);
+                    bool skipFileExecution = false;
 
                     using (var targetConn = new SqlConnection(GetConnectionString(server, targetDatabase, user, pass)))
                     {
@@ -821,7 +825,62 @@ namespace SMS_Search.Data
                                 "SELECT COUNT(*) FROM sys.tables WHERE name = @name",
                                 new { name = parsed.TableName }) > 0;
 
-                            if (!tableExists)
+                            if (tableExists)
+                            {
+                                Services.ExistingTableAction action;
+                                if (skipAll)
+                                {
+                                    action = Services.ExistingTableAction.Skip;
+                                }
+                                else if (recreateAll)
+                                {
+                                    action = Services.ExistingTableAction.Recreate;
+                                }
+                                else
+                                {
+                                    action = await tableExistsPromptCallback(parsed.TableName);
+                                    if (action == Services.ExistingTableAction.SkipAll)
+                                    {
+                                        skipAll = true;
+                                        action = Services.ExistingTableAction.Skip;
+                                    }
+                                    else if (action == Services.ExistingTableAction.RecreateAll)
+                                    {
+                                        recreateAll = true;
+                                        action = Services.ExistingTableAction.Recreate;
+                                    }
+                                }
+
+                                if (action == Services.ExistingTableAction.Skip)
+                                {
+                                    skipFileExecution = true;
+                                }
+                                else if (action == Services.ExistingTableAction.Recreate)
+                                {
+                                    progressCallback(new ViewModels.ImportProgressInfo
+                                    {
+                                        IsIndeterminate = false,
+                                        Percentage = ((double)currentStep / totalSteps) * 100,
+                                        Message = $"Recreating structure for {parsed.TableName}..."
+                                    });
+
+                                    // Drop the existing table
+                                    await targetConn.ExecuteAsync(new CommandDefinition($"DROP TABLE [{safeTargetDb}].[dbo].[{parsed.TableName}]", cancellationToken: cancellationToken));
+
+                                    // Re-copy from template
+                                    try
+                                    {
+                                        string copyStructSql = $"SELECT * INTO [{safeTargetDb}].[dbo].[{parsed.TableName}] FROM [{safeTemplateDb}].[dbo].[{parsed.TableName}] WHERE 1=0";
+                                        await targetConn.ExecuteAsync(new CommandDefinition(copyStructSql, cancellationToken: cancellationToken));
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _logger.LogWarning($"Failed to recreate structure for {parsed.TableName}: {ex.Message}");
+                                        throw new Exception($"Could not copy the required structure for table {parsed.TableName} from template database. Ensure the table exists in {templateDatabase}.");
+                                    }
+                                }
+                            }
+                            else
                             {
                                 progressCallback(new ViewModels.ImportProgressInfo
                                 {
@@ -844,7 +903,7 @@ namespace SMS_Search.Data
                         }
 
                         // Execute the sanitized SQL
-                        if (parsed.Statements.Count > 0)
+                        if (parsed.Statements.Count > 0 && !skipFileExecution)
                         {
                             progressCallback(new ViewModels.ImportProgressInfo
                             {

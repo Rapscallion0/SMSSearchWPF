@@ -103,5 +103,27 @@ namespace SMS_Search.Services
                  });
             }
         }
+
+        public ExistingTableAction ShowTableExistsPrompt(string tableName)
+        {
+            if (System.Windows.Application.Current != null && System.Windows.Application.Current.Dispatcher != null)
+            {
+                return System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    var dlg = new SMS_Search.Views.Windows.ImportTableExistsDialog(tableName);
+                    var mainWindow = System.Windows.Application.Current.MainWindow;
+                    if (mainWindow != null && mainWindow.IsVisible)
+                    {
+                        dlg.Owner = mainWindow;
+                    }
+
+                    dlg.ShowDialog();
+                    return dlg.Result;
+                });
+            }
+
+            // Fallback if no UI thread context exists
+            return ExistingTableAction.Skip;
+        }
     }
 }

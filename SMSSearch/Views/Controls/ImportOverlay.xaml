@@ -24,7 +24,7 @@
             </Border.Effect>
 
             <StackPanel>
-                <TextBlock Text="Import Customer Database" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
+                <TextBlock Text="Import Tables" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
 
                 <Border x:Name="DropZone" BorderBrush="#2196F3" BorderThickness="2" CornerRadius="5" Background="#F0F8FF" Padding="20" Margin="0,0,0,20">
                     <StackPanel HorizontalAlignment="Center">
@@ -53,11 +53,25 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Text="New Database Name:" VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Margin="0,0,10,0"/>
-                    <TextBox Text="{Binding TargetDatabaseName, UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="1" Padding="2" ToolTip="Name should typically start with DBUSER_"/>
+                    <TextBlock Text="Target Database:" VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Margin="0,0,10,0"/>
+                    <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
+                        <TextBlock Text="DBUSER_" VerticalAlignment="Center" Foreground="#555" Margin="0,0,2,0"/>
+                        <ComboBox ItemsSource="{Binding TargetDatabases}" Text="{Binding TargetDatabaseSuffix, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Width="200" Padding="2" ToolTip="Enter a suffix or select an existing one"/>
+                    </StackPanel>
 
                     <TextBlock Text="Template Database:" VerticalAlignment="Center" Grid.Row="2" Grid.Column="0" Margin="0,0,10,0"/>
-                    <ComboBox ItemsSource="{Binding Databases}" SelectedItem="{Binding TemplateDatabaseName}" Grid.Row="2" Grid.Column="1" Padding="2" ToolTip="Select the database to copy the base schema from"/>
+                    <ComboBox ItemsSource="{Binding Databases}" SelectedItem="{Binding TemplateDatabaseName}" IsEnabled="{Binding CanChangeTemplateDatabase}" ToolTipService.ShowOnDisabled="True" Grid.Row="2" Grid.Column="1" Padding="2">
+                        <ComboBox.Style>
+                            <Style TargetType="ComboBox">
+                                <Setter Property="ToolTip" Value="Select the database to copy the base schema from" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CanChangeTemplateDatabase}" Value="False">
+                                        <Setter Property="ToolTip" Value="Cannot change Template database for an existing target database" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ComboBox.Style>
+                    </ComboBox>
                 </Grid>
 
                 <CheckBox Content="Switch to imported database after completion" IsChecked="{Binding SwitchToDatabaseAfterImport}" Margin="0,0,0,20"/>
