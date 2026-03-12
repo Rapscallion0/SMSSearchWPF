@@ -912,17 +912,89 @@ namespace SMS_Search.Data
                                 Message = $"Executing script for {fileName}..."
                             });
 
+                            // Cache for table column types
+                            var tableColumnDateTypesCache = new Dictionary<string, List<bool>>();
+                            var tableColumnNamesCache = new Dictionary<string, List<string>>();
+
                             foreach (var stmt in parsed.Statements)
                             {
                                 if (string.IsNullOrWhiteSpace(stmt)) continue;
 
+                                string processedStmt = stmt;
+
+                                // If it's an INSERT statement, process Julian dates based on column types
+                                if (processedStmt.StartsWith("INSERT INTO", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var match = System.Text.RegularExpressions.Regex.Match(processedStmt, @"INSERT\s+INTO\s+([^\s\(]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                                    if (match.Success)
+                                    {
+                                        string tableName = match.Groups[1].Value.Replace("[", "").Replace("]", "");
+
+                                        if (!tableColumnDateTypesCache.TryGetValue(tableName, out List<bool>? isDateColumn))
+                                        {
+                                            isDateColumn = new List<bool>();
+                                            var columnNames = new List<string>();
+                                            try
+                                            {
+                                                var cmdDef = new CommandDefinition($"SELECT TOP 0 * FROM [{tableName}]", cancellationToken: cancellationToken);
+                                                using (var reader = await targetConn.ExecuteReaderAsync(cmdDef))
+                                                {
+                                                    for (int i = 0; i < reader.FieldCount; i++)
+                                                    {
+                                                        string typeName = reader.GetDataTypeName(i).ToLowerInvariant();
+                                                        isDateColumn.Add(typeName == "datetime" || typeName == "date" || typeName == "datetime2" || typeName == "smalldatetime");
+                                                        columnNames.Add(reader.GetName(i));
+                                                    }
+                                                }
+                                                tableColumnDateTypesCache[tableName] = isDateColumn;
+                                                tableColumnNamesCache[tableName] = columnNames;
+                                            }
+                                            catch
+                                            {
+                                                // If table doesn't exist or other error, just don't do Julian conversions
+                                                tableColumnDateTypesCache[tableName] = new List<bool>();
+                                                tableColumnNamesCache[tableName] = new List<string>();
+                                            }
+                                        }
+
+                                        if (isDateColumn != null && isDateColumn.Count > 0)
+                                        {
+                                            // Handle potential column mapping: INSERT INTO TABLE (col1, col2) VALUES (...)
+                                            List<bool> mappedIsDateColumn = isDateColumn;
+
+                                            var colMatch = System.Text.RegularExpressions.Regex.Match(processedStmt, @"INSERT\s+INTO\s+[^\s\(]+\s*\((.*?)\)\s*VALUES", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                                            if (colMatch.Success && tableColumnNamesCache.TryGetValue(tableName, out var columnNames) && columnNames.Count > 0)
+                                            {
+                                                string colsStr = colMatch.Groups[1].Value;
+                                                var cols = colsStr.Split(',').Select(c => c.Trim().Trim('[', ']', '"', '\'')).ToList();
+
+                                                mappedIsDateColumn = new List<bool>();
+                                                foreach (var c in cols)
+                                                {
+                                                    int idx = columnNames.FindIndex(tc => tc.Equals(c, StringComparison.OrdinalIgnoreCase));
+                                                    if (idx >= 0 && idx < isDateColumn.Count)
+                                                    {
+                                                        mappedIsDateColumn.Add(isDateColumn[idx]);
+                                                    }
+                                                    else
+                                                    {
+                                                        mappedIsDateColumn.Add(false);
+                                                    }
+                                                }
+                                            }
+
+                                            processedStmt = ProcessJulianDatesInInsert(processedStmt, mappedIsDateColumn);
+                                        }
+                                    }
+                                }
+
                                 try
                                 {
-                                    await targetConn.ExecuteAsync(new CommandDefinition(stmt, cancellationToken: cancellationToken));
+                                    await targetConn.ExecuteAsync(new CommandDefinition(processedStmt, cancellationToken: cancellationToken));
                                 }
                                 catch (Exception ex)
                                 {
-                                    throw new Exception($"Statement failed: {stmt}. Error: {ex.Message}", ex);
+                                    throw new Exception($"Statement failed: {processedStmt}. Error: {ex.Message}", ex);
                                 }
                             }
                         }
@@ -998,16 +1070,127 @@ namespace SMS_Search.Data
             return result;
         }
 
-        private string ProcessDateMacros(string statement)
+        private string ProcessJulianDatesInInsert(string stmt, List<bool> isDateColumn)
         {
-            if (!System.Text.RegularExpressions.Regex.IsMatch(statement, @"^\s*INSERT\s+INTO\s+(Run_Load|RUN_TAB)", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            var match = System.Text.RegularExpressions.Regex.Match(stmt, @"\bVALUES\s*\(", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (!match.Success) return stmt;
+
+            int startIdx = match.Index + match.Length - 1; // Start exactly at the '('
+
+            bool inString = false;
+
+            var currentVal = new System.Text.StringBuilder();
+            int colIndex = 0;
+            var newStmt = new System.Text.StringBuilder(stmt.Substring(0, startIdx));
+
+            string julianPattern = @"^'(\d{4})(\d{3})(?:\s+(\d{2}:\d{2}:\d{2}(?:\.\d+)?))?'$";
+
+            bool inValues = false; // true when inside a (... ) block of values
+
+            for (int i = startIdx; i < stmt.Length; i++)
             {
-                return statement;
+                char c = stmt[i];
+
+                if (c == '\'')
+                {
+                    inString = !inString;
+                    currentVal.Append(c);
+                }
+                else if (!inString)
+                {
+                    if (c == '(')
+                    {
+                        if (!inValues) {
+                            inValues = true;
+                            colIndex = 0;
+                            newStmt.Append(c);
+                        } else {
+                            currentVal.Append(c);
+                        }
+                    }
+                    else if (c == ')' && inValues)
+                    {
+                        inValues = false;
+
+                        string valStr = currentVal.ToString();
+                        string trimmedValStr = valStr.Trim();
+                        if (trimmedValStr.Length > 0)
+                        {
+                            string processed = ProcessSingleJulianValue(trimmedValStr, colIndex, isDateColumn, julianPattern);
+                            newStmt.Append(processed);
+                        }
+                        newStmt.Append(c);
+                        currentVal.Clear();
+                    }
+                    else if (c == ',' && inValues)
+                    {
+                        string valStr = currentVal.ToString();
+                        string trimmedValStr = valStr.Trim();
+                        string processed = ProcessSingleJulianValue(trimmedValStr, colIndex, isDateColumn, julianPattern);
+                        newStmt.Append(processed).Append(c);
+                        currentVal.Clear();
+                        colIndex++;
+                    }
+                    else
+                    {
+                        if (inValues)
+                        {
+                            currentVal.Append(c);
+                        }
+                        else
+                        {
+                            newStmt.Append(c);
+                        }
+                    }
+                }
+                else
+                {
+                    currentVal.Append(c);
+                }
             }
 
-            string pattern = @"'(@DSS[F\+\-]?\d*|@DSW[DF\+\-]?\d*)(?:\s+([^']+))?'";
+            return newStmt.ToString();
+        }
 
-            return System.Text.RegularExpressions.Regex.Replace(statement, pattern, match =>
+        private string ProcessSingleJulianValue(string valStr, int colIndex, List<bool> isDateColumn, string julianPattern)
+        {
+            if (colIndex < isDateColumn.Count && isDateColumn[colIndex])
+            {
+                var jMatch = System.Text.RegularExpressions.Regex.Match(valStr, julianPattern);
+                if (jMatch.Success)
+                {
+                    string yearStr = jMatch.Groups[1].Value;
+                    string dayStr = jMatch.Groups[2].Value;
+                    string timeStr = jMatch.Groups[3].Value;
+
+                    if (int.TryParse(yearStr, out int year) && year >= 1900 && year <= 2100 &&
+                        int.TryParse(dayStr, out int day) && day >= 1 && day <= 366)
+                    {
+                        try
+                        {
+                            DateTime dt = new DateTime(year, 1, 1).AddDays(day - 1);
+                            if (!string.IsNullOrEmpty(timeStr))
+                            {
+                                return $"'{dt.ToString("yyyy-MM-dd")} {timeStr}'";
+                            }
+                            else
+                            {
+                                return $"'{dt.ToString("yyyy-MM-dd")}'";
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }
+            return valStr;
+        }
+
+        private string ProcessDateMacros(string statement)
+        {
+            // Process macro strings
+            string macroPattern = @"'(@DSS[F\+\-]?\d*|@DSW[DF\+\-]?\d*)(?:\s+([^']+))?'";
+
+            string processedStatement = System.Text.RegularExpressions.Regex.Replace(statement, macroPattern, match =>
             {
                 string macro = match.Groups[1].Value.ToUpperInvariant();
                 string timePart = match.Groups[2].Value;
@@ -1042,18 +1225,19 @@ namespace SMS_Search.Data
                 }
                 else
                 {
-                    return match.Value;
+                    return match.Value; // Return original if unknown macro
                 }
 
                 if (!string.IsNullOrEmpty(timePart))
                 {
-                    return $"{sqlExpression} + ' {timePart}'";
+                    // If there was a time part, append it
+                    return $"CONVERT(DATETIME, {sqlExpression} + ' {timePart}', 120)";
                 }
-                else
-                {
-                    return sqlExpression;
-                }
+
+                return sqlExpression;
             }, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            return processedStatement;
         }
 
         private List<string> SplitSqlStatements(string sql)
