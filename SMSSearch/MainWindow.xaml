@@ -79,7 +79,7 @@
                                  </Setter>
                              </Style>
                         </ToggleButton.Style>
-                        <Image Source="/Resources/Import.png" Width="16" Height="16"/>
+                        <Control Template="{StaticResource Icon_Import}" Width="16" Height="16"/>
                     </ToggleButton>
                     <ToggleButton Command="{Binding OpenUnarchiveCommand}" IsChecked="{Binding IsUnarchiveTargetVisible, Mode=OneWay}" ToolTip="Unarchive Target"
                                   Background="Transparent" BorderThickness="0" Padding="0">
@@ -104,6 +104,6 @@
 
         <Grid x:Name="MaskOverlay" Background="#AA000000" Visibility="Collapsed" Grid.RowSpan="4"/>
 
-        <controls:ImportOverlay Grid.RowSpan="4" DataContext="{Binding ImportVm}" Visibility="{Binding IsImportTargetVisible, Converter={StaticResource BoolToVis}}" Panel.ZIndex="10"/>
+        <controls:ImportOverlay Grid.RowSpan="4" DataContext="{Binding ImportVm}" Visibility="{Binding DataContext.IsImportTargetVisible, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}" Panel.ZIndex="10"/>
     </Grid>
 </Window>
