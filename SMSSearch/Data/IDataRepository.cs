@@ -28,5 +28,7 @@ namespace SMS_Search.Data
         Task<int> GetMatchRowIndexAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string searchText, Dictionary<string, string?> columnTypes, int startRowIndex, string? sortCol, string? sortDir, bool forward, CancellationToken cancellationToken = default);
         Task<List<string>> GetAllMatchesAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string searchText, Dictionary<string, string?> columnTypes, CancellationToken cancellationToken = default);
         Task PerformImportProcessAsync(string server, string? user, string? pass, string targetDatabase, string templateDatabase, System.Collections.Generic.List<string> sqlFiles, System.Action<ViewModels.ImportProgressInfo> progressCallback, System.Func<string, Task<Services.ExistingTableAction>> tableExistsPromptCallback, CancellationToken cancellationToken = default);
+        Task<string?> GetDatabaseTemplateAsync(string server, string database, string? user, string? pass, CancellationToken cancellationToken = default);
+        Task DropDatabaseAsync(string server, string database, string? user, string? pass, CancellationToken cancellationToken = default);
     }
 }

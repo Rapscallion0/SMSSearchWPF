@@ -83,10 +83,49 @@
                 </StackPanel>
 
                 <!-- Action Buttons -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Cancel" Command="{Binding CancelCommand}" Padding="15,5" Margin="0,0,10,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Content="Delete Database" Command="{Binding DeleteDatabaseCommand}" Padding="15,5" Foreground="White" Background="#F44336" BorderThickness="0" Grid.Column="0">
                         <Button.Style>
                             <Style TargetType="Button">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#D32F2F"/>
+                                                </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Background" Value="#EF9A9A"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CanChangeTemplateDatabase}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="1">
+                        <Button Content="Cancel" Command="{Binding CancelCommand}" Padding="15,5" Margin="0,0,10,0">
+                            <Button.Style>
+                                <Style TargetType="Button">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsBusy}" Value="True">
                                         <Setter Property="IsEnabled" Value="False"/>
@@ -123,7 +162,8 @@
                             </Style>
                         </Button.Style>
                     </Button>
-                </StackPanel>
+                    </StackPanel>
+                </Grid>
             </StackPanel>
         </Border>
     </Grid>
