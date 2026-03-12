@@ -1,0 +1,116 @@
+<UserControl x:Class="SMS_Search.Views.Controls.ImportOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:SMS_Search.Views.Controls"
+             xmlns:conv="clr-namespace:SMS_Search.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="#D9000000"
+             AllowDrop="True"
+             Drop="UserControl_Drop"
+             DragEnter="UserControl_DragEnter">
+
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+        <Border Background="White" CornerRadius="8" Padding="20" MinWidth="450" MaxWidth="600"
+                BorderBrush="#CCC" BorderThickness="1">
+            <Border.Effect>
+                <DropShadowEffect Color="Black" Opacity="0.3" BlurRadius="10" Direction="270" ShadowDepth="4"/>
+            </Border.Effect>
+
+            <StackPanel>
+                <TextBlock Text="Import Customer Database" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
+
+                <Border x:Name="DropZone" BorderBrush="#2196F3" BorderThickness="2" CornerRadius="5" Background="#F0F8FF" Padding="20" Margin="0,0,0,20">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="Drag and Drop .sql files here" FontSize="16" Foreground="#555" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="or" HorizontalAlignment="Center" Foreground="#888" Margin="0,0,0,10"/>
+                        <Button Content="Browse for Files" Command="{Binding BrowseFilesCommand}" Padding="15,5" HorizontalAlignment="Center"/>
+
+                        <ItemsControl ItemsSource="{Binding SelectedFiles}" Margin="0,15,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Foreground="#333" FontSize="12" Margin="0,2"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Grid Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="New Database Name:" VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Margin="0,0,10,0"/>
+                    <TextBox Text="{Binding TargetDatabaseName, UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="1" Padding="2" ToolTip="Name should typically start with DBUSER_"/>
+
+                    <TextBlock Text="Template Database:" VerticalAlignment="Center" Grid.Row="2" Grid.Column="0" Margin="0,0,10,0"/>
+                    <ComboBox ItemsSource="{Binding Databases}" SelectedItem="{Binding TemplateDatabaseName}" Grid.Row="2" Grid.Column="1" Padding="2" ToolTip="Select the database to copy the base schema from"/>
+                </Grid>
+
+                <CheckBox Content="Switch to imported database after completion" IsChecked="{Binding SwitchToDatabaseAfterImport}" Margin="0,0,0,20"/>
+
+                <!-- Progress Section -->
+                <StackPanel Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" Margin="0,0,0,15">
+                    <ProgressBar IsIndeterminate="{Binding IsProgressIndeterminate}" Value="{Binding ProgressValue}" Minimum="0" Maximum="100" Height="10" Margin="0,0,0,5"/>
+                    <TextBlock Text="{Binding ProgressStatusText}" Foreground="#555" FontSize="12" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Action Buttons -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Cancel" Command="{Binding CancelCommand}" Padding="15,5" Margin="0,0,10,0">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="Import" Command="{Binding ImportCommand}" Padding="15,5" Background="#2196F3" Foreground="White" BorderThickness="0">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#1976D2"/>
+                                                </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Background" Value="#A0C8EF"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -5,11 +5,15 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SMS_Search"
         xmlns:views="clr-namespace:SMS_Search.Views"
+        xmlns:controls="clr-namespace:SMS_Search.Views.Controls"
         xmlns:vm="clr-namespace:SMS_Search.ViewModels"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
         Title="{Binding Title}" Height="800" Width="800"
         Icon="pack://application:,,,/Resources/SMS Search.ico" MinWidth="675" MinHeight="600">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
     <Window.InputBindings>
         <KeyBinding Key="F5" Command="{Binding SearchCommand}" />
     </Window.InputBindings>
@@ -60,6 +64,23 @@
                         <Control Template="{StaticResource Icon_Settings}"
                                Width="16" Height="16"/>
                     </Button>
+                    <ToggleButton Command="{Binding OpenImportCommand}" IsChecked="{Binding IsImportTargetVisible, Mode=OneWay}" ToolTip="Import Files"
+                                  Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,10,0">
+                        <ToggleButton.Style>
+                             <Style TargetType="ToggleButton">
+                                 <Setter Property="Template">
+                                     <Setter.Value>
+                                         <ControlTemplate TargetType="ToggleButton">
+                                             <Border Background="Transparent">
+                                                 <ContentPresenter/>
+                                             </Border>
+                                         </ControlTemplate>
+                                     </Setter.Value>
+                                 </Setter>
+                             </Style>
+                        </ToggleButton.Style>
+                        <Image Source="/Resources/Import.png" Width="16" Height="16"/>
+                    </ToggleButton>
                     <ToggleButton Command="{Binding OpenUnarchiveCommand}" IsChecked="{Binding IsUnarchiveTargetVisible, Mode=OneWay}" ToolTip="Unarchive Target"
                                   Background="Transparent" BorderThickness="0" Padding="0">
                         <ToggleButton.Style>
@@ -82,5 +103,7 @@
         </StatusBar>
 
         <Grid x:Name="MaskOverlay" Background="#AA000000" Visibility="Collapsed" Grid.RowSpan="4"/>
+
+        <controls:ImportOverlay Grid.RowSpan="4" DataContext="{Binding ImportVm}" Visibility="{Binding IsImportTargetVisible, Converter={StaticResource BoolToVis}}" Panel.ZIndex="10"/>
     </Grid>
 </Window>

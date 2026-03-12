@@ -719,6 +719,322 @@ namespace SMS_Search.Data
             return results;
         }
 
+        public async Task PerformImportProcessAsync(string server, string? user, string? pass, string targetDatabase, string templateDatabase, List<string> sqlFiles, Action<ViewModels.ImportProgressInfo> progressCallback, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                // Sanitize database names to prevent SQL injection in DDL statements
+                string safeTargetDb = targetDatabase.Replace("]", "]]");
+                string safeTemplateDb = templateDatabase.Replace("]", "]]");
+
+                progressCallback(new ViewModels.ImportProgressInfo { IsIndeterminate = true, Message = $"Connecting to server..." });
+
+                // 1. Check if Target DB exists
+                bool dbExists = false;
+                using (var connMaster = new SqlConnection(GetConnectionString(server, "master", user, pass)))
+                {
+                    await connMaster.OpenAsync(cancellationToken);
+                    dbExists = await connMaster.ExecuteScalarAsync<int>(
+                        "SELECT COUNT(*) FROM sys.databases WHERE name = @name",
+                        new { name = targetDatabase }) > 0;
+
+                    if (!dbExists)
+                    {
+                        progressCallback(new ViewModels.ImportProgressInfo { IsIndeterminate = true, Message = $"Creating database '{targetDatabase}'..." });
+                        // Cannot parameterize CREATE DATABASE
+                        await connMaster.ExecuteAsync(new CommandDefinition($"CREATE DATABASE [{safeTargetDb}]", cancellationToken: cancellationToken));
+                    }
+                }
+
+                // 2. Base tables to copy from Template DB to Target DB
+                string[] baseTables = new[] { "RB_FIELDS", "RB_TABLES", "INFORMATION_SCHEMA.KEY_COLUMN_USAGE" };
+
+                int totalSteps = baseTables.Length + sqlFiles.Count;
+                int currentStep = 0;
+
+                foreach (var table in baseTables)
+                {
+                    progressCallback(new ViewModels.ImportProgressInfo
+                    {
+                        IsIndeterminate = false,
+                        Percentage = ((double)currentStep / totalSteps) * 100,
+                        Message = $"Copying base schema: {table}"
+                    });
+
+                    // We need to copy these into the target database.
+                    // For standard tables we can use SELECT * INTO
+                    // For INFORMATION_SCHEMA we can't do SELECT * INTO Target.INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                    // So we skip system views if requested, but user specifically asked for INFORMATION_SCHEMA.KEY_COLUMN_USAGE.
+                    // Let's create a snapshot of it in dbo if they want it.
+                    string targetTableName = table.Contains(".") ? table.Split('.')[1] : table;
+                    string sourceTableName = table.Contains(".") ? table : $"[dbo].[{table}]";
+
+                    using (var targetConn = new SqlConnection(GetConnectionString(server, targetDatabase, user, pass)))
+                    {
+                        await targetConn.OpenAsync(cancellationToken);
+
+                        // Check if it already exists
+                        bool tableExists = await targetConn.ExecuteScalarAsync<int>(
+                            "SELECT COUNT(*) FROM sys.tables WHERE name = @name",
+                            new { name = targetTableName }) > 0;
+
+                        if (!tableExists)
+                        {
+                            try
+                            {
+                                string copySql = $"SELECT * INTO [{safeTargetDb}].[dbo].[{targetTableName}] FROM [{safeTemplateDb}].{sourceTableName}";
+                                await targetConn.ExecuteAsync(new CommandDefinition(copySql, cancellationToken: cancellationToken));
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogWarning($"Failed to copy base table {table}: {ex.Message}");
+                            }
+                        }
+                    }
+                    currentStep++;
+                }
+
+                // 3. Process each SQL file
+                foreach (var file in sqlFiles)
+                {
+                    string fileName = System.IO.Path.GetFileName(file);
+                    progressCallback(new ViewModels.ImportProgressInfo
+                    {
+                        IsIndeterminate = false,
+                        Percentage = ((double)currentStep / totalSteps) * 100,
+                        Message = $"Processing {fileName}..."
+                    });
+
+                    string fileContent = await System.IO.File.ReadAllTextAsync(file, cancellationToken);
+
+                    // Parse the file
+                    var parsed = ParseSqlImportFile(fileContent);
+
+                    using (var targetConn = new SqlConnection(GetConnectionString(server, targetDatabase, user, pass)))
+                    {
+                        await targetConn.OpenAsync(cancellationToken);
+
+                        if (!string.IsNullOrEmpty(parsed.TableName))
+                        {
+                            // Copy table structure from template DB if it doesn't exist
+                            bool tableExists = await targetConn.ExecuteScalarAsync<int>(
+                                "SELECT COUNT(*) FROM sys.tables WHERE name = @name",
+                                new { name = parsed.TableName }) > 0;
+
+                            if (!tableExists)
+                            {
+                                progressCallback(new ViewModels.ImportProgressInfo
+                                {
+                                    IsIndeterminate = false,
+                                    Percentage = ((double)currentStep / totalSteps) * 100,
+                                    Message = $"Copying structure for {parsed.TableName}..."
+                                });
+
+                                try
+                                {
+                                    string copyStructSql = $"SELECT * INTO [{safeTargetDb}].[dbo].[{parsed.TableName}] FROM [{safeTemplateDb}].[dbo].[{parsed.TableName}] WHERE 1=0";
+                                    await targetConn.ExecuteAsync(new CommandDefinition(copyStructSql, cancellationToken: cancellationToken));
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogWarning($"Failed to copy structure for {parsed.TableName}: {ex.Message}");
+                                    throw new Exception($"Could not copy the required structure for table {parsed.TableName} from template database. Ensure the table exists in {templateDatabase}.");
+                                }
+                            }
+                        }
+
+                        // Execute the sanitized SQL
+                        if (parsed.Statements.Count > 0)
+                        {
+                            progressCallback(new ViewModels.ImportProgressInfo
+                            {
+                                IsIndeterminate = false,
+                                Percentage = ((double)currentStep / totalSteps) * 100,
+                                Message = $"Executing script for {fileName}..."
+                            });
+
+                            foreach (var stmt in parsed.Statements)
+                            {
+                                if (string.IsNullOrWhiteSpace(stmt)) continue;
+
+                                try
+                                {
+                                    await targetConn.ExecuteAsync(new CommandDefinition(stmt, cancellationToken: cancellationToken));
+                                }
+                                catch (Exception ex)
+                                {
+                                    throw new Exception($"Statement failed: {stmt}. Error: {ex.Message}", ex);
+                                }
+                            }
+                        }
+                    }
+                    currentStep++;
+                }
+
+                progressCallback(new ViewModels.ImportProgressInfo
+                {
+                    IsIndeterminate = false,
+                    Percentage = 100,
+                    Message = "Import completed successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PerformImportProcessAsync Error", ex);
+                throw;
+            }
+        }
+
+        private class ParsedSql
+        {
+            public string TableName { get; set; } = "";
+            public List<string> Statements { get; set; } = new List<string>();
+        }
+
+        private ParsedSql ParseSqlImportFile(string content)
+        {
+            var result = new ParsedSql();
+
+            // Extract @CREATE(TableName,...)
+            var createMatch = System.Text.RegularExpressions.Regex.Match(content, @"@CREATE\s*\(\s*([^,]+)\s*,");
+            if (createMatch.Success)
+            {
+                result.TableName = createMatch.Groups[1].Value.Trim();
+            }
+
+            // Extract CREATE VIEW ... AS SELECT ... FROM ... to find the temporary view name
+            string viewName = "";
+            var viewMatch = System.Text.RegularExpressions.Regex.Match(content, @"CREATE\s+VIEW\s+([^\s]+)\s+AS", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (viewMatch.Success)
+            {
+                viewName = viewMatch.Groups[1].Value.Trim();
+            }
+
+            // Split content into statements safely (respecting string literals)
+            var rawStatements = SplitSqlStatements(content);
+
+            foreach (var stmt in rawStatements)
+            {
+                // Skip macro statements
+                if (stmt.StartsWith("@", StringComparison.OrdinalIgnoreCase)) continue;
+
+                string processedStmt = stmt;
+
+                // If this is an INSERT statement, we need to fix empty commas in VALUES
+                if (processedStmt.StartsWith("INSERT INTO", StringComparison.OrdinalIgnoreCase))
+                {
+                    processedStmt = FixEmptySqlValues(processedStmt);
+                }
+
+                // If it's dropping the view but using DROP TABLE, fix it to DROP VIEW
+                if (!string.IsNullOrEmpty(viewName) && processedStmt.StartsWith($"DROP TABLE {viewName}", StringComparison.OrdinalIgnoreCase))
+                {
+                    processedStmt = $"DROP VIEW {viewName}";
+                }
+
+                result.Statements.Add(processedStmt);
+            }
+
+            return result;
+        }
+
+        private List<string> SplitSqlStatements(string sql)
+        {
+            var statements = new List<string>();
+            bool inString = false;
+            var sb = new System.Text.StringBuilder();
+
+            for (int i = 0; i < sql.Length; i++)
+            {
+                char c = sql[i];
+
+                if (c == '\'')
+                {
+                    // If we encounter a quote, it toggles the string state, UNLESS it's escaped (two quotes)
+                    // We just toggle it. If it's escaped, the next quote will toggle it back immediately.
+                    inString = !inString;
+                    sb.Append(c);
+                }
+                else if (c == ';' && !inString)
+                {
+                    string stmt = sb.ToString().Trim();
+                    if (!string.IsNullOrEmpty(stmt))
+                    {
+                        statements.Add(stmt);
+                    }
+                    sb.Clear();
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+
+            if (sb.Length > 0)
+            {
+                string stmt = sb.ToString().Trim();
+                if (!string.IsNullOrEmpty(stmt))
+                {
+                    statements.Add(stmt);
+                }
+            }
+
+            return statements;
+        }
+
+        private string FixEmptySqlValues(string statement)
+        {
+            // We only want to replace empty commas outside of string literals
+            bool inString = false;
+            var sb = new System.Text.StringBuilder();
+            char prevChar = '\0';
+
+            for (int i = 0; i < statement.Length; i++)
+            {
+                char c = statement[i];
+
+                if (c == '\'')
+                {
+                    inString = !inString;
+                    sb.Append(c);
+                    prevChar = c;
+                    continue;
+                }
+
+                if (!inString)
+                {
+                    if (c == ',' && prevChar == ',')
+                    {
+                        sb.Append("NULL,");
+                    }
+                    else if (c == ',' && prevChar == '(')
+                    {
+                        sb.Append("NULL,");
+                    }
+                    else if (c == ')' && prevChar == ',')
+                    {
+                        sb.Append("NULL)");
+                    }
+                    else
+                    {
+                        sb.Append(c);
+                    }
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+
+                // Skip spaces when tracking the previous structural character
+                if (!char.IsWhiteSpace(c))
+                {
+                    prevChar = c;
+                }
+            }
+
+            return sb.ToString();
+        }
+
         public async Task<int> GetMatchRowIndexAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string searchText, Dictionary<string, string?> columnTypes, int startRowIndex, string? sortCol, string? sortDir, bool forward, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(searchText)) return -1;
