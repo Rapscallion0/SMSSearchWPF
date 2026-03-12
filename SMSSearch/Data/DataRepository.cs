@@ -924,6 +924,7 @@ namespace SMS_Search.Data
                 if (processedStmt.StartsWith("INSERT INTO", StringComparison.OrdinalIgnoreCase))
                 {
                     processedStmt = FixEmptySqlValues(processedStmt);
+                    processedStmt = ProcessDateMacros(processedStmt);
                 }
 
                 // If it's dropping the view but using DROP TABLE, fix it to DROP VIEW
@@ -936,6 +937,64 @@ namespace SMS_Search.Data
             }
 
             return result;
+        }
+
+        private string ProcessDateMacros(string statement)
+        {
+            if (!System.Text.RegularExpressions.Regex.IsMatch(statement, @"^\s*INSERT\s+INTO\s+(Run_Load|RUN_TAB)", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            {
+                return statement;
+            }
+
+            string pattern = @"'(@DSS[F\+\-]?\d*|@DSW[DF\+\-]?\d*)(?:\s+([^']+))?'";
+
+            return System.Text.RegularExpressions.Regex.Replace(statement, pattern, match =>
+            {
+                string macro = match.Groups[1].Value.ToUpperInvariant();
+                string timePart = match.Groups[2].Value;
+
+                string sqlExpression = "";
+
+                if (macro == "@DSSF")
+                {
+                    sqlExpression = "CONVERT(VARCHAR(10), GETDATE(), 120)";
+                }
+                else if (macro.StartsWith("@DSS+") || macro.StartsWith("@DSS-"))
+                {
+                    string sign = macro.Substring(4, 1); // get the +/-
+                    string days = macro.Substring(5); // get the numbers
+                    sqlExpression = $"CONVERT(VARCHAR(10), DATEADD(day, {sign}{days}, GETDATE()), 120)";
+                }
+                else if (macro == "@DSWD")
+                {
+                    // Start of week (Sunday)
+                    sqlExpression = "CONVERT(VARCHAR(10), DATEADD(day, 1 - DATEPART(weekday, GETDATE()), GETDATE()), 120)";
+                }
+                else if (macro == "@DSWF")
+                {
+                    // End of week (Saturday)
+                    sqlExpression = "CONVERT(VARCHAR(10), DATEADD(day, 7 - DATEPART(weekday, GETDATE()), GETDATE()), 120)";
+                }
+                else if (macro.StartsWith("@DSW+") || macro.StartsWith("@DSW-"))
+                {
+                    string sign = macro.Substring(4, 1);
+                    string days = macro.Substring(5);
+                    sqlExpression = $"CONVERT(VARCHAR(10), DATEADD(day, {sign}{days} + (1 - DATEPART(weekday, GETDATE())), GETDATE()), 120)";
+                }
+                else
+                {
+                    return match.Value;
+                }
+
+                if (!string.IsNullOrEmpty(timePart))
+                {
+                    return $"{sqlExpression} + ' {timePart}'";
+                }
+                else
+                {
+                    return sqlExpression;
+                }
+            }, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         }
 
         private List<string> SplitSqlStatements(string sql)
