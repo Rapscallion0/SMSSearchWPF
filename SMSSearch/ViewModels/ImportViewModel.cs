@@ -27,11 +27,12 @@ namespace SMS_Search.ViewModels
             _config = config;
             _mainViewModel = mainViewModel;
 
-            TargetDatabaseSuffix = "";
-            SwitchToDatabaseAfterImport = true;
             SelectedFiles = new ObservableCollection<string>();
             Databases = new ObservableCollection<string>();
             TargetDatabases = new ObservableCollection<string>();
+
+            TargetDatabaseSuffix = "";
+            SwitchToDatabaseAfterImport = true;
             CanChangeTemplateDatabase = true;
 
             // When the import overlay is shown, load databases
