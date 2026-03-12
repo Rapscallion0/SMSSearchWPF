@@ -29,6 +29,7 @@ namespace SMS_Search.ViewModels
 
         public event Action? RequestOpenSettings;
         public event Action<bool>? RequestToggleUnarchiveWindow;
+        public event Action<bool>? RequestToggleImportTarget;
 
         public MainViewModel(
             IConfigService config,
@@ -48,6 +49,11 @@ namespace SMS_Search.ViewModels
             _historyService = historyService;
             SearchVm = searchViewModel;
             ResultsVm = resultsViewModel;
+
+            // ImportVm gets initialized separately since it needs MainViewModel
+            // To break circular dependency, we inject it or create it.
+            // Actually let's just create it.
+            ImportVm = new ImportViewModel(repository, logger, dialogService, config, this);
 
             var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version;
             Title = $"SMS Search - V{version}";
@@ -114,6 +120,9 @@ namespace SMS_Search.ViewModels
 
         [ObservableProperty]
         private bool _isUnarchiveTargetVisible;
+
+        [ObservableProperty]
+        private bool _isImportTargetVisible;
 
         [ObservableProperty]
         private ObservableCollection<string> _databases = new ObservableCollection<string>();
@@ -248,6 +257,11 @@ namespace SMS_Search.ViewModels
             RequestToggleUnarchiveWindow?.Invoke(value);
         }
 
+        partial void OnIsImportTargetVisibleChanged(bool value)
+        {
+            RequestToggleImportTarget?.Invoke(value);
+        }
+
         private bool _isUpdatingDate;
 
         partial void OnJulianDateTextChanged(string value)
@@ -280,6 +294,7 @@ namespace SMS_Search.ViewModels
 
         public SearchViewModel SearchVm { get; }
         public ResultsViewModel ResultsVm { get; }
+        public ImportViewModel ImportVm { get; }
 
         [RelayCommand]
         private async Task Search()
@@ -310,6 +325,13 @@ namespace SMS_Search.ViewModels
         {
             IsUnarchiveTargetVisible = !IsUnarchiveTargetVisible;
             _logger.LogInfo($"Unarchive window visibility toggled. New State: {IsUnarchiveTargetVisible}");
+        }
+
+        [RelayCommand]
+        private void OpenImport()
+        {
+            IsImportTargetVisible = !IsImportTargetVisible;
+            _logger.LogInfo($"Import overlay visibility toggled. New State: {IsImportTargetVisible}");
         }
 
         [RelayCommand]
