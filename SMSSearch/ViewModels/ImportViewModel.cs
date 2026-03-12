@@ -50,7 +50,7 @@ namespace SMS_Search.ViewModels
 
         partial void OnTargetDatabaseSuffixChanged(string value)
         {
-            UpdateTemplateDatabaseState();
+            _ = UpdateTemplateDatabaseStateAsync();
         }
 
         [ObservableProperty]
@@ -78,16 +78,45 @@ namespace SMS_Search.ViewModels
         public ObservableCollection<string> Databases { get; }
         public ObservableCollection<string> TargetDatabases { get; }
 
-        private void UpdateTemplateDatabaseState()
+        private async Task UpdateTemplateDatabaseStateAsync()
         {
             string fullTargetDbName = "DBUSER_" + (TargetDatabaseSuffix ?? "");
 
-            // If the target database already exists, enforce it as the template and disable changes
+            // If the target database already exists, find its original template database and lock it
             if (Databases.Contains(fullTargetDbName, StringComparer.OrdinalIgnoreCase))
             {
-                // Find the actual cased name from the list
                 string actualDbName = Databases.First(d => d.Equals(fullTargetDbName, StringComparison.OrdinalIgnoreCase));
-                TemplateDatabaseName = actualDbName;
+
+                var server = _config.GetValue("CONNECTION", "SERVER") ?? "";
+                string user = "";
+                string? decryptedPass = null;
+
+                bool isWindowsAuth = true;
+                if (bool.TryParse(_config.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b))
+                    isWindowsAuth = b;
+
+                if (!isWindowsAuth)
+                {
+                    user = _config.GetValue("CONNECTION", "SQLUSER") ?? "";
+                    var pass = _config.GetValue("CONNECTION", "SQLPASSWORD");
+                    decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+                }
+
+                if (!string.IsNullOrEmpty(server))
+                {
+                    string? originalTemplate = await _repository.GetDatabaseTemplateAsync(server, actualDbName, user, decryptedPass);
+                    if (!string.IsNullOrEmpty(originalTemplate) && Databases.Contains(originalTemplate, StringComparer.OrdinalIgnoreCase))
+                    {
+                        string actualTemplateName = Databases.First(d => d.Equals(originalTemplate, StringComparison.OrdinalIgnoreCase));
+                        TemplateDatabaseName = actualTemplateName;
+                    }
+                    else
+                    {
+                        TemplateDatabaseName = null;
+                        _dialogService.ShowError($"Database '{actualDbName}' is missing its original Template DB reference and cannot be used for further imports. Consider creating a new database or deleting it.", "Import Blocked");
+                    }
+                }
+
                 CanChangeTemplateDatabase = false;
             }
             else
@@ -139,7 +168,7 @@ namespace SMS_Search.ViewModels
                     TemplateDatabaseName = Databases[0];
                 }
 
-                UpdateTemplateDatabaseState();
+                await UpdateTemplateDatabaseStateAsync();
             }
             catch (Exception ex)
             {
@@ -175,6 +204,64 @@ namespace SMS_Search.ViewModels
         {
             SelectedFiles.Clear();
             _mainViewModel.IsImportTargetVisible = false;
+        }
+
+        [RelayCommand]
+        private async Task DeleteDatabaseAsync()
+        {
+            if (string.IsNullOrWhiteSpace(TargetDatabaseSuffix)) return;
+            string fullTargetDbName = "DBUSER_" + TargetDatabaseSuffix;
+
+            if (!Databases.Contains(fullTargetDbName, StringComparer.OrdinalIgnoreCase))
+            {
+                _dialogService.ShowError($"Database '{fullTargetDbName}' does not exist.", "Delete Failed");
+                return;
+            }
+
+            if (!_dialogService.ShowConfirmation($"Are you sure you want to permanently delete the database '{fullTargetDbName}'?", "Confirm Delete"))
+            {
+                return;
+            }
+
+            IsBusy = true;
+            IsProgressIndeterminate = true;
+            ProgressStatusText = $"Deleting database {fullTargetDbName}...";
+
+            try
+            {
+                var server = _config.GetValue("CONNECTION", "SERVER") ?? "";
+                string user = "";
+                string? decryptedPass = null;
+
+                bool isWindowsAuth = true;
+                if (bool.TryParse(_config.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b))
+                    isWindowsAuth = b;
+
+                if (!isWindowsAuth)
+                {
+                    user = _config.GetValue("CONNECTION", "SQLUSER") ?? "";
+                    var pass = _config.GetValue("CONNECTION", "SQLPASSWORD");
+                    decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
+                }
+
+                await _repository.DropDatabaseAsync(server, fullTargetDbName, user, decryptedPass);
+
+                _dialogService.ShowToast($"Database '{fullTargetDbName}' deleted.", "Delete Success", Views.ToastType.Success);
+
+                TargetDatabaseSuffix = "";
+                await LoadDatabasesAsync();
+                await _mainViewModel.LoadDatabasesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Delete database failed", ex);
+                _dialogService.ShowError($"Delete failed: {ex.Message}", "Delete Error");
+            }
+            finally
+            {
+                IsBusy = false;
+                ProgressStatusText = "";
+            }
         }
 
         [RelayCommand]

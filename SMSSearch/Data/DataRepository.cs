@@ -719,6 +719,38 @@ namespace SMS_Search.Data
             return results;
         }
 
+        public async Task<string?> GetDatabaseTemplateAsync(string server, string database, string? user, string? pass, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                string sql = "SELECT CAST(value AS NVARCHAR(MAX)) FROM sys.extended_properties WHERE name = 'OriginalTemplateDB'";
+                using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
+                {
+                    await conn.OpenAsync(cancellationToken);
+                    return await conn.ExecuteScalarAsync<string>(new CommandDefinition(sql, cancellationToken: cancellationToken));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"GetDatabaseTemplateAsync failed for db {database}", ex);
+                return null;
+            }
+        }
+
+        public async Task DropDatabaseAsync(string server, string database, string? user, string? pass, CancellationToken cancellationToken = default)
+        {
+            string safeDb = database.Replace("]", "]]");
+            string sql = $@"
+                ALTER DATABASE [{safeDb}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+                DROP DATABASE [{safeDb}];
+            ";
+            using (var conn = new SqlConnection(GetConnectionString(server, "master", user, pass)))
+            {
+                await conn.OpenAsync(cancellationToken);
+                await conn.ExecuteAsync(new CommandDefinition(sql, cancellationToken: cancellationToken));
+            }
+        }
+
         public async Task PerformImportProcessAsync(string server, string? user, string? pass, string targetDatabase, string templateDatabase, List<string> sqlFiles, Action<ViewModels.ImportProgressInfo> progressCallback, Func<string, Task<Services.ExistingTableAction>> tableExistsPromptCallback, CancellationToken cancellationToken = default)
         {
             try
@@ -743,6 +775,20 @@ namespace SMS_Search.Data
                         progressCallback(new ViewModels.ImportProgressInfo { IsIndeterminate = true, Message = $"Creating database '{targetDatabase}'..." });
                         // Cannot parameterize CREATE DATABASE
                         await connMaster.ExecuteAsync(new CommandDefinition($"CREATE DATABASE [{safeTargetDb}]", cancellationToken: cancellationToken));
+                    }
+                }
+
+                if (!dbExists)
+                {
+                    // Add extended property for OriginalTemplateDB
+                    using (var connTarget = new SqlConnection(GetConnectionString(server, targetDatabase, user, pass)))
+                    {
+                        await connTarget.OpenAsync(cancellationToken);
+                        string addPropSql = @"
+                            EXEC sys.sp_addextendedproperty
+                                @name = N'OriginalTemplateDB',
+                                @value = @TemplateDbName;";
+                        await connTarget.ExecuteAsync(new CommandDefinition(addPropSql, new { TemplateDbName = templateDatabase }, cancellationToken: cancellationToken));
                     }
                 }
 
