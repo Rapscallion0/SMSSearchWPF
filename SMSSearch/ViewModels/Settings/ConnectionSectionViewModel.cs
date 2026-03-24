@@ -201,10 +201,16 @@ namespace SMS_Search.ViewModels.Settings
                      return;
                  }
 
+                 string? previousSelection = Database.Value;
                  var databases = await _dataRepository.GetDatabasesAsync(server, user, decryptedPass);
                  Databases.Clear();
                  foreach(var db in databases) Databases.Add(db);
                  _logger.LogInfo($"Loaded {Databases.Count} databases for settings view.");
+
+                 if (!string.IsNullOrEmpty(previousSelection) && Databases.Contains(previousSelection))
+                 {
+                     Database.Value = previousSelection;
+                 }
 
                  IsServerInvalid = false;
                  UpdateValidationState();

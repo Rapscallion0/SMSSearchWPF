@@ -165,8 +165,13 @@ namespace SMS_Search.ViewModels
             try
             {
                 IsRefreshingDatabases = true;
+                string? previousSelection = SelectedDatabase;
                 Databases.Clear();
                 await LoadDatabasesAsync();
+                if (previousSelection != null && Databases.Contains(previousSelection))
+                {
+                    SelectedDatabase = previousSelection;
+                }
                 _dialogService.ShowToast("Databases Refreshed", "Refresh Complete", ToastType.Info);
             }
             finally

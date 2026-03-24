@@ -625,8 +625,13 @@ namespace SMS_Search.ViewModels
             try
             {
                 IsRefreshingTables = true;
+                string? previousSelection = SelectedTable;
                 Tables.Clear();
                 await LoadTablesAsync();
+                if (previousSelection != null && Tables.Contains(previousSelection))
+                {
+                    SelectedTable = previousSelection;
+                }
                 _dialogService.ShowToast("Tables Refreshed", "Refresh Complete", ToastType.Info);
             }
             finally
