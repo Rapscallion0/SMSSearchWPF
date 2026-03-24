@@ -71,6 +71,7 @@ namespace SMS_Search.ViewModels
             DatabasesView = CollectionViewSource.GetDefaultView(Databases);
 
             LoadDatabasesCommand = new AsyncRelayCommand(LoadDatabasesAsync);
+            RefreshDatabasesCommand = new AsyncRelayCommand(RefreshDatabasesAsync);
 
             // Initial load of databases
             SelectedDatabase = _config.GetValue("CONNECTION", "DATABASE");
@@ -132,6 +133,9 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         private string? _selectedDatabase;
 
+        [ObservableProperty]
+        private bool _isRefreshingDatabases;
+
         partial void OnSelectedDatabaseChanged(string? value)
         {
             // Update the connection string database for the repository logic to use this session database
@@ -153,9 +157,27 @@ namespace SMS_Search.ViewModels
         }
 
         public IAsyncRelayCommand LoadDatabasesCommand { get; }
+        public IAsyncRelayCommand RefreshDatabasesCommand { get; }
+
+        public async Task RefreshDatabasesAsync()
+        {
+            if (IsRefreshingDatabases) return;
+            try
+            {
+                IsRefreshingDatabases = true;
+                Databases.Clear();
+                await LoadDatabasesAsync();
+                _dialogService.ShowToast("Databases Refreshed", "Refresh Complete", ToastType.Info);
+            }
+            finally
+            {
+                IsRefreshingDatabases = false;
+            }
+        }
 
         public async Task LoadDatabasesAsync()
         {
+            if (Databases.Count > 0) return;
             try
             {
                  var server = _config.GetValue("CONNECTION", "SERVER") ?? "";

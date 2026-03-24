@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows.Data;
+using SMS_Search.Views;
 
 namespace SMS_Search.ViewModels
 {
@@ -41,6 +42,7 @@ namespace SMS_Search.ViewModels
             _intellisenseService = intellisenseService;
 
             LoadTablesCommand = new AsyncRelayCommand(LoadTablesAsync);
+            RefreshTablesCommand = new AsyncRelayCommand(RefreshTablesAsync);
             CleanSqlCommand = new RelayCommand(CleanSql);
             BuildSqlCommand = new RelayCommand<string>(BuildSql);
             ShowHistoryCommand = new RelayCommand<System.Windows.Controls.Button>(ShowHistory);
@@ -211,6 +213,9 @@ namespace SMS_Search.ViewModels
         private bool _isFieldDescription;
         [ObservableProperty]
         private bool _isFieldTable;
+
+        [ObservableProperty]
+        private bool _isRefreshingTables;
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsCustomSqlMode))]
         private bool _isFieldCustomSql;
@@ -336,6 +341,7 @@ namespace SMS_Search.ViewModels
         }
 
         public IAsyncRelayCommand LoadTablesCommand { get; }
+        public IAsyncRelayCommand RefreshTablesCommand { get; }
         public IRelayCommand CleanSqlCommand { get; }
         public IRelayCommand<string> BuildSqlCommand { get; }
         public IRelayCommand<System.Windows.Controls.Button> ShowHistoryCommand { get; }
@@ -611,6 +617,22 @@ namespace SMS_Search.ViewModels
             }
 
             _logger.LogInfo("SQL built successfully.");
+        }
+
+        private async Task RefreshTablesAsync()
+        {
+            if (IsRefreshingTables) return;
+            try
+            {
+                IsRefreshingTables = true;
+                Tables.Clear();
+                await LoadTablesAsync();
+                _dialogService.ShowToast("Tables Refreshed", "Refresh Complete", ToastType.Info);
+            }
+            finally
+            {
+                IsRefreshingTables = false;
+            }
         }
 
         private async Task LoadTablesAsync()

@@ -52,6 +52,35 @@
                               PreviewMouseDoubleClick="DatabaseComboBox_PreviewMouseDoubleClick" LostFocus="DatabaseComboBox_LostFocus">
                     </ComboBox>
 
+                    <Button Command="{Binding RefreshDatabasesCommand}" Style="{StaticResource TransparentIconButtonStyle}" ToolTip="Refresh Databases" Margin="5,0,0,0" Width="20" Height="20">
+                        <Control Template="{StaticResource Icon_Refresh}" Width="14" Height="14" RenderTransformOrigin="0.5,0.5">
+                            <Control.Style>
+                                <Style TargetType="Control">
+                                    <Setter Property="RenderTransform">
+                                        <Setter.Value>
+                                            <RotateTransform Angle="0"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsRefreshingDatabases}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard x:Name="SpinStoryboard">
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                         From="0" To="360" Duration="0:0:1" RepeatBehavior="Forever"/>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <StopStoryboard BeginStoryboardName="SpinStoryboard"/>
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Control.Style>
+                        </Control>
+                    </Button>
+
                     <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="10,0,0,0"/>
                 </StackPanel>
             </StatusBarItem>
