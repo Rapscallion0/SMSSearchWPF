@@ -45,6 +45,7 @@ namespace SMS_Search.ViewModels.Settings
         private bool _isTotalizerSaved;
 
         public ObservableSetting<bool> SelectCustomSqlOnBuild { get; }
+        public ObservableSetting<bool> AnyMatchDefault { get; }
 
         public SearchSectionViewModel(
             ISettingsRepository repository,
@@ -65,6 +66,12 @@ namespace SMS_Search.ViewModels.Settings
                 repository, "GENERAL", "SELECT_CUSTOM_SQL_ON_BUILD",
                 selectCustomSqlStr != "0", // Default true
                 v => v ? "1" : "0");
+
+            var anyMatchDefaultStr = repository.GetValue("GENERAL", "ANY_MATCH_DEFAULT");
+            AnyMatchDefault = new ObservableSetting<bool>(
+                repository, "GENERAL", "ANY_MATCH_DEFAULT",
+                anyMatchDefaultStr != "False", // Default true
+                v => v.ToString());
         }
 
         partial void OnFunctionColumnsChanged(string value)

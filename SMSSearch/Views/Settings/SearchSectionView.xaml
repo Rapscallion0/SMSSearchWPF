@@ -65,6 +65,9 @@
                 <ctrl:SettingControl Header="Build SQL Action" IsSaved="{Binding SelectCustomSqlOnBuild.IsSaved}">
                     <CheckBox IsChecked="{Binding SelectCustomSqlOnBuild.Value}" Content="Switch to Custom SQL tab when building query" />
                 </ctrl:SettingControl>
+                <ctrl:SettingControl Header="Any Match Default" IsSaved="{Binding AnyMatchDefault.IsSaved}">
+                    <CheckBox IsChecked="{Binding AnyMatchDefault.Value}" Content="Enable 'Any Match' toggle by default on new searches" />
+                </ctrl:SettingControl>
             </StackPanel>
         </GroupBox>
 
