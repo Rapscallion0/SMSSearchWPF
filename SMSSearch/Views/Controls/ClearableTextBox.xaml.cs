@@ -94,6 +94,53 @@ namespace SMS_Search.Views.Controls
             set { SetValue(PlaceholderMarginProperty, value); }
         }
 
+        public static readonly DependencyProperty NumericOnlyProperty =
+            DependencyProperty.Register("NumericOnly", typeof(bool), typeof(ClearableTextBox), new PropertyMetadata(false, OnNumericOnlyChanged));
+
+        public bool NumericOnly
+        {
+            get { return (bool)GetValue(NumericOnlyProperty); }
+            set { SetValue(NumericOnlyProperty, value); }
+        }
+
+        private static void OnNumericOnlyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ClearableTextBox ctb)
+            {
+                if ((bool)e.NewValue)
+                {
+                    ctb.InputBox.PreviewTextInput += ctb.InputBox_PreviewTextInput;
+                    System.Windows.DataObject.AddPastingHandler(ctb.InputBox, ctb.InputBox_Pasting);
+                }
+                else
+                {
+                    ctb.InputBox.PreviewTextInput -= ctb.InputBox_PreviewTextInput;
+                    System.Windows.DataObject.RemovePastingHandler(ctb.InputBox, ctb.InputBox_Pasting);
+                }
+            }
+        }
+
+        private void InputBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !System.Text.RegularExpressions.Regex.IsMatch(e.Text, "^[0-9]+$");
+        }
+
+        private void InputBox_Pasting(object sender, DataObjectPastingEventArgs e)
+        {
+            if (e.DataObject.GetDataPresent(typeof(string)))
+            {
+                string text = (string)e.DataObject.GetData(typeof(string));
+                if (!System.Text.RegularExpressions.Regex.IsMatch(text, "^[0-9]+$"))
+                {
+                    e.CancelCommand();
+                }
+            }
+            else
+            {
+                e.CancelCommand();
+            }
+        }
+
         private static void OnPrefixTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is ClearableTextBox ctb)

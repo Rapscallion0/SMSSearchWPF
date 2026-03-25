@@ -131,10 +131,15 @@ namespace SMS_Search.ViewModels
 
         private void LoadAnyMatchConfig()
         {
+            bool defaultMatch = true;
             if (bool.TryParse(_configService.GetValue("GENERAL", "ANY_MATCH_DEFAULT"), out bool result))
             {
-                AnyMatch = result;
+                defaultMatch = result;
             }
+            AnyMatch = defaultMatch;
+            IsFunctionAnyMatch = defaultMatch;
+            IsTotalizerAnyMatch = defaultMatch;
+            IsFieldAnyMatch = defaultMatch;
         }
 
         [ObservableProperty]
@@ -192,6 +197,8 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         private bool _isFunctionNumber = true;
         [ObservableProperty]
+        private bool _isFunctionAnyMatch = true;
+        [ObservableProperty]
         private bool _isFunctionDescription;
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsCustomSqlMode))]
@@ -201,6 +208,8 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         private bool _isTotalizerNumber = true;
         [ObservableProperty]
+        private bool _isTotalizerAnyMatch = true;
+        [ObservableProperty]
         private bool _isTotalizerDescription;
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsCustomSqlMode))]
@@ -209,6 +218,8 @@ namespace SMS_Search.ViewModels
         // Field Tab Properties
         [ObservableProperty]
         private bool _isFieldNumber = true;
+        [ObservableProperty]
+        private bool _isFieldAnyMatch = true;
         [ObservableProperty]
         private bool _isFieldDescription;
         [ObservableProperty]
@@ -533,6 +544,9 @@ namespace SMS_Search.ViewModels
 
             // Determine search criteria without changing UI state (preventing focus bounce)
             var criteria = new SearchCriteria { Mode = SelectedMode, AnyMatch = AnyMatch };
+            if (SelectedMode == SearchMode.Function) criteria.AnyMatch = IsFunctionAnyMatch;
+            else if (SelectedMode == SearchMode.Totalizer) criteria.AnyMatch = IsTotalizerAnyMatch;
+            else if (SelectedMode == SearchMode.Field) criteria.AnyMatch = IsFieldAnyMatch;
 
             if (type == "Number")
             {
@@ -681,6 +695,9 @@ namespace SMS_Search.ViewModels
         public SearchCriteria GetSearchCriteria()
         {
             var criteria = new SearchCriteria { Mode = SelectedMode, AnyMatch = AnyMatch };
+            if (SelectedMode == SearchMode.Function) criteria.AnyMatch = IsFunctionAnyMatch;
+            else if (SelectedMode == SearchMode.Totalizer) criteria.AnyMatch = IsTotalizerAnyMatch;
+            else if (SelectedMode == SearchMode.Field) criteria.AnyMatch = IsFieldAnyMatch;
 
             if (SelectedMode == SearchMode.Function)
             {
