@@ -15,6 +15,15 @@ $hasErrors   = $false
 Set-Location $PSScriptRoot
 
 # --- Helper Functions ---
+function Stop-RunningApp {
+    $processes = Get-Process -Name "SMS Search" -ErrorAction SilentlyContinue
+    if ($processes) {
+        Write-Host "Found running instances of SMS Search. Terminating..." -ForegroundColor Yellow
+        $processes | Stop-Process -Force
+        Start-Sleep -Seconds 1
+    }
+}
+
 function Get-ProjectVersion {
     if (Test-Path $ProjectFile) {
         [xml]$csproj = Get-Content $ProjectFile
@@ -26,6 +35,8 @@ function Get-ProjectVersion {
 
 # --- 1. Build Logic ---
 try {
+    Stop-RunningApp
+
     if (-not $FromVS) {
         Write-Host "--- SMS Search: $Configuration Build ---" -ForegroundColor Cyan
         dotnet clean $ProjectFile -c $Configuration -p:IsPublishing=true
