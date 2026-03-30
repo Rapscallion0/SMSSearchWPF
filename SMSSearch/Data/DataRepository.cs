@@ -105,7 +105,8 @@ namespace SMS_Search.Data
                         // 1033: The ORDER BY clause is invalid in views, inline functions, derived tables, subqueries...
                         // This means the user provided an ORDER BY clause in their query.
                         // We can bypass this by executing the query as-is and wrapping it with an OFFSET.
-                        string offsetSql = $"SELECT COUNT(*) FROM ({finalSql} OFFSET 0 ROWS) AS _CountQ";
+                        string offsetFinalSql = ApplyFilter(sql, filter, true);
+                        string offsetSql = $"SELECT COUNT(*) FROM ({offsetFinalSql}) AS _CountQ";
                         var offsetCmdDef = new CommandDefinition(offsetSql, parameters, cancellationToken: cancellationToken);
                         count = await conn.ExecuteScalarAsync<int>(offsetCmdDef);
                         countSql = offsetSql; // Update for logging
@@ -158,8 +159,9 @@ namespace SMS_Search.Data
                 }
                 catch (SqlException ex) when (ex.Number == 1033)
                 {
+                    string offsetFinalSql = ApplyFilter(sql, filter, true);
                     string offsetPageSql = $@"
-                        SELECT * FROM ({finalSql} OFFSET 0 ROWS) AS _PageQ
+                        SELECT * FROM ({offsetFinalSql}) AS _PageQ
                         ORDER BY {orderBy}
                         OFFSET {offset} ROWS FETCH NEXT {limit} ROWS ONLY";
                     var offsetCmdDef = new CommandDefinition(offsetPageSql, parameters, cancellationToken: cancellationToken);
@@ -273,10 +275,15 @@ namespace SMS_Search.Data
             }
         }
 
-        private string ApplyFilter(string sql, string? filter)
+        private string ApplyFilter(string sql, string? filter, bool useOffset = false)
         {
-            if (string.IsNullOrWhiteSpace(filter)) return sql;
-            return $"SELECT * FROM ({sql}) AS _FilterQ WHERE {filter}";
+            string innerSql = sql;
+            if (useOffset)
+            {
+                innerSql = $"{sql} OFFSET 0 ROWS";
+            }
+            if (string.IsNullOrWhiteSpace(filter)) return innerSql;
+            return $"SELECT * FROM ({innerSql}) AS _FilterQ WHERE {filter}";
         }
 
         public async Task<IEnumerable<string>> GetServersAsync(CancellationToken cancellationToken = default)
@@ -424,7 +431,8 @@ namespace SMS_Search.Data
                 }
                 catch (SqlException ex) when (ex.Number == 1033)
                 {
-                    string offsetSql = $"SELECT COUNT(*) FROM ({finalSql} OFFSET 0 ROWS) AS _CountQ WHERE ({whereExpression})";
+                    string offsetFinalSql = ApplyFilter(sql, filterClause, true);
+                    string offsetSql = $"SELECT COUNT(*) FROM ({offsetFinalSql}) AS _CountQ WHERE ({whereExpression})";
                     var offsetCmdDef = new CommandDefinition(offsetSql, parameters, cancellationToken: cancellationToken);
                     result = await conn.ExecuteScalarAsync<object>(offsetCmdDef);
                 }
@@ -477,7 +485,8 @@ namespace SMS_Search.Data
                 }
                 catch (SqlException ex) when (ex.Number == 1033)
                 {
-                    string offsetSql = $"SELECT SUM({sumExpression}) FROM ({finalSql} OFFSET 0 ROWS) AS _CountQ WHERE ({whereExpression})";
+                    string offsetFinalSql = ApplyFilter(sql, filterClause, true);
+                    string offsetSql = $"SELECT SUM({sumExpression}) FROM ({offsetFinalSql}) AS _CountQ WHERE ({whereExpression})";
                     var offsetCmdDef = new CommandDefinition(offsetSql, parameters, cancellationToken: cancellationToken);
                     result = await conn.ExecuteScalarAsync<object>(offsetCmdDef);
                 }
@@ -553,10 +562,11 @@ namespace SMS_Search.Data
                 }
                 catch (SqlException ex) when (ex.Number == 1033)
                 {
+                    string offsetFinalSql = ApplyFilter(sql, filterClause, true);
                     string offsetSql = $@"
                         SELECT SUM({sumExpression})
                         FROM (
-                            SELECT * FROM ({finalSql} OFFSET 0 ROWS) AS _Base
+                            SELECT * FROM ({offsetFinalSql}) AS _Base
                             ORDER BY {orderBy}
                             OFFSET 0 ROWS FETCH NEXT {limitRowIndex} ROWS ONLY
                         ) AS _Preceding
@@ -628,10 +638,11 @@ namespace SMS_Search.Data
                 }
                 catch (SqlException ex) when (ex.Number == 1033)
                 {
+                    string offsetFinalSql = ApplyFilter(sql, filterClause, true);
                     string offsetSql = $@"
                         SELECT COUNT(*)
                         FROM (
-                            SELECT * FROM ({finalSql} OFFSET 0 ROWS) AS _Base
+                            SELECT * FROM ({offsetFinalSql}) AS _Base
                             ORDER BY {orderBy}
                             OFFSET 0 ROWS FETCH NEXT {limitRowIndex} ROWS ONLY
                         ) AS _Preceding
@@ -691,7 +702,8 @@ namespace SMS_Search.Data
                 }
                 catch (SqlException ex) when (ex.Number == 1033)
                 {
-                    cmd.CommandText = $"SELECT * FROM ({finalSql} OFFSET 0 ROWS) AS _Base";
+                    string offsetFinalSql = ApplyFilter(sql, filterClause, true);
+                    cmd.CommandText = $"SELECT * FROM ({offsetFinalSql}) AS _Base";
                     using (var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess, cancellationToken))
                     {
                         while (await reader.ReadAsync(cancellationToken))
@@ -1444,11 +1456,12 @@ namespace SMS_Search.Data
                 }
                 catch (SqlException ex) when (ex.Number == 1033)
                 {
+                    string offsetFinalSql = ApplyFilter(sql, filterClause, true);
                     string offsetSql = $@"
                         SELECT TOP 1 RowNum
                         FROM (
                             SELECT ROW_NUMBER() OVER (ORDER BY {orderBy}) - 1 as RowNum, *
-                            FROM ({finalSql} OFFSET 0 ROWS) AS _Base
+                            FROM ({offsetFinalSql}) AS _Base
                         ) AS _Ordered
                         WHERE RowNum {comparison} {startRowIndex}
                         AND ({searchExpression})
