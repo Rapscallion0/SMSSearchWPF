@@ -195,11 +195,10 @@ namespace SMS_Search.Data
                 }
                 catch (SqlException ex) when (ex.Number == 1033)
                 {
-                    // Fallback using SET FMTONLY ON which ignores the derived table restriction
-                    // We don't wrap the query at all.
-                    string fmtSql = $"SET FMTONLY ON;\n{sql}\nSET FMTONLY OFF;";
-                    var fmtCmdDef = new CommandDefinition(fmtSql, parameters, cancellationToken: cancellationToken);
-                    reader = await conn.ExecuteReaderAsync(fmtCmdDef);
+                    string offsetFinalSql = ApplyFilter(sql, null, true);
+                    string offsetSchemaSql = $"SELECT TOP 0 * FROM ({offsetFinalSql}) AS _SchemaQ";
+                    var offsetCmdDef = new CommandDefinition(offsetSchemaSql, parameters, cancellationToken: cancellationToken);
+                    reader = await conn.ExecuteReaderAsync(offsetCmdDef);
                 }
 
                 using (reader)
