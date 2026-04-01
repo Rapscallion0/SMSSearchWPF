@@ -137,20 +137,34 @@ namespace SMS_Search.ViewModels.Gs1
             }
         }
 
+        private bool _isUpdatingFromSubAi;
+
         partial void OnRawBarcodeChanged(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
+                foreach (var ai in ParsedAis)
+                {
+                    ai.PropertyChanged -= OnParsedAiPropertyChanged;
+                }
                 ParsedAis.Clear();
                 DetectedType = "Unknown";
                 return;
             }
 
             var result = _parser.Parse(value, AvailableDefinitions.ToList());
+
+            foreach (var ai in ParsedAis)
+            {
+                ai.PropertyChanged -= OnParsedAiPropertyChanged;
+            }
             ParsedAis.Clear();
+
             foreach (var ai in result.ParsedAis)
             {
-                ParsedAis.Add(new Gs1ParsedAiViewModel(ai));
+                var vm = new Gs1ParsedAiViewModel(ai);
+                vm.PropertyChanged += OnParsedAiPropertyChanged;
+                ParsedAis.Add(vm);
             }
             DetectedType = _parser.DetectType(result.ParsedAis);
 
@@ -160,15 +174,64 @@ namespace SMS_Search.ViewModels.Gs1
             }
         }
 
+        private void OnParsedAiPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (_isUpdatingFromSubAi) return;
+
+            if (e.PropertyName == nameof(Gs1ParsedAiViewModel.RawValue) && sender is Gs1ParsedAiViewModel vm)
+            {
+                if (vm.Ai == "└─")
+                {
+                    UpdateDatabarCouponFromSubAis();
+                }
+                else if (vm.Ai == "8110" || vm.Ai == "8112")
+                {
+                    // If the user edits the main AI, update RawBarcode to trigger a re-parse and refresh sub AIs
+                    _isUpdatingFromSubAi = true;
+                    try
+                    {
+                        RawBarcode = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => $"({a.Ai}){a.RawValue}"));
+                    }
+                    finally
+                    {
+                        _isUpdatingFromSubAi = false;
+                    }
+                }
+            }
+        }
+
+        private void UpdateDatabarCouponFromSubAis()
+        {
+            var mainAi = ParsedAis.FirstOrDefault(a => a.Ai == "8110" || a.Ai == "8112");
+            if (mainAi == null) return;
+
+            string newRawValue = Gs1DatabarCouponEncoder.Encode(ParsedAis);
+
+            _isUpdatingFromSubAi = true;
+            try
+            {
+                mainAi.RawValue = newRawValue;
+
+                // Also update the full RawBarcode to reflect changes
+                RawBarcode = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => $"({a.Ai}){a.RawValue}"));
+            }
+            finally
+            {
+                _isUpdatingFromSubAi = false;
+            }
+        }
+
         private void AddEmptyAi(Gs1AiDefinition definition)
         {
-            ParsedAis.Add(new Gs1ParsedAiViewModel(new Gs1ParsedAi
+            var vm = new Gs1ParsedAiViewModel(new Gs1ParsedAi
             {
                 Ai = definition.Ai,
                 Definition = definition,
                 RawValue = "",
                 IsValid = true
-            }));
+            });
+            vm.PropertyChanged += OnParsedAiPropertyChanged;
+            ParsedAis.Add(vm);
         }
 
         [RelayCommand]
@@ -307,7 +370,7 @@ namespace SMS_Search.ViewModels.Gs1
         private void Validate()
         {
             _errors.Clear();
-            if (_model.Definition != null)
+            if (_model.Definition != null && Ai != "└─")
             {
                 if (RawValue.Length < _model.Definition.MinLength)
                 {
