@@ -183,7 +183,7 @@ namespace SMS_Search.ViewModels.Gs1
         [RelayCommand]
         private void GenerateBarcode()
         {
-            string data = string.Join("", ParsedAis.Select(a => $"({a.Ai}){a.RawValue}"));
+            string data = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => $"({a.Ai}){a.RawValue}"));
             if (string.IsNullOrWhiteSpace(data))
             {
                 _dialogService.ShowToast("No data to encode. Please enter barcode values.", "Generate Barcode", SMS_Search.Views.ToastType.Warning);
@@ -201,7 +201,7 @@ namespace SMS_Search.ViewModels.Gs1
         [RelayCommand]
         private void SavePdf()
         {
-            string data = string.Join("", ParsedAis.Select(a => $"({a.Ai}){a.RawValue}"));
+            string data = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => $"({a.Ai}){a.RawValue}"));
             if (string.IsNullOrWhiteSpace(data))
             {
                 _dialogService.ShowToast("No data to encode. Please enter barcode values.", "Save PDF", SMS_Search.Views.ToastType.Warning);

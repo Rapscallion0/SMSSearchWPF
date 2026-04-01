@@ -130,6 +130,12 @@ namespace SMS_Search.Services.Gs1
                 }
 
                 result.ParsedAis.Add(parsedAi);
+
+                // Sub-parse 8110 / 8112 Databar Coupon internal structure
+                if ((matchedDef.Ai == "8110" || matchedDef.Ai == "8112") && !string.IsNullOrEmpty(rawValue))
+                {
+                    ParseDatabarCoupon(rawValue, result);
+                }
             }
 
             if (string.IsNullOrEmpty(result.ErrorMessage))
@@ -153,6 +159,103 @@ namespace SMS_Search.Services.Gs1
             if (parsedAis.Any(a => a.Ai == "253")) return "GDTI";
 
             return "GS1 Generic";
+        }
+
+        private void ParseDatabarCoupon(string rawValue, Gs1ParseResult result)
+        {
+            int index = 0;
+
+            string Read(int len)
+            {
+                if (index >= rawValue.Length) return "";
+                if (index + len > rawValue.Length) len = rawValue.Length - index;
+                string v = rawValue.Substring(index, len);
+                index += len;
+                return v;
+            }
+
+            int ReadInt(int len)
+            {
+                string v = Read(len);
+                if (string.IsNullOrEmpty(v)) return 0;
+                return int.TryParse(v, out int resultVal) ? resultVal : 0;
+            }
+
+            void AddSubAi(string title, string value)
+            {
+                if (string.IsNullOrEmpty(value)) return;
+                result.ParsedAis.Add(new Gs1ParsedAi
+                {
+                    Ai = "└─",
+                    RawValue = value,
+                    IsValid = true,
+                    Definition = new Gs1AiDefinition { Title = title }
+                });
+            }
+
+            AddSubAi("Primary Company Prefix", Read(ReadInt(1) + 6));
+            AddSubAi("Offer Code", Read(6));
+            AddSubAi("Save Value", Read(ReadInt(1)));
+            AddSubAi("Primary Purchase Requirement", Read(ReadInt(1)));
+            AddSubAi("Primary Purchase Requirement Code", Read(1));
+            AddSubAi("Primary Purchase Family Code", Read(3));
+
+            while (index < rawValue.Length)
+            {
+                string field = Read(1);
+                if (field == "0")
+                {
+                    AddSubAi("Data Field 0", Read(2));
+                }
+                else if (field == "1")
+                {
+                    AddSubAi("2nd Additional Purchase Rules Code", Read(1));
+                    AddSubAi("2nd Purchase Requirement", Read(ReadInt(1)));
+                    AddSubAi("2nd Purchase Requirement Code", Read(1));
+                    AddSubAi("2nd Purchase Family Code", Read(3));
+                    int cpVli = ReadInt(1);
+                    if (cpVli == 9) AddSubAi("2nd Purchase Company Prefix", "N/A");
+                    else AddSubAi("2nd Purchase Company Prefix", Read(cpVli + 6));
+                }
+                else if (field == "2")
+                {
+                    AddSubAi("3rd Purchase Requirement", Read(ReadInt(1)));
+                    AddSubAi("3rd Purchase Requirement Code", Read(1));
+                    AddSubAi("3rd Purchase Family Code", Read(3));
+                    int cpVli = ReadInt(1);
+                    if (cpVli == 9) AddSubAi("3rd Purchase Company Prefix", "N/A");
+                    else AddSubAi("3rd Purchase Company Prefix", Read(cpVli + 6));
+                }
+                else if (field == "3")
+                {
+                    AddSubAi("Expiration Date", Read(6));
+                }
+                else if (field == "4")
+                {
+                    AddSubAi("Start Date", Read(6));
+                }
+                else if (field == "5")
+                {
+                    // Serial Number VLI + 6 = Length
+                    AddSubAi("Serial Number", Read(ReadInt(1) + 6));
+                }
+                else if (field == "6")
+                {
+                    AddSubAi("Retailer Company Prefix / GLN", Read(ReadInt(1) + 6));
+                }
+                else if (field == "9")
+                {
+                    AddSubAi("Save Value Code", Read(1));
+                    AddSubAi("Applies to Which Item", Read(1));
+                    AddSubAi("Store Coupon", Read(1));
+                    AddSubAi("Don't Multiply Flag", Read(1));
+                }
+                else
+                {
+                    AddSubAi($"Unknown Field ({field})", Read(rawValue.Length - index));
+                    break;
+                }
+            }
         }
 
         private bool ValidateCheckDigit(string value)
