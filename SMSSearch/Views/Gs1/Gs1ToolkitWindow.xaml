@@ -1,0 +1,142 @@
+<Window x:Class="SMS_Search.Views.Gs1.Gs1ToolkitWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:SMS_Search.ViewModels.Gs1"
+        mc:Ignorable="d"
+        Title="GS1 Barcode Toolkit" Height="600" Width="800" WindowStartupLocation="CenterOwner" MinWidth="600" MinHeight="400">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <!-- Validation Error Template -->
+        <ControlTemplate x:Key="ErrorTemplate">
+            <DockPanel>
+                <Border BorderBrush="Red" BorderThickness="1">
+                    <AdornedElementPlaceholder/>
+                </Border>
+                <TextBlock Foreground="Red" Margin="5,0,0,0" Text="{Binding [0].ErrorContent}" VerticalAlignment="Center"/>
+            </DockPanel>
+        </ControlTemplate>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- Header / Input -->
+        <Border DockPanel.Dock="Top" Background="#F0F0F0" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Control Width="32" Height="32" Margin="0,0,10,0">
+                    <Control.Style>
+                        <Style TargetType="Control">
+                            <Setter Property="Template" Value="{StaticResource Icon_Gs1_Type_Generic}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding DetectedType}" Value="SSCC-18">
+                                    <Setter Property="Template" Value="{StaticResource Icon_Gs1_Type_SSCC}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding DetectedType}" Value="GTIN-14">
+                                    <Setter Property="Template" Value="{StaticResource Icon_Gs1_Type_GTIN}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding DetectedType}" Value="GS1-128 (GTIN + Attributes)">
+                                    <Setter Property="Template" Value="{StaticResource Icon_Gs1_Type_GTIN}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding DetectedType}" Value="GCN">
+                                    <Setter Property="Template" Value="{StaticResource Icon_Gs1_Type_GCN}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding DetectedType}" Value="GDTI">
+                                    <Setter Property="Template" Value="{StaticResource Icon_Gs1_Type_GDTI}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Control.Style>
+                </Control>
+
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding DetectedType}" FontWeight="Bold" FontSize="16" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding RawBarcode, UpdateSourceTrigger=PropertyChanged}"
+                             Height="25" VerticalContentAlignment="Center"
+                             ToolTip="Paste GS1 Barcode Data Here"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Footer / Commands -->
+        <Border DockPanel.Dock="Bottom" Background="#F0F0F0" Padding="10">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <TextBlock Text="Template:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <ComboBox ItemsSource="{Binding AvailableTemplates}" SelectedItem="{Binding SelectedTemplate}" Width="150"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock Text="Symbology:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <ComboBox ItemsSource="{Binding AvailableSymbologies}" SelectedItem="{Binding SelectedSymbology}" Width="120" Margin="0,0,15,0"/>
+
+                    <Button Command="{Binding GenerateBarcodeCommand}" Content="Copy SVG" Width="80" Margin="0,0,10,0"/>
+                    <Button Command="{Binding SavePdfCommand}" Content="Save as PDF" Width="100"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Breakdown Grid -->
+            <DockPanel Grid.Column="0" Margin="10">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
+                    <ComboBox ItemsSource="{Binding AvailableDefinitions}"
+                              SelectedItem="{Binding SelectedDefinitionToAdd}"
+                              DisplayMemberPath="Title" Width="200" Margin="0,0,5,0"
+                              IsEditable="True" IsTextSearchEnabled="True"/>
+                    <Button Command="{Binding AddAiCommand}" Content="Add AI" Width="60"/>
+                </StackPanel>
+
+                <DataGrid ItemsSource="{Binding ParsedAis}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="AI" Binding="{Binding Ai}" IsReadOnly="True" Width="50"/>
+                        <DataGridTextColumn Header="Description" Binding="{Binding Title}" IsReadOnly="True" Width="200"/>
+                        <DataGridTemplateColumn Header="Value" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding RawValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                             Validation.ErrorTemplate="{StaticResource ErrorTemplate}"
+                                             BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding RawValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                             Validation.ErrorTemplate="{StaticResource ErrorTemplate}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+
+            <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+            <!-- History -->
+            <GroupBox Grid.Column="2" Header="History" Margin="0,10,10,10">
+                <ListBox ItemsSource="{Binding History}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="2">
+                                <TextBlock Text="{Binding DetectedType}" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding FormattedValue}" Foreground="Gray" FontSize="11"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </GroupBox>
+        </Grid>
+    </DockPanel>
+</Window>

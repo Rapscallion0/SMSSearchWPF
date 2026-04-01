@@ -414,4 +414,52 @@
             <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Control}}" Data="{StaticResource Geometry_Refresh}" />
         </Viewbox>
     </ControlTemplate>
+
+    <!-- GS1 Icons -->
+    <StreamGeometry x:Key="Geometry_Gs1_Barcode">M3 5H5V19H3V5M7 5H9V19H7V5M11 5H15V19H11V5M17 5H19V19H17V5M21 5H23V19H21V5</StreamGeometry>
+
+    <!-- Dynamic GS1 Type Geometries -->
+    <StreamGeometry x:Key="Geometry_Gs1_SSCC">M19,3H5C3.89,3 3,3.89 3,5V19C3,20.1 3.9,21 5,21H19C20.11,21 21,20.11 21,19V5C21,3.89 20.11,3 19,3M19,19H5V5H19V19M17,17H7V15H17V17M17,13H7V11H17V13M17,9H7V7H17V9</StreamGeometry>
+    <StreamGeometry x:Key="Geometry_Gs1_GTIN">M11,15H13V17H11V15M11,7H13V13H11V7M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20Z</StreamGeometry>
+    <StreamGeometry x:Key="Geometry_Gs1_GCN">M12,3L1,9L12,15L21,10.09V17H23V9M5,13.18V17.18L12,21L19,17.18V13.18L12,17.09L5,13.18Z</StreamGeometry>
+    <StreamGeometry x:Key="Geometry_Gs1_GDTI">M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,19H5V5H19V19M10,17H6V15H10V17M14,17H12V15H14V17M18,17H16V15H18V17M10,13H6V11H10V13M14,13H12V11H14V13M18,13H16V11H18V13M10,9H6V7H10V9M18,9H12V7H18V9Z</StreamGeometry>
+    <StreamGeometry x:Key="Geometry_Gs1_Generic">M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z</StreamGeometry>
+
+    <!-- Base Control Templates for Type Icons -->
+    <ControlTemplate x:Key="Icon_Gs1_Type_SSCC" TargetType="Control">
+        <Viewbox><Path Fill="#FF2196F3" Data="{StaticResource Geometry_Gs1_SSCC}" /></Viewbox>
+    </ControlTemplate>
+    <ControlTemplate x:Key="Icon_Gs1_Type_GTIN" TargetType="Control">
+        <Viewbox><Path Fill="#FF4CAF50" Data="{StaticResource Geometry_Gs1_GTIN}" /></Viewbox>
+    </ControlTemplate>
+    <ControlTemplate x:Key="Icon_Gs1_Type_GCN" TargetType="Control">
+        <Viewbox><Path Fill="#FFFFC107" Data="{StaticResource Geometry_Gs1_GCN}" /></Viewbox>
+    </ControlTemplate>
+    <ControlTemplate x:Key="Icon_Gs1_Type_GDTI" TargetType="Control">
+        <Viewbox><Path Fill="#FF9C27B0" Data="{StaticResource Geometry_Gs1_GDTI}" /></Viewbox>
+    </ControlTemplate>
+    <ControlTemplate x:Key="Icon_Gs1_Type_Generic" TargetType="Control">
+        <Viewbox><Path Fill="#FF9E9E9E" Data="{StaticResource Geometry_Gs1_Generic}" /></Viewbox>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="Icon_Gs1_Toolkit" TargetType="Control">
+        <Viewbox>
+            <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Control}}" Data="{StaticResource Geometry_Gs1_Barcode}" Stretch="Uniform"/>
+        </Viewbox>
+    </ControlTemplate>
+    <ControlTemplate x:Key="Icon_Nav_Gs1" TargetType="Control">
+        <Viewbox>
+            <Grid>
+                <Path Data="{StaticResource Geometry_DB_Stack}">
+                    <Path.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#FF455A64" Offset="0.0"/>
+                            <GradientStop Color="#FF263238" Offset="1.0"/>
+                        </LinearGradientBrush>
+                    </Path.Fill>
+                </Path>
+                <Path Fill="#FF4CAF50" Data="{StaticResource Geometry_Gs1_Barcode}" />
+            </Grid>
+        </Viewbox>
+    </ControlTemplate>
 </ResourceDictionary>

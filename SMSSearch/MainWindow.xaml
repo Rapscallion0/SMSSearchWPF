@@ -93,6 +93,11 @@
                         <Control Template="{StaticResource Icon_Settings}"
                                Width="16" Height="16"/>
                     </Button>
+                    <Button Command="{Binding OpenGs1ToolkitCommand}"
+                            Style="{StaticResource TransparentIconButtonStyle}" ToolTip="GS1 Toolkit" Margin="0,0,10,0">
+                        <Control Template="{StaticResource Icon_Gs1_Toolkit}"
+                               Width="16" Height="16"/>
+                    </Button>
                     <ToggleButton Command="{Binding OpenImportCommand}" IsChecked="{Binding IsImportTargetVisible, Mode=OneWay}" ToolTip="Import Files"
                                   Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,10,0">
                         <ToggleButton.Style>
