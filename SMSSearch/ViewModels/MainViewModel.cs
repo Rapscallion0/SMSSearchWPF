@@ -28,6 +28,7 @@ namespace SMS_Search.ViewModels
         private DateTime _lastKnownDate;
 
         public event Action? RequestOpenSettings;
+        public event Action? RequestOpenGs1Toolkit;
         public event Action<bool>? RequestToggleUnarchiveWindow;
         public event Action<bool>? RequestToggleImportTarget;
 
@@ -359,6 +360,13 @@ namespace SMS_Search.ViewModels
         {
             IsImportTargetVisible = !IsImportTargetVisible;
             _logger.LogInfo($"Import overlay visibility toggled. New State: {IsImportTargetVisible}");
+        }
+
+        [RelayCommand]
+        private void OpenGs1Toolkit()
+        {
+            _logger.LogInfo("Opening GS1 Toolkit.");
+            RequestOpenGs1Toolkit?.Invoke();
         }
 
         [RelayCommand]

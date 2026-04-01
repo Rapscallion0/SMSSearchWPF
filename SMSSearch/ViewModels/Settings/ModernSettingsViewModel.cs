@@ -30,7 +30,8 @@ namespace SMS_Search.ViewModels.Settings
             EditorSectionViewModel editor,
             CleanSqlSectionViewModel cleanSql,
             IntegrationSectionViewModel integration,
-            SystemSectionViewModel system)
+            SystemSectionViewModel system,
+            Gs1ToolkitSettingsSectionViewModel gs1Toolkit)
         {
             _allSections = new ObservableCollection<SettingsSectionViewModel>
             {
@@ -41,6 +42,7 @@ namespace SMS_Search.ViewModels.Settings
                 editor,
                 cleanSql,
                 integration,
+                gs1Toolkit,
                 system
             };
 

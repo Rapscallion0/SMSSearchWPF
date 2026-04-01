@@ -31,10 +31,25 @@ namespace SMS_Search
             _config = config;
             DataContext = viewModel;
             viewModel.RequestOpenSettings += OnRequestOpenSettings;
+            viewModel.RequestOpenGs1Toolkit += OnRequestOpenGs1Toolkit;
             viewModel.RequestToggleUnarchiveWindow += OnRequestToggleUnarchiveWindow;
 
             this.SizeChanged += MainWindow_SizeChanged;
             this.LocationChanged += MainWindow_LocationChanged;
+            this.Loaded += MainWindow_Loaded;
+            this.Unloaded += MainWindow_Unloaded;
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            var watcher = App.Current.Services.GetService<SMS_Search.Services.Gs1.Gs1ClipboardWatcher>();
+            watcher?.Start(this);
+        }
+
+        private void MainWindow_Unloaded(object sender, RoutedEventArgs e)
+        {
+            var watcher = App.Current.Services.GetService<SMS_Search.Services.Gs1.Gs1ClipboardWatcher>();
+            watcher?.Stop();
         }
 
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -175,6 +190,14 @@ namespace SMS_Search
                 _unarchiveWindow?.Close();
                 _unarchiveWindow = null;
             }
+        }
+
+        private void OnRequestOpenGs1Toolkit()
+        {
+            var gs1Window = App.Current.Services.GetRequiredService<SMS_Search.Views.Gs1.Gs1ToolkitWindow>();
+            gs1Window.DataContext = App.Current.Services.GetRequiredService<SMS_Search.ViewModels.Gs1.Gs1ToolkitViewModel>();
+            gs1Window.Owner = this;
+            gs1Window.ShowDialog();
         }
 
         private void OnRequestOpenSettings()

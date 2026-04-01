@@ -5,6 +5,9 @@ using SMS_Search.Utils;
 using SMS_Search.ViewModels;
 using SMS_Search.ViewModels.Settings;
 using SMS_Search.Views;
+using SMS_Search.Services.Gs1;
+using SMS_Search.ViewModels.Gs1;
+using SMS_Search.Views.Gs1;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -46,11 +49,18 @@ namespace SMS_Search
 
             services.AddSingleton<UpdateChecker>();
 
+            // GS1 Toolkit Services
+            services.AddSingleton<IGs1Repository, Gs1Repository>();
+            services.AddSingleton<IGs1Parser, Gs1Parser>();
+            services.AddSingleton<IGs1BarcodeService, Gs1BarcodeService>();
+            services.AddSingleton<Gs1ClipboardWatcher>();
+
             services.AddTransient<MainViewModel>();
             services.AddTransient<SearchViewModel>();
             services.AddTransient<ResultsViewModel>();
             services.AddTransient<EulaViewModel>();
             services.AddTransient<UnarchiveViewModel>();
+            services.AddTransient<Gs1ToolkitViewModel>();
 
             // New Settings ViewModels
             services.AddTransient<GeneralSectionViewModel>();
@@ -60,6 +70,7 @@ namespace SMS_Search
             services.AddTransient<EditorSectionViewModel>();
             services.AddTransient<CleanSqlSectionViewModel>();
             services.AddTransient<IntegrationSectionViewModel>();
+            services.AddTransient<Gs1ToolkitSettingsSectionViewModel>();
             services.AddTransient<SystemSectionViewModel>();
             services.AddTransient<ModernSettingsViewModel>();
 
@@ -67,6 +78,7 @@ namespace SMS_Search
             services.AddTransient<ModernSettingsWindow>();
             services.AddTransient<EulaWindow>();
             services.AddTransient<UnarchiveWindow>();
+            services.AddTransient<Gs1ToolkitWindow>();
 
             return services.BuildServiceProvider();
         }
