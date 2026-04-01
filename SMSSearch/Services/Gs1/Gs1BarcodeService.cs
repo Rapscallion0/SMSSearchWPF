@@ -2,8 +2,8 @@ using System.IO;
 using ZXing;
 using ZXing.Common;
 using ZXing.Rendering;
-using PdfSharpCore.Pdf;
-using PdfSharpCore.Drawing;
+using PdfSharp.Pdf;
+using PdfSharp.Drawing;
 using SMS_Search.Models.Gs1;
 
 namespace SMS_Search.Services.Gs1
@@ -48,7 +48,7 @@ namespace SMS_Search.Services.Gs1
             var pixelData = writer.Write(barcodeData);
 
             // To embed in PDF, we need to convert PixelData to an image format PdfSharp understands.
-            // Simplified approach using a temporary file since PdfSharpCore may lack direct bitmap support
+            // Simplified approach using a temporary file since PdfSharp may lack direct bitmap support
             string tempImage = Path.GetTempFileName() + ".png";
 
             using (var bmp = new System.Drawing.Bitmap(pixelData.Width, pixelData.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
