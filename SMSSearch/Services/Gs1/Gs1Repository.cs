@@ -117,6 +117,16 @@ namespace SMS_Search.Services.Gs1
                 }
             }
 
+            // Ensure 8110 and 8112 Databar Coupon AIs are present
+            if (!defs.Exists(d => d.Ai == "8110"))
+            {
+                defs.Add(CreateDefinition("8110", "?", "X..70,couponcode", "", "Coupon code"));
+            }
+            if (!defs.Exists(d => d.Ai == "8112"))
+            {
+                defs.Add(CreateDefinition("8112", "?", "X..70,couponposoffer", "", "Paperless coupon format"));
+            }
+
             return defs;
         }
 
