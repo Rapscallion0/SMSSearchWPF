@@ -64,6 +64,7 @@ namespace SMS_Search.Services.Gs1
                     _cachedDefinitions = JsonSerializer.Deserialize<List<Gs1AiDefinition>>(json);
                     if (_cachedDefinitions != null && _cachedDefinitions.Count > 0)
                     {
+                        EnsureRequiredAis(_cachedDefinitions);
                         return _cachedDefinitions;
                     }
                 }
@@ -77,6 +78,19 @@ namespace SMS_Search.Services.Gs1
             return await DownloadAndCacheAiDefinitionsAsync();
         }
 
+        private void EnsureRequiredAis(List<Gs1AiDefinition> defs)
+        {
+            // Ensure 8110 and 8112 Databar Coupon AIs are present
+            if (!defs.Exists(d => d.Ai == "8110"))
+            {
+                defs.Add(CreateDefinition("8110", "?", "X..70,couponcode", "", "Coupon code"));
+            }
+            if (!defs.Exists(d => d.Ai == "8112"))
+            {
+                defs.Add(CreateDefinition("8112", "?", "X..70,couponposoffer", "", "Paperless coupon format"));
+            }
+        }
+
         private List<Gs1AiDefinition> ParseDictionaryText(string text)
         {
             var defs = new List<Gs1AiDefinition>();
@@ -88,7 +102,7 @@ namespace SMS_Search.Services.Gs1
 
                 // Format: AI    Flags  Specification    Attributes   # Title
                 // Example: 01   *?  N14,csum,gcppos2  ex=255,37 dlpkey=22,10,21|235  # GTIN
-                var match = Regex.Match(line, @"^(\S+)\s+([\*!\?""\$%\&'\(\)\+,\-\./:;<=>@\[\\\]\^_`\{\|\}~]+)?\s+(\S+(?:\s+\[\S+\])?)\s+(.*?)\s*#\s*(.*)$");
+                var match = Regex.Match(line, @"^(\S+)\s+([\*!\?""\$%\&'\(\)\+,\-\./:;<=>@\[\\\]\^_`\{\|\}~]+)?\s+(\S+(?:\s+\[\S+\])?)\s*(.*?)(?:\s*#\s*(.*))?$");
 
                 if (match.Success)
                 {
@@ -96,7 +110,7 @@ namespace SMS_Search.Services.Gs1
                     string flags = match.Groups[2].Value.Trim();
                     string spec = match.Groups[3].Value.Trim();
                     string attr = match.Groups[4].Value.Trim();
-                    string title = match.Groups[5].Value.Trim();
+                    string title = match.Groups[5].Success ? match.Groups[5].Value.Trim() : "Unknown";
 
                     // If it's a range like 3100-3105, we expand it
                     if (aiCode.Contains("-"))
@@ -117,15 +131,7 @@ namespace SMS_Search.Services.Gs1
                 }
             }
 
-            // Ensure 8110 and 8112 Databar Coupon AIs are present
-            if (!defs.Exists(d => d.Ai == "8110"))
-            {
-                defs.Add(CreateDefinition("8110", "?", "X..70,couponcode", "", "Coupon code"));
-            }
-            if (!defs.Exists(d => d.Ai == "8112"))
-            {
-                defs.Add(CreateDefinition("8112", "?", "X..70,couponposoffer", "", "Paperless coupon format"));
-            }
+            EnsureRequiredAis(defs);
 
             return defs;
         }

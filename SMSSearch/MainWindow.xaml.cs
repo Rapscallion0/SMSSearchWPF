@@ -197,7 +197,7 @@ namespace SMS_Search
             var gs1Window = App.Current.Services.GetRequiredService<SMS_Search.Views.Gs1.Gs1ToolkitWindow>();
             gs1Window.DataContext = App.Current.Services.GetRequiredService<SMS_Search.ViewModels.Gs1.Gs1ToolkitViewModel>();
             gs1Window.Owner = this;
-            gs1Window.ShowDialog();
+            gs1Window.Show();
         }
 
         private void OnRequestOpenSettings()
