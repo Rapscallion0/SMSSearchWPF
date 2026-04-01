@@ -29,6 +29,7 @@ namespace SMS_Search.ViewModels.Gs1
 
         public ObservableCollection<string> AvailableTemplates { get; } = new ObservableCollection<string>
         {
+            "GS1 Databar Coupon",
             "SSCC-18",
             "GTIN-14",
             "GS1-128 (GTIN + Attributes)"
@@ -42,7 +43,12 @@ namespace SMS_Search.ViewModels.Gs1
             if (string.IsNullOrEmpty(value)) return;
 
             ParsedAis.Clear();
-            if (value == "SSCC-18")
+            if (value == "GS1 Databar Coupon")
+            {
+                var def = AvailableDefinitions.FirstOrDefault(d => d.Ai == "8110");
+                if (def != null) AddEmptyAi(def);
+            }
+            else if (value == "SSCC-18")
             {
                 var def = AvailableDefinitions.FirstOrDefault(d => d.Ai == "00");
                 if (def != null) AddEmptyAi(def);
@@ -117,6 +123,11 @@ namespace SMS_Search.ViewModels.Gs1
                 foreach (var def in defs)
                 {
                     AvailableDefinitions.Add(def);
+                }
+
+                if (string.IsNullOrEmpty(SelectedTemplate))
+                {
+                    SelectedTemplate = "GS1 Databar Coupon";
                 }
             }
             catch (System.Exception ex)

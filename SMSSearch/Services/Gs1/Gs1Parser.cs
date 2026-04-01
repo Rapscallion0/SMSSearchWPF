@@ -142,6 +142,7 @@ namespace SMS_Search.Services.Gs1
 
         public string DetectType(List<Gs1ParsedAi> parsedAis)
         {
+            if (parsedAis.Any(a => a.Ai == "8110" || a.Ai == "8112")) return "GS1 Databar Coupon";
             if (parsedAis.Any(a => a.Ai == "00")) return "SSCC-18";
             if (parsedAis.Any(a => a.Ai == "01"))
             {
