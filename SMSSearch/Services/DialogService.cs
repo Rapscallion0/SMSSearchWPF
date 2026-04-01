@@ -76,7 +76,7 @@ namespace SMS_Search.Services
              return null;
         }
 
-        public void ShowToast(string message, string title, ToastType type = ToastType.Info, string? details = null, string? filePath = null)
+        public void ShowToast(string message, string title, ToastType type = ToastType.Info, string? details = null, string? filePath = null, System.Windows.Window? owner = null)
         {
             // Ensure UI thread access for creating window
             if (System.Windows.Application.Current != null && System.Windows.Application.Current.Dispatcher != null)
@@ -93,10 +93,10 @@ namespace SMS_Search.Services
 
                      var toast = new ToastWindow(message, title, type, timeout, details, filePath);
 
-                     var mainWindow = System.Windows.Application.Current.MainWindow;
-                     if (mainWindow != null && mainWindow.IsVisible)
+                     var targetWindow = owner ?? System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(x => x.IsActive) ?? System.Windows.Application.Current.MainWindow;
+                     if (targetWindow != null && targetWindow.IsVisible)
                      {
-                         toast.Owner = mainWindow;
+                         toast.Owner = targetWindow;
                      }
 
                      toast.Show();
