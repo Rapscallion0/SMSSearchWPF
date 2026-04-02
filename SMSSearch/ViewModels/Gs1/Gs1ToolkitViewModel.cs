@@ -40,8 +40,36 @@ namespace SMS_Search.ViewModels.Gs1
 
         private bool _isUpdatingTemplateInternally;
 
+        [ObservableProperty]
+        private bool _isAddAiVisible;
+
+        private void UpdateFilteredDefinitions()
+        {
+            FilteredDefinitions.Clear();
+
+            if (SelectedTemplate == "GS1-128 (GTIN + Attributes)")
+            {
+                var filtered = AvailableDefinitions.Where(d =>
+                    d.Ai != "00" &&
+                    d.Ai != "01" &&
+                    d.Ai != "8110" &&
+                    d.Ai != "8112" &&
+                    d.Ai != "└─");
+
+                foreach (var def in filtered)
+                {
+                    FilteredDefinitions.Add(def);
+                }
+            }
+
+            IsAddAiVisible = FilteredDefinitions.Count > 0;
+            SelectedDefinitionToAdd = FilteredDefinitions.FirstOrDefault();
+        }
+
         partial void OnSelectedTemplateChanged(string? value)
         {
+            UpdateFilteredDefinitions();
+
             if (string.IsNullOrEmpty(value) || _isUpdatingTemplateInternally) return;
 
             ParsedAis.Clear();
@@ -109,6 +137,7 @@ namespace SMS_Search.ViewModels.Gs1
 
         public ObservableCollection<Gs1ParsedAiViewModel> ParsedAis { get; } = new ObservableCollection<Gs1ParsedAiViewModel>();
         public ObservableCollection<Gs1AiDefinition> AvailableDefinitions { get; } = new ObservableCollection<Gs1AiDefinition>();
+        public ObservableCollection<Gs1AiDefinition> FilteredDefinitions { get; } = new ObservableCollection<Gs1AiDefinition>();
         public ObservableCollection<Gs1HistoryItem> History { get; } = new ObservableCollection<Gs1HistoryItem>();
 
         [ObservableProperty]
@@ -158,6 +187,10 @@ namespace SMS_Search.ViewModels.Gs1
             {
                 _logger.LogError("Failed to initialize GS1 Toolkit", ex);
                 _dialogService.ShowToast("Failed to load GS1 definitions.", "GS1 Toolkit", SMS_Search.Views.ToastType.Error);
+            }
+            finally
+            {
+                UpdateFilteredDefinitions();
             }
         }
 
@@ -232,6 +265,7 @@ namespace SMS_Search.ViewModels.Gs1
             _isUpdatingTemplateInternally = true;
             SelectedTemplate = DetectedType;
             _isUpdatingTemplateInternally = false;
+            UpdateFilteredDefinitions();
 
             ApplyRequiredStatusByTemplate(DetectedType);
 
