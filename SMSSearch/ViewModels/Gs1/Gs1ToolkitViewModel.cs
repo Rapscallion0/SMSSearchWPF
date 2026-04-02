@@ -626,11 +626,11 @@ namespace SMS_Search.ViewModels.Gs1
                 {
                     if (DraftValue.Length < _model.Definition.MinLength)
                     {
-                        _errors[nameof(DraftValue)] = new System.Collections.Generic.List<string> { $"Minimum length is {_model.Definition.MinLength}" };
+                        _errors[nameof(DraftValue)] = new System.Collections.Generic.List<string> { $"Minimum length is {_model.Definition.MinLength}, {DraftValue.Length} provided" };
                     }
                     else if (DraftValue.Length > _model.Definition.MaxLength)
                     {
-                        _errors[nameof(DraftValue)] = new System.Collections.Generic.List<string> { $"Maximum length is {_model.Definition.MaxLength}" };
+                        _errors[nameof(DraftValue)] = new System.Collections.Generic.List<string> { $"Maximum length is {_model.Definition.MaxLength}, {DraftValue.Length} provided" };
                     }
 
                     string dataType = _model.Definition.DataType ?? "";

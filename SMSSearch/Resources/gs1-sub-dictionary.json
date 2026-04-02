@@ -110,7 +110,7 @@
   {
     "Title": "Serial Number",
     "MinLength": 1,
-    "MaxLength": 12,
+    "MaxLength": 15,
     "DataType": "X"
   },
   {
