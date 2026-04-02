@@ -576,6 +576,7 @@ namespace SMS_Search.ViewModels.Gs1
         public string Ai => _model.Ai;
         public string Title => _model.Definition?.Title ?? "Unknown";
         public string Description => _model.Definition?.Description ?? "";
+        public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
         public string DataType => _model.Definition?.DataType ?? "";
         public int MinLength => _model.Definition?.MinLength ?? 0;
         public int MaxLength => _model.Definition?.MaxLength ?? 0;
