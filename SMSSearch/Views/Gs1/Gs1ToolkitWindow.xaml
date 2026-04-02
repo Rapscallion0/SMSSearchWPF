@@ -9,15 +9,49 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <!-- Validation Error Template -->
+        <!-- Validation Error Template (Empty to suppress default red border, handled via triggers) -->
         <ControlTemplate x:Key="ErrorTemplate">
-            <DockPanel>
-                <Border BorderBrush="Red" BorderThickness="1">
-                    <AdornedElementPlaceholder/>
-                </Border>
-                <TextBlock Foreground="Red" Margin="5,0,0,0" Text="{Binding [0].ErrorContent}" VerticalAlignment="Center"/>
-            </DockPanel>
+            <AdornedElementPlaceholder/>
         </ControlTemplate>
+
+        <Style x:Key="ModifiableTextBoxStyle" TargetType="TextBox">
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Validation.ErrorTemplate" Value="{StaticResource ErrorTemplate}"/>
+            <Style.Triggers>
+                <Trigger Property="Validation.HasError" Value="True">
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="Red" BlurRadius="5" ShadowDepth="0" Opacity="0.8"/>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={x:Static RelativeSource.Self}}"/>
+                </Trigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding IsModified}" Value="True"/>
+                        <Condition Binding="{Binding (Validation.HasError), RelativeSource={RelativeSource Self}}" Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="#FFFFA6" BlurRadius="5" ShadowDepth="0" Opacity="0.8"/>
+                        </Setter.Value>
+                    </Setter>
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ModifiableRawBarcodeTextBoxStyle" TargetType="TextBox">
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsRawBarcodeModified}" Value="True">
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="#FFFFA6" BlurRadius="5" ShadowDepth="0" Opacity="0.8"/>
+                        </Setter.Value>
+                    </Setter>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
     <DockPanel>
@@ -56,9 +90,14 @@
 
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="{Binding DetectedType}" FontWeight="Bold" FontSize="16" Margin="0,0,0,5"/>
-                    <TextBox Text="{Binding RawBarcode, UpdateSourceTrigger=PropertyChanged}"
-                             Height="25" VerticalContentAlignment="Center"
-                             ToolTip="Paste GS1 Barcode Data Here"/>
+                    <TextBox Text="{Binding DraftRawBarcode, UpdateSourceTrigger=PropertyChanged}"
+                             Height="25" Style="{StaticResource ModifiableRawBarcodeTextBoxStyle}"
+                             ToolTip="Paste GS1 Barcode Data Here (Press Enter to apply, Esc to revert)">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding CommitRawBarcodeCommand}"/>
+                            <KeyBinding Key="Escape" Command="{Binding RevertRawBarcodeCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
                 </StackPanel>
             </Grid>
         </Border>
@@ -106,15 +145,27 @@
                         <DataGridTemplateColumn Header="Value" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBox Text="{Binding RawValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
-                                             Validation.ErrorTemplate="{StaticResource ErrorTemplate}"
-                                             BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center"/>
+                                    <TextBox Text="{Binding DraftValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                             Style="{StaticResource ModifiableTextBoxStyle}"
+                                             BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center"
+                                             ToolTip="Press Enter to apply, Esc to revert">
+                                        <TextBox.InputBindings>
+                                            <KeyBinding Key="Enter" Command="{Binding CommitCommand}"/>
+                                            <KeyBinding Key="Escape" Command="{Binding RevertCommand}"/>
+                                        </TextBox.InputBindings>
+                                    </TextBox>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
                                 <DataTemplate>
-                                    <TextBox Text="{Binding RawValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
-                                             Validation.ErrorTemplate="{StaticResource ErrorTemplate}"/>
+                                    <TextBox Text="{Binding DraftValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                             Style="{StaticResource ModifiableTextBoxStyle}"
+                                             ToolTip="Press Enter to apply, Esc to revert">
+                                        <TextBox.InputBindings>
+                                            <KeyBinding Key="Enter" Command="{Binding CommitCommand}"/>
+                                            <KeyBinding Key="Escape" Command="{Binding RevertCommand}"/>
+                                        </TextBox.InputBindings>
+                                    </TextBox>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>

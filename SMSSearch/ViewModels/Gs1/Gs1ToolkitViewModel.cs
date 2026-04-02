@@ -137,10 +137,44 @@ namespace SMS_Search.ViewModels.Gs1
             }
         }
 
+        [ObservableProperty]
+        private string _draftRawBarcode = "";
+
+        [ObservableProperty]
+        private bool _isRawBarcodeModified;
+
+        partial void OnDraftRawBarcodeChanged(string value)
+        {
+            IsRawBarcodeModified = value != RawBarcode;
+        }
+
+        [RelayCommand]
+        private void CommitRawBarcode()
+        {
+            if (IsRawBarcodeModified)
+            {
+                RawBarcode = DraftRawBarcode;
+                IsRawBarcodeModified = false;
+            }
+        }
+
+        [RelayCommand]
+        private void RevertRawBarcode()
+        {
+            DraftRawBarcode = RawBarcode;
+            IsRawBarcodeModified = false;
+        }
+
         private bool _isUpdatingFromSubAi;
 
         partial void OnRawBarcodeChanged(string value)
         {
+            if (!_isUpdatingFromSubAi)
+            {
+                DraftRawBarcode = value;
+                IsRawBarcodeModified = false;
+            }
+
             if (string.IsNullOrWhiteSpace(value))
             {
                 foreach (var ai in ParsedAis)
@@ -162,7 +196,7 @@ namespace SMS_Search.ViewModels.Gs1
 
             foreach (var ai in result.ParsedAis)
             {
-                var vm = new Gs1ParsedAiViewModel(ai);
+                var vm = new Gs1ParsedAiViewModel(ai, _dialogService);
                 vm.PropertyChanged += OnParsedAiPropertyChanged;
                 ParsedAis.Add(vm);
             }
@@ -346,11 +380,14 @@ namespace SMS_Search.ViewModels.Gs1
     public partial class Gs1ParsedAiViewModel : ObservableObject, INotifyDataErrorInfo
     {
         private readonly Gs1ParsedAi _model;
+        private readonly SMS_Search.Services.IDialogService? _dialogService;
 
-        public Gs1ParsedAiViewModel(Gs1ParsedAi model)
+        public Gs1ParsedAiViewModel(Gs1ParsedAi model, SMS_Search.Services.IDialogService? dialogService = null)
         {
             _model = model;
+            _dialogService = dialogService;
             RawValue = model.RawValue;
+            DraftValue = model.RawValue;
         }
 
         public string Ai => _model.Ai;
@@ -359,9 +396,54 @@ namespace SMS_Search.ViewModels.Gs1
         [ObservableProperty]
         private string _rawValue;
 
+        [ObservableProperty]
+        private string _draftValue;
+
+        [ObservableProperty]
+        private bool _isModified;
+
+        partial void OnDraftValueChanged(string value)
+        {
+            IsModified = value != RawValue;
+            Validate();
+        }
+
         partial void OnRawValueChanged(string value)
         {
             _model.RawValue = value;
+            if (DraftValue != value)
+            {
+                DraftValue = value;
+            }
+        }
+
+        [RelayCommand]
+        public void Commit()
+        {
+            Validate();
+            if (HasErrors)
+            {
+                if (_dialogService != null)
+                {
+                    var errors = GetErrors(nameof(DraftValue)).Cast<string>();
+                    string msg = string.Join("\n", errors);
+                    _dialogService.ShowToast(msg, "Validation Error", SMS_Search.Views.ToastType.Warning);
+                }
+                return;
+            }
+
+            if (IsModified)
+            {
+                RawValue = DraftValue;
+                IsModified = false;
+            }
+        }
+
+        [RelayCommand]
+        public void Revert()
+        {
+            DraftValue = RawValue;
+            IsModified = false;
             Validate();
         }
 
@@ -372,16 +454,16 @@ namespace SMS_Search.ViewModels.Gs1
             _errors.Clear();
             if (_model.Definition != null && Ai != "└─")
             {
-                if (RawValue.Length < _model.Definition.MinLength)
+                if (DraftValue.Length < _model.Definition.MinLength)
                 {
-                    _errors[nameof(RawValue)] = new System.Collections.Generic.List<string> { $"Minimum length is {_model.Definition.MinLength}" };
+                    _errors[nameof(DraftValue)] = new System.Collections.Generic.List<string> { $"Minimum length is {_model.Definition.MinLength}" };
                 }
-                else if (RawValue.Length > _model.Definition.MaxLength)
+                else if (DraftValue.Length > _model.Definition.MaxLength)
                 {
-                    _errors[nameof(RawValue)] = new System.Collections.Generic.List<string> { $"Maximum length is {_model.Definition.MaxLength}" };
+                    _errors[nameof(DraftValue)] = new System.Collections.Generic.List<string> { $"Maximum length is {_model.Definition.MaxLength}" };
                 }
             }
-            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(nameof(RawValue)));
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(nameof(DraftValue)));
         }
 
         public event System.EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
