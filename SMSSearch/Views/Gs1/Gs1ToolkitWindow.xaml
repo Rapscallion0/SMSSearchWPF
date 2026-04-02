@@ -114,11 +114,7 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <TextBlock Text="Symbology:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                    <ComboBox ItemsSource="{Binding AvailableSymbologies}" SelectedItem="{Binding SelectedSymbology}" Width="120" Margin="0,0,15,0"/>
-
-                    <Button Command="{Binding GenerateBarcodeCommand}" Content="Copy SVG" Width="80" Margin="0,0,10,0"/>
-                    <Button Command="{Binding SavePdfCommand}" Content="Save as PDF" Width="100"/>
+                    <Button Command="{Binding ViewBarcodeCommand}" Content="View Barcode" Width="100"/>
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -138,7 +134,8 @@
                               SelectedItem="{Binding SelectedDefinitionToAdd}"
                               DisplayMemberPath="Title" Width="200" Margin="0,0,5,0"
                               IsEditable="True" IsTextSearchEnabled="True"/>
-                    <Button Command="{Binding AddAiCommand}" Content="Add AI" Width="60"/>
+                    <Button Command="{Binding AddAiCommand}" Content="Add AI" Width="60" Margin="0,0,10,0"/>
+                    <Button Command="{Binding ClearValuesCommand}" Content="Clear Values" Width="80"/>
                 </StackPanel>
 
                 <DataGrid ItemsSource="{Binding ParsedAis}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single" SelectionUnit="Cell">

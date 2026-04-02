@@ -27,6 +27,47 @@ namespace SMS_Search.Services.Gs1
             return svgImage.Content;
         }
 
+        public System.Windows.Media.Imaging.BitmapSource GenerateBitmapSource(string barcodeData, Gs1BarcodeType type)
+        {
+            var format = type == Gs1BarcodeType.Gs1DataMatrix ? BarcodeFormat.DATA_MATRIX : BarcodeFormat.CODE_128;
+            var writer = new ZXing.Windows.Compatibility.BarcodeWriter
+            {
+                Format = format,
+                Options = new EncodingOptions
+                {
+                    Width = 600,
+                    Height = 200,
+                    Margin = 10,
+                    PureBarcode = false
+                }
+            };
+
+            using (var bitmap = writer.Write(barcodeData))
+            {
+                var hbitmap = bitmap.GetHbitmap();
+                try
+                {
+                    var source = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                        hbitmap,
+                        System.IntPtr.Zero,
+                        System.Windows.Int32Rect.Empty,
+                        System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
+
+                    // Freeze it for cross-thread access if needed
+                    source.Freeze();
+                    return source;
+                }
+                finally
+                {
+                    // Clean up GDI handles to avoid memory leaks
+                    DeleteObject(hbitmap);
+                }
+            }
+        }
+
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        private static extern bool DeleteObject(System.IntPtr hObject);
+
         public void SaveAsPdf(string barcodeData, Gs1BarcodeType type, string filePath)
         {
             var document = new PdfDocument();

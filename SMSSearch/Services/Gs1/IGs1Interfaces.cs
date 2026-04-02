@@ -27,5 +27,6 @@ namespace SMS_Search.Services.Gs1
     {
         string GenerateSvg(string barcodeData, Gs1BarcodeType type);
         void SaveAsPdf(string barcodeData, Gs1BarcodeType type, string filePath);
+        System.Windows.Media.Imaging.BitmapSource GenerateBitmapSource(string barcodeData, Gs1BarcodeType type);
     }
 }
