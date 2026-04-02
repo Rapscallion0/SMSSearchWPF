@@ -36,5 +36,6 @@ namespace SMS_Search.Models.Gs1
         public string FormattedValue { get; set; } = "";
         public string DetectedType { get; set; } = "";
         public System.DateTime Timestamp { get; set; }
+        public string OriginalAi { get; set; } = "";
     }
 }

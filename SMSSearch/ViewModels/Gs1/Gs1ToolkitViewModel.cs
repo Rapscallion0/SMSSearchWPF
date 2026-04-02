@@ -272,7 +272,7 @@ namespace SMS_Search.ViewModels.Gs1
                     _isUpdatingFromSubAi = true;
                     try
                     {
-                        RawBarcode = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => $"({a.Ai}){a.RawValue}"));
+                        RawBarcode = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => (a.Ai == "8110" || a.Ai == "8112") ? $"{a.Ai}{a.RawValue}" : $"({a.Ai}){a.RawValue}"));
                     }
                     finally
                     {
@@ -295,7 +295,7 @@ namespace SMS_Search.ViewModels.Gs1
                 mainAi.RawValue = newRawValue;
 
                 // Also update the full RawBarcode to reflect changes
-                RawBarcode = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => $"({a.Ai}){a.RawValue}"));
+                RawBarcode = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => (a.Ai == "8110" || a.Ai == "8112") ? $"{a.Ai}{a.RawValue}" : $"({a.Ai}){a.RawValue}"));
             }
             finally
             {
@@ -354,7 +354,7 @@ namespace SMS_Search.ViewModels.Gs1
         [RelayCommand]
         private void ViewBarcode()
         {
-            string data = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => $"({a.Ai}){a.RawValue}"));
+            string data = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => (a.Ai == "8110" || a.Ai == "8112") ? $"{a.Ai}{a.RawValue}" : $"({a.Ai}){a.RawValue}"));
             if (string.IsNullOrWhiteSpace(data))
             {
                 _dialogService.ShowToast("No data to encode. Please enter barcode values.", "View Barcode", SMS_Search.Views.ToastType.Warning);
@@ -378,10 +378,11 @@ namespace SMS_Search.ViewModels.Gs1
         {
             var item = new Gs1HistoryItem
             {
-                RawValue = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => $"({a.Ai}){a.RawValue}")),
+                RawValue = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => (a.Ai == "8110" || a.Ai == "8112") ? $"{a.Ai}{a.RawValue}" : $"({a.Ai}){a.RawValue}")),
                 FormattedValue = formattedValue,
                 DetectedType = DetectedType,
-                Timestamp = System.DateTime.Now
+                Timestamp = System.DateTime.Now,
+                OriginalAi = ParsedAis.FirstOrDefault(a => a.Ai == "8110" || a.Ai == "8112")?.Ai ?? ""
             };
 
             // Limit history size in memory
@@ -397,6 +398,8 @@ namespace SMS_Search.ViewModels.Gs1
         {
             if (item != null)
             {
+                // The parser now natively supports injecting parentheses for raw strings starting with 8110 or 8112.
+                // We can just pass the raw string and let the parser handle it.
                 RawBarcode = item.RawValue;
             }
         }
