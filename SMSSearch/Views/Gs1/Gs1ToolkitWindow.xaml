@@ -68,6 +68,9 @@
                         <Style TargetType="Control">
                             <Setter Property="Template" Value="{StaticResource Icon_Gs1_Type_Generic}"/>
                             <Style.Triggers>
+                                <DataTrigger Binding="{Binding DetectedType}" Value="GS1 Databar Coupon">
+                                    <Setter Property="Template" Value="{StaticResource Icon_Gs1_Type_Coupon}"/>
+                                </DataTrigger>
                                 <DataTrigger Binding="{Binding DetectedType}" Value="SSCC-18">
                                     <Setter Property="Template" Value="{StaticResource Icon_Gs1_Type_SSCC}"/>
                                 </DataTrigger>
@@ -139,6 +142,17 @@
                 </StackPanel>
 
                 <DataGrid ItemsSource="{Binding ParsedAis}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single" SelectionUnit="Cell">
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Foreground" Value="Black" />
+                                    <Setter Property="Background" Value="#CCE8FF" />
+                                    <Setter Property="BorderBrush" Value="#99D1FF" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.CellStyle>
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="AI" Binding="{Binding Ai}" IsReadOnly="True" Width="50"/>
                         <DataGridTemplateColumn Header="Description" Width="200" IsReadOnly="True">
