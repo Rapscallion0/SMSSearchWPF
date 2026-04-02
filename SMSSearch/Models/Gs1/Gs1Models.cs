@@ -7,6 +7,7 @@ namespace SMS_Search.Models.Gs1
         public string Specification { get; set; } = "";
         public string Attributes { get; set; } = "";
         public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
         public bool IsVariableLength { get; set; }
         public int MinLength { get; set; }
         public int MaxLength { get; set; }
