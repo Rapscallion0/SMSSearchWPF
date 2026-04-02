@@ -72,6 +72,19 @@ namespace SMS_Search.ViewModels.Gs1
 
             if (string.IsNullOrEmpty(value) || _isUpdatingTemplateInternally) return;
 
+            // Clear the raw barcode and draft raw barcode first, so the ForceParse triggers don't happen
+            // in an unexpected way when ParsedAis is manipulated.
+            _isClearingValues = true;
+            try
+            {
+                RawBarcode = "";
+                DraftRawBarcode = "";
+            }
+            finally
+            {
+                _isClearingValues = false;
+            }
+
             ParsedAis.Clear();
             if (value == "GS1 Databar Coupon")
             {
@@ -210,12 +223,16 @@ namespace SMS_Search.ViewModels.Gs1
         [RelayCommand]
         private void CommitRawBarcode()
         {
-            if (IsRawBarcodeModified)
+            _logger.LogInfo($"Committing raw barcode. Length: {DraftRawBarcode.Length}");
+            if (RawBarcode == DraftRawBarcode)
             {
-                _logger.LogInfo($"Committing raw barcode. Length: {DraftRawBarcode.Length}");
-                RawBarcode = DraftRawBarcode;
-                IsRawBarcodeModified = false;
+                ForceParse(DraftRawBarcode);
             }
+            else
+            {
+                RawBarcode = DraftRawBarcode;
+            }
+            IsRawBarcodeModified = false;
         }
 
         [RelayCommand]
@@ -238,6 +255,11 @@ namespace SMS_Search.ViewModels.Gs1
                 IsRawBarcodeModified = false;
             }
 
+            ForceParse(value);
+        }
+
+        private void ForceParse(string value)
+        {
             if (string.IsNullOrWhiteSpace(value))
             {
                 foreach (var ai in ParsedAis)

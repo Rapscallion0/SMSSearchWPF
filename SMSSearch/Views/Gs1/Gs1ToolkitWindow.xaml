@@ -140,9 +140,22 @@
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
                     <ComboBox ItemsSource="{Binding FilteredDefinitions}"
                               SelectedItem="{Binding SelectedDefinitionToAdd}"
-                              DisplayMemberPath="Title" Width="200" Margin="0,0,5,0"
-                              IsEditable="True" IsTextSearchEnabled="True"
-                              Visibility="{Binding IsAddAiVisible, Converter={StaticResource BoolToVis}}"/>
+                              Width="200" Margin="0,0,5,0"
+                              IsEditable="False" IsTextSearchEnabled="True" TextSearch.TextPath="Ai"
+                              Visibility="{Binding IsAddAiVisible, Converter={StaticResource BoolToVis}}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock ToolTip="{Binding Title}">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}{0} - {1}">
+                                            <Binding Path="Ai"/>
+                                            <Binding Path="Title"/>
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                     <Button Command="{Binding AddAiCommand}" Content="Add AI" Width="60" Margin="0,0,10,0"
                             Visibility="{Binding IsAddAiVisible, Converter={StaticResource BoolToVis}}"/>
                     <Button Command="{Binding ClearValuesCommand}" Content="Clear Values" Width="80"/>
