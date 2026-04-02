@@ -38,9 +38,11 @@ namespace SMS_Search.ViewModels.Gs1
         [ObservableProperty]
         private string? _selectedTemplate;
 
+        private bool _isUpdatingTemplateInternally;
+
         partial void OnSelectedTemplateChanged(string? value)
         {
-            if (string.IsNullOrEmpty(value)) return;
+            if (string.IsNullOrEmpty(value) || _isUpdatingTemplateInternally) return;
 
             ParsedAis.Clear();
             if (value == "GS1 Databar Coupon")
@@ -227,6 +229,10 @@ namespace SMS_Search.ViewModels.Gs1
             }
             DetectedType = _parser.DetectType(result.ParsedAis);
 
+            _isUpdatingTemplateInternally = true;
+            SelectedTemplate = DetectedType;
+            _isUpdatingTemplateInternally = false;
+
             ApplyRequiredStatusByTemplate(DetectedType);
 
             if (!result.IsValid)
@@ -322,10 +328,13 @@ namespace SMS_Search.ViewModels.Gs1
 
         private void AddEmptySubAi(string title, bool isRequired = false)
         {
+            var def = AvailableDefinitions.FirstOrDefault(d => d.Ai == "└─" && d.Title == title)
+                      ?? new Gs1AiDefinition { Title = title, Ai = "└─" };
+
             var vm = new Gs1ParsedAiViewModel(new Gs1ParsedAi
             {
                 Ai = "└─",
-                Definition = new Gs1AiDefinition { Title = title },
+                Definition = def,
                 RawValue = "",
                 IsValid = true
             }, _dialogService);
@@ -561,7 +570,7 @@ namespace SMS_Search.ViewModels.Gs1
         private void Validate()
         {
             _errors.Clear();
-            if (_model.Definition != null && Ai != "└─")
+            if (_model.Definition != null)
             {
                 if (DraftValue.Length < _model.Definition.MinLength)
                 {
