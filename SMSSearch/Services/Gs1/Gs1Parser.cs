@@ -201,7 +201,6 @@ namespace SMS_Search.Services.Gs1
 
             void AddSubAi(string title, string value)
             {
-                if (string.IsNullOrEmpty(value)) return;
                 result.ParsedAis.Add(new Gs1ParsedAi
                 {
                     Ai = "└─",
@@ -218,12 +217,15 @@ namespace SMS_Search.Services.Gs1
             AddSubAi("Primary Purchase Requirement Code", Read(1));
             AddSubAi("Primary Purchase Family Code", Read(3));
 
+            var parsedFields = new HashSet<string>();
+
             while (index < rawValue.Length)
             {
                 string field = Read(1);
                 if (field == "0")
                 {
                     AddSubAi("Data Field 0", Read(2));
+                    parsedFields.Add("0");
                 }
                 else if (field == "1")
                 {
@@ -234,6 +236,7 @@ namespace SMS_Search.Services.Gs1
                     int cpVli = ReadInt(1);
                     if (cpVli == 9) AddSubAi("2nd Purchase Company Prefix", "N/A");
                     else AddSubAi("2nd Purchase Company Prefix", Read(cpVli + 6));
+                    parsedFields.Add("1");
                 }
                 else if (field == "2")
                 {
@@ -243,23 +246,28 @@ namespace SMS_Search.Services.Gs1
                     int cpVli = ReadInt(1);
                     if (cpVli == 9) AddSubAi("3rd Purchase Company Prefix", "N/A");
                     else AddSubAi("3rd Purchase Company Prefix", Read(cpVli + 6));
+                    parsedFields.Add("2");
                 }
                 else if (field == "3")
                 {
                     AddSubAi("Expiration Date", Read(6));
+                    parsedFields.Add("3");
                 }
                 else if (field == "4")
                 {
                     AddSubAi("Start Date", Read(6));
+                    parsedFields.Add("4");
                 }
                 else if (field == "5")
                 {
                     // Serial Number VLI + 6 = Length
                     AddSubAi("Serial Number", Read(ReadInt(1) + 6));
+                    parsedFields.Add("5");
                 }
                 else if (field == "6")
                 {
                     AddSubAi("Retailer Company Prefix / GLN", Read(ReadInt(1) + 6));
+                    parsedFields.Add("6");
                 }
                 else if (field == "9")
                 {
@@ -267,12 +275,57 @@ namespace SMS_Search.Services.Gs1
                     AddSubAi("Applies to Which Item", Read(1));
                     AddSubAi("Store Coupon", Read(1));
                     AddSubAi("Don't Multiply Flag", Read(1));
+                    parsedFields.Add("9");
                 }
                 else
                 {
                     AddSubAi($"Unknown Field ({field})", Read(rawValue.Length - index));
                     break;
                 }
+            }
+
+            // Always add missing optional fields so they can be manipulated
+            if (!parsedFields.Contains("0"))
+            {
+                AddSubAi("Data Field 0", "");
+            }
+            if (!parsedFields.Contains("1"))
+            {
+                AddSubAi("2nd Additional Purchase Rules Code", "");
+                AddSubAi("2nd Purchase Requirement", "");
+                AddSubAi("2nd Purchase Requirement Code", "");
+                AddSubAi("2nd Purchase Family Code", "");
+                AddSubAi("2nd Purchase Company Prefix", "");
+            }
+            if (!parsedFields.Contains("2"))
+            {
+                AddSubAi("3rd Purchase Requirement", "");
+                AddSubAi("3rd Purchase Requirement Code", "");
+                AddSubAi("3rd Purchase Family Code", "");
+                AddSubAi("3rd Purchase Company Prefix", "");
+            }
+            if (!parsedFields.Contains("3"))
+            {
+                AddSubAi("Expiration Date", "");
+            }
+            if (!parsedFields.Contains("4"))
+            {
+                AddSubAi("Start Date", "");
+            }
+            if (!parsedFields.Contains("5"))
+            {
+                AddSubAi("Serial Number", "");
+            }
+            if (!parsedFields.Contains("6"))
+            {
+                AddSubAi("Retailer Company Prefix / GLN", "");
+            }
+            if (!parsedFields.Contains("9"))
+            {
+                AddSubAi("Save Value Code", "");
+                AddSubAi("Applies to Which Item", "");
+                AddSubAi("Store Coupon", "");
+                AddSubAi("Don't Multiply Flag", "");
             }
         }
 

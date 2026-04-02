@@ -364,7 +364,7 @@ namespace SMS_Search.ViewModels.Gs1
         {
             var item = new Gs1HistoryItem
             {
-                RawValue = string.Join("", ParsedAis.Select(a => a.RawValue)), // Approximate raw string
+                RawValue = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => $"({a.Ai}){a.RawValue}")),
                 FormattedValue = formattedValue,
                 DetectedType = DetectedType,
                 Timestamp = System.DateTime.Now
