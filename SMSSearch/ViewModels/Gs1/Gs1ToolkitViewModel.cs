@@ -46,28 +46,59 @@ namespace SMS_Search.ViewModels.Gs1
             if (value == "GS1 Databar Coupon")
             {
                 var def = AvailableDefinitions.FirstOrDefault(d => d.Ai == "8110");
-                if (def != null) AddEmptyAi(def);
+                if (def != null)
+                {
+                    AddEmptyAi(def, true);
+                    AddEmptySubAi("Primary Company Prefix", true);
+                    AddEmptySubAi("Offer Code", true);
+                    AddEmptySubAi("Save Value", true);
+                    AddEmptySubAi("Primary Purchase Requirement", true);
+                    AddEmptySubAi("Primary Purchase Requirement Code", true);
+                    AddEmptySubAi("Primary Purchase Family Code", true);
+
+                    AddEmptySubAi("Data Field 0", false);
+                    AddEmptySubAi("2nd Additional Purchase Rules Code", false);
+                    AddEmptySubAi("2nd Purchase Requirement", false);
+                    AddEmptySubAi("2nd Purchase Requirement Code", false);
+                    AddEmptySubAi("2nd Purchase Family Code", false);
+                    AddEmptySubAi("2nd Purchase Company Prefix", false);
+
+                    AddEmptySubAi("3rd Purchase Requirement", false);
+                    AddEmptySubAi("3rd Purchase Requirement Code", false);
+                    AddEmptySubAi("3rd Purchase Family Code", false);
+                    AddEmptySubAi("3rd Purchase Company Prefix", false);
+
+                    AddEmptySubAi("Expiration Date", false);
+                    AddEmptySubAi("Start Date", false);
+                    AddEmptySubAi("Serial Number", false);
+                    AddEmptySubAi("Retailer Company Prefix / GLN", false);
+
+                    AddEmptySubAi("Save Value Code", false);
+                    AddEmptySubAi("Applies to Which Item", false);
+                    AddEmptySubAi("Store Coupon", false);
+                    AddEmptySubAi("Don't Multiply Flag", false);
+                }
             }
             else if (value == "SSCC-18")
             {
                 var def = AvailableDefinitions.FirstOrDefault(d => d.Ai == "00");
-                if (def != null) AddEmptyAi(def);
+                if (def != null) AddEmptyAi(def, true);
             }
             else if (value == "GTIN-14")
             {
                 var def = AvailableDefinitions.FirstOrDefault(d => d.Ai == "01");
-                if (def != null) AddEmptyAi(def);
+                if (def != null) AddEmptyAi(def, true);
             }
             else if (value == "GS1-128 (GTIN + Attributes)")
             {
                 var def01 = AvailableDefinitions.FirstOrDefault(d => d.Ai == "01");
-                if (def01 != null) AddEmptyAi(def01);
+                if (def01 != null) AddEmptyAi(def01, true);
 
                 var def10 = AvailableDefinitions.FirstOrDefault(d => d.Ai == "10");
-                if (def10 != null) AddEmptyAi(def10);
+                if (def10 != null) AddEmptyAi(def10, false);
 
                 var def21 = AvailableDefinitions.FirstOrDefault(d => d.Ai == "21");
-                if (def21 != null) AddEmptyAi(def21);
+                if (def21 != null) AddEmptyAi(def21, false);
             }
 
             DetectedType = value;
@@ -255,7 +286,7 @@ namespace SMS_Search.ViewModels.Gs1
             }
         }
 
-        private void AddEmptyAi(Gs1AiDefinition definition)
+        private void AddEmptyAi(Gs1AiDefinition definition, bool isRequired = false)
         {
             var vm = new Gs1ParsedAiViewModel(new Gs1ParsedAi
             {
@@ -263,7 +294,22 @@ namespace SMS_Search.ViewModels.Gs1
                 Definition = definition,
                 RawValue = "",
                 IsValid = true
-            });
+            }, _dialogService);
+            vm.IsRequired = isRequired;
+            vm.PropertyChanged += OnParsedAiPropertyChanged;
+            ParsedAis.Add(vm);
+        }
+
+        private void AddEmptySubAi(string title, bool isRequired = false)
+        {
+            var vm = new Gs1ParsedAiViewModel(new Gs1ParsedAi
+            {
+                Ai = "└─",
+                Definition = new Gs1AiDefinition { Title = title },
+                RawValue = "",
+                IsValid = true
+            }, _dialogService);
+            vm.IsRequired = isRequired;
             vm.PropertyChanged += OnParsedAiPropertyChanged;
             ParsedAis.Add(vm);
         }
@@ -330,6 +376,35 @@ namespace SMS_Search.ViewModels.Gs1
 
             // Save to disk
             _ = SaveHistoryAsync();
+        }
+
+        [RelayCommand]
+        private void LoadHistoryItem(Gs1HistoryItem item)
+        {
+            if (item != null)
+            {
+                RawBarcode = item.RawValue;
+            }
+        }
+
+        [RelayCommand]
+        private void DeleteHistoryItem(Gs1HistoryItem item)
+        {
+            if (item != null && History.Contains(item))
+            {
+                History.Remove(item);
+                _ = SaveHistoryAsync();
+            }
+        }
+
+        [RelayCommand]
+        private void ClearHistory()
+        {
+            if (History.Count > 0)
+            {
+                History.Clear();
+                _ = SaveHistoryAsync();
+            }
         }
 
         private async Task LoadHistoryAsync()
@@ -401,6 +476,9 @@ namespace SMS_Search.ViewModels.Gs1
 
         [ObservableProperty]
         private bool _isModified;
+
+        [ObservableProperty]
+        private bool _isRequired;
 
         partial void OnDraftValueChanged(string value)
         {

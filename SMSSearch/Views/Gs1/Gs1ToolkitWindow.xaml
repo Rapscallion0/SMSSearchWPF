@@ -138,10 +138,30 @@
                     <Button Command="{Binding AddAiCommand}" Content="Add AI" Width="60"/>
                 </StackPanel>
 
-                <DataGrid ItemsSource="{Binding ParsedAis}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single">
+                <DataGrid ItemsSource="{Binding ParsedAis}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single" SelectionUnit="Cell">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="AI" Binding="{Binding Ai}" IsReadOnly="True" Width="50"/>
-                        <DataGridTextColumn Header="Description" Binding="{Binding Title}" IsReadOnly="True" Width="200"/>
+                        <DataGridTemplateColumn Header="Description" Width="200" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Title}"/>
+                                        <TextBlock Text=" *" Foreground="Red" FontWeight="Bold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsRequired}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTemplateColumn Header="Value" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -178,6 +198,26 @@
             <!-- History -->
             <GroupBox Grid.Column="2" Header="History" Margin="0,10,10,10">
                 <ListBox ItemsSource="{Binding History}">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}" />
+                            <Setter Property="ContextMenu">
+                                <Setter.Value>
+                                    <ContextMenu>
+                                        <MenuItem Header="Load"
+                                                  Command="{Binding PlacementTarget.Tag.LoadHistoryItemCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                        <Separator/>
+                                        <MenuItem Header="Delete"
+                                                  Command="{Binding PlacementTarget.Tag.DeleteHistoryItemCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                        <MenuItem Header="Clear All"
+                                                  Command="{Binding PlacementTarget.Tag.ClearHistoryCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                    </ContextMenu>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Margin="2">
