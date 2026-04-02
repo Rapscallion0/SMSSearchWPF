@@ -13,6 +13,7 @@ namespace SMS_Search.Services.Gs1
     public class Gs1Repository : IGs1Repository
     {
         private const string DictionaryUrl = "https://raw.githubusercontent.com/gs1/gs1-syntax-dictionary/master/gs1-syntax-dictionary.txt";
+        private const string JsonLdUrl = "https://ref.gs1.org/ai/GS1_Application_Identifiers.jsonld";
         private readonly ILoggerService _logger;
         private List<Gs1AiDefinition>? _cachedDefinitions;
 
@@ -31,11 +32,46 @@ namespace SMS_Search.Services.Gs1
         {
             try
             {
-                _logger.LogInfo($"Downloading GS1 syntax dictionary from {DictionaryUrl}...");
                 using var client = new HttpClient();
+                _logger.LogInfo($"Downloading GS1 syntax dictionary from {DictionaryUrl}...");
                 string content = await client.GetStringAsync(DictionaryUrl);
-
                 var definitions = ParseDictionaryText(content);
+
+                try
+                {
+                    _logger.LogInfo($"Downloading GS1 JSON-LD dictionary from {JsonLdUrl}...");
+                    string jsonLdContent = await client.GetStringAsync(JsonLdUrl);
+                    using var document = JsonDocument.Parse(jsonLdContent);
+                    if (document.RootElement.TryGetProperty("applicationIdentifiers", out var aisElement))
+                    {
+                        var descriptions = new Dictionary<string, string>();
+                        foreach (var aiElement in aisElement.EnumerateArray())
+                        {
+                            if (aiElement.TryGetProperty("applicationIdentifier", out var aiCodeElement) &&
+                                aiElement.TryGetProperty("description", out var descElement))
+                            {
+                                string aiCode = aiCodeElement.GetString() ?? "";
+                                string desc = descElement.GetString() ?? "";
+                                if (!string.IsNullOrEmpty(aiCode) && !string.IsNullOrEmpty(desc))
+                                {
+                                    descriptions[aiCode] = desc;
+                                }
+                            }
+                        }
+
+                        foreach (var def in definitions)
+                        {
+                            if (descriptions.TryGetValue(def.Ai, out string? description))
+                            {
+                                def.Description = description;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Failed to download or parse GS1 JSON-LD for descriptions. Continuing without enriched descriptions.", ex);
+                }
 
                 string json = JsonSerializer.Serialize(definitions, new JsonSerializerOptions { WriteIndented = true });
                 await File.WriteAllTextAsync(GetCachePath(), json);
