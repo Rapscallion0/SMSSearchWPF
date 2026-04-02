@@ -17,6 +17,7 @@
         <Style x:Key="ModifiableTextBoxStyle" TargetType="TextBox">
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Validation.ErrorTemplate" Value="{StaticResource ErrorTemplate}"/>
+            <Setter Property="ToolTip" Value="Press Enter to apply, Esc to revert, or click away to save"/>
             <Style.Triggers>
                 <Trigger Property="Validation.HasError" Value="True">
                     <Setter Property="Effect">
@@ -147,7 +148,7 @@
                     <Button Command="{Binding ClearValuesCommand}" Content="Clear Values" Width="80"/>
                 </StackPanel>
 
-                <DataGrid ItemsSource="{Binding ParsedAis}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single" SelectionUnit="Cell">
+                <DataGrid ItemsSource="{Binding ParsedAis}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserResizeRows="False" SelectionMode="Single" SelectionUnit="Cell">
                     <DataGrid.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Style.Triggers>
@@ -194,7 +195,10 @@
                                     <TextBox Text="{Binding DraftValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                                              Style="{StaticResource ModifiableTextBoxStyle}"
                                              BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center"
-                                             ToolTip="Press Enter to apply, Esc to revert, or click away to save" LostFocus="TextBox_LostFocus">
+                                             LostFocus="TextBox_LostFocus"
+                                             PreviewTextInput="TextBox_PreviewTextInput"
+                                             Loaded="TextBox_Loaded"
+                                             Unloaded="TextBox_Unloaded">
                                         <TextBox.InputBindings>
                                             <KeyBinding Key="Enter" Command="{Binding CommitCommand}"/>
                                             <KeyBinding Key="Escape" Command="{Binding RevertCommand}"/>
@@ -206,7 +210,10 @@
                                 <DataTemplate>
                                     <TextBox Text="{Binding DraftValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                                              Style="{StaticResource ModifiableTextBoxStyle}"
-                                             ToolTip="Press Enter to apply, Esc to revert, or click away to save" LostFocus="TextBox_LostFocus">
+                                             LostFocus="TextBox_LostFocus"
+                                             PreviewTextInput="TextBox_PreviewTextInput"
+                                             Loaded="TextBox_Loaded"
+                                             Unloaded="TextBox_Unloaded">
                                         <TextBox.InputBindings>
                                             <KeyBinding Key="Enter" Command="{Binding CommitCommand}"/>
                                             <KeyBinding Key="Escape" Command="{Binding RevertCommand}"/>
