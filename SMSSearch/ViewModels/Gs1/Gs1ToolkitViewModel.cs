@@ -105,15 +105,6 @@ namespace SMS_Search.ViewModels.Gs1
             RawBarcode = ""; // Clear raw string when using template
         }
 
-        public ObservableCollection<Gs1BarcodeType> AvailableSymbologies { get; } = new ObservableCollection<Gs1BarcodeType>
-        {
-            Gs1BarcodeType.Gs1_128,
-            Gs1BarcodeType.Gs1DataMatrix
-        };
-
-        [ObservableProperty]
-        private Gs1BarcodeType _selectedSymbology = Gs1BarcodeType.Gs1_128;
-
         public ObservableCollection<Gs1ParsedAiViewModel> ParsedAis { get; } = new ObservableCollection<Gs1ParsedAiViewModel>();
         public ObservableCollection<Gs1AiDefinition> AvailableDefinitions { get; } = new ObservableCollection<Gs1AiDefinition>();
         public ObservableCollection<Gs1HistoryItem> History { get; } = new ObservableCollection<Gs1HistoryItem>();
@@ -233,9 +224,35 @@ namespace SMS_Search.ViewModels.Gs1
             }
             DetectedType = _parser.DetectType(result.ParsedAis);
 
+            ApplyRequiredStatusByTemplate(DetectedType);
+
             if (!result.IsValid)
             {
                 _dialogService.ShowToast(result.ErrorMessage, "GS1 Parsing Error", SMS_Search.Views.ToastType.Warning);
+            }
+        }
+
+        private void ApplyRequiredStatusByTemplate(string templateName)
+        {
+            if (templateName == "GS1 Databar Coupon")
+            {
+                var requiredTitles = new[] { "Primary Company Prefix", "Offer Code", "Save Value", "Primary Purchase Requirement", "Primary Purchase Requirement Code", "Primary Purchase Family Code" };
+                foreach (var ai in ParsedAis)
+                {
+                    if (ai.Ai == "8110" || ai.Ai == "8112" || requiredTitles.Contains(ai.Title))
+                    {
+                        ai.IsRequired = true;
+                    }
+                }
+            }
+            else if (templateName == "SSCC-18" || templateName == "GTIN-14")
+            {
+                foreach (var ai in ParsedAis) ai.IsRequired = true;
+            }
+            else if (templateName == "GS1-128 (GTIN + Attributes)")
+            {
+                var def01 = ParsedAis.FirstOrDefault(a => a.Ai == "01");
+                if (def01 != null) def01.IsRequired = true;
             }
         }
 
@@ -324,40 +341,37 @@ namespace SMS_Search.ViewModels.Gs1
         }
 
         [RelayCommand]
-        private void GenerateBarcode()
+        private void ClearValues()
         {
-            string data = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => $"({a.Ai}){a.RawValue}"));
-            if (string.IsNullOrWhiteSpace(data))
+            foreach (var ai in ParsedAis)
             {
-                _dialogService.ShowToast("No data to encode. Please enter barcode values.", "Generate Barcode", SMS_Search.Views.ToastType.Warning);
-                return;
+                ai.RawValue = "";
+                ai.DraftValue = "";
+                ai.IsModified = false;
             }
-
-            string svg = _barcodeService.GenerateSvg(data, SelectedSymbology);
-            _clipboard.SetText(svg);
-            _dialogService.ShowToast("Barcode SVG copied to clipboard.", "Generate Barcode", SMS_Search.Views.ToastType.Success);
-
-            // Add to history
-            AddToHistory(data);
         }
 
         [RelayCommand]
-        private void SavePdf()
+        private void ViewBarcode()
         {
             string data = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => $"({a.Ai}){a.RawValue}"));
             if (string.IsNullOrWhiteSpace(data))
             {
-                _dialogService.ShowToast("No data to encode. Please enter barcode values.", "Save PDF", SMS_Search.Views.ToastType.Warning);
+                _dialogService.ShowToast("No data to encode. Please enter barcode values.", "View Barcode", SMS_Search.Views.ToastType.Warning);
                 return;
             }
 
-            string path = _dialogService.SaveFileDialog("PDF Files (*.pdf)|*.pdf", "barcode.pdf") ?? "";
-            if (!string.IsNullOrEmpty(path))
+            var vm = new Gs1BarcodeWindowViewModel(data, _barcodeService, _clipboard, _dialogService);
+            var window = new SMS_Search.Views.Gs1.Gs1BarcodeWindow
             {
-                _barcodeService.SaveAsPdf(data, SelectedSymbology, path);
-                _dialogService.ShowToast($"Barcode PDF saved.", "Save PDF", SMS_Search.Views.ToastType.Success);
-                AddToHistory(data);
-            }
+                DataContext = vm
+            };
+
+            // Set owner to the active window for proper centering
+            window.Owner = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive);
+            window.ShowDialog();
+
+            AddToHistory(data);
         }
 
         private void AddToHistory(string formattedValue)
