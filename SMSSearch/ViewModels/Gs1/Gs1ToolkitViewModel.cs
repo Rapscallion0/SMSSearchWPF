@@ -188,9 +188,12 @@ namespace SMS_Search.ViewModels.Gs1
         }
 
         private bool _isUpdatingFromSubAi;
+        private bool _isClearingValues;
 
         partial void OnRawBarcodeChanged(string value)
         {
+            if (_isClearingValues) return;
+
             if (!_isUpdatingFromSubAi)
             {
                 DraftRawBarcode = value;
@@ -343,11 +346,22 @@ namespace SMS_Search.ViewModels.Gs1
         [RelayCommand]
         private void ClearValues()
         {
-            foreach (var ai in ParsedAis)
+            _isClearingValues = true;
+            try
             {
-                ai.RawValue = "";
-                ai.DraftValue = "";
-                ai.IsModified = false;
+                foreach (var ai in ParsedAis)
+                {
+                    ai.RawValue = "";
+                    ai.DraftValue = "";
+                    ai.IsModified = false;
+                }
+
+                // Also update the full RawBarcode to reflect changes
+                RawBarcode = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => (a.Ai == "8110" || a.Ai == "8112") ? $"{a.Ai}{a.RawValue}" : $"({a.Ai}){a.RawValue}"));
+            }
+            finally
+            {
+                _isClearingValues = false;
             }
         }
 
