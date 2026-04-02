@@ -38,16 +38,34 @@ namespace SMS_Search.Services.Gs1
                 Gs1AiDefinition? matchedDef = null;
                 int aiLength = 0;
 
-                for (int i = 4; i >= 2; i--)
+                // Check for explicit parenthesis around AI
+                if (barcode[index] == '(')
                 {
-                    if (index + i <= barcode.Length)
+                    int closeParenIndex = barcode.IndexOf(')', index);
+                    if (closeParenIndex > index + 1)
                     {
-                        string possibleAi = barcode.Substring(index, i);
+                        string possibleAi = barcode.Substring(index + 1, closeParenIndex - index - 1);
                         matchedDef = definitions.FirstOrDefault(d => d.Ai == possibleAi);
                         if (matchedDef != null)
                         {
-                            aiLength = i;
-                            break;
+                            aiLength = closeParenIndex - index + 1; // Include both parenthesis
+                        }
+                    }
+                }
+
+                if (matchedDef == null)
+                {
+                    for (int i = 4; i >= 2; i--)
+                    {
+                        if (index + i <= barcode.Length)
+                        {
+                            string possibleAi = barcode.Substring(index, i);
+                            matchedDef = definitions.FirstOrDefault(d => d.Ai == possibleAi);
+                            if (matchedDef != null)
+                            {
+                                aiLength = i;
+                                break;
+                            }
                         }
                     }
                 }
