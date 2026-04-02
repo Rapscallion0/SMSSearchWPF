@@ -24,6 +24,12 @@ namespace SMS_Search.Services.Gs1
                 barcode = barcode.Substring(3);
             }
 
+            // Pre-process raw string: if it starts with 8110 or 8112 without parenthesis, inject them so standard parser flow works
+            if ((barcode.StartsWith("8110") || barcode.StartsWith("8112")) && !barcode.StartsWith("("))
+            {
+                barcode = $"({barcode.Substring(0, 4)}){barcode.Substring(4)}";
+            }
+
             int index = 0;
             while (index < barcode.Length)
             {
