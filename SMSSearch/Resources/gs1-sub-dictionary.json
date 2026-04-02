@@ -1,0 +1,146 @@
+[
+  {
+    "Title": "Primary Company Prefix",
+    "MinLength": 1,
+    "MaxLength": 12,
+    "DataType": "N"
+  },
+  {
+    "Title": "Offer Code",
+    "MinLength": 1,
+    "MaxLength": 6,
+    "DataType": "N"
+  },
+  {
+    "Title": "Save Value",
+    "MinLength": 1,
+    "MaxLength": 5,
+    "DataType": "N"
+  },
+  {
+    "Title": "Primary Purchase Requirement",
+    "MinLength": 1,
+    "MaxLength": 5,
+    "DataType": "N"
+  },
+  {
+    "Title": "Primary Purchase Requirement Code",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N"
+  },
+  {
+    "Title": "Primary Purchase Family Code",
+    "MinLength": 1,
+    "MaxLength": 3,
+    "DataType": "N"
+  },
+  {
+    "Title": "Data Field 0",
+    "MinLength": 1,
+    "MaxLength": 2,
+    "DataType": "N"
+  },
+  {
+    "Title": "2nd Additional Purchase Rules Code",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N"
+  },
+  {
+    "Title": "2nd Purchase Requirement",
+    "MinLength": 1,
+    "MaxLength": 5,
+    "DataType": "N"
+  },
+  {
+    "Title": "2nd Purchase Requirement Code",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N"
+  },
+  {
+    "Title": "2nd Purchase Family Code",
+    "MinLength": 1,
+    "MaxLength": 3,
+    "DataType": "N"
+  },
+  {
+    "Title": "2nd Purchase Company Prefix",
+    "MinLength": 1,
+    "MaxLength": 12,
+    "DataType": "N"
+  },
+  {
+    "Title": "3rd Purchase Requirement",
+    "MinLength": 1,
+    "MaxLength": 5,
+    "DataType": "N"
+  },
+  {
+    "Title": "3rd Purchase Requirement Code",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N"
+  },
+  {
+    "Title": "3rd Purchase Family Code",
+    "MinLength": 1,
+    "MaxLength": 3,
+    "DataType": "N"
+  },
+  {
+    "Title": "3rd Purchase Company Prefix",
+    "MinLength": 1,
+    "MaxLength": 12,
+    "DataType": "N"
+  },
+  {
+    "Title": "Expiration Date",
+    "MinLength": 6,
+    "MaxLength": 6,
+    "DataType": "N"
+  },
+  {
+    "Title": "Start Date",
+    "MinLength": 6,
+    "MaxLength": 6,
+    "DataType": "N"
+  },
+  {
+    "Title": "Serial Number",
+    "MinLength": 1,
+    "MaxLength": 12,
+    "DataType": "X"
+  },
+  {
+    "Title": "Retailer Company Prefix / GLN",
+    "MinLength": 1,
+    "MaxLength": 12,
+    "DataType": "N"
+  },
+  {
+    "Title": "Save Value Code",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N"
+  },
+  {
+    "Title": "Applies to Which Item",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N"
+  },
+  {
+    "Title": "Store Coupon",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N"
+  },
+  {
+    "Title": "Don't Multiply Flag",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N"
+  }
+]

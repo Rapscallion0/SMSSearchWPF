@@ -93,14 +93,26 @@
 
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="{Binding DetectedType}" FontWeight="Bold" FontSize="16" Margin="0,0,0,5"/>
-                    <TextBox Text="{Binding DraftRawBarcode, UpdateSourceTrigger=PropertyChanged}"
-                             Height="25" Style="{StaticResource ModifiableRawBarcodeTextBoxStyle}"
-                             ToolTip="Paste GS1 Barcode Data Here (Press Enter to apply, Esc to revert)">
-                        <TextBox.InputBindings>
-                            <KeyBinding Key="Enter" Command="{Binding CommitRawBarcodeCommand}"/>
-                            <KeyBinding Key="Escape" Command="{Binding RevertRawBarcodeCommand}"/>
-                        </TextBox.InputBindings>
-                    </TextBox>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding DraftRawBarcode, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="25" Style="{StaticResource ModifiableRawBarcodeTextBoxStyle}"
+                                 ToolTip="Paste GS1 Barcode Data Here (Press Enter to apply, Esc to revert)">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding CommitRawBarcodeCommand}"/>
+                                <KeyBinding Key="Escape" Command="{Binding RevertRawBarcodeCommand}"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <Button Grid.Column="1" Command="{Binding CommitRawBarcodeCommand}" Content="Decode" Height="25" Margin="5,0,0,0" Padding="10,0"/>
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock Text="Template:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox ItemsSource="{Binding AvailableTemplates}" SelectedItem="{Binding SelectedTemplate}" Width="200" Height="25"/>
+                    </StackPanel>
                 </StackPanel>
             </Grid>
         </Border>
@@ -108,11 +120,6 @@
         <!-- Footer / Commands -->
         <Border DockPanel.Dock="Bottom" Background="#F0F0F0" Padding="10">
             <DockPanel>
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <TextBlock Text="Template:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                    <ComboBox ItemsSource="{Binding AvailableTemplates}" SelectedItem="{Binding SelectedTemplate}" Width="150"/>
-                </StackPanel>
-
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Command="{Binding ViewBarcodeCommand}" Content="View Barcode" Width="100"/>
                 </StackPanel>
@@ -151,12 +158,18 @@
                         </Style>
                     </DataGrid.CellStyle>
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="AI" Binding="{Binding Ai}" IsReadOnly="True" Width="50"/>
-                        <DataGridTemplateColumn Header="Description" Width="200" IsReadOnly="True">
+                        <DataGridTextColumn Header="AI" Binding="{Binding Ai}" IsReadOnly="True" Width="Auto"/>
+                        <DataGridTemplateColumn Header="Description" Width="Auto" IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Title}"/>
+                                        <TextBox Text="{Binding Title, Mode=OneWay}"
+                                                 IsReadOnly="True"
+                                                 BorderThickness="0"
+                                                 Background="Transparent"
+                                                 VerticalContentAlignment="Center"
+                                                 IsHitTestVisible="True"
+                                                 Focusable="True" />
                                         <TextBlock Text=" *" Foreground="Red" FontWeight="Bold">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
@@ -173,13 +186,13 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Value" Width="*">
+                        <DataGridTemplateColumn Header="Value" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBox Text="{Binding DraftValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                                              Style="{StaticResource ModifiableTextBoxStyle}"
                                              BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center"
-                                             ToolTip="Press Enter to apply, Esc to revert">
+                                             ToolTip="Press Enter to apply, Esc to revert, or click away to save" LostFocus="TextBox_LostFocus">
                                         <TextBox.InputBindings>
                                             <KeyBinding Key="Enter" Command="{Binding CommitCommand}"/>
                                             <KeyBinding Key="Escape" Command="{Binding RevertCommand}"/>
@@ -191,7 +204,7 @@
                                 <DataTemplate>
                                     <TextBox Text="{Binding DraftValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                                              Style="{StaticResource ModifiableTextBoxStyle}"
-                                             ToolTip="Press Enter to apply, Esc to revert">
+                                             ToolTip="Press Enter to apply, Esc to revert, or click away to save" LostFocus="TextBox_LostFocus">
                                         <TextBox.InputBindings>
                                             <KeyBinding Key="Enter" Command="{Binding CommitCommand}"/>
                                             <KeyBinding Key="Escape" Command="{Binding RevertCommand}"/>

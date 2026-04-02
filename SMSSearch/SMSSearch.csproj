@@ -60,6 +60,12 @@
     <EmbeddedResource Include="Resources\SQL.xshd" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Resources\gs1-sub-dictionary.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <Target Name="PostBuild" AfterTargets="Build" Condition="'$(IsPublishing)' == '' AND '$(OS)' == 'Windows_NT'">
     <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -Command &quot;Start-Process powershell.exe -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', '\&quot;$(MSBuildProjectDirectory)\..\publish.ps1\&quot;', '-Configuration', '$(Configuration)', '-FromVS') -Wait&quot;" />
   </Target>

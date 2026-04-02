@@ -80,6 +80,32 @@ namespace SMS_Search.Services.Gs1
 
         private void EnsureRequiredAis(List<Gs1AiDefinition> defs)
         {
+            // Inject sub-AIs from resource
+            try
+            {
+                string subPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "gs1-sub-dictionary.json");
+                if (File.Exists(subPath))
+                {
+                    string json = File.ReadAllText(subPath);
+                    var subDefs = JsonSerializer.Deserialize<List<Gs1AiDefinition>>(json);
+                    if (subDefs != null)
+                    {
+                        foreach (var subDef in subDefs)
+                        {
+                            subDef.Ai = "└─"; // Mark as pseudo-AI
+                            if (!defs.Exists(d => d.Title == subDef.Title))
+                            {
+                                defs.Add(subDef);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to load sub AI dictionary.", ex);
+            }
+
             // Ensure 8110 and 8112 Databar Coupon AIs are present
             if (!defs.Exists(d => d.Ai == "8110"))
             {

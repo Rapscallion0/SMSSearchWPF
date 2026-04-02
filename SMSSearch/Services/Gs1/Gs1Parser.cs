@@ -158,7 +158,7 @@ namespace SMS_Search.Services.Gs1
                 // Sub-parse 8110 / 8112 Databar Coupon internal structure
                 if ((matchedDef.Ai == "8110" || matchedDef.Ai == "8112") && !string.IsNullOrEmpty(rawValue))
                 {
-                    ParseDatabarCoupon(rawValue, result);
+                    ParseDatabarCoupon(rawValue, result, definitions);
                 }
             }
 
@@ -185,7 +185,7 @@ namespace SMS_Search.Services.Gs1
             return "GS1 Generic";
         }
 
-        private void ParseDatabarCoupon(string rawValue, Gs1ParseResult result)
+        private void ParseDatabarCoupon(string rawValue, Gs1ParseResult result, List<Gs1AiDefinition> definitions)
         {
             int index = 0;
 
@@ -207,12 +207,15 @@ namespace SMS_Search.Services.Gs1
 
             void AddSubAi(string title, string value)
             {
+                var def = definitions.FirstOrDefault(d => d.Ai == "└─" && d.Title == title)
+                          ?? new Gs1AiDefinition { Title = title, Ai = "└─" };
+
                 result.ParsedAis.Add(new Gs1ParsedAi
                 {
                     Ai = "└─",
                     RawValue = value,
                     IsValid = true,
-                    Definition = new Gs1AiDefinition { Title = title }
+                    Definition = def
                 });
             }
 
