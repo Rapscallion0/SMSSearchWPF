@@ -142,6 +142,29 @@ namespace SMS_Search.Services.Gs1
                     IsValid = true // Base validation, can be enhanced with check digits
                 };
 
+                // Apply constraints if any
+                if (rawValue.Length < matchedDef.MinLength || rawValue.Length > matchedDef.MaxLength)
+                {
+                    parsedAi.IsValid = false;
+                    parsedAi.ErrorMessage = $"Length {rawValue.Length} out of bounds ({matchedDef.MinLength}-{matchedDef.MaxLength})";
+                    result.IsValid = false;
+                    result.ErrorMessage = $"Invalid length for AI {matchedDef.Ai}";
+                }
+                else if ((matchedDef.DataType ?? "").Contains("N") && !(matchedDef.DataType ?? "").Contains("X") && !System.Text.RegularExpressions.Regex.IsMatch(rawValue, "^[0-9]+$"))
+                {
+                    parsedAi.IsValid = false;
+                    parsedAi.ErrorMessage = $"Value must be numeric for AI {matchedDef.Ai}";
+                    result.IsValid = false;
+                    result.ErrorMessage = $"Invalid characters in AI {matchedDef.Ai}";
+                }
+                else if (System.Text.RegularExpressions.Regex.IsMatch(rawValue, @"\s"))
+                {
+                    parsedAi.IsValid = false;
+                    parsedAi.ErrorMessage = $"Value cannot contain whitespace for AI {matchedDef.Ai}";
+                    result.IsValid = false;
+                    result.ErrorMessage = $"Invalid characters in AI {matchedDef.Ai}";
+                }
+
                 // Simple check digit validation for GTIN/SSCC
                 if (matchedDef.Specification.Contains("csum"))
                 {

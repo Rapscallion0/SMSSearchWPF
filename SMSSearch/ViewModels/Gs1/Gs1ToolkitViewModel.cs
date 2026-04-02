@@ -182,6 +182,8 @@ namespace SMS_Search.ViewModels.Gs1
                 {
                     SelectedTemplate = "GS1 Databar Coupon";
                 }
+
+                _logger.LogInfo("GS1 Toolkit initialized successfully.");
             }
             catch (System.Exception ex)
             {
@@ -210,6 +212,7 @@ namespace SMS_Search.ViewModels.Gs1
         {
             if (IsRawBarcodeModified)
             {
+                _logger.LogInfo($"Committing raw barcode. Length: {DraftRawBarcode.Length}");
                 RawBarcode = DraftRawBarcode;
                 IsRawBarcodeModified = false;
             }
@@ -271,7 +274,12 @@ namespace SMS_Search.ViewModels.Gs1
 
             if (!result.IsValid)
             {
+                _logger.LogWarning($"GS1 Parsing Error: {result.ErrorMessage}");
                 _dialogService.ShowToast(result.ErrorMessage, "GS1 Parsing Error", SMS_Search.Views.ToastType.Warning);
+            }
+            else
+            {
+                _logger.LogInfo($"Successfully parsed GS1 barcode. Detected type: {DetectedType}. Extracted {result.ParsedAis.Count} AIs.");
             }
         }
 
@@ -382,6 +390,7 @@ namespace SMS_Search.ViewModels.Gs1
         {
             if (SelectedDefinitionToAdd != null)
             {
+                _logger.LogInfo($"Adding new AI manually: {SelectedDefinitionToAdd.Ai}");
                 AddEmptyAi(SelectedDefinitionToAdd);
             }
         }
@@ -389,6 +398,7 @@ namespace SMS_Search.ViewModels.Gs1
         [RelayCommand]
         private void ClearValues()
         {
+            _logger.LogInfo("Clearing all AI values.");
             _isClearingValues = true;
             try
             {
@@ -455,6 +465,7 @@ namespace SMS_Search.ViewModels.Gs1
         {
             if (item != null)
             {
+                _logger.LogInfo($"Loading history item. Type: {item.DetectedType}");
                 // The parser now natively supports injecting parentheses for raw strings starting with 8110 or 8112.
                 // We can just pass the raw string and let the parser handle it.
                 RawBarcode = item.RawValue;
@@ -539,6 +550,7 @@ namespace SMS_Search.ViewModels.Gs1
             DraftValue = model.RawValue;
         }
 
+        public Gs1ParsedAi Model => _model;
         public string Ai => _model.Ai;
         public string Title => _model.Definition?.Title ?? "Unknown";
 
@@ -578,7 +590,7 @@ namespace SMS_Search.ViewModels.Gs1
                 if (_dialogService != null)
                 {
                     var errors = GetErrors(nameof(DraftValue)).Cast<string>();
-                    string msg = string.Join("\n", errors);
+                    string msg = string.Join("\n", errors.Select(e => $"[{Title}] {e}"));
                     _dialogService.ShowToast(msg, "Validation Error", SMS_Search.Views.ToastType.Warning);
                 }
                 return;
@@ -606,13 +618,37 @@ namespace SMS_Search.ViewModels.Gs1
             _errors.Clear();
             if (_model.Definition != null)
             {
-                if (DraftValue.Length < _model.Definition.MinLength)
+                if (!IsRequired && string.IsNullOrEmpty(DraftValue))
                 {
-                    _errors[nameof(DraftValue)] = new System.Collections.Generic.List<string> { $"Minimum length is {_model.Definition.MinLength}" };
+                    // If it's optional and empty, it's valid. No length checks needed.
                 }
-                else if (DraftValue.Length > _model.Definition.MaxLength)
+                else
                 {
-                    _errors[nameof(DraftValue)] = new System.Collections.Generic.List<string> { $"Maximum length is {_model.Definition.MaxLength}" };
+                    if (DraftValue.Length < _model.Definition.MinLength)
+                    {
+                        _errors[nameof(DraftValue)] = new System.Collections.Generic.List<string> { $"Minimum length is {_model.Definition.MinLength}" };
+                    }
+                    else if (DraftValue.Length > _model.Definition.MaxLength)
+                    {
+                        _errors[nameof(DraftValue)] = new System.Collections.Generic.List<string> { $"Maximum length is {_model.Definition.MaxLength}" };
+                    }
+
+                    string dataType = _model.Definition.DataType ?? "";
+                    if (dataType.Contains("N") && !dataType.Contains("X"))
+                    {
+                        if (!System.Text.RegularExpressions.Regex.IsMatch(DraftValue, "^[0-9]+$"))
+                        {
+                            if (!_errors.ContainsKey(nameof(DraftValue)))
+                                _errors[nameof(DraftValue)] = new System.Collections.Generic.List<string>();
+                            _errors[nameof(DraftValue)].Add("Value must be numeric.");
+                        }
+                    }
+                    else if (System.Text.RegularExpressions.Regex.IsMatch(DraftValue, @"\s"))
+                    {
+                        if (!_errors.ContainsKey(nameof(DraftValue)))
+                            _errors[nameof(DraftValue)] = new System.Collections.Generic.List<string>();
+                        _errors[nameof(DraftValue)].Add("Value cannot contain whitespace.");
+                    }
                 }
             }
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(nameof(DraftValue)));
