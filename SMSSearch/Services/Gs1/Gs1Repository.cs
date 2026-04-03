@@ -36,6 +36,7 @@ namespace SMS_Search.Services.Gs1
                 _logger.LogInfo($"Downloading GS1 syntax dictionary from {DictionaryUrl}...");
                 string content = await client.GetStringAsync(DictionaryUrl);
                 var definitions = ParseDictionaryText(content);
+                _logger.LogInfo($"Successfully parsed {definitions.Count} AI definitions from the syntax dictionary.");
 
                 try
                 {
@@ -59,13 +60,23 @@ namespace SMS_Search.Services.Gs1
                             }
                         }
 
+                        _logger.LogInfo($"Extracted {descriptions.Count} descriptions from the JSON-LD dictionary.");
+
+                        int matchedCount = 0;
                         foreach (var def in definitions)
                         {
                             if (descriptions.TryGetValue(def.Ai, out string? description))
                             {
                                 def.Description = description;
+                                matchedCount++;
                             }
                         }
+
+                        _logger.LogInfo($"Successfully matched {matchedCount} descriptions to the parsed AI definitions.");
+                    }
+                    else
+                    {
+                        _logger.LogWarning("The JSON-LD dictionary did not contain an 'applicationIdentifiers' root property.");
                     }
                 }
                 catch (Exception ex)
@@ -100,8 +111,16 @@ namespace SMS_Search.Services.Gs1
                     _cachedDefinitions = JsonSerializer.Deserialize<List<Gs1AiDefinition>>(json);
                     if (_cachedDefinitions != null && _cachedDefinitions.Count > 0)
                     {
-                        EnsureRequiredAis(_cachedDefinitions);
-                        return _cachedDefinitions;
+                        bool hasDescriptions = _cachedDefinitions.Exists(d => !string.IsNullOrEmpty(d.Description));
+                        if (!hasDescriptions)
+                        {
+                            _logger.LogInfo("Cached GS1 dictionary is missing descriptions (likely an outdated cache). Forcing a refresh.");
+                        }
+                        else
+                        {
+                            EnsureRequiredAis(_cachedDefinitions);
+                            return _cachedDefinitions;
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -110,7 +129,7 @@ namespace SMS_Search.Services.Gs1
                 }
             }
 
-            // Fallback: Download if not cached or corrupted
+            // Fallback: Download if not cached, corrupted, or outdated
             return await DownloadAndCacheAiDefinitionsAsync();
         }
 
