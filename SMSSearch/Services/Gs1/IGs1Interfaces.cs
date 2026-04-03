@@ -26,7 +26,7 @@ namespace SMS_Search.Services.Gs1
     public interface IGs1BarcodeService
     {
         string GenerateSvg(string barcodeData, Gs1BarcodeType type);
-        void SaveAsPdf(string barcodeData, Gs1BarcodeType type, string filePath);
+        void SaveAsPdf(string barcodeData, Gs1BarcodeType type, string filePath, bool includeDetails = false, List<Gs1ParsedAi>? parsedAis = null);
         System.Windows.Media.Imaging.BitmapSource GenerateBitmapSource(string barcodeData, Gs1BarcodeType type);
     }
 }

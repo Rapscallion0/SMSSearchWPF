@@ -68,7 +68,7 @@ namespace SMS_Search.Services.Gs1
         [System.Runtime.InteropServices.DllImport("gdi32.dll")]
         private static extern bool DeleteObject(System.IntPtr hObject);
 
-        public void SaveAsPdf(string barcodeData, Gs1BarcodeType type, string filePath)
+        public void SaveAsPdf(string barcodeData, Gs1BarcodeType type, string filePath, bool includeDetails = false, System.Collections.Generic.List<Gs1ParsedAi>? parsedAis = null)
         {
             var document = new PdfDocument();
             var page = document.AddPage();
@@ -108,6 +108,54 @@ namespace SMS_Search.Services.Gs1
 
             XImage image = XImage.FromFile(tempImage);
             gfx.DrawImage(image, 50, 50, 300, 100);
+
+            if (includeDetails && parsedAis != null && parsedAis.Count > 0)
+            {
+                var fontBold = new XFont("Arial", 12, XFontStyleEx.Bold);
+                var fontRegular = new XFont("Arial", 10, XFontStyleEx.Regular);
+                var fontSmall = new XFont("Arial", 8, XFontStyleEx.Regular);
+
+                double yPosition = 170; // Below the image
+
+                gfx.DrawString("GS1 Barcode Details", fontBold, XBrushes.Black, new XRect(50, yPosition, page.Width - 100, 20), XStringFormats.TopLeft);
+                yPosition += 25;
+
+                gfx.DrawString($"Raw Data: {barcodeData}", fontRegular, XBrushes.Black, new XRect(50, yPosition, page.Width - 100, 20), XStringFormats.TopLeft);
+                yPosition += 30;
+
+                // Draw table header
+                gfx.DrawString("AI", fontBold, XBrushes.Black, new XRect(50, yPosition, 50, 20), XStringFormats.TopLeft);
+                gfx.DrawString("Value", fontBold, XBrushes.Black, new XRect(100, yPosition, 150, 20), XStringFormats.TopLeft);
+                gfx.DrawString("Title", fontBold, XBrushes.Black, new XRect(250, yPosition, page.Width - 300, 20), XStringFormats.TopLeft);
+                yPosition += 20;
+
+                gfx.DrawLine(new XPen(XColors.Black, 1), 50, yPosition, page.Width - 50, yPosition);
+                yPosition += 5;
+
+                foreach (var ai in parsedAis)
+                {
+                    string aiText = ai.Ai == "└─" ? "  └─" : ai.Ai;
+                    gfx.DrawString(aiText, fontRegular, XBrushes.Black, new XRect(50, yPosition, 50, 20), XStringFormats.TopLeft);
+                    gfx.DrawString(ai.RawValue, fontRegular, XBrushes.Black, new XRect(100, yPosition, 150, 20), XStringFormats.TopLeft);
+                    gfx.DrawString(ai.Definition?.Title ?? "Unknown", fontRegular, XBrushes.Black, new XRect(250, yPosition, page.Width - 300, 20), XStringFormats.TopLeft);
+                    yPosition += 15;
+
+                    if (!string.IsNullOrEmpty(ai.Definition?.Description) && ai.Definition.Description != ai.Definition.Title)
+                    {
+                        gfx.DrawString(ai.Definition.Description, fontSmall, XBrushes.Gray, new XRect(250, yPosition, page.Width - 300, 20), XStringFormats.TopLeft);
+                        yPosition += 15;
+                    }
+
+                    yPosition += 5;
+
+                    if (yPosition > page.Height - 50)
+                    {
+                        page = document.AddPage();
+                        gfx = XGraphics.FromPdfPage(page);
+                        yPosition = 50;
+                    }
+                }
+            }
 
             document.Save(filePath);
 
