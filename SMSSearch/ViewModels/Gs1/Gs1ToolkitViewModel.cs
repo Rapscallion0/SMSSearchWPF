@@ -450,10 +450,11 @@ namespace SMS_Search.ViewModels.Gs1
                 return;
             }
 
-            var vm = new Gs1BarcodeWindowViewModel(data, _barcodeService, _clipboard, _dialogService);
+            var parsedModels = ParsedAis.Select(vm => vm.Model).ToList();
+            var vmInstance = new Gs1BarcodeWindowViewModel(data, _barcodeService, _clipboard, _dialogService, parsedModels);
             var window = new SMS_Search.Views.Gs1.Gs1BarcodeWindow
             {
-                DataContext = vm
+                DataContext = vmInstance
             };
 
             // Set owner to the active window for proper centering
