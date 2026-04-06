@@ -117,19 +117,19 @@ namespace SMS_Search.Services.Gs1
 
                 double yPosition = 170; // Below the image
 
-                gfx.DrawString("GS1 Barcode Details", fontBold, XBrushes.Black, new XRect(50, yPosition, page.Width - 100, 20), XStringFormats.TopLeft);
+                gfx.DrawString("GS1 Barcode Details", fontBold, XBrushes.Black, new XRect(50, yPosition, page.Width.Point - 100, 20), XStringFormats.TopLeft);
                 yPosition += 25;
 
-                gfx.DrawString($"Raw Data: {barcodeData}", fontRegular, XBrushes.Black, new XRect(50, yPosition, page.Width - 100, 20), XStringFormats.TopLeft);
+                gfx.DrawString($"Raw Data: {barcodeData}", fontRegular, XBrushes.Black, new XRect(50, yPosition, page.Width.Point - 100, 20), XStringFormats.TopLeft);
                 yPosition += 30;
 
                 // Draw table header
                 gfx.DrawString("AI", fontBold, XBrushes.Black, new XRect(50, yPosition, 50, 20), XStringFormats.TopLeft);
                 gfx.DrawString("Value", fontBold, XBrushes.Black, new XRect(100, yPosition, 150, 20), XStringFormats.TopLeft);
-                gfx.DrawString("Title", fontBold, XBrushes.Black, new XRect(250, yPosition, page.Width - 300, 20), XStringFormats.TopLeft);
+                gfx.DrawString("Title", fontBold, XBrushes.Black, new XRect(250, yPosition, page.Width.Point - 300, 20), XStringFormats.TopLeft);
                 yPosition += 20;
 
-                gfx.DrawLine(new XPen(XColors.Black, 1), 50, yPosition, page.Width - 50, yPosition);
+                gfx.DrawLine(new XPen(XColors.Black, 1), 50, yPosition, page.Width.Point - 50, yPosition);
                 yPosition += 5;
 
                 foreach (var ai in parsedAis)
@@ -137,18 +137,18 @@ namespace SMS_Search.Services.Gs1
                     string aiText = ai.Ai == "└─" ? "  └─" : ai.Ai;
                     gfx.DrawString(aiText, fontRegular, XBrushes.Black, new XRect(50, yPosition, 50, 20), XStringFormats.TopLeft);
                     gfx.DrawString(ai.RawValue, fontRegular, XBrushes.Black, new XRect(100, yPosition, 150, 20), XStringFormats.TopLeft);
-                    gfx.DrawString(ai.Definition?.Title ?? "Unknown", fontRegular, XBrushes.Black, new XRect(250, yPosition, page.Width - 300, 20), XStringFormats.TopLeft);
+                    gfx.DrawString(ai.Definition?.Title ?? "Unknown", fontRegular, XBrushes.Black, new XRect(250, yPosition, page.Width.Point - 300, 20), XStringFormats.TopLeft);
                     yPosition += 15;
 
                     if (!string.IsNullOrEmpty(ai.Definition?.Description) && ai.Definition.Description != ai.Definition.Title)
                     {
-                        gfx.DrawString(ai.Definition.Description, fontSmall, XBrushes.Gray, new XRect(250, yPosition, page.Width - 300, 20), XStringFormats.TopLeft);
+                        gfx.DrawString(ai.Definition.Description, fontSmall, XBrushes.Gray, new XRect(250, yPosition, page.Width.Point - 300, 20), XStringFormats.TopLeft);
                         yPosition += 15;
                     }
 
                     yPosition += 5;
 
-                    if (yPosition > page.Height - 50)
+                    if (yPosition > page.Height.Point - 50)
                     {
                         page = document.AddPage();
                         gfx = XGraphics.FromPdfPage(page);
