@@ -148,10 +148,14 @@ namespace SMS_Search.Services.Gs1
                         foreach (var subDef in subDefs)
                         {
                             subDef.Ai = "└─"; // Mark as pseudo-AI
-                            if (!defs.Exists(d => d.Title == subDef.Title))
+                            // If it already exists in the cache, we remove the old one so we can inject the fresh one
+                            // which might contain new fields like ControlType or Options.
+                            var existing = defs.Find(d => d.Title == subDef.Title);
+                            if (existing != null)
                             {
-                                defs.Add(subDef);
+                                defs.Remove(existing);
                             }
+                            defs.Add(subDef);
                         }
                     }
                 }
