@@ -70,6 +70,34 @@
             </TextBox>
         </DataTemplate>
 
+        <DataTemplate x:Key="ValueReadOnlyTextTemplate">
+            <TextBox Text="{Binding DraftValue, Mode=OneWay}"
+                     IsReadOnly="True"
+                     BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center">
+                <TextBox.Style>
+                    <Style TargetType="TextBox">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsAnimatingUpdate}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)"
+                                                             From="0" To="15" Duration="0:0:0.1" AutoReverse="True"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="LimeGreen" BlurRadius="0" ShadowDepth="0" Opacity="0.8"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
+        </DataTemplate>
+
         <DataTemplate x:Key="ValueCheckBoxTemplate">
             <CheckBox IsChecked="{Binding BoolValue, UpdateSourceTrigger=PropertyChanged}"
                       HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0"/>
@@ -111,6 +139,7 @@
 
         <views:Gs1ValueTemplateSelector x:Key="ValueTemplateSelector"
                                         TextTemplate="{StaticResource ValueTextTemplate}"
+                                        ReadOnlyTextTemplate="{StaticResource ValueReadOnlyTextTemplate}"
                                         CheckBoxTemplate="{StaticResource ValueCheckBoxTemplate}"
                                         ComboBoxTemplate="{StaticResource ValueComboBoxTemplate}"/>
     </Window.Resources>

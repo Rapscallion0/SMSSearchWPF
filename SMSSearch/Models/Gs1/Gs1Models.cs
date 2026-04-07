@@ -13,6 +13,7 @@ namespace SMS_Search.Models.Gs1
         public int MaxLength { get; set; }
         public string DataType { get; set; } = ""; // e.g. "N", "X"
         public string ControlType { get; set; } = "Text"; // e.g. "Text", "CheckBox", "ComboBox"
+        public bool IsReadOnly { get; set; }
         public System.Collections.Generic.List<Gs1AiOption>? Options { get; set; }
     }
 

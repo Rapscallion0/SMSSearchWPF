@@ -1,214 +1,434 @@
 [
   {
+    "Title": "Primary Company Prefix Length",
+    "Description": "Variable Length Indicator for the Primary Company Prefix.",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N",
+    "IsReadOnly": true
+  },
+  {
     "Title": "Primary Company Prefix",
+    "Description": "Primary GS1 Company Prefix (GCP): As verified by the GS1 US. Also, the funder of this promotion (i.e. responsible for reimbursing retailer).",
     "MinLength": 1,
     "MaxLength": 12,
     "DataType": "N"
   },
   {
     "Title": "Offer Code",
+    "Description": "The specific offer code assigned by the manufacturer",
     "MinLength": 1,
     "MaxLength": 6,
     "DataType": "N"
   },
   {
+    "Title": "Save Value Length",
+    "Description": "Variable Length Indicator for the Save Value.",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N",
+    "IsReadOnly": true
+  },
+  {
     "Title": "Save Value",
+    "Description": "Amount of discount (cents off, free, or percent off). Depends on Save Value Code.",
     "MinLength": 1,
     "MaxLength": 5,
     "DataType": "N"
   },
   {
+    "Title": "Primary Purchase Requirement Length",
+    "Description": "Variable Length Indicator for the Primary Purchase Requirement.",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N",
+    "IsReadOnly": true
+  },
+  {
     "Title": "Primary Purchase Requirement",
+    "Description": "The specific amount required to be purchased, based on the Purchase Requirement Code (e.g. number of units, value, weight).",
     "MinLength": 1,
     "MaxLength": 5,
     "DataType": "N"
   },
   {
     "Title": "Primary Purchase Requirement Code",
+    "Description": "Indicates what the Purchase Requirement means (Number of Units, Value, Weight).",
     "MinLength": 1,
     "MaxLength": 1,
     "DataType": "N",
     "ControlType": "ComboBox",
     "Options": [
-      { "Value": "0", "Label": "Specified Items" },
-      { "Value": "1", "Label": "1 Item" },
-      { "Value": "2", "Label": "2 Items" },
-      { "Value": "3", "Label": "3 Items" },
-      { "Value": "4", "Label": "4 Items" },
-      { "Value": "5", "Label": "5 Items" },
-      { "Value": "6", "Label": "6 Items" },
-      { "Value": "7", "Label": "7 Items" },
-      { "Value": "8", "Label": "8 Items" },
-      { "Value": "9", "Label": "Weight/Volume/Quantity" }
+      {
+        "Value": "0",
+        "Label": "Specified Items"
+      },
+      {
+        "Value": "1",
+        "Label": "1 Item"
+      },
+      {
+        "Value": "2",
+        "Label": "2 Items"
+      },
+      {
+        "Value": "3",
+        "Label": "3 Items"
+      },
+      {
+        "Value": "4",
+        "Label": "4 Items"
+      },
+      {
+        "Value": "5",
+        "Label": "5 Items"
+      },
+      {
+        "Value": "6",
+        "Label": "6 Items"
+      },
+      {
+        "Value": "7",
+        "Label": "7 Items"
+      },
+      {
+        "Value": "8",
+        "Label": "8 Items"
+      },
+      {
+        "Value": "9",
+        "Label": "Weight/Volume/Quantity"
+      }
     ]
   },
   {
     "Title": "Primary Purchase Family Code",
+    "Description": "Triple zero super summary (000), 992 Bypass, or 3-digit code as assigned by Mfr. 992 is often used to bypass specific item validation if it applies to any item by the manufacturer.",
     "MinLength": 1,
     "MaxLength": 3,
     "DataType": "N"
   },
   {
     "Title": "Data Field 0",
+    "Description": "Used as a spacer or separator for additional fields.",
     "MinLength": 1,
     "MaxLength": 2,
     "DataType": "N"
   },
   {
     "Title": "2nd Additional Purchase Rules Code",
+    "Description": "Save Value Rules logic. e.g. Primary Item OR Second Item, Primary Item AND Second Item.",
     "MinLength": 1,
     "MaxLength": 1,
     "DataType": "N",
     "ControlType": "ComboBox",
     "Options": [
-      { "Value": "0", "Label": "Require 2nd purchase only" },
-      { "Value": "1", "Label": "Require 2nd purchase OR Primary" },
-      { "Value": "2", "Label": "Require 2nd purchase AND Primary" }
+      {
+        "Value": "0",
+        "Label": "Require 2nd purchase only"
+      },
+      {
+        "Value": "1",
+        "Label": "Require 2nd purchase OR Primary"
+      },
+      {
+        "Value": "2",
+        "Label": "Require 2nd purchase AND Primary"
+      }
     ]
   },
   {
+    "Title": "2nd Purchase Requirement Length",
+    "Description": "Variable Length Indicator for the 2nd Purchase Requirement.",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N",
+    "IsReadOnly": true
+  },
+  {
     "Title": "2nd Purchase Requirement",
+    "Description": "The specific amount required to be purchased for the 2nd item group, based on the Purchase Requirement Code (e.g. number of units, value, weight).",
     "MinLength": 1,
     "MaxLength": 5,
     "DataType": "N"
   },
   {
     "Title": "2nd Purchase Requirement Code",
+    "Description": "Indicates what the 2nd Purchase Requirement means (Number of Units, Value, Weight).",
     "MinLength": 1,
     "MaxLength": 1,
     "DataType": "N",
     "ControlType": "ComboBox",
     "Options": [
-      { "Value": "0", "Label": "Specified Items" },
-      { "Value": "1", "Label": "1 Item" },
-      { "Value": "2", "Label": "2 Items" },
-      { "Value": "3", "Label": "3 Items" },
-      { "Value": "4", "Label": "4 Items" },
-      { "Value": "5", "Label": "5 Items" },
-      { "Value": "6", "Label": "6 Items" },
-      { "Value": "7", "Label": "7 Items" },
-      { "Value": "8", "Label": "8 Items" },
-      { "Value": "9", "Label": "Weight/Volume/Quantity" }
+      {
+        "Value": "0",
+        "Label": "Specified Items"
+      },
+      {
+        "Value": "1",
+        "Label": "1 Item"
+      },
+      {
+        "Value": "2",
+        "Label": "2 Items"
+      },
+      {
+        "Value": "3",
+        "Label": "3 Items"
+      },
+      {
+        "Value": "4",
+        "Label": "4 Items"
+      },
+      {
+        "Value": "5",
+        "Label": "5 Items"
+      },
+      {
+        "Value": "6",
+        "Label": "6 Items"
+      },
+      {
+        "Value": "7",
+        "Label": "7 Items"
+      },
+      {
+        "Value": "8",
+        "Label": "8 Items"
+      },
+      {
+        "Value": "9",
+        "Label": "Weight/Volume/Quantity"
+      }
     ]
   },
   {
     "Title": "2nd Purchase Family Code",
+    "Description": "Triple zero super summary or 3-digit code as assigned by Mfr for the second purchase requirement.",
     "MinLength": 1,
     "MaxLength": 3,
     "DataType": "N"
   },
   {
+    "Title": "2nd Purchase Company Prefix Length",
+    "Description": "Variable Length Indicator for the 2nd Purchase Company Prefix.",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N",
+    "IsReadOnly": true
+  },
+  {
     "Title": "2nd Purchase Company Prefix",
+    "Description": "Second GS1 Company Prefix (GCP): Optional company prefix for the second purchase requirement.",
     "MinLength": 1,
     "MaxLength": 12,
     "DataType": "N"
   },
   {
+    "Title": "3rd Purchase Requirement Length",
+    "Description": "Variable Length Indicator for the 3rd Purchase Requirement.",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N",
+    "IsReadOnly": true
+  },
+  {
     "Title": "3rd Purchase Requirement",
+    "Description": "The specific amount required to be purchased for the 3rd item group, based on the Purchase Requirement Code (e.g. number of units, value, weight).",
     "MinLength": 1,
     "MaxLength": 5,
     "DataType": "N"
   },
   {
     "Title": "3rd Purchase Requirement Code",
+    "Description": "Indicates what the 3rd Purchase Requirement means (Number of Units, Value, Weight).",
     "MinLength": 1,
     "MaxLength": 1,
     "DataType": "N",
     "ControlType": "ComboBox",
     "Options": [
-      { "Value": "0", "Label": "Specified Items" },
-      { "Value": "1", "Label": "1 Item" },
-      { "Value": "2", "Label": "2 Items" },
-      { "Value": "3", "Label": "3 Items" },
-      { "Value": "4", "Label": "4 Items" },
-      { "Value": "5", "Label": "5 Items" },
-      { "Value": "6", "Label": "6 Items" },
-      { "Value": "7", "Label": "7 Items" },
-      { "Value": "8", "Label": "8 Items" },
-      { "Value": "9", "Label": "Weight/Volume/Quantity" }
+      {
+        "Value": "0",
+        "Label": "Specified Items"
+      },
+      {
+        "Value": "1",
+        "Label": "1 Item"
+      },
+      {
+        "Value": "2",
+        "Label": "2 Items"
+      },
+      {
+        "Value": "3",
+        "Label": "3 Items"
+      },
+      {
+        "Value": "4",
+        "Label": "4 Items"
+      },
+      {
+        "Value": "5",
+        "Label": "5 Items"
+      },
+      {
+        "Value": "6",
+        "Label": "6 Items"
+      },
+      {
+        "Value": "7",
+        "Label": "7 Items"
+      },
+      {
+        "Value": "8",
+        "Label": "8 Items"
+      },
+      {
+        "Value": "9",
+        "Label": "Weight/Volume/Quantity"
+      }
     ]
   },
   {
     "Title": "3rd Purchase Family Code",
+    "Description": "Triple zero super summary or 3-digit code as assigned by Mfr for the third purchase requirement.",
     "MinLength": 1,
     "MaxLength": 3,
     "DataType": "N"
   },
   {
+    "Title": "3rd Purchase Company Prefix Length",
+    "Description": "Variable Length Indicator for the 3rd Purchase Company Prefix.",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N",
+    "IsReadOnly": true
+  },
+  {
     "Title": "3rd Purchase Company Prefix",
+    "Description": "Third GS1 Company Prefix (GCP): Optional company prefix for the third purchase requirement.",
     "MinLength": 1,
     "MaxLength": 12,
     "DataType": "N"
   },
   {
     "Title": "Expiration Date",
+    "Description": "As printed on the coupon. Format: YYMMDD",
     "MinLength": 6,
     "MaxLength": 6,
     "DataType": "N"
   },
   {
     "Title": "Start Date",
+    "Description": "First date offer is available for use. This date MUST be printed on the coupon. Format: YYMMDD",
     "MinLength": 6,
     "MaxLength": 6,
     "DataType": "N"
   },
   {
+    "Title": "Serial Number Length",
+    "Description": "Variable Length Indicator for the Serial Number.",
+    "MinLength": 1,
+    "MaxLength": 1,
+    "DataType": "N",
+    "IsReadOnly": true
+  },
+  {
     "Title": "Serial Number",
+    "Description": "Indicates serialization codes will be added to this DataBar. The length of that code, including check-digit, is to be specified. Length may be 6 to 15 digits.",
     "MinLength": 1,
     "MaxLength": 15,
     "DataType": "X"
   },
   {
     "Title": "Retailer Company Prefix / GLN",
+    "Description": "Allows a retailer\u2019s GCP or GLN to be included which will limit coupon\u2019s use to that location only.",
     "MinLength": 1,
     "MaxLength": 12,
     "DataType": "N"
   },
   {
     "Title": "Save Value Code",
+    "Description": "Determines if the save value is cents off, free item, or percent off.",
     "MinLength": 1,
     "MaxLength": 1,
     "DataType": "N",
     "ControlType": "ComboBox",
     "Options": [
-      { "Value": "0", "Label": "Cents Off" },
-      { "Value": "1", "Label": "Free Item" },
-      { "Value": "2", "Label": "Percent Off" },
-      { "Value": "5", "Label": "Free Item up to maximum value" }
+      {
+        "Value": "0",
+        "Label": "Cents Off"
+      },
+      {
+        "Value": "1",
+        "Label": "Free Item"
+      },
+      {
+        "Value": "2",
+        "Label": "Percent Off"
+      },
+      {
+        "Value": "5",
+        "Label": "Free Item up to maximum value"
+      }
     ]
   },
   {
     "Title": "Applies to Which Item",
+    "Description": "Value Applies to: Points discount to one of the GCP/family codes listed. NOTE: If ANY, BOTH or ANY Item Combination is selected, Primary Item should be selected in this field, as the consumer has been given options and we do not know what item will be purchased.",
     "MinLength": 1,
     "MaxLength": 1,
     "DataType": "N",
     "ControlType": "ComboBox",
     "Options": [
-      { "Value": "0", "Label": "Primary Purchase" },
-      { "Value": "1", "Label": "2nd Purchase" },
-      { "Value": "2", "Label": "3rd Purchase" }
+      {
+        "Value": "0",
+        "Label": "Primary Purchase"
+      },
+      {
+        "Value": "1",
+        "Label": "2nd Purchase"
+      },
+      {
+        "Value": "2",
+        "Label": "3rd Purchase"
+      }
     ]
   },
   {
     "Title": "Store Coupon",
+    "Description": "ONLY used for retailer promotions that offer a discount on a product and limits the number of products that can be purchased at that discount. For example: Save .50 on 2-liter soda, limit 5. NOTE: Not to be used in manufacturer DataBars.",
     "MinLength": 1,
     "MaxLength": 1,
     "DataType": "N",
     "ControlType": "CheckBox",
     "Options": [
-      { "Value": "0", "Label": "Manufacturer Coupon" },
-      { "Value": "1", "Label": "Store Coupon" }
+      {
+        "Value": "0",
+        "Label": "Manufacturer Coupon"
+      },
+      {
+        "Value": "1",
+        "Label": "Store Coupon"
+      }
     ]
   },
   {
     "Title": "Don't Multiply Flag",
+    "Description": "Do Not Multiply Save Value: Do Not Double flag for in-store distributed coupons",
     "MinLength": 1,
     "MaxLength": 1,
     "DataType": "N",
     "ControlType": "CheckBox",
     "Options": [
-      { "Value": "0", "Label": "Default" },
-      { "Value": "1", "Label": "Do Not Multiply" }
+      {
+        "Value": "0",
+        "Label": "Default"
+      },
+      {
+        "Value": "1",
+        "Label": "Do Not Multiply"
+      }
     ]
   }
 ]

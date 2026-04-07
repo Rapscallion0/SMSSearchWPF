@@ -242,10 +242,20 @@ namespace SMS_Search.Services.Gs1
                 });
             }
 
-            AddSubAi("Primary Company Prefix", Read(ReadInt(1) + 6));
+            int primaryCpLen = ReadInt(1);
+            AddSubAi("Primary Company Prefix Length", primaryCpLen.ToString());
+            AddSubAi("Primary Company Prefix", Read(primaryCpLen + 6));
+
             AddSubAi("Offer Code", Read(6));
-            AddSubAi("Save Value", Read(ReadInt(1)));
-            AddSubAi("Primary Purchase Requirement", Read(ReadInt(1)));
+
+            int saveValueLen = ReadInt(1);
+            AddSubAi("Save Value Length", saveValueLen.ToString());
+            AddSubAi("Save Value", Read(saveValueLen));
+
+            int primaryReqLen = ReadInt(1);
+            AddSubAi("Primary Purchase Requirement Length", primaryReqLen.ToString());
+            AddSubAi("Primary Purchase Requirement", Read(primaryReqLen));
+
             AddSubAi("Primary Purchase Requirement Code", Read(1));
             AddSubAi("Primary Purchase Family Code", Read(3));
 
@@ -262,22 +272,34 @@ namespace SMS_Search.Services.Gs1
                 else if (field == "1")
                 {
                     AddSubAi("2nd Additional Purchase Rules Code", Read(1));
-                    AddSubAi("2nd Purchase Requirement", Read(ReadInt(1)));
+                    int p2ReqLen = ReadInt(1);
+                    AddSubAi("2nd Purchase Requirement Length", p2ReqLen.ToString());
+                    AddSubAi("2nd Purchase Requirement", Read(p2ReqLen));
+
                     AddSubAi("2nd Purchase Requirement Code", Read(1));
                     AddSubAi("2nd Purchase Family Code", Read(3));
+
                     int cpVli = ReadInt(1);
+                    AddSubAi("2nd Purchase Company Prefix Length", cpVli.ToString());
                     if (cpVli == 9) AddSubAi("2nd Purchase Company Prefix", "N/A");
                     else AddSubAi("2nd Purchase Company Prefix", Read(cpVli + 6));
+
                     parsedFields.Add("1");
                 }
                 else if (field == "2")
                 {
-                    AddSubAi("3rd Purchase Requirement", Read(ReadInt(1)));
+                    int p3ReqLen = ReadInt(1);
+                    AddSubAi("3rd Purchase Requirement Length", p3ReqLen.ToString());
+                    AddSubAi("3rd Purchase Requirement", Read(p3ReqLen));
+
                     AddSubAi("3rd Purchase Requirement Code", Read(1));
                     AddSubAi("3rd Purchase Family Code", Read(3));
+
                     int cpVli = ReadInt(1);
+                    AddSubAi("3rd Purchase Company Prefix Length", cpVli.ToString());
                     if (cpVli == 9) AddSubAi("3rd Purchase Company Prefix", "N/A");
                     else AddSubAi("3rd Purchase Company Prefix", Read(cpVli + 6));
+
                     parsedFields.Add("2");
                 }
                 else if (field == "3")
@@ -293,7 +315,9 @@ namespace SMS_Search.Services.Gs1
                 else if (field == "5")
                 {
                     // Serial Number VLI + 6 = Length
-                    AddSubAi("Serial Number", Read(ReadInt(1) + 6));
+                    int serialVli = ReadInt(1);
+                    AddSubAi("Serial Number Length", serialVli.ToString());
+                    AddSubAi("Serial Number", Read(serialVli + 6));
                     parsedFields.Add("5");
                 }
                 else if (field == "6")
