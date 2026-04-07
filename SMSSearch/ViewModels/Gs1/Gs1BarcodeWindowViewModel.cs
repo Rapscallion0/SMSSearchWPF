@@ -12,6 +12,7 @@ namespace SMS_Search.ViewModels.Gs1
         private readonly IGs1BarcodeService _barcodeService;
         private readonly IClipboardService _clipboard;
         private readonly IDialogService _dialogService;
+        private readonly Utils.ILoggerService _logger;
         private readonly string _barcodeData;
 
         private readonly System.Collections.Generic.List<Models.Gs1.Gs1ParsedAi> _parsedAis;
@@ -21,12 +22,14 @@ namespace SMS_Search.ViewModels.Gs1
             IGs1BarcodeService barcodeService,
             IClipboardService clipboard,
             IDialogService dialogService,
+            Utils.ILoggerService logger,
             System.Collections.Generic.List<Models.Gs1.Gs1ParsedAi>? parsedAis = null)
         {
             _barcodeData = barcodeData;
             _barcodeService = barcodeService;
             _clipboard = clipboard;
             _dialogService = dialogService;
+            _logger = logger;
             _parsedAis = parsedAis ?? new System.Collections.Generic.List<Models.Gs1.Gs1ParsedAi>();
 
             AvailableSymbologies = new ObservableCollection<Gs1BarcodeType>
@@ -68,9 +71,11 @@ namespace SMS_Search.ViewModels.Gs1
             try
             {
                 BarcodeImage = _barcodeService.GenerateBitmapSource(_barcodeData, SelectedSymbology);
+                _logger.LogInfo($"Barcode image generated successfully. Data length: {_barcodeData.Length}, Symbology: {SelectedSymbology}");
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
+                _logger.LogError("Failed to generate barcode image.", ex);
                 _dialogService.ShowToast("Failed to generate barcode image.", "Error", SMS_Search.Views.ToastType.Error);
             }
         }
@@ -78,9 +83,18 @@ namespace SMS_Search.ViewModels.Gs1
         [RelayCommand]
         private void CopySvg()
         {
-            string svg = _barcodeService.GenerateSvg(_barcodeData, SelectedSymbology);
-            _clipboard.SetText(svg);
-            _dialogService.ShowToast("Barcode SVG copied to clipboard.", "Copy SVG", SMS_Search.Views.ToastType.Success);
+            try
+            {
+                string svg = _barcodeService.GenerateSvg(_barcodeData, SelectedSymbology);
+                _clipboard.SetText(svg);
+                _logger.LogInfo($"Barcode SVG copied to clipboard. Symbology: {SelectedSymbology}");
+                _dialogService.ShowToast("Barcode SVG copied to clipboard.", "Copy SVG", SMS_Search.Views.ToastType.Success);
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError("Failed to copy barcode SVG.", ex);
+                _dialogService.ShowToast("Failed to copy barcode SVG.", "Error", SMS_Search.Views.ToastType.Error);
+            }
         }
 
         [RelayCommand]
@@ -92,10 +106,12 @@ namespace SMS_Search.ViewModels.Gs1
                 try
                 {
                     _barcodeService.SaveAsPdf(_barcodeData, SelectedSymbology, path, IncludeDetails, _parsedAis, BarcodeName, BarcodeDescription);
+                    _logger.LogInfo($"Barcode PDF saved successfully to {path}. Symbology: {SelectedSymbology}, IncludeDetails: {IncludeDetails}");
                     _dialogService.ShowToast($"Barcode PDF saved.", "Save PDF", SMS_Search.Views.ToastType.Success);
                 }
-                catch (System.Exception)
+                catch (System.Exception ex)
                 {
+                    _logger.LogError($"Failed to save barcode PDF to {path}.", ex);
                     _dialogService.ShowToast("Failed to save barcode PDF.", "Error", SMS_Search.Views.ToastType.Error);
                 }
             }
@@ -107,15 +123,17 @@ namespace SMS_Search.ViewModels.Gs1
             var printDialog = new System.Windows.Controls.PrintDialog();
             if (printDialog.ShowDialog() == true)
             {
-                System.Windows.FrameworkElement printElement;
-
-                var stackPanel = new System.Windows.Controls.StackPanel
+                try
                 {
-                    Margin = new System.Windows.Thickness(50)
-                };
+                    System.Windows.FrameworkElement printElement;
 
-                if (!string.IsNullOrWhiteSpace(BarcodeName))
-                {
+                    var stackPanel = new System.Windows.Controls.StackPanel
+                    {
+                        Margin = new System.Windows.Thickness(50)
+                    };
+
+                    if (!string.IsNullOrWhiteSpace(BarcodeName))
+                    {
                     stackPanel.Children.Add(new System.Windows.Controls.TextBlock
                     {
                         Text = BarcodeName,
@@ -234,13 +252,20 @@ namespace SMS_Search.ViewModels.Gs1
                     stackPanel.Children.Add(grid);
                 }
 
-                printElement = stackPanel;
+                    printElement = stackPanel;
 
-                // Measure and arrange the element so it has size
-                printElement.Measure(new System.Windows.Size(printDialog.PrintableAreaWidth, printDialog.PrintableAreaHeight));
-                printElement.Arrange(new System.Windows.Rect(0, 0, printDialog.PrintableAreaWidth, printDialog.PrintableAreaHeight));
+                    // Measure and arrange the element so it has size
+                    printElement.Measure(new System.Windows.Size(printDialog.PrintableAreaWidth, printDialog.PrintableAreaHeight));
+                    printElement.Arrange(new System.Windows.Rect(0, 0, printDialog.PrintableAreaWidth, printDialog.PrintableAreaHeight));
 
-                printDialog.PrintVisual(printElement, "GS1 Barcode");
+                    printDialog.PrintVisual(printElement, "GS1 Barcode");
+                    _logger.LogInfo($"Barcode printed successfully. Symbology: {SelectedSymbology}, IncludeDetails: {IncludeDetails}");
+                }
+                catch (System.Exception ex)
+                {
+                    _logger.LogError("Failed to print barcode.", ex);
+                    _dialogService.ShowToast("Failed to print barcode.", "Error", SMS_Search.Views.ToastType.Error);
+                }
             }
         }
     }
