@@ -72,6 +72,10 @@ namespace SMS_Search.Services.Gs1
         public void SaveAsPdf(string barcodeData, Gs1BarcodeType type, string filePath, bool includeDetails = false, System.Collections.Generic.List<Gs1ParsedAi>? parsedAis = null, string? barcodeName = null, string? barcodeDescription = null)
         {
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            if (PdfSharp.Fonts.GlobalFontSettings.FontResolver == null)
+            {
+                PdfSharp.Fonts.GlobalFontSettings.FontResolver = new SMS_Search.Utils.SystemFontResolver();
+            }
 
             var document = new PdfDocument();
             var page = document.AddPage();
