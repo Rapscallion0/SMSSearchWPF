@@ -106,5 +106,21 @@ namespace SMS_Search.Views.Gs1
                 }
             }
         }
+
+        private void Segment_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.DataContext is ViewModels.Gs1.Gs1BarcodeSegmentViewModel vm)
+            {
+                vm.StartHover();
+            }
+        }
+
+        private void Segment_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.DataContext is ViewModels.Gs1.Gs1BarcodeSegmentViewModel vm)
+            {
+                vm.EndHover();
+            }
+        }
     }
 }
