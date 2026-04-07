@@ -27,7 +27,20 @@
     "Title": "Primary Purchase Requirement Code",
     "MinLength": 1,
     "MaxLength": 1,
-    "DataType": "N"
+    "DataType": "N",
+    "ControlType": "ComboBox",
+    "Options": [
+      { "Value": "0", "Label": "Specified Items" },
+      { "Value": "1", "Label": "1 Item" },
+      { "Value": "2", "Label": "2 Items" },
+      { "Value": "3", "Label": "3 Items" },
+      { "Value": "4", "Label": "4 Items" },
+      { "Value": "5", "Label": "5 Items" },
+      { "Value": "6", "Label": "6 Items" },
+      { "Value": "7", "Label": "7 Items" },
+      { "Value": "8", "Label": "8 Items" },
+      { "Value": "9", "Label": "Weight/Volume/Quantity" }
+    ]
   },
   {
     "Title": "Primary Purchase Family Code",
@@ -45,7 +58,13 @@
     "Title": "2nd Additional Purchase Rules Code",
     "MinLength": 1,
     "MaxLength": 1,
-    "DataType": "N"
+    "DataType": "N",
+    "ControlType": "ComboBox",
+    "Options": [
+      { "Value": "0", "Label": "Require 2nd purchase only" },
+      { "Value": "1", "Label": "Require 2nd purchase OR Primary" },
+      { "Value": "2", "Label": "Require 2nd purchase AND Primary" }
+    ]
   },
   {
     "Title": "2nd Purchase Requirement",
@@ -57,7 +76,20 @@
     "Title": "2nd Purchase Requirement Code",
     "MinLength": 1,
     "MaxLength": 1,
-    "DataType": "N"
+    "DataType": "N",
+    "ControlType": "ComboBox",
+    "Options": [
+      { "Value": "0", "Label": "Specified Items" },
+      { "Value": "1", "Label": "1 Item" },
+      { "Value": "2", "Label": "2 Items" },
+      { "Value": "3", "Label": "3 Items" },
+      { "Value": "4", "Label": "4 Items" },
+      { "Value": "5", "Label": "5 Items" },
+      { "Value": "6", "Label": "6 Items" },
+      { "Value": "7", "Label": "7 Items" },
+      { "Value": "8", "Label": "8 Items" },
+      { "Value": "9", "Label": "Weight/Volume/Quantity" }
+    ]
   },
   {
     "Title": "2nd Purchase Family Code",
@@ -81,7 +113,20 @@
     "Title": "3rd Purchase Requirement Code",
     "MinLength": 1,
     "MaxLength": 1,
-    "DataType": "N"
+    "DataType": "N",
+    "ControlType": "ComboBox",
+    "Options": [
+      { "Value": "0", "Label": "Specified Items" },
+      { "Value": "1", "Label": "1 Item" },
+      { "Value": "2", "Label": "2 Items" },
+      { "Value": "3", "Label": "3 Items" },
+      { "Value": "4", "Label": "4 Items" },
+      { "Value": "5", "Label": "5 Items" },
+      { "Value": "6", "Label": "6 Items" },
+      { "Value": "7", "Label": "7 Items" },
+      { "Value": "8", "Label": "8 Items" },
+      { "Value": "9", "Label": "Weight/Volume/Quantity" }
+    ]
   },
   {
     "Title": "3rd Purchase Family Code",
@@ -123,24 +168,47 @@
     "Title": "Save Value Code",
     "MinLength": 1,
     "MaxLength": 1,
-    "DataType": "N"
+    "DataType": "N",
+    "ControlType": "ComboBox",
+    "Options": [
+      { "Value": "0", "Label": "Cents Off" },
+      { "Value": "1", "Label": "Free Item" },
+      { "Value": "2", "Label": "Percent Off" },
+      { "Value": "5", "Label": "Free Item up to maximum value" }
+    ]
   },
   {
     "Title": "Applies to Which Item",
     "MinLength": 1,
     "MaxLength": 1,
-    "DataType": "N"
+    "DataType": "N",
+    "ControlType": "ComboBox",
+    "Options": [
+      { "Value": "0", "Label": "Primary Purchase" },
+      { "Value": "1", "Label": "2nd Purchase" },
+      { "Value": "2", "Label": "3rd Purchase" }
+    ]
   },
   {
     "Title": "Store Coupon",
     "MinLength": 1,
     "MaxLength": 1,
-    "DataType": "N"
+    "DataType": "N",
+    "ControlType": "CheckBox",
+    "Options": [
+      { "Value": "0", "Label": "Manufacturer Coupon" },
+      { "Value": "1", "Label": "Store Coupon" }
+    ]
   },
   {
     "Title": "Don't Multiply Flag",
     "MinLength": 1,
     "MaxLength": 1,
-    "DataType": "N"
+    "DataType": "N",
+    "ControlType": "CheckBox",
+    "Options": [
+      { "Value": "0", "Label": "Default" },
+      { "Value": "1", "Label": "Do Not Multiply" }
+    ]
   }
 ]

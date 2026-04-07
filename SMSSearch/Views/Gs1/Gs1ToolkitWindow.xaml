@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:SMS_Search.ViewModels.Gs1"
+        xmlns:views="clr-namespace:SMS_Search.Views.Gs1"
         mc:Ignorable="d"
         Title="GS1 Barcode Toolkit" Height="600" Width="800" WindowStartupLocation="CenterOwner" MinWidth="600" MinHeight="400">
     <Window.Resources>
@@ -53,6 +54,65 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+
+        <DataTemplate x:Key="ValueTextTemplate">
+            <TextBox Text="{Binding DraftValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                     Style="{StaticResource ModifiableTextBoxStyle}"
+                     BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center"
+                     LostFocus="TextBox_LostFocus"
+                     PreviewTextInput="TextBox_PreviewTextInput"
+                     Loaded="TextBox_Loaded"
+                     Unloaded="TextBox_Unloaded">
+                <TextBox.InputBindings>
+                    <KeyBinding Key="Enter" Command="{Binding CommitCommand}"/>
+                    <KeyBinding Key="Escape" Command="{Binding RevertCommand}"/>
+                </TextBox.InputBindings>
+            </TextBox>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ValueCheckBoxTemplate">
+            <CheckBox IsChecked="{Binding BoolValue, UpdateSourceTrigger=PropertyChanged}"
+                      HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0"/>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ValueComboBoxTemplate">
+            <ComboBox ItemsSource="{Binding Options}"
+                      SelectedValue="{Binding DraftValue, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedValuePath="Value"
+                      DisplayMemberPath="Label"
+                      BorderThickness="0" Background="Transparent" Margin="0,0,0,0">
+                <ComboBox.Style>
+                    <Style TargetType="ComboBox">
+                        <Style.Triggers>
+                            <Trigger Property="Validation.HasError" Value="True">
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="Red" BlurRadius="5" ShadowDepth="0" Opacity="0.8"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={x:Static RelativeSource.Self}}"/>
+                            </Trigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsModified}" Value="True"/>
+                                    <Condition Binding="{Binding (Validation.HasError), RelativeSource={RelativeSource Self}}" Value="False"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FFFFA6" BlurRadius="5" ShadowDepth="0" Opacity="0.8"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ComboBox.Style>
+            </ComboBox>
+        </DataTemplate>
+
+        <views:Gs1ValueTemplateSelector x:Key="ValueTemplateSelector"
+                                        TextTemplate="{StaticResource ValueTextTemplate}"
+                                        CheckBoxTemplate="{StaticResource ValueCheckBoxTemplate}"
+                                        ComboBoxTemplate="{StaticResource ValueComboBoxTemplate}"/>
     </Window.Resources>
 
     <DockPanel>
@@ -197,6 +257,27 @@
                                                         <TextBlock Text="{Binding Description}" TextWrapping="Wrap"/>
                                                     </StackPanel>
 
+                                                    <ItemsControl ItemsSource="{Binding Options}" Margin="0,0,0,10">
+                                                        <ItemsControl.Style>
+                                                            <Style TargetType="ItemsControl">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Options}" Value="{x:Null}">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </ItemsControl.Style>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                                    <TextBlock Text="{Binding Value, StringFormat='{}• {0}: '}" FontWeight="SemiBold"/>
+                                                                    <TextBlock Text="{Binding Label}"/>
+                                                                </StackPanel>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="Auto"/>
@@ -262,33 +343,12 @@
                         <DataGridTemplateColumn Header="Value" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBox Text="{Binding DraftValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
-                                             Style="{StaticResource ModifiableTextBoxStyle}"
-                                             BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center"
-                                             LostFocus="TextBox_LostFocus"
-                                             PreviewTextInput="TextBox_PreviewTextInput"
-                                             Loaded="TextBox_Loaded"
-                                             Unloaded="TextBox_Unloaded">
-                                        <TextBox.InputBindings>
-                                            <KeyBinding Key="Enter" Command="{Binding CommitCommand}"/>
-                                            <KeyBinding Key="Escape" Command="{Binding RevertCommand}"/>
-                                        </TextBox.InputBindings>
-                                    </TextBox>
+                                    <ContentControl Content="{Binding}" ContentTemplateSelector="{StaticResource ValueTemplateSelector}"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
                                 <DataTemplate>
-                                    <TextBox Text="{Binding DraftValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
-                                             Style="{StaticResource ModifiableTextBoxStyle}"
-                                             LostFocus="TextBox_LostFocus"
-                                             PreviewTextInput="TextBox_PreviewTextInput"
-                                             Loaded="TextBox_Loaded"
-                                             Unloaded="TextBox_Unloaded">
-                                        <TextBox.InputBindings>
-                                            <KeyBinding Key="Enter" Command="{Binding CommitCommand}"/>
-                                            <KeyBinding Key="Escape" Command="{Binding RevertCommand}"/>
-                                        </TextBox.InputBindings>
-                                    </TextBox>
+                                    <ContentControl Content="{Binding}" ContentTemplateSelector="{StaticResource ValueTemplateSelector}"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
