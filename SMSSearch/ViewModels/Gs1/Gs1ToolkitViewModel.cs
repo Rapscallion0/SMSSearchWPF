@@ -451,7 +451,7 @@ namespace SMS_Search.ViewModels.Gs1
             }
 
             var parsedModels = ParsedAis.Select(vm => vm.Model).ToList();
-            var vmInstance = new Gs1BarcodeWindowViewModel(data, _barcodeService, _clipboard, _dialogService, parsedModels);
+            var vmInstance = new Gs1BarcodeWindowViewModel(data, _barcodeService, _clipboard, _dialogService, _logger, parsedModels);
             var window = new SMS_Search.Views.Gs1.Gs1BarcodeWindow
             {
                 DataContext = vmInstance
@@ -466,18 +466,30 @@ namespace SMS_Search.ViewModels.Gs1
 
         private void AddToHistory(string formattedValue)
         {
+            var rawValueToSave = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => (a.Ai == "8110" || a.Ai == "8112") ? $"{a.Ai}{a.RawValue}" : $"({a.Ai}){a.RawValue}"));
+
+            var existingItem = History.FirstOrDefault(h => h.RawValue == rawValueToSave);
+            if (existingItem != null)
+            {
+                History.Remove(existingItem);
+            }
+
             var item = new Gs1HistoryItem
             {
-                RawValue = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => (a.Ai == "8110" || a.Ai == "8112") ? $"{a.Ai}{a.RawValue}" : $"({a.Ai}){a.RawValue}")),
+                RawValue = rawValueToSave,
                 FormattedValue = formattedValue,
                 DetectedType = DetectedType,
                 Timestamp = System.DateTime.Now,
                 OriginalAi = ParsedAis.FirstOrDefault(a => a.Ai == "8110" || a.Ai == "8112")?.Ai ?? ""
             };
 
+            History.Insert(0, item);
+
             // Limit history size in memory
-            if (History.Count > 50) History.RemoveAt(0);
-            History.Add(item);
+            while (History.Count > 50)
+            {
+                History.RemoveAt(History.Count - 1);
+            }
 
             // Save to disk
             _ = SaveHistoryAsync();

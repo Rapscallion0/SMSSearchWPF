@@ -92,5 +92,19 @@ namespace SMS_Search.Views.Gs1
                 System.Windows.DataObject.RemovePastingHandler(textBox, TextBox_Pasting);
             }
         }
+
+        private void HistoryItem_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is System.Windows.Controls.ListBoxItem item && item.DataContext is Models.Gs1.Gs1HistoryItem historyItem)
+            {
+                if (DataContext is ViewModels.Gs1.Gs1ToolkitViewModel vm)
+                {
+                    if (vm.LoadHistoryItemCommand.CanExecute(historyItem))
+                    {
+                        vm.LoadHistoryItemCommand.Execute(historyItem);
+                    }
+                }
+            }
+        }
     }
 }
