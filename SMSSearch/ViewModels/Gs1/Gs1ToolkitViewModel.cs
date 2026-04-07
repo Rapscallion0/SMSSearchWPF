@@ -27,6 +27,101 @@ namespace SMS_Search.ViewModels.Gs1
         [ObservableProperty]
         private string _detectedType = "Unknown";
 
+        public ObservableCollection<Gs1BarcodeSegmentViewModel> BarcodeSegments { get; } = new ObservableCollection<Gs1BarcodeSegmentViewModel>();
+
+        [ObservableProperty]
+        private Gs1ParsedAiViewModel? _selectedAi;
+
+        partial void OnSelectedAiChanged(Gs1ParsedAiViewModel? value)
+        {
+            UpdateSegmentSelection();
+        }
+
+        [RelayCommand]
+        private void CopyCode()
+        {
+            string codeToCopy = string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => $"{a.Ai}{a.DraftValue}"));
+            if (string.IsNullOrEmpty(codeToCopy))
+            {
+                _dialogService.ShowToast("No code to copy.", "Copy Barcode", SMS_Search.Views.ToastType.Warning);
+                return;
+            }
+            _clipboard.SetText(codeToCopy);
+            _dialogService.ShowToast("Barcode copied to clipboard.", "Copy Barcode", SMS_Search.Views.ToastType.Success);
+        }
+
+        private void UpdateSegmentSelection()
+        {
+            if (BarcodeSegments == null) return;
+            foreach (var segment in BarcodeSegments)
+            {
+                segment.IsSelected = false;
+            }
+
+            if (SelectedAi == null) return;
+
+            foreach (var segment in BarcodeSegments)
+            {
+                if (segment.AssociatedAi == SelectedAi)
+                {
+                    segment.IsSelected = true;
+                }
+            }
+        }
+
+        private void RebuildSegments()
+        {
+            var oldSegments = BarcodeSegments.ToList();
+            BarcodeSegments.Clear();
+
+            foreach (var ai in ParsedAis.Where(a => a.Ai != "└─"))
+            {
+                var aiSeg = new Gs1BarcodeSegmentViewModel
+                {
+                    Text = ai.Ai,
+                    AssociatedAi = ai
+                };
+                aiSeg.HoverStarted = () => ai.IsHovered = true;
+                aiSeg.HoverEnded = () => ai.IsHovered = false;
+                BarcodeSegments.Add(aiSeg);
+
+                if (ai.Ai == "8110" || ai.Ai == "8112")
+                {
+                    // Databar coupon sub-segments
+                    foreach (var subAi in ParsedAis.Where(a => a.Ai == "└─"))
+                    {
+                        if (string.IsNullOrEmpty(subAi.DraftValue)) continue;
+
+                        // User specifically asked for lengths of length fields
+                        string segText = subAi.DraftValue;
+
+                        var subSeg = new Gs1BarcodeSegmentViewModel
+                        {
+                            Text = segText,
+                            AssociatedAi = subAi
+                        };
+                        subSeg.HoverStarted = () => subAi.IsHovered = true;
+                        subSeg.HoverEnded = () => subAi.IsHovered = false;
+                        BarcodeSegments.Add(subSeg);
+                    }
+                }
+                else
+                {
+                    var valSeg = new Gs1BarcodeSegmentViewModel
+                    {
+                        Text = ai.DraftValue,
+                        AssociatedAi = ai
+                    };
+                    valSeg.HoverStarted = () => ai.IsHovered = true;
+                    valSeg.HoverEnded = () => ai.IsHovered = false;
+                    BarcodeSegments.Add(valSeg);
+                }
+            }
+
+            // Restore selection and hover states if possible
+            UpdateSegmentSelection();
+        }
+
         public ObservableCollection<string> AvailableTemplates { get; } = new ObservableCollection<string>
         {
             "GS1 Databar Coupon",
@@ -293,6 +388,7 @@ namespace SMS_Search.ViewModels.Gs1
             UpdateFilteredDefinitions();
 
             ApplyRequiredStatusByTemplate(DetectedType);
+            RebuildSegments();
 
             if (!result.IsValid)
             {
@@ -350,6 +446,16 @@ namespace SMS_Search.ViewModels.Gs1
                     finally
                     {
                         _isUpdatingFromSubAi = false;
+                    }
+                }
+                RebuildSegments();
+
+                // Pulse segment if it exists
+                if (!_isClearingValues)
+                {
+                    foreach (var seg in BarcodeSegments.Where(s => s.AssociatedAi == vm))
+                    {
+                        seg.PulseAnimation();
                     }
                 }
             }
@@ -453,6 +559,7 @@ namespace SMS_Search.ViewModels.Gs1
             vm.IsRequired = isRequired;
             vm.PropertyChanged += OnParsedAiPropertyChanged;
             ParsedAis.Add(vm);
+            RebuildSegments();
         }
 
         private void AddEmptySubAi(string title, bool isRequired = false)
@@ -470,6 +577,7 @@ namespace SMS_Search.ViewModels.Gs1
             vm.IsRequired = isRequired;
             vm.PropertyChanged += OnParsedAiPropertyChanged;
             ParsedAis.Add(vm);
+            RebuildSegments();
         }
 
         [RelayCommand]
@@ -503,6 +611,7 @@ namespace SMS_Search.ViewModels.Gs1
             {
                 _isClearingValues = false;
             }
+            RebuildSegments();
         }
 
         [RelayCommand]
@@ -681,6 +790,14 @@ namespace SMS_Search.ViewModels.Gs1
         [ObservableProperty]
         private bool _isAnimatingUpdate;
 
+        [ObservableProperty]
+        private bool _isHovered;
+
+        public bool IsRootComplexAi => Ai == "8110" || Ai == "8112";
+        public bool IsEffectivelyReadOnly => IsReadOnly || IsRootComplexAi;
+
+        public string DisplayValue => IsRootComplexAi ? "(-- See Above --)" : DraftValue;
+
         partial void OnDraftValueChanged(string value)
         {
             IsModified = value != RawValue;
@@ -712,6 +829,7 @@ namespace SMS_Search.ViewModels.Gs1
             {
                 DraftValue = value;
             }
+            OnPropertyChanged(nameof(DisplayValue));
         }
 
         [RelayCommand]

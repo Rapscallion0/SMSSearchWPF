@@ -71,7 +71,7 @@
         </DataTemplate>
 
         <DataTemplate x:Key="ValueReadOnlyTextTemplate">
-            <TextBox Text="{Binding DraftValue, Mode=OneWay}"
+            <TextBox Text="{Binding DisplayValue, Mode=OneWay}"
                      IsReadOnly="True" Foreground="#555555"
                      BorderThickness="0" Background="#F0F0F0" VerticalContentAlignment="Center" Padding="2,0">
                 <TextBox.Style>
@@ -226,8 +226,94 @@
 
             <!-- Breakdown Grid -->
             <DockPanel Grid.Column="0" Margin="10">
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
-                    <ComboBox ItemsSource="{Binding FilteredDefinitions}"
+                <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding BarcodeSegments}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="Transparent" MouseEnter="Segment_MouseEnter" MouseLeave="Segment_MouseLeave">
+                                            <StackPanel>
+                                                <!-- Top Brace -->
+                                                <Path Data="M 0,5 L 0,0 L 100,0 L 100,5" Stroke="Black" StrokeThickness="2" Stretch="Fill" Height="4" Margin="2,0" VerticalAlignment="Bottom">
+                                                    <Path.Style>
+                                                        <Style TargetType="Path">
+                                                            <Setter Property="Visibility" Value="Hidden"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Path.Style>
+                                                </Path>
+
+                                                <TextBlock Text="{Binding Text}" FontSize="16" Margin="1,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="FontWeight" Value="Normal"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsAnimatingUpdate}" Value="True">
+                                                                    <DataTrigger.EnterActions>
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard>
+                                                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)"
+                                                                                                 From="0" To="20" Duration="0:0:0.25" AutoReverse="True" RepeatBehavior="2x"/>
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </DataTrigger.EnterActions>
+                                                                    <Setter Property="Effect">
+                                                                        <Setter.Value>
+                                                                            <DropShadowEffect Color="#008000" BlurRadius="0" ShadowDepth="0" Opacity="1.0"/>
+                                                                        </Setter.Value>
+                                                                    </Setter>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <Button Grid.Column="1" Command="{Binding CopyCodeCommand}" Width="32" Height="32" Margin="5,0,0,0" ToolTip="Copy Full Barcode">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="Transparent" CornerRadius="4" x:Name="Bd">
+                                        <Path Data="M19 21H8V7H19M19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1Z"
+                                              Fill="{TemplateBinding Foreground}" Stretch="Uniform" Margin="6"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="#E0E0E0"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="#D0D0D0"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal">
+                        <ComboBox ItemsSource="{Binding FilteredDefinitions}"
                               SelectedItem="{Binding SelectedDefinitionToAdd}"
                               Width="200" Margin="0,0,5,0"
                               IsEditable="False" IsTextSearchEnabled="True" TextSearch.TextPath="Ai"
@@ -247,10 +333,24 @@
                     </ComboBox>
                     <Button Command="{Binding AddAiCommand}" Content="Add AI" Width="60" Margin="0,0,10,0"
                             Visibility="{Binding IsAddAiVisible, Converter={StaticResource BoolToVis}}"/>
-                    <Button Command="{Binding ClearValuesCommand}" Content="Clear Values" Width="80"/>
+                        <Button Command="{Binding ClearValuesCommand}" Content="Clear Values" Width="80"/>
+                    </StackPanel>
                 </StackPanel>
 
-                <DataGrid ItemsSource="{Binding ParsedAis}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserResizeRows="False" SelectionMode="Single" SelectionUnit="Cell">
+                <DataGrid ItemsSource="{Binding ParsedAis}" SelectedItem="{Binding SelectedAi}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserResizeRows="False" SelectionMode="Single" SelectionUnit="Cell">
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsHovered}" Value="True">
+                                    <Setter Property="Effect">
+                                        <Setter.Value>
+                                            <DropShadowEffect Color="#008000" BlurRadius="10" ShadowDepth="0" Opacity="0.5"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
                     <DataGrid.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Style.Triggers>

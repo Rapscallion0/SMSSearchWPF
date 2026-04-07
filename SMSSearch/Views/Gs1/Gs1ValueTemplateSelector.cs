@@ -15,7 +15,7 @@ namespace SMS_Search.Views.Gs1
         {
             if (item is Gs1ParsedAiViewModel viewModel)
             {
-                if (viewModel.Model.Definition != null && viewModel.Model.Definition.IsReadOnly && ReadOnlyTextTemplate != null)
+                if (viewModel.IsEffectivelyReadOnly && ReadOnlyTextTemplate != null)
                 {
                     return ReadOnlyTextTemplate;
                 }
