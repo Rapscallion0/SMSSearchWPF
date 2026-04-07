@@ -436,7 +436,8 @@ namespace SMS_Search.ViewModels.Gs1
         private async void PulseAnimation(Gs1ParsedAiViewModel vm)
         {
             vm.IsAnimatingUpdate = true;
-            await Task.Delay(100);
+            // 250ms * 2 (forward + backward) * 2 repeats = 1000ms. Add a small buffer.
+            await Task.Delay(1100);
             vm.IsAnimatingUpdate = false;
         }
 
@@ -659,6 +660,7 @@ namespace SMS_Search.ViewModels.Gs1
         public int MaxLength => _model.Definition?.MaxLength ?? 0;
 
         public string ControlType => _model.Definition?.ControlType ?? "Text";
+        public bool IsReadOnly => _model.Definition?.IsReadOnly ?? false;
         public System.Collections.Generic.List<Gs1AiOption>? Options => _model.Definition?.Options;
 
         [ObservableProperty]

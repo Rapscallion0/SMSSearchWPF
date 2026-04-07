@@ -72,8 +72,8 @@
 
         <DataTemplate x:Key="ValueReadOnlyTextTemplate">
             <TextBox Text="{Binding DraftValue, Mode=OneWay}"
-                     IsReadOnly="True"
-                     BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center">
+                     IsReadOnly="True" Foreground="#555555"
+                     BorderThickness="0" Background="#F0F0F0" VerticalContentAlignment="Center" Padding="2,0">
                 <TextBox.Style>
                     <Style TargetType="TextBox">
                         <Style.Triggers>
@@ -82,13 +82,13 @@
                                     <BeginStoryboard>
                                         <Storyboard>
                                             <DoubleAnimation Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)"
-                                                             From="0" To="15" Duration="0:0:0.1" AutoReverse="True"/>
+                                                             From="0" To="20" Duration="0:0:0.25" AutoReverse="True" RepeatBehavior="2x"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </DataTrigger.EnterActions>
                                 <Setter Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="LimeGreen" BlurRadius="0" ShadowDepth="0" Opacity="0.8"/>
+                                        <DropShadowEffect Color="#008000" BlurRadius="0" ShadowDepth="0" Opacity="1.0"/>
                                     </Setter.Value>
                                 </Setter>
                             </DataTrigger>
@@ -276,15 +276,15 @@
                                                 <StackPanel MinWidth="200" MaxWidth="300">
                                                     <TextBlock Text="{Binding Ai, StringFormat='AI: {0}'}" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
 
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                                        <TextBlock Text="Title: " FontWeight="SemiBold"/>
-                                                        <TextBlock Text="{Binding Title}" TextWrapping="Wrap"/>
-                                                    </StackPanel>
+                                                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                                                        <Run Text="Title: " FontWeight="SemiBold"/>
+                                                        <Run Text="{Binding Title}"/>
+                                                    </TextBlock>
 
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10" Visibility="{Binding HasDescription, Converter={StaticResource BoolToVis}}">
-                                                        <TextBlock Text="Description: " FontWeight="SemiBold"/>
-                                                        <TextBlock Text="{Binding Description}" TextWrapping="Wrap"/>
-                                                    </StackPanel>
+                                                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" Visibility="{Binding HasDescription, Converter={StaticResource BoolToVis}}">
+                                                        <Run Text="Description: " FontWeight="SemiBold"/>
+                                                        <Run Text="{Binding Description}"/>
+                                                    </TextBlock>
 
                                                     <ItemsControl ItemsSource="{Binding Options}" Margin="0,0,0,10">
                                                         <ItemsControl.Style>
@@ -316,6 +316,7 @@
                                                             <RowDefinition Height="Auto"/>
                                                             <RowDefinition Height="Auto"/>
                                                             <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
                                                         </Grid.RowDefinitions>
 
                                                         <TextBlock Text="Data Type:" Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Margin="0,0,5,2"/>
@@ -331,8 +332,11 @@
                                                             </TextBlock.Text>
                                                         </TextBlock>
 
-                                                        <TextBlock Text="Required:" Grid.Row="2" Grid.Column="0" FontWeight="SemiBold" Margin="0,0,5,0"/>
-                                                        <TextBlock Text="{Binding IsRequired, StringFormat='{}{0}'}" Grid.Row="2" Grid.Column="1"/>
+                                                        <TextBlock Text="Required:" Grid.Row="2" Grid.Column="0" FontWeight="SemiBold" Margin="0,0,5,2"/>
+                                                        <TextBlock Text="{Binding IsRequired, StringFormat='{}{0}'}" Grid.Row="2" Grid.Column="1" Margin="0,0,0,2"/>
+
+                                                        <TextBlock Text="Read Only:" Grid.Row="3" Grid.Column="0" FontWeight="SemiBold" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="{Binding IsReadOnly, StringFormat='{}{0}'}" Grid.Row="3" Grid.Column="1"/>
                                                     </Grid>
                                                 </StackPanel>
                                             </Border>
