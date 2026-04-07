@@ -594,6 +594,9 @@ namespace SMS_Search.ViewModels.Gs1
         public int MinLength => _model.Definition?.MinLength ?? 0;
         public int MaxLength => _model.Definition?.MaxLength ?? 0;
 
+        public string ControlType => _model.Definition?.ControlType ?? "Text";
+        public System.Collections.Generic.List<Gs1AiOption>? Options => _model.Definition?.Options;
+
         [ObservableProperty]
         private string _rawValue;
 
@@ -606,10 +609,31 @@ namespace SMS_Search.ViewModels.Gs1
         [ObservableProperty]
         private bool _isRequired;
 
+        [ObservableProperty]
+        private bool _boolValue;
+
         partial void OnDraftValueChanged(string value)
         {
             IsModified = value != RawValue;
+            if (ControlType == "CheckBox")
+            {
+                bool newBoolVal = value == "1";
+                if (BoolValue != newBoolVal)
+                {
+                    BoolValue = newBoolVal;
+                }
+            }
             Validate();
+        }
+
+        partial void OnBoolValueChanged(bool value)
+        {
+            string newDraftVal = value ? "1" : "0";
+            if (DraftValue != newDraftVal)
+            {
+                DraftValue = newDraftVal;
+                CommitCommand.Execute(null); // Auto commit checkbox toggles
+            }
         }
 
         partial void OnRawValueChanged(string value)
@@ -649,6 +673,11 @@ namespace SMS_Search.ViewModels.Gs1
             DraftValue = RawValue;
             IsModified = false;
             Validate();
+        }
+
+        public void CommitSilently()
+        {
+             CommitCommand.Execute(null);
         }
 
         private readonly System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>> _errors = new();
