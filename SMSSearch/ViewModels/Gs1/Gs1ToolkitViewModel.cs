@@ -360,6 +360,63 @@ namespace SMS_Search.ViewModels.Gs1
             var mainAi = ParsedAis.FirstOrDefault(a => a.Ai == "8110" || a.Ai == "8112");
             if (mainAi == null) return;
 
+            // Recalculate and pulse animations for VLI fields
+            void UpdateVli(string vliTitle, int newVliValue)
+            {
+                var vliVm = ParsedAis.FirstOrDefault(a => a.Ai == "└─" && a.Title == vliTitle);
+                if (vliVm != null)
+                {
+                    string newValStr = newVliValue.ToString();
+                    if (vliVm.RawValue != newValStr)
+                    {
+                        vliVm.RawValue = newValStr;
+                        vliVm.DraftValue = newValStr;
+                        PulseAnimation(vliVm);
+                    }
+                }
+            }
+
+            int GetVli(string value)
+            {
+                if (string.IsNullOrEmpty(value)) return 0;
+                int len = value.Length - 6;
+                return len < 0 ? 0 : len;
+            }
+
+            string PadVliField(string? value)
+            {
+                if (string.IsNullOrEmpty(value)) return new string('0', 6);
+                if (value.Length < 6) return value.PadLeft(6, '0');
+                return value;
+            }
+
+            UpdateVli("Primary Company Prefix Length", GetVli(PadVliField(ParsedAis.FirstOrDefault(a => a.Title == "Primary Company Prefix")?.RawValue)));
+            UpdateVli("Save Value Length", (ParsedAis.FirstOrDefault(a => a.Title == "Save Value")?.RawValue ?? "").Length);
+            UpdateVli("Primary Purchase Requirement Length", (ParsedAis.FirstOrDefault(a => a.Title == "Primary Purchase Requirement")?.RawValue ?? "").Length);
+
+            var p2Req = ParsedAis.FirstOrDefault(a => a.Title == "2nd Purchase Requirement");
+            if (p2Req != null) UpdateVli("2nd Purchase Requirement Length", (p2Req.RawValue ?? "").Length);
+
+            var p2Cp = ParsedAis.FirstOrDefault(a => a.Title == "2nd Purchase Company Prefix");
+            if (p2Cp != null)
+            {
+                if (p2Cp.RawValue == "N/A" || string.IsNullOrEmpty(p2Cp.RawValue)) UpdateVli("2nd Purchase Company Prefix Length", 9);
+                else UpdateVli("2nd Purchase Company Prefix Length", GetVli(PadVliField(p2Cp.RawValue)));
+            }
+
+            var p3Req = ParsedAis.FirstOrDefault(a => a.Title == "3rd Purchase Requirement");
+            if (p3Req != null) UpdateVli("3rd Purchase Requirement Length", (p3Req.RawValue ?? "").Length);
+
+            var p3Cp = ParsedAis.FirstOrDefault(a => a.Title == "3rd Purchase Company Prefix");
+            if (p3Cp != null)
+            {
+                if (p3Cp.RawValue == "N/A" || string.IsNullOrEmpty(p3Cp.RawValue)) UpdateVli("3rd Purchase Company Prefix Length", 9);
+                else UpdateVli("3rd Purchase Company Prefix Length", GetVli(PadVliField(p3Cp.RawValue)));
+            }
+
+            var serial = ParsedAis.FirstOrDefault(a => a.Title == "Serial Number");
+            if (serial != null) UpdateVli("Serial Number Length", GetVli(PadVliField(serial.RawValue)));
+
             string newRawValue = Gs1DatabarCouponEncoder.Encode(ParsedAis);
 
             _isUpdatingFromSubAi = true;
@@ -374,6 +431,13 @@ namespace SMS_Search.ViewModels.Gs1
             {
                 _isUpdatingFromSubAi = false;
             }
+        }
+
+        private async void PulseAnimation(Gs1ParsedAiViewModel vm)
+        {
+            vm.IsAnimatingUpdate = true;
+            await Task.Delay(100);
+            vm.IsAnimatingUpdate = false;
         }
 
         private void AddEmptyAi(Gs1AiDefinition definition, bool isRequired = false)
@@ -611,6 +675,9 @@ namespace SMS_Search.ViewModels.Gs1
 
         [ObservableProperty]
         private bool _boolValue;
+
+        [ObservableProperty]
+        private bool _isAnimatingUpdate;
 
         partial void OnDraftValueChanged(string value)
         {

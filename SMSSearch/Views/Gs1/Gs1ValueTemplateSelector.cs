@@ -7,6 +7,7 @@ namespace SMS_Search.Views.Gs1
     public class Gs1ValueTemplateSelector : DataTemplateSelector
     {
         public DataTemplate? TextTemplate { get; set; }
+        public DataTemplate? ReadOnlyTextTemplate { get; set; }
         public DataTemplate? CheckBoxTemplate { get; set; }
         public DataTemplate? ComboBoxTemplate { get; set; }
 
@@ -14,6 +15,11 @@ namespace SMS_Search.Views.Gs1
         {
             if (item is Gs1ParsedAiViewModel viewModel)
             {
+                if (viewModel.Model.Definition != null && viewModel.Model.Definition.IsReadOnly && ReadOnlyTextTemplate != null)
+                {
+                    return ReadOnlyTextTemplate;
+                }
+
                 if (viewModel.ControlType == "CheckBox" && CheckBoxTemplate != null)
                 {
                     return CheckBoxTemplate;
