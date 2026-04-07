@@ -47,6 +47,12 @@ namespace SMS_Search.ViewModels.Gs1
         [ObservableProperty]
         private bool _includeDetails;
 
+        [ObservableProperty]
+        private string? _barcodeName;
+
+        [ObservableProperty]
+        private string? _barcodeDescription;
+
         partial void OnSelectedSymbologyChanged(Gs1BarcodeType value)
         {
             UpdateBarcodeImage();
@@ -83,8 +89,15 @@ namespace SMS_Search.ViewModels.Gs1
             string path = _dialogService.SaveFileDialog("PDF Files (*.pdf)|*.pdf", "barcode.pdf") ?? "";
             if (!string.IsNullOrEmpty(path))
             {
-                _barcodeService.SaveAsPdf(_barcodeData, SelectedSymbology, path, IncludeDetails, _parsedAis);
-                _dialogService.ShowToast($"Barcode PDF saved.", "Save PDF", SMS_Search.Views.ToastType.Success);
+                try
+                {
+                    _barcodeService.SaveAsPdf(_barcodeData, SelectedSymbology, path, IncludeDetails, _parsedAis, BarcodeName, BarcodeDescription);
+                    _dialogService.ShowToast($"Barcode PDF saved.", "Save PDF", SMS_Search.Views.ToastType.Success);
+                }
+                catch (System.Exception)
+                {
+                    _dialogService.ShowToast("Failed to save barcode PDF.", "Error", SMS_Search.Views.ToastType.Error);
+                }
             }
         }
 
@@ -96,15 +109,39 @@ namespace SMS_Search.ViewModels.Gs1
             {
                 System.Windows.FrameworkElement printElement;
 
+                var stackPanel = new System.Windows.Controls.StackPanel
+                {
+                    Margin = new System.Windows.Thickness(50)
+                };
+
+                if (!string.IsNullOrWhiteSpace(BarcodeName))
+                {
+                    stackPanel.Children.Add(new System.Windows.Controls.TextBlock
+                    {
+                        Text = BarcodeName,
+                        FontWeight = System.Windows.FontWeights.Bold,
+                        FontSize = 20,
+                        Margin = new System.Windows.Thickness(0, 0, 0, 5),
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center
+                    });
+                }
+
+                if (!string.IsNullOrWhiteSpace(BarcodeDescription))
+                {
+                    stackPanel.Children.Add(new System.Windows.Controls.TextBlock
+                    {
+                        Text = BarcodeDescription,
+                        FontSize = 14,
+                        Margin = new System.Windows.Thickness(0, 0, 0, 20),
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                        TextWrapping = System.Windows.TextWrapping.Wrap
+                    });
+                }
+
                 var image = new System.Windows.Controls.Image
                 {
                     Source = BarcodeImage,
                     Stretch = System.Windows.Media.Stretch.Uniform,
-                    Margin = new System.Windows.Thickness(50)
-                };
-
-                var stackPanel = new System.Windows.Controls.StackPanel
-                {
                     Margin = new System.Windows.Thickness(50)
                 };
 
@@ -195,18 +232,6 @@ namespace SMS_Search.ViewModels.Gs1
                     }
 
                     stackPanel.Children.Add(grid);
-                }
-                else
-                {
-                    // Print barcode text below if not including details
-                    var textBlock = new System.Windows.Controls.TextBlock
-                    {
-                        Text = _barcodeData,
-                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                        Margin = new System.Windows.Thickness(0, 5, 0, 0),
-                        FontSize = 14
-                    };
-                    stackPanel.Children.Add(textBlock);
                 }
 
                 printElement = stackPanel;

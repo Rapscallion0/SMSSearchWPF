@@ -69,8 +69,10 @@ namespace SMS_Search.Services.Gs1
         [System.Runtime.InteropServices.DllImport("gdi32.dll")]
         private static extern bool DeleteObject(System.IntPtr hObject);
 
-        public void SaveAsPdf(string barcodeData, Gs1BarcodeType type, string filePath, bool includeDetails = false, System.Collections.Generic.List<Gs1ParsedAi>? parsedAis = null)
+        public void SaveAsPdf(string barcodeData, Gs1BarcodeType type, string filePath, bool includeDetails = false, System.Collections.Generic.List<Gs1ParsedAi>? parsedAis = null, string? barcodeName = null, string? barcodeDescription = null)
         {
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
             var document = new PdfDocument();
             var page = document.AddPage();
             var gfx = XGraphics.FromPdfPage(page);
@@ -109,14 +111,37 @@ namespace SMS_Search.Services.Gs1
             }
 
             XImage image = XImage.FromFile(tempImage);
-            gfx.DrawImage(image, 50, 50, 300, 100);
+
+            double currentY = 50;
+
+            if (!string.IsNullOrWhiteSpace(barcodeName))
+            {
+                var fontName = new XFont("Arial", 20, XFontStyleEx.Bold);
+                gfx.DrawString(barcodeName, fontName, XBrushes.Black, new XRect(50, currentY, page.Width.Point - 100, 25), XStringFormats.TopCenter);
+                currentY += 30;
+            }
+
+            if (!string.IsNullOrWhiteSpace(barcodeDescription))
+            {
+                var fontDesc = new XFont("Arial", 14, XFontStyleEx.Regular);
+                // Basic text layout
+                var formatter = new PdfSharp.Drawing.Layout.XTextFormatter(gfx);
+                var rect = new XRect(50, currentY, page.Width.Point - 100, 50);
+                formatter.DrawString(barcodeDescription, fontDesc, XBrushes.Black, rect, XStringFormats.TopCenter);
+                currentY += 40;
+            }
+
+            gfx.DrawImage(image, 50, currentY, 300, 100);
 
             var fontRegular = new XFont("Arial", 10, XFontStyleEx.Regular);
 
+            currentY += 105;
+
             if (!includeDetails)
             {
-                // Print barcode text below if not including details
-                gfx.DrawString(barcodeData, fontRegular, XBrushes.Black, new XRect(50, 155, 300, 20), XStringFormats.TopCenter);
+                // Note: User requested removal of double printed barcode text when printing,
+                // but this applies to print/pdf when IncludeDetails is false. The barcode image
+                // inherently includes the text.
             }
 
             if (includeDetails && parsedAis != null && parsedAis.Count > 0)
@@ -124,7 +149,7 @@ namespace SMS_Search.Services.Gs1
                 var fontBold = new XFont("Arial", 12, XFontStyleEx.Bold);
                 var fontSmall = new XFont("Arial", 8, XFontStyleEx.Regular);
 
-                double yPosition = 170; // Below the image
+                double yPosition = currentY + 15; // Below the image
 
                 gfx.DrawString("GS1 Barcode Details", fontBold, XBrushes.Black, new XRect(50, yPosition, page.Width.Point - 100, 20), XStringFormats.TopLeft);
                 yPosition += 25;
