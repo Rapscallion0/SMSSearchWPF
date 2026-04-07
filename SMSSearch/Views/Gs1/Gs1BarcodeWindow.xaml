@@ -8,15 +8,24 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
-            <CheckBox IsChecked="{Binding IncludeDetails}" Content="Include details on print/PDF" VerticalAlignment="Center" Margin="0,0,15,0"/>
-            <TextBlock Text="Symbology:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-            <ComboBox ItemsSource="{Binding AvailableSymbologies}" SelectedItem="{Binding SelectedSymbology}" Width="120" Margin="0,0,15,0"/>
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-            <Button Command="{Binding CopySvgCommand}" Content="Copy SVG" Width="80" Margin="0,0,10,0"/>
-            <Button Command="{Binding SavePdfCommand}" Content="Save as PDF" Width="100" Margin="0,0,10,0"/>
-            <Button Command="{Binding PrintCommand}" Content="Print" Width="80"/>
-        </StackPanel>
+            <CheckBox Grid.Column="0" IsChecked="{Binding IncludeDetails}" Content="Include details on print/PDF" VerticalAlignment="Center" Margin="0,0,15,0"/>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock Text="Symbology:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <ComboBox ItemsSource="{Binding AvailableSymbologies}" SelectedItem="{Binding SelectedSymbology}" Width="120" Margin="0,0,15,0"/>
+
+                <Button Command="{Binding CopySvgCommand}" Content="Copy SVG" Width="80" Margin="0,0,10,0"/>
+                <Button Command="{Binding SavePdfCommand}" Content="Save as PDF" Width="100" Margin="0,0,10,0"/>
+                <Button Command="{Binding PrintCommand}" Content="Print" Width="80"/>
+            </StackPanel>
+        </Grid>
 
         <Border Grid.Row="1" BorderBrush="Gray" BorderThickness="1" Background="White">
             <Image Source="{Binding BarcodeImage}" Stretch="Uniform" Margin="10"/>

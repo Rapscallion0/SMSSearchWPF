@@ -103,15 +103,16 @@ namespace SMS_Search.ViewModels.Gs1
                     Margin = new System.Windows.Thickness(50)
                 };
 
+                var stackPanel = new System.Windows.Controls.StackPanel
+                {
+                    Margin = new System.Windows.Thickness(50)
+                };
+
+                image.Margin = new System.Windows.Thickness(0, 0, 0, 20);
+                stackPanel.Children.Add(image);
+
                 if (IncludeDetails && _parsedAis.Count > 0)
                 {
-                    var stackPanel = new System.Windows.Controls.StackPanel
-                    {
-                        Margin = new System.Windows.Thickness(50)
-                    };
-
-                    image.Margin = new System.Windows.Thickness(0, 0, 0, 20);
-                    stackPanel.Children.Add(image);
 
                     var headerText = new System.Windows.Controls.TextBlock
                     {
@@ -194,12 +195,21 @@ namespace SMS_Search.ViewModels.Gs1
                     }
 
                     stackPanel.Children.Add(grid);
-                    printElement = stackPanel;
                 }
                 else
                 {
-                    printElement = image;
+                    // Print barcode text below if not including details
+                    var textBlock = new System.Windows.Controls.TextBlock
+                    {
+                        Text = _barcodeData,
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                        Margin = new System.Windows.Thickness(0, 5, 0, 0),
+                        FontSize = 14
+                    };
+                    stackPanel.Children.Add(textBlock);
                 }
+
+                printElement = stackPanel;
 
                 // Measure and arrange the element so it has size
                 printElement.Measure(new System.Windows.Size(printDialog.PrintableAreaWidth, printDialog.PrintableAreaHeight));

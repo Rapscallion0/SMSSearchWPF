@@ -20,7 +20,8 @@ namespace SMS_Search.Services.Gs1
                 {
                     Width = 300,
                     Height = 100,
-                    Margin = 10
+                    Margin = 10,
+                    PureBarcode = false
                 }
             };
             var svgImage = writer.Write(barcodeData);
@@ -82,7 +83,8 @@ namespace SMS_Search.Services.Gs1
                 {
                     Width = 300,
                     Height = 100,
-                    Margin = 10
+                    Margin = 10,
+                    PureBarcode = false
                 }
             };
 
@@ -109,10 +111,17 @@ namespace SMS_Search.Services.Gs1
             XImage image = XImage.FromFile(tempImage);
             gfx.DrawImage(image, 50, 50, 300, 100);
 
+            var fontRegular = new XFont("Arial", 10, XFontStyleEx.Regular);
+
+            if (!includeDetails)
+            {
+                // Print barcode text below if not including details
+                gfx.DrawString(barcodeData, fontRegular, XBrushes.Black, new XRect(50, 155, 300, 20), XStringFormats.TopCenter);
+            }
+
             if (includeDetails && parsedAis != null && parsedAis.Count > 0)
             {
                 var fontBold = new XFont("Arial", 12, XFontStyleEx.Bold);
-                var fontRegular = new XFont("Arial", 10, XFontStyleEx.Regular);
                 var fontSmall = new XFont("Arial", 8, XFontStyleEx.Regular);
 
                 double yPosition = 170; // Below the image
@@ -134,10 +143,24 @@ namespace SMS_Search.Services.Gs1
 
                 foreach (var ai in parsedAis)
                 {
-                    string aiText = ai.Ai == "└─" ? "  └─" : ai.Ai;
+                    string aiText = ai.Ai == "└─" ? "  └─" : ai.Ai ?? "";
+                    string rawVal = ai.RawValue ?? "";
+                    string title = ai.Definition?.Title ?? "Unknown";
+
+                    // Handle wrapping or simply drawing
                     gfx.DrawString(aiText, fontRegular, XBrushes.Black, new XRect(50, yPosition, 50, 20), XStringFormats.TopLeft);
-                    gfx.DrawString(ai.RawValue, fontRegular, XBrushes.Black, new XRect(100, yPosition, 150, 20), XStringFormats.TopLeft);
-                    gfx.DrawString(ai.Definition?.Title ?? "Unknown", fontRegular, XBrushes.Black, new XRect(250, yPosition, page.Width.Point - 300, 20), XStringFormats.TopLeft);
+                    gfx.DrawString(rawVal, fontRegular, XBrushes.Black, new XRect(100, yPosition, 150, 20), XStringFormats.TopLeft);
+
+                    // Simple word wrap for Title since some titles are very long
+                    var titleRect = new XRect(250, yPosition, page.Width.Point - 300, 40);
+                    XStringFormat strFormat = new XStringFormat();
+                    strFormat.Alignment = XStringAlignment.Near;
+                    strFormat.LineAlignment = XLineAlignment.Near;
+
+                    // PdfSharp DrawString doesn't natively word-wrap for simple DrawString. Use XTextFormatter or calculate
+                    // But we can just use an XTextFormatter for safety if we had one. Let's just draw string.
+                    gfx.DrawString(title, fontRegular, XBrushes.Black, new XRect(250, yPosition, page.Width.Point - 300, 20), XStringFormats.TopLeft);
+
                     yPosition += 15;
 
                     if (!string.IsNullOrEmpty(ai.Definition?.Description) && ai.Definition.Description != ai.Definition.Title)
