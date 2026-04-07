@@ -19,7 +19,7 @@ namespace SMS_Search.Services.Gs1
                 Options = new EncodingOptions
                 {
                     Width = 300,
-                    Height = 100,
+                    Height = type == Gs1BarcodeType.Gs1DataMatrix ? 300 : 100,
                     Margin = 10,
                     PureBarcode = false
                 }
@@ -37,7 +37,7 @@ namespace SMS_Search.Services.Gs1
                 Options = new EncodingOptions
                 {
                     Width = 600,
-                    Height = 200,
+                    Height = type == Gs1BarcodeType.Gs1DataMatrix ? 600 : 200,
                     Margin = 10,
                     PureBarcode = false
                 }
@@ -88,7 +88,7 @@ namespace SMS_Search.Services.Gs1
                 Options = new EncodingOptions
                 {
                     Width = 300,
-                    Height = 100,
+                    Height = type == Gs1BarcodeType.Gs1DataMatrix ? 300 : 100,
                     Margin = 10,
                     PureBarcode = false
                 }
@@ -135,11 +135,12 @@ namespace SMS_Search.Services.Gs1
                 currentY += 40;
             }
 
-            gfx.DrawImage(image, 50, currentY, 300, 100);
+            double imageHeight = type == Gs1BarcodeType.Gs1DataMatrix ? 300 : 100;
+            gfx.DrawImage(image, 50, currentY, 300, imageHeight);
 
             var fontRegular = new XFont("Arial", 10, XFontStyleEx.Regular);
 
-            currentY += 105;
+            currentY += imageHeight + 5;
 
             if (!includeDetails)
             {
