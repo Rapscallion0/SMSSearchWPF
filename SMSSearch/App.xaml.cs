@@ -107,6 +107,11 @@ namespace SMS_Search
             {
                 base.OnStartup(e);
 
+                if (PdfSharp.Fonts.GlobalFontSettings.FontResolver == null)
+                {
+                    PdfSharp.Fonts.GlobalFontSettings.FontResolver = new SMS_Search.Utils.SystemFontResolver();
+                }
+
                 // Prevent application from exiting when EulaWindow or SettingsWindow closes
                 this.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
