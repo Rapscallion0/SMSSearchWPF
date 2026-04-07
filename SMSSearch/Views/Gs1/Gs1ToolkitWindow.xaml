@@ -278,12 +278,12 @@
 
                                                     <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
                                                         <Run Text="Title: " FontWeight="SemiBold"/>
-                                                        <Run Text="{Binding Title}"/>
+                                                        <Run Text="{Binding Title, Mode=OneWay}"/>
                                                     </TextBlock>
 
                                                     <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" Visibility="{Binding HasDescription, Converter={StaticResource BoolToVis}}">
                                                         <Run Text="Description: " FontWeight="SemiBold"/>
-                                                        <Run Text="{Binding Description}"/>
+                                                        <Run Text="{Binding Description, Mode=OneWay}"/>
                                                     </TextBlock>
 
                                                     <ItemsControl ItemsSource="{Binding Options}" Margin="0,0,0,10">
