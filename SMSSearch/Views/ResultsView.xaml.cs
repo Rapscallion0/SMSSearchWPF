@@ -13,6 +13,7 @@ using System.Windows.Interop;
 using SMS_Search.ViewModels;
 using SMS_Search.Data;
 using SMS_Search.Services;
+using SMS_Search.Utils;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -430,7 +431,11 @@ namespace SMS_Search.Views
             }
             catch (Exception ex)
             {
-                var dialogService = (System.Windows.Application.Current as App)?.Services.GetService<IDialogService>();
+                var services = (System.Windows.Application.Current as App)?.Services;
+                var logger = services?.GetService<ILoggerService>();
+                logger?.LogError("Failed to copy selected cells to clipboard", ex);
+
+                var dialogService = services?.GetService<IDialogService>();
                 if (dialogService != null)
                 {
                     dialogService.ShowError("Failed to copy: " + ex.Message, "Error");
@@ -483,7 +488,22 @@ namespace SMS_Search.Views
         {
             if (col != null)
             {
-                try { System.Windows.Clipboard.SetText(col.Header.ToString() ?? ""); } catch { }
+                try
+                {
+                    System.Windows.Clipboard.SetText(col.Header.ToString() ?? "");
+                }
+                catch (Exception ex)
+                {
+                    var services = (System.Windows.Application.Current as App)?.Services;
+                    var logger = services?.GetService<ILoggerService>();
+                    logger?.LogError("Failed to copy column name to clipboard", ex);
+
+                    var dialogService = services?.GetService<IDialogService>();
+                    if (dialogService != null)
+                    {
+                        dialogService.ShowError("Failed to copy column name: " + ex.Message, "Error");
+                    }
+                }
             }
         }
 
