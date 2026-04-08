@@ -208,5 +208,26 @@ namespace SMS_Search.Views.Gs1
             }
             return child;
         }
+
+        private void HistoryPanelThumb_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
+        {
+            if (DataContext is ViewModels.Gs1.Gs1ToolkitViewModel vm)
+            {
+                // Dragging from the left edge of a right-docked panel: negative HorizontalChange means width increases.
+                double newWidth = vm.HistoryPanelWidth - e.HorizontalChange;
+                if (newWidth >= 200)
+                {
+                    vm.HistoryPanelWidth = newWidth;
+                }
+            }
+        }
+
+        private void CollapsedHistoryBar_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (DataContext is ViewModels.Gs1.Gs1ToolkitViewModel vm)
+            {
+                vm.IsHistoryPanelOpen = true;
+            }
+        }
     }
 }

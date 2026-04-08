@@ -276,6 +276,53 @@ namespace SMS_Search.ViewModels.Gs1
         private Gs1AiDefinition? _selectedDefinitionToAdd;
 
         private readonly string _historyFilePath;
+        private readonly ISettingsRepository _settingsRepository;
+
+        [ObservableProperty]
+        private bool _isHistoryPanelOpen;
+
+        [ObservableProperty]
+        private bool _isHistoryPanelPinned;
+
+        [ObservableProperty]
+        private double _historyPanelWidth;
+
+        partial void OnIsHistoryPanelOpenChanged(bool value)
+        {
+            _settingsRepository.SetValue("GS1", "HISTORY_PANEL_OPEN", value.ToString());
+            _ = _settingsRepository.SaveAsync();
+        }
+
+        partial void OnIsHistoryPanelPinnedChanged(bool value)
+        {
+            _settingsRepository.SetValue("GS1", "HISTORY_PANEL_PINNED", value.ToString());
+            _ = _settingsRepository.SaveAsync();
+        }
+
+        partial void OnHistoryPanelWidthChanged(double value)
+        {
+            if (value >= 200)
+            {
+                _settingsRepository.SetValue("GS1", "HISTORY_PANEL_WIDTH", value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                _ = _settingsRepository.SaveAsync();
+            }
+        }
+
+        [RelayCommand]
+        private void ToggleHistoryPanel()
+        {
+            IsHistoryPanelOpen = !IsHistoryPanelOpen;
+        }
+
+        [RelayCommand]
+        private void ToggleHistoryPanelPinned()
+        {
+            IsHistoryPanelPinned = !IsHistoryPanelPinned;
+            if (IsHistoryPanelPinned && !IsHistoryPanelOpen)
+            {
+                IsHistoryPanelOpen = true;
+            }
+        }
 
         public Gs1ToolkitViewModel(
             IGs1Repository repository,
@@ -283,9 +330,11 @@ namespace SMS_Search.ViewModels.Gs1
             IGs1BarcodeService barcodeService,
             IDialogService dialogService,
             ILoggerService logger,
-            IClipboardService clipboard)
+            IClipboardService clipboard,
+            ISettingsRepository settingsRepository)
         {
             _repository = repository;
+            _settingsRepository = settingsRepository;
             _parser = parser;
             _barcodeService = barcodeService;
             _dialogService = dialogService;
@@ -298,10 +347,41 @@ namespace SMS_Search.ViewModels.Gs1
             _ = InitializeAsync();
         }
 
+        private void LoadPanelSettings()
+        {
+            if (bool.TryParse(_settingsRepository.GetValue("GS1", "HISTORY_PANEL_OPEN"), out bool isOpen))
+            {
+                IsHistoryPanelOpen = isOpen;
+            }
+            else
+            {
+                IsHistoryPanelOpen = true; // default
+            }
+
+            if (bool.TryParse(_settingsRepository.GetValue("GS1", "HISTORY_PANEL_PINNED"), out bool isPinned))
+            {
+                IsHistoryPanelPinned = isPinned;
+            }
+            else
+            {
+                IsHistoryPanelPinned = true; // default
+            }
+
+            if (double.TryParse(_settingsRepository.GetValue("GS1", "HISTORY_PANEL_WIDTH"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double width) && width >= 200)
+            {
+                HistoryPanelWidth = width;
+            }
+            else
+            {
+                HistoryPanelWidth = 300; // default
+            }
+        }
+
         private async Task InitializeAsync()
         {
             try
             {
+                LoadPanelSettings();
                 await LoadHistoryAsync();
 
                 var defs = await _repository.GetAiDefinitionsAsync();
