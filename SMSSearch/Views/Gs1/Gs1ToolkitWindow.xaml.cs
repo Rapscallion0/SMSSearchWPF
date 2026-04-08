@@ -229,5 +229,13 @@ namespace SMS_Search.Views.Gs1
                 vm.IsHistoryPanelOpen = true;
             }
         }
+
+        private void HistoryOverlay_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (DataContext is ViewModels.Gs1.Gs1ToolkitViewModel vm && vm.IsHistoryPanelOpen && !vm.IsHistoryPanelPinned)
+            {
+                vm.IsHistoryPanelOpen = false;
+            }
+        }
     }
 }
