@@ -6,7 +6,7 @@
         xmlns:vm="clr-namespace:SMS_Search.ViewModels.Gs1"
         xmlns:views="clr-namespace:SMS_Search.Views.Gs1"
         mc:Ignorable="d"
-        Title="GS1 Barcode Toolkit" Height="600" Width="800" WindowStartupLocation="CenterOwner" MinWidth="600" MinHeight="400">
+        Title="GS1 Barcode Toolkit" Height="600" Width="1000" WindowStartupLocation="CenterOwner" MinWidth="600" MinHeight="400">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
@@ -233,11 +233,11 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                             <ItemsControl ItemsSource="{Binding BarcodeSegments}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal"/>
+                                        <WrapPanel Orientation="Horizontal"/>
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
