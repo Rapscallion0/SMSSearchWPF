@@ -17,7 +17,29 @@ namespace SMS_Search.ViewModels.Gs1
         [ObservableProperty]
         private bool _isAnimatingUpdate;
 
-        public Gs1ParsedAiViewModel? AssociatedAi { get; set; }
+        private Gs1ParsedAiViewModel? _associatedAi;
+        public Gs1ParsedAiViewModel? AssociatedAi
+        {
+            get => _associatedAi;
+            set
+            {
+                SetProperty(ref _associatedAi, value);
+                OnPropertyChanged(nameof(ToolTipText));
+            }
+        }
+
+        public string ToolTipText
+        {
+            get
+            {
+                if (AssociatedAi == null) return string.Empty;
+                if (AssociatedAi.Ai == "└─" || string.IsNullOrEmpty(AssociatedAi.Ai))
+                {
+                    return AssociatedAi.Title;
+                }
+                return $"{AssociatedAi.Ai} - {AssociatedAi.Title}";
+            }
+        }
 
         public Action? HoverStarted { get; set; }
         public Action? HoverEnded { get; set; }

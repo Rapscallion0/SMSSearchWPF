@@ -112,6 +112,25 @@ namespace SMS_Search.Views.Gs1
             if (sender is FrameworkElement fe && fe.DataContext is ViewModels.Gs1.Gs1BarcodeSegmentViewModel vm)
             {
                 vm.StartHover();
+                if (vm.AssociatedAi != null)
+                {
+                    AisDataGrid.ScrollIntoView(vm.AssociatedAi);
+                }
+            }
+        }
+
+        private void AisDataGrid_SelectedCellsChanged(object sender, System.Windows.Controls.SelectedCellsChangedEventArgs e)
+        {
+            if (e.AddedCells.Count > 0)
+            {
+                var item = e.AddedCells[0].Item;
+                if (item is ViewModels.Gs1.Gs1ParsedAiViewModel aiVm)
+                {
+                    if (DataContext is ViewModels.Gs1.Gs1ToolkitViewModel vm)
+                    {
+                        vm.SelectedAi = aiVm;
+                    }
+                }
             }
         }
 

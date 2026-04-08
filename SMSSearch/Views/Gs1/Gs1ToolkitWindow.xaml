@@ -242,13 +242,17 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="Transparent" MouseEnter="Segment_MouseEnter" MouseLeave="Segment_MouseLeave">
+                                        <Border Background="Transparent" MouseEnter="Segment_MouseEnter" MouseLeave="Segment_MouseLeave" ToolTip="{Binding ToolTipText}">
                                             <TextBlock Text="{Binding Text}" FontSize="16" Margin="0" VerticalAlignment="Center">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="FontWeight" Value="Normal"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                <Setter Property="FontWeight" Value="Bold"/>
+                                                                <Setter Property="Foreground" Value="Green"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsHovered}" Value="True">
                                                                 <Setter Property="FontWeight" Value="Bold"/>
                                                                 <Setter Property="Foreground" Value="Green"/>
                                                             </DataTrigger>
@@ -322,7 +326,7 @@
                     </StackPanel>
                 </StackPanel>
 
-                <DataGrid ItemsSource="{Binding ParsedAis}" SelectedItem="{Binding SelectedAi}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserResizeRows="False" SelectionMode="Single" SelectionUnit="Cell">
+                <DataGrid x:Name="AisDataGrid" ItemsSource="{Binding ParsedAis}" SelectedItem="{Binding SelectedAi}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserResizeRows="False" SelectionMode="Single" SelectionUnit="Cell" SelectedCellsChanged="AisDataGrid_SelectedCellsChanged">
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow">
                             <Style.Triggers>
