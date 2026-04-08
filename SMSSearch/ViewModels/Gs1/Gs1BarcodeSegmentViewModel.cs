@@ -44,8 +44,16 @@ namespace SMS_Search.ViewModels.Gs1
         public Action? HoverStarted { get; set; }
         public Action? HoverEnded { get; set; }
 
-        public void StartHover() => HoverStarted?.Invoke();
-        public void EndHover() => HoverEnded?.Invoke();
+        public void StartHover()
+        {
+            IsHovered = true;
+            HoverStarted?.Invoke();
+        }
+        public void EndHover()
+        {
+            IsHovered = false;
+            HoverEnded?.Invoke();
+        }
 
         public async void PulseAnimation()
         {
