@@ -28,31 +28,11 @@
                     </Setter>
                     <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={x:Static RelativeSource.Self}}"/>
                 </Trigger>
-                <MultiDataTrigger>
-                    <MultiDataTrigger.Conditions>
-                        <Condition Binding="{Binding IsModified}" Value="True"/>
-                        <Condition Binding="{Binding (Validation.HasError), RelativeSource={RelativeSource Self}}" Value="False"/>
-                    </MultiDataTrigger.Conditions>
-                    <Setter Property="Effect">
-                        <Setter.Value>
-                            <DropShadowEffect Color="#FFFFA6" BlurRadius="5" ShadowDepth="0" Opacity="0.8"/>
-                        </Setter.Value>
-                    </Setter>
-                </MultiDataTrigger>
             </Style.Triggers>
         </Style>
 
         <Style x:Key="ModifiableRawBarcodeTextBoxStyle" TargetType="TextBox">
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsRawBarcodeModified}" Value="True">
-                    <Setter Property="Effect">
-                        <Setter.Value>
-                            <DropShadowEffect Color="#FFFFA6" BlurRadius="5" ShadowDepth="0" Opacity="0.8"/>
-                        </Setter.Value>
-                    </Setter>
-                </DataTrigger>
-            </Style.Triggers>
         </Style>
 
         <DataTemplate x:Key="ValueTextTemplate">
@@ -120,17 +100,6 @@
                                 </Setter>
                                 <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={x:Static RelativeSource.Self}}"/>
                             </Trigger>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding IsModified}" Value="True"/>
-                                    <Condition Binding="{Binding (Validation.HasError), RelativeSource={RelativeSource Self}}" Value="False"/>
-                                </MultiDataTrigger.Conditions>
-                                <Setter Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#FFFFA6" BlurRadius="5" ShadowDepth="0" Opacity="0.8"/>
-                                    </Setter.Value>
-                                </Setter>
-                            </MultiDataTrigger>
                         </Style.Triggers>
                     </Style>
                 </ComboBox.Style>
@@ -242,16 +211,20 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="Transparent" MouseEnter="Segment_MouseEnter" MouseLeave="Segment_MouseLeave" ToolTip="{Binding ToolTipText}">
+                                        <Border Background="Transparent" MouseEnter="Segment_MouseEnter" MouseLeave="Segment_MouseLeave" MouseLeftButtonDown="Segment_MouseLeftButtonDown" ToolTip="{Binding ToolTipText}">
                                             <TextBlock Text="{Binding Text}" FontSize="16" Margin="0" VerticalAlignment="Center">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="FontWeight" Value="Normal"/>
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding IsSelected}" Value="True"/>
+                                                                    <Condition Binding="{Binding DataContext.IsAnySegmentHovered, RelativeSource={RelativeSource AncestorType=Window}}" Value="False"/>
+                                                                </MultiDataTrigger.Conditions>
                                                                 <Setter Property="FontWeight" Value="Bold"/>
                                                                 <Setter Property="Foreground" Value="Green"/>
-                                                            </DataTrigger>
+                                                            </MultiDataTrigger>
                                                             <DataTrigger Binding="{Binding IsHovered}" Value="True">
                                                                 <Setter Property="FontWeight" Value="Bold"/>
                                                                 <Setter Property="Foreground" Value="Green"/>

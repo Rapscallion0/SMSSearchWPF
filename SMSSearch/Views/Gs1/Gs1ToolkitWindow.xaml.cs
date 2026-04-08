@@ -141,5 +141,72 @@ namespace SMS_Search.Views.Gs1
                 vm.EndHover();
             }
         }
+
+        private void Segment_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.DataContext is ViewModels.Gs1.Gs1BarcodeSegmentViewModel vm)
+            {
+                if (vm.AssociatedAi != null && DataContext is ViewModels.Gs1.Gs1ToolkitViewModel mainVm)
+                {
+                    mainVm.SelectedAi = vm.AssociatedAi;
+                    AisDataGrid.ScrollIntoView(vm.AssociatedAi);
+
+                    // Delay slightly to allow virtualization to generate the row if needed
+                    System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        var row = (System.Windows.Controls.DataGridRow)AisDataGrid.ItemContainerGenerator.ContainerFromItem(vm.AssociatedAi);
+                        if (row != null)
+                        {
+                            // Column 3 is "Value" column
+                            System.Windows.Controls.DataGridCell cell = GetCell(AisDataGrid, row, 3);
+                            if (cell != null)
+                            {
+                                cell.Focus();
+                                AisDataGrid.SelectedCells.Clear();
+                                AisDataGrid.SelectedCells.Add(new System.Windows.Controls.DataGridCellInfo(cell));
+                            }
+                        }
+                    }, System.Windows.Threading.DispatcherPriority.Background);
+                }
+            }
+        }
+
+        private System.Windows.Controls.DataGridCell GetCell(System.Windows.Controls.DataGrid grid, System.Windows.Controls.DataGridRow row, int column)
+        {
+            if (row != null)
+            {
+                var presenter = GetVisualChild<System.Windows.Controls.Primitives.DataGridCellsPresenter>(row);
+                if (presenter == null) return null;
+
+                var cell = (System.Windows.Controls.DataGridCell)presenter.ItemContainerGenerator.ContainerFromIndex(column);
+                if (cell == null)
+                {
+                    grid.ScrollIntoView(row, grid.Columns[column]);
+                    cell = (System.Windows.Controls.DataGridCell)presenter.ItemContainerGenerator.ContainerFromIndex(column);
+                }
+                return cell;
+            }
+            return null;
+        }
+
+        private T GetVisualChild<T>(System.Windows.Media.Visual parent) where T : System.Windows.Media.Visual
+        {
+            T child = default(T);
+            int numVisuals = System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < numVisuals; i++)
+            {
+                System.Windows.Media.Visual v = (System.Windows.Media.Visual)System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                child = v as T;
+                if (child == null)
+                {
+                    child = GetVisualChild<T>(v);
+                }
+                if (child != null)
+                {
+                    break;
+                }
+            }
+            return child;
+        }
     }
 }

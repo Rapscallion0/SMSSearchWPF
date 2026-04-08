@@ -81,8 +81,16 @@ namespace SMS_Search.ViewModels.Gs1
                     Text = ai.Ai,
                     AssociatedAi = ai
                 };
-                aiSeg.HoverStarted = () => ai.IsHovered = true;
-                aiSeg.HoverEnded = () => ai.IsHovered = false;
+                aiSeg.HoverStarted = () =>
+                {
+                    ai.IsHovered = true;
+                    IsAnySegmentHovered = true;
+                };
+                aiSeg.HoverEnded = () =>
+                {
+                    ai.IsHovered = false;
+                    IsAnySegmentHovered = BarcodeSegments.Any(s => s.IsHovered);
+                };
                 BarcodeSegments.Add(aiSeg);
 
                 if (ai.Ai == "8110" || ai.Ai == "8112")
@@ -100,8 +108,16 @@ namespace SMS_Search.ViewModels.Gs1
                             Text = segText,
                             AssociatedAi = subAi
                         };
-                        subSeg.HoverStarted = () => subAi.IsHovered = true;
-                        subSeg.HoverEnded = () => subAi.IsHovered = false;
+                        subSeg.HoverStarted = () =>
+                        {
+                            subAi.IsHovered = true;
+                            IsAnySegmentHovered = true;
+                        };
+                        subSeg.HoverEnded = () =>
+                        {
+                            subAi.IsHovered = false;
+                            IsAnySegmentHovered = BarcodeSegments.Any(s => s.IsHovered);
+                        };
                         BarcodeSegments.Add(subSeg);
                     }
                 }
@@ -112,8 +128,16 @@ namespace SMS_Search.ViewModels.Gs1
                         Text = ai.DraftValue,
                         AssociatedAi = ai
                     };
-                    valSeg.HoverStarted = () => ai.IsHovered = true;
-                    valSeg.HoverEnded = () => ai.IsHovered = false;
+                    valSeg.HoverStarted = () =>
+                    {
+                        ai.IsHovered = true;
+                        IsAnySegmentHovered = true;
+                    };
+                    valSeg.HoverEnded = () =>
+                    {
+                        ai.IsHovered = false;
+                        IsAnySegmentHovered = BarcodeSegments.Any(s => s.IsHovered);
+                    };
                     BarcodeSegments.Add(valSeg);
                 }
             }
@@ -305,6 +329,9 @@ namespace SMS_Search.ViewModels.Gs1
         }
 
         [ObservableProperty]
+        private bool _isAnySegmentHovered;
+
+        [ObservableProperty]
         private string _draftRawBarcode = "";
 
         [ObservableProperty]
@@ -366,6 +393,10 @@ namespace SMS_Search.ViewModels.Gs1
                 return;
             }
 
+            // Save current selection to restore after re-parse
+            string? selectedAiCode = SelectedAi?.Ai;
+            string? selectedAiTitle = SelectedAi?.Title;
+
             var result = _parser.Parse(value, AvailableDefinitions.ToList());
 
             foreach (var ai in ParsedAis)
@@ -388,6 +419,14 @@ namespace SMS_Search.ViewModels.Gs1
             UpdateFilteredDefinitions();
 
             ApplyRequiredStatusByTemplate(DetectedType);
+
+            // Restore selection if possible
+            if (!string.IsNullOrEmpty(selectedAiCode))
+            {
+                SelectedAi = ParsedAis.FirstOrDefault(a => a.Ai == selectedAiCode && a.Title == selectedAiTitle)
+                             ?? ParsedAis.FirstOrDefault(a => a.Ai == selectedAiCode);
+            }
+
             RebuildSegments();
 
             if (!result.IsValid)
