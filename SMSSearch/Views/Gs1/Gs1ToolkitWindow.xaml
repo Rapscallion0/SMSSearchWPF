@@ -453,11 +453,110 @@
                 </DataGrid>
             </DockPanel>
 
-            <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+            <!-- Column 2 placeholder when pinned -->
+            <Grid Grid.Column="2">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Width" Value="0"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsHistoryPanelPinned}" Value="True">
+                                <Setter Property="Width" Value="{Binding HistoryPanelWidth, Mode=TwoWay}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+            </Grid>
 
-            <!-- History -->
-            <GroupBox Grid.Column="2" Header="History" Margin="0,10,10,10">
-                <ListBox ItemsSource="{Binding History}">
+            <!-- History Flyout Panel Overlay -->
+            <Grid Grid.Column="0" Grid.ColumnSpan="3" HorizontalAlignment="Right" Panel.ZIndex="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <!-- Default state is the flyout mode. If pinned, it docks to Column 2's width directly -->
+                        <Setter Property="Width" Value="Auto"/>
+                    </Style>
+                </Grid.Style>
+
+                <!-- Resizable Content Area -->
+                <Border Grid.Column="1" Background="White" BorderBrush="Gray" BorderThickness="1,0,0,0">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Setter Property="Width" Value="{Binding HistoryPanelWidth, Mode=TwoWay}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsHistoryPanelOpen}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsHistoryPanelPinned}" Value="True"/>
+                                        <Condition Binding="{Binding IsHistoryPanelOpen}" Value="True"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Grid>
+                        <!-- Thumb for resizing -->
+                        <Thumb HorizontalAlignment="Left" Width="5" Cursor="SizeWE" Background="Transparent" Panel.ZIndex="2" DragDelta="HistoryPanelThumb_DragDelta">
+                            <Thumb.Style>
+                                <Style TargetType="Thumb">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="Transparent"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </Style>
+                            </Thumb.Style>
+                        </Thumb>
+
+                        <!-- History Main Content -->
+                        <GroupBox Header="History" Margin="5,10,10,10" MinWidth="200">
+                            <Grid>
+                                <!-- Pinned Toggle -->
+                                <Button Command="{Binding ToggleHistoryPanelPinnedCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" Width="24" Height="24" Margin="0,-25,0,0" ToolTip="Pin/Unpin History" Background="Transparent" BorderThickness="0">
+                                    <Grid>
+                                        <Path Data="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" Fill="#607D8B" Stretch="Uniform" Margin="4">
+                                            <Path.Style>
+                                                <Style TargetType="Path">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsHistoryPanelPinned}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Path.Style>
+                                        </Path>
+                                        <Path Data="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12 M12.8,16H11.2V22H12.8 M18,14H6 M8,4H16 M16,12L18,14 M8,12L6,14" Stroke="#607D8B" StrokeThickness="1.5" Stretch="Uniform" Margin="4">
+                                            <Path.Style>
+                                                <Style TargetType="Path">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsHistoryPanelPinned}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Path.Style>
+                                        </Path>
+                                    </Grid>
+                                </Button>
+                                <!-- Expand/Collapse Toggle -->
+                                <Button Command="{Binding ToggleHistoryPanelCommand}" HorizontalAlignment="Left" VerticalAlignment="Top" Width="24" Height="24" Margin="0,-25,0,0" ToolTip="Collapse History" Background="Transparent" BorderThickness="0">
+                                    <Path Data="M16.59,5.59L18,7L13,12L18,17L16.59,18.41L10.18,12L16.59,5.59 M11.59,5.59L13,7L8,12L13,17L11.59,18.41L5.18,12L11.59,5.59Z" Fill="#607D8B" Stretch="Uniform" Margin="2"/>
+                                </Button>
+
+                                <ListBox ItemsSource="{Binding History}" Margin="0,5,0,0">
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
                             <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}" />
@@ -488,7 +587,66 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-            </GroupBox>
+                            </Grid>
+                        </GroupBox>
+                    </Grid>
+                </Border>
+
+                <!-- Collapsed Narrow Bar -->
+                <Border Grid.Column="0" Width="30" Background="#F0F0F0" BorderBrush="Gray" BorderThickness="1,0,0,0" MouseLeftButtonUp="CollapsedHistoryBar_MouseLeftButtonUp" Cursor="Hand" ToolTip="Expand History">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsHistoryPanelOpen}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Grid>
+                        <!-- Pinned Toggle (Even when collapsed) -->
+                        <Button Command="{Binding ToggleHistoryPanelPinnedCommand}" VerticalAlignment="Top" HorizontalAlignment="Center" Width="24" Height="24" Margin="0,5,0,0" ToolTip="Pin/Unpin History" Background="Transparent" BorderThickness="0">
+                            <Grid>
+                                <Path Data="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" Fill="#607D8B" Stretch="Uniform" Margin="4">
+                                    <Path.Style>
+                                        <Style TargetType="Path">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsHistoryPanelPinned}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Path.Style>
+                                </Path>
+                                <Path Data="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12 M12.8,16H11.2V22H12.8 M18,14H6 M8,4H16 M16,12L18,14 M8,12L6,14" Stroke="#607D8B" StrokeThickness="1.5" Stretch="Uniform" Margin="4">
+                                    <Path.Style>
+                                        <Style TargetType="Path">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsHistoryPanelPinned}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Path.Style>
+                                </Path>
+                            </Grid>
+                        </Button>
+
+                        <!-- Expand Chevron -->
+                        <Path Data="M7.41,18.41L6,17L11,12L6,7L7.41,5.59L13.82,12L7.41,18.41 M12.41,18.41L11,17L16,12L11,7L12.41,5.59L18.82,12L12.41,18.41Z" Fill="#607D8B" Stretch="Uniform" Width="20" Height="20" VerticalAlignment="Top" Margin="0,35,0,0"/>
+
+                        <!-- Sideways Text -->
+                        <TextBlock Text="History" FontWeight="SemiBold" Foreground="#607D8B" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="14">
+                            <TextBlock.LayoutTransform>
+                                <RotateTransform Angle="90"/>
+                            </TextBlock.LayoutTransform>
+                        </TextBlock>
+                    </Grid>
+                </Border>
+            </Grid>
         </Grid>
     </DockPanel>
 </Window>

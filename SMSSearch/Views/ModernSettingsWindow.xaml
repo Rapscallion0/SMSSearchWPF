@@ -37,6 +37,9 @@
         <DataTemplate DataType="{x:Type vm:SystemSectionViewModel}">
             <views:SystemSectionView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:Gs1ToolkitSettingsSectionViewModel}">
+            <views:Gs1ToolkitSettingsSectionView />
+        </DataTemplate>
 
         <Style TargetType="ListBoxItem">
             <Setter Property="Padding" Value="10,8"/>
