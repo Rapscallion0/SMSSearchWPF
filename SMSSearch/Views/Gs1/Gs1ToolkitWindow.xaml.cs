@@ -158,7 +158,7 @@ namespace SMS_Search.Views.Gs1
                         if (row != null)
                         {
                             // Column 3 is "Value" column
-                            System.Windows.Controls.DataGridCell cell = GetCell(AisDataGrid, row, 3);
+                            System.Windows.Controls.DataGridCell? cell = GetCell(AisDataGrid, row, 3);
                             if (cell != null)
                             {
                                 cell.Focus();
@@ -171,27 +171,27 @@ namespace SMS_Search.Views.Gs1
             }
         }
 
-        private System.Windows.Controls.DataGridCell GetCell(System.Windows.Controls.DataGrid grid, System.Windows.Controls.DataGridRow row, int column)
+        private System.Windows.Controls.DataGridCell? GetCell(System.Windows.Controls.DataGrid grid, System.Windows.Controls.DataGridRow row, int column)
         {
             if (row != null)
             {
                 var presenter = GetVisualChild<System.Windows.Controls.Primitives.DataGridCellsPresenter>(row);
                 if (presenter == null) return null;
 
-                var cell = (System.Windows.Controls.DataGridCell)presenter.ItemContainerGenerator.ContainerFromIndex(column);
+                var cell = presenter.ItemContainerGenerator.ContainerFromIndex(column) as System.Windows.Controls.DataGridCell;
                 if (cell == null)
                 {
                     grid.ScrollIntoView(row, grid.Columns[column]);
-                    cell = (System.Windows.Controls.DataGridCell)presenter.ItemContainerGenerator.ContainerFromIndex(column);
+                    cell = presenter.ItemContainerGenerator.ContainerFromIndex(column) as System.Windows.Controls.DataGridCell;
                 }
                 return cell;
             }
             return null;
         }
 
-        private T GetVisualChild<T>(System.Windows.Media.Visual parent) where T : System.Windows.Media.Visual
+        private T? GetVisualChild<T>(System.Windows.Media.Visual parent) where T : System.Windows.Media.Visual
         {
-            T child = default(T);
+            T? child = default;
             int numVisuals = System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);
             for (int i = 0; i < numVisuals; i++)
             {
