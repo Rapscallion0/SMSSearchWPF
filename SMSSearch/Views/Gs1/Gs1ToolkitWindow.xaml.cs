@@ -7,6 +7,52 @@ namespace SMS_Search.Views.Gs1
         public Gs1ToolkitWindow()
         {
             InitializeComponent();
+            DataContextChanged += Gs1ToolkitWindow_DataContextChanged;
+        }
+
+        private void Gs1ToolkitWindow_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (e.OldValue is ViewModels.Gs1.Gs1ToolkitViewModel oldVm)
+            {
+                oldVm.PropertyChanged -= Vm_PropertyChanged;
+            }
+            if (e.NewValue is ViewModels.Gs1.Gs1ToolkitViewModel newVm)
+            {
+                newVm.PropertyChanged += Vm_PropertyChanged;
+                UpdatePlaceholderWidth(newVm);
+            }
+        }
+
+        private void Vm_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ViewModels.Gs1.Gs1ToolkitViewModel.IsHistoryPanelPinned) ||
+                e.PropertyName == nameof(ViewModels.Gs1.Gs1ToolkitViewModel.IsHistoryPanelOpen) ||
+                e.PropertyName == nameof(ViewModels.Gs1.Gs1ToolkitViewModel.HistoryPanelWidth))
+            {
+                if (DataContext is ViewModels.Gs1.Gs1ToolkitViewModel vm)
+                {
+                    UpdatePlaceholderWidth(vm);
+                }
+            }
+        }
+
+        private void UpdatePlaceholderWidth(ViewModels.Gs1.Gs1ToolkitViewModel vm)
+        {
+            double targetWidth = 0;
+            if (vm.IsHistoryPanelPinned && vm.IsHistoryPanelOpen)
+            {
+                targetWidth = vm.HistoryPanelWidth;
+            }
+
+            var animation = new System.Windows.Media.Animation.DoubleAnimation
+            {
+                To = targetWidth,
+                Duration = new Duration(System.TimeSpan.FromMilliseconds(250)),
+                DecelerationRatio = 0.8,
+                FillBehavior = System.Windows.Media.Animation.FillBehavior.HoldEnd
+            };
+
+            Column2Placeholder.BeginAnimation(WidthProperty, animation);
         }
 
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)

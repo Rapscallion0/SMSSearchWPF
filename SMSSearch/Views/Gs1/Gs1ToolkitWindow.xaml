@@ -454,18 +454,7 @@
             </DockPanel>
 
             <!-- Column 2 placeholder when pinned -->
-            <Grid Grid.Column="2">
-                <Grid.Style>
-                    <Style TargetType="Grid">
-                        <Setter Property="Width" Value="0"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsHistoryPanelPinned}" Value="True">
-                                <Setter Property="Width" Value="{Binding HistoryPanelWidth, Mode=TwoWay}"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Grid.Style>
-            </Grid>
+            <Grid x:Name="Column2Placeholder" Grid.Column="2" Width="0"/>
 
             <!-- Transparent Overlay to Close Unpinned History Flyout -->
             <Grid Grid.Column="0" Grid.ColumnSpan="3" Panel.ZIndex="9" Background="Transparent" MouseLeftButtonDown="HistoryOverlay_MouseLeftButtonDown">
@@ -489,7 +478,6 @@
             <Grid Grid.Column="0" Grid.ColumnSpan="3" HorizontalAlignment="Right" Panel.ZIndex="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <Grid.Style>
@@ -500,7 +488,7 @@
                 </Grid.Style>
 
                 <!-- Resizable Content Area -->
-                <Border Grid.Column="1" Background="White" BorderBrush="Gray" BorderThickness="1,0,0,0">
+                <Border Grid.Column="0" Background="White" BorderBrush="Gray" BorderThickness="1,0,0,0">
                     <Border.Style>
                         <Style TargetType="Border">
                             <Setter Property="Visibility" Value="Collapsed"/>
@@ -549,7 +537,7 @@
 
                                 <!-- Expand/Collapse Toggle -->
                                 <Button Grid.Column="0" Command="{Binding ToggleHistoryPanelCommand}" Width="24" Height="24" ToolTip="Collapse History" Background="Transparent" BorderThickness="0" Foreground="#607D8B">
-                                    <Control Template="{StaticResource Icon_Chevron_Right}" />
+                                    <Control Template="{StaticResource Icon_Chevron_Double_Right}" />
                                 </Button>
 
                                 <TextBlock Grid.Column="1" Text="History" FontWeight="SemiBold" VerticalAlignment="Center" Margin="5,0,0,0" Foreground="#607D8B"/>
@@ -632,31 +620,32 @@
                     </Grid>
                 </Border>
 
-                <!-- Collapsed Narrow Bar -->
-                <Border Grid.Column="0" Width="30" Background="#F0F0F0" BorderBrush="Gray" BorderThickness="1,0,0,0" MouseLeftButtonUp="CollapsedHistoryBar_MouseLeftButtonUp" Cursor="Hand" ToolTip="Expand History">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsHistoryPanelOpen}" Value="False">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <Grid>
-                        <!-- Expand Chevron -->
-                        <Control Template="{StaticResource Icon_Chevron_Left}" Width="24" Height="24" Foreground="#607D8B" VerticalAlignment="Top" Margin="0,5,0,0"/>
-
-                        <!-- Sideways Text -->
-                        <TextBlock Text="History" FontWeight="SemiBold" Foreground="#607D8B" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="14">
-                            <TextBlock.LayoutTransform>
-                                <RotateTransform Angle="90"/>
-                            </TextBlock.LayoutTransform>
-                        </TextBlock>
-                    </Grid>
-                </Border>
             </Grid>
+
+            <!-- Collapsed Narrow Bar (Now in Column 2 instead of overlay) -->
+            <Border Grid.Column="2" Width="30" Background="#F0F0F0" BorderBrush="Gray" BorderThickness="1,0,0,0" MouseLeftButtonUp="CollapsedHistoryBar_MouseLeftButtonUp" Cursor="Hand" ToolTip="Expand History">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsHistoryPanelOpen}" Value="False">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <!-- Expand Chevron -->
+                    <Control Template="{StaticResource Icon_Chevron_Double_Left}" Width="24" Height="24" Foreground="#607D8B" VerticalAlignment="Top" Margin="0,5,0,0"/>
+
+                    <!-- Sideways Text -->
+                    <TextBlock Text="History" FontWeight="SemiBold" Foreground="#607D8B" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="14">
+                        <TextBlock.LayoutTransform>
+                            <RotateTransform Angle="90"/>
+                        </TextBlock.LayoutTransform>
+                    </TextBlock>
+                </Grid>
+            </Border>
         </Grid>
     </DockPanel>
 </Window>
