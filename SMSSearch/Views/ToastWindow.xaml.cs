@@ -116,6 +116,12 @@ namespace SMS_Search.Views
         {
             _activeToasts.Remove(this);
             UpdateAllToastPositions(false);
+
+            if (_closeTimer != null)
+            {
+                _closeTimer.Stop();
+                _closeTimer.Tick -= CloseTimer_Tick;
+            }
         }
 
         public static void UpdateAllToastPositions(bool animateNewest)

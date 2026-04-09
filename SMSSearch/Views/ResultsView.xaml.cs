@@ -91,6 +91,12 @@ namespace SMS_Search.Views
         {
             _hwndSource?.RemoveHook(WndProc);
             _hwndSource = null;
+
+            if (_debounceTimer != null)
+            {
+                _debounceTimer.Stop();
+                _debounceTimer.Tick -= DebounceTimer_Tick;
+            }
         }
 
         private ScrollViewer? GetCachedScrollViewer()

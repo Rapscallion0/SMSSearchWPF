@@ -168,6 +168,12 @@ namespace SMS_Search
         {
             base.OnClosed(e);
             _unarchiveWindow?.Close();
+
+            if (_typingTimer != null)
+            {
+                _typingTimer.Stop();
+                _typingTimer.Tick -= TypingTimer_Tick;
+            }
         }
 
         private void OnRequestToggleUnarchiveWindow(bool isVisible)
