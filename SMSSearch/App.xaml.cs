@@ -208,22 +208,6 @@ namespace SMS_Search
                     }
                 }
 
-                // Update Check
-                if (configService.GetValue("GENERAL", "CHECKUPDATE") == "1")
-                {
-                    var updateChecker = Services.GetRequiredService<UpdateChecker>();
-                    var info = await updateChecker.CheckForUpdatesAsync();
-                    if (info.IsNewer)
-                    {
-                        var msg = $"There is an update available for download.\n\nCurrent Version: {System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version}\nNew Version: {info.Version}\n\nWould you like to update now?";
-                        if (System.Windows.MessageBox.Show(msg, "SMS Search Update", MessageBoxButton.YesNo, MessageBoxImage.Asterisk) == MessageBoxResult.Yes)
-                        {
-                            await updateChecker.PerformUpdate(info);
-                            return; // Should have shut down in PerformUpdate, but just in case
-                        }
-                    }
-                }
-
                 logger.LogInfo("Application starting...");
 
                 bool isListener = false;
@@ -294,6 +278,35 @@ namespace SMS_Search
                     this.MainWindow = mainWindow;
                     this.ShutdownMode = ShutdownMode.OnMainWindowClose;
                     mainWindow.Show();
+
+                    // Update Check after window is shown to avoid blocking startup
+                    if (configService.GetValue("GENERAL", "CHECKUPDATE") == "1")
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var updateChecker = Services.GetRequiredService<UpdateChecker>();
+                                var info = await updateChecker.CheckForUpdatesAsync();
+                                if (info.IsNewer)
+                                {
+                                    await Dispatcher.InvokeAsync(async () =>
+                                    {
+                                        var msg = $"There is an update available for download.\n\nCurrent Version: {System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version}\nNew Version: {info.Version}\n\nWould you like to update now?";
+                                        if (System.Windows.MessageBox.Show(mainWindow, msg, "SMS Search Update", MessageBoxButton.YesNo, MessageBoxImage.Asterisk) == MessageBoxResult.Yes)
+                                        {
+                                            await updateChecker.PerformUpdate(info);
+                                            Shutdown();
+                                        }
+                                    });
+                                }
+                            }
+                            catch (Exception updateEx)
+                            {
+                                logger.LogError("Background update check failed", updateEx);
+                            }
+                        });
+                    }
                 }
             }
             catch (Exception ex)

@@ -335,6 +335,7 @@ namespace SMS_Search.Data
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("Page fetch error: " + ex.Message);
+                LoadError?.Invoke(this, ex);
             }
             finally
             {
