@@ -31,6 +31,16 @@ namespace SMS_Search.Views
             });
         }
 
+        private void UserControl_Unloaded(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (_typingTimer != null)
+            {
+                _typingTimer.Stop();
+                _typingTimer.Tick -= TypingTimer_Tick;
+            }
+            CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.UnregisterAll(this);
+        }
+
         private void UserControl_Loaded(object sender, System.Windows.RoutedEventArgs e)
         {
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(FocusActiveSearchInput));

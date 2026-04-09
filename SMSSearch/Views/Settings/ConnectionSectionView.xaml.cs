@@ -19,6 +19,15 @@ namespace SMS_Search.Views.Settings
             _typingTimer.Tick += TypingTimer_Tick;
         }
 
+        private void UserControl_Unloaded(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (_typingTimer != null)
+            {
+                _typingTimer.Stop();
+                _typingTimer.Tick -= TypingTimer_Tick;
+            }
+        }
+
         private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
             for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
