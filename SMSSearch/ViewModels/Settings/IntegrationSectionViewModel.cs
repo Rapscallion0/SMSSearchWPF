@@ -247,10 +247,17 @@ namespace SMS_Search.ViewModels.Settings
 
         private async void MonitorServiceStatus()
         {
-            while (_isMonitoring)
+            try
             {
-                CheckServiceStatus();
-                await Task.Delay(2000);
+                while (_isMonitoring)
+                {
+                    CheckServiceStatus();
+                    await Task.Delay(2000);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in MonitorServiceStatus: {ex.Message}");
             }
         }
 
