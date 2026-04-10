@@ -9,6 +9,7 @@ using SMS_Search.Models.Gs1;
 using SMS_Search.Services.Gs1;
 using SMS_Search.Services;
 using SMS_Search.Utils;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace SMS_Search.ViewModels.Gs1
 {
@@ -20,6 +21,9 @@ namespace SMS_Search.ViewModels.Gs1
         private readonly IDialogService _dialogService;
         private readonly ILoggerService _logger;
         private readonly IClipboardService _clipboard;
+        private readonly IStateService _stateService;
+        private readonly ISettingsRepository _settingsRepository;
+        private readonly string _historyFilePath;
 
         [ObservableProperty]
         private string _rawBarcode = "";
@@ -275,9 +279,6 @@ namespace SMS_Search.ViewModels.Gs1
         [ObservableProperty]
         private Gs1AiDefinition? _selectedDefinitionToAdd;
 
-        private readonly string _historyFilePath;
-        private readonly ISettingsRepository _settingsRepository;
-
         [ObservableProperty]
         private bool _isHistoryPanelOpen;
 
@@ -289,22 +290,22 @@ namespace SMS_Search.ViewModels.Gs1
 
         partial void OnIsHistoryPanelOpenChanged(bool value)
         {
-            _settingsRepository.SetValue("GS1", "HISTORY_PANEL_OPEN", value.ToString());
-            _ = _settingsRepository.SaveAsync();
+            _stateService.SetValue("GS1", "HISTORY_PANEL_OPEN", value.ToString());
+            _stateService.Save();
         }
 
         partial void OnIsHistoryPanelPinnedChanged(bool value)
         {
-            _settingsRepository.SetValue("GS1", "HISTORY_PANEL_PINNED", value.ToString());
-            _ = _settingsRepository.SaveAsync();
+            _stateService.SetValue("GS1", "HISTORY_PANEL_PINNED", value.ToString());
+            _stateService.Save();
         }
 
         partial void OnHistoryPanelWidthChanged(double value)
         {
             if (value >= 200)
             {
-                _settingsRepository.SetValue("GS1", "HISTORY_PANEL_WIDTH", value.ToString(System.Globalization.CultureInfo.InvariantCulture));
-                _ = _settingsRepository.SaveAsync();
+                _stateService.SetValue("GS1", "HISTORY_PANEL_WIDTH", value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                _stateService.Save();
             }
         }
 
@@ -331,6 +332,7 @@ namespace SMS_Search.ViewModels.Gs1
             IDialogService dialogService,
             ILoggerService logger,
             IClipboardService clipboard,
+            IStateService stateService,
             ISettingsRepository settingsRepository)
         {
             _repository = repository;
@@ -340,6 +342,7 @@ namespace SMS_Search.ViewModels.Gs1
             _dialogService = dialogService;
             _logger = logger;
             _clipboard = clipboard;
+            _stateService = stateService;
 
             string baseDir = System.AppDomain.CurrentDomain.BaseDirectory;
             _historyFilePath = System.IO.Path.Combine(baseDir, "gs1-history.json");
@@ -349,7 +352,7 @@ namespace SMS_Search.ViewModels.Gs1
 
         private void LoadPanelSettings()
         {
-            if (bool.TryParse(_settingsRepository.GetValue("GS1", "HISTORY_PANEL_OPEN"), out bool isOpen))
+            if (bool.TryParse(_stateService.GetValue("GS1", "HISTORY_PANEL_OPEN"), out bool isOpen))
             {
                 IsHistoryPanelOpen = isOpen;
             }
@@ -358,7 +361,7 @@ namespace SMS_Search.ViewModels.Gs1
                 IsHistoryPanelOpen = true; // default
             }
 
-            if (bool.TryParse(_settingsRepository.GetValue("GS1", "HISTORY_PANEL_PINNED"), out bool isPinned))
+            if (bool.TryParse(_stateService.GetValue("GS1", "HISTORY_PANEL_PINNED"), out bool isPinned))
             {
                 IsHistoryPanelPinned = isPinned;
             }
@@ -367,7 +370,7 @@ namespace SMS_Search.ViewModels.Gs1
                 IsHistoryPanelPinned = true; // default
             }
 
-            if (double.TryParse(_settingsRepository.GetValue("GS1", "HISTORY_PANEL_WIDTH"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double width) && width >= 200)
+            if (double.TryParse(_stateService.GetValue("GS1", "HISTORY_PANEL_WIDTH"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double width) && width >= 200)
             {
                 HistoryPanelWidth = width;
             }
