@@ -1,0 +1,74 @@
+--- SMSSearch/ViewModels/Gs1/Gs1ToolkitViewModel.cs
++++ SMSSearch/ViewModels/Gs1/Gs1ToolkitViewModel.cs
+@@ -25,6 +25,12 @@
+         private readonly IStateService _stateService;
+         private readonly ISettingsRepository _settingsRepository;
+
++        private bool GetSetting(string key, bool defaultValue = true)
++        {
++            string value = _settingsRepository.GetSetting("GS1", key);
++            return string.IsNullOrEmpty(value) ? defaultValue : bool.Parse(value);
++        }
++
+         [ObservableProperty]
+         private string _rawBarcode = "";
+
+@@ -51,6 +57,11 @@
+             }
+             _clipboard.SetText(codeToCopy);
+             _dialogService.ShowToast("Barcode copied to clipboard.", "Copy Barcode", SMS_Search.Views.ToastType.Success);
++
++            if (GetSetting("SAVE_HISTORY_ON_COPY", true))
++            {
++                AddToHistory(codeToCopy);
++            }
+         }
+
+         private void UpdateSegmentSelection()
+@@ -493,6 +504,11 @@
+             {
+                 _logger.LogWarning($"GS1 Parsing Error: {result.ErrorMessage}");
+                 _dialogService.ShowToast(result.ErrorMessage, "GS1 Parsing Error", SMS_Search.Views.ToastType.Warning);
+             }
+             else
+             {
+                 _logger.LogInfo($"Successfully parsed GS1 barcode. Detected type: {DetectedType}. Extracted {result.ParsedAis.Count} AIs.");
++                if (GetSetting("SAVE_HISTORY_ON_PARSE", true))
++                {
++                    AddToHistory(string.Join("", result.ParsedAis.Where(a => a.Ai != "└─").Select(a => (a.Ai == "8110" || a.Ai == "8112") ? $"{a.Ai}{a.RawValue}" : $"({a.Ai}){a.RawValue}")));
++                }
+             }
+         }
+
+@@ -536,6 +552,11 @@
+                     }
+                 }
+                 RebuildSegments();
+
+                 // Pulse segment if it exists
+                 if (!_isClearingValues)
+                 {
+                     foreach (var seg in BarcodeSegments.Where(s => s.AssociatedAi == vm))
+                     {
+                         seg.PulseAnimation();
+                     }
++
++                    if (GetSetting("SAVE_HISTORY_ON_MODIFY", true))
++                    {
++                        AddToHistory(string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => (a.Ai == "8110" || a.Ai == "8112") ? $"{a.Ai}{a.RawValue}" : $"({a.Ai}){a.RawValue}")));
++                    }
+                 }
+             }
+         }
+@@ -750,7 +771,10 @@
+             window.Owner = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive);
+             window.ShowDialog();
+
+-            AddToHistory(data);
++            if (GetSetting("SAVE_HISTORY_ON_VIEW", true))
++            {
++                AddToHistory(data);
++            }
+         }
+
+         private void AddToHistory(string formattedValue)

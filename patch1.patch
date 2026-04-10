@@ -1,0 +1,27 @@
+--- SMSSearch/ViewModels/Gs1/Gs1ToolkitViewModel.cs
++++ SMSSearch/ViewModels/Gs1/Gs1ToolkitViewModel.cs
+@@ -25,6 +25,12 @@
+         private readonly IStateService _stateService;
+         private readonly ISettingsRepository _settingsRepository;
+
++        private bool GetSetting(string key, bool defaultValue = true)
++        {
++            string value = _settingsRepository.GetSetting("GS1", key);
++            return string.IsNullOrEmpty(value) ? defaultValue : bool.TryParse(value, out bool result) ? result : defaultValue;
++        }
++
+         [ObservableProperty]
+         private string _rawBarcode = "";
+
+@@ -51,6 +57,11 @@
+             }
+             _clipboard.SetText(codeToCopy);
+             _dialogService.ShowToast("Barcode copied to clipboard.", "Copy Barcode", SMS_Search.Views.ToastType.Success);
++
++            if (GetSetting("SAVE_HISTORY_ON_COPY", true))
++            {
++                AddToHistory(codeToCopy);
++            }
+         }
+
+         private void UpdateSegmentSelection()

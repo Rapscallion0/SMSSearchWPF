@@ -1,0 +1,20 @@
+--- SMSSearch/ViewModels/Settings/Gs1ToolkitSettingsSectionViewModel.cs
++++ SMSSearch/ViewModels/Settings/Gs1ToolkitSettingsSectionViewModel.cs
+@@ -10,8 +10,16 @@
+         public Gs1ToolkitSettingsSectionViewModel(ISettingsRepository settingsRepository) : base()
+         {
+             MonitorClipboard = new ObservableSetting<bool>(settingsRepository, "GS1", "MONITOR_CLIPBOARD", false);
++            SaveHistoryOnView = new ObservableSetting<bool>(settingsRepository, "GS1", "SAVE_HISTORY_ON_VIEW", true);
++            SaveHistoryOnCopy = new ObservableSetting<bool>(settingsRepository, "GS1", "SAVE_HISTORY_ON_COPY", true);
++            SaveHistoryOnParse = new ObservableSetting<bool>(settingsRepository, "GS1", "SAVE_HISTORY_ON_PARSE", true);
++            SaveHistoryOnModify = new ObservableSetting<bool>(settingsRepository, "GS1", "SAVE_HISTORY_ON_MODIFY", true);
+         }
+
+
+         public ObservableSetting<bool> MonitorClipboard { get; }
++        public ObservableSetting<bool> SaveHistoryOnView { get; }
++        public ObservableSetting<bool> SaveHistoryOnCopy { get; }
++        public ObservableSetting<bool> SaveHistoryOnParse { get; }
++        public ObservableSetting<bool> SaveHistoryOnModify { get; }
+     }
+ }

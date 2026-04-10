@@ -24,12 +24,6 @@ namespace SMS_Search.ViewModels.Gs1
         private readonly IStateService _stateService;
         private readonly ISettingsRepository _settingsRepository;
 
-        private bool GetSetting(string key, bool defaultValue = true)
-        {
-            string? value = _settingsRepository.GetValue("GS1", key);
-            return string.IsNullOrEmpty(value) ? defaultValue : bool.TryParse(value, out bool result) ? result : defaultValue;
-        }
-
         [ObservableProperty]
         private string _rawBarcode = "";
 
@@ -57,11 +51,6 @@ namespace SMS_Search.ViewModels.Gs1
             }
             _clipboard.SetText(codeToCopy);
             _dialogService.ShowToast("Barcode copied to clipboard.", "Copy Barcode", SMS_Search.Views.ToastType.Success);
-
-            if (GetSetting("SAVE_HISTORY_ON_COPY", true))
-            {
-                AddToHistory(codeToCopy);
-            }
         }
 
         private void UpdateSegmentSelection()
@@ -527,10 +516,6 @@ namespace SMS_Search.ViewModels.Gs1
             else
             {
                 _logger.LogInfo($"Successfully parsed GS1 barcode. Detected type: {DetectedType}. Extracted {result.ParsedAis.Count} AIs.");
-                if (GetSetting("SAVE_HISTORY_ON_PARSE", true))
-                {
-                    AddToHistory(string.Join("", result.ParsedAis.Where(a => a.Ai != "└─").Select(a => (a.Ai == "8110" || a.Ai == "8112") ? $"{a.Ai}{a.RawValue}" : $"({a.Ai}){a.RawValue}")));
-                }
             }
         }
 
@@ -589,11 +574,6 @@ namespace SMS_Search.ViewModels.Gs1
                     foreach (var seg in BarcodeSegments.Where(s => s.AssociatedAi == vm))
                     {
                         seg.PulseAnimation();
-                    }
-
-                    if (GetSetting("SAVE_HISTORY_ON_MODIFY", true))
-                    {
-                        AddToHistory(string.Join("", ParsedAis.Where(a => a.Ai != "└─").Select(a => (a.Ai == "8110" || a.Ai == "8112") ? $"{a.Ai}{a.RawValue}" : $"({a.Ai}){a.RawValue}")));
                     }
                 }
             }
@@ -773,10 +753,7 @@ namespace SMS_Search.ViewModels.Gs1
             window.Owner = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive);
             window.ShowDialog();
 
-            if (GetSetting("SAVE_HISTORY_ON_VIEW", true))
-            {
-                AddToHistory(data);
-            }
+            AddToHistory(data);
         }
 
         private void AddToHistory(string formattedValue)
