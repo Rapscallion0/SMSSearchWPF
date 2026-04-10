@@ -119,11 +119,25 @@
         <GroupBox Header="Appearance" Margin="0,0,0,10">
             <StackPanel Margin="5">
                 <ctrl:SettingControl Header="Font Family" IsSaved="{Binding SqlFontFamily.IsSaved}">
-                    <ctrl:ClearableTextBox Text="{Binding SqlFontFamily.Value, UpdateSourceTrigger=PropertyChanged}" />
+                    <ComboBox ItemsSource="{Binding SystemFontFamilies}" SelectedItem="{Binding SqlFontFamily.Value, UpdateSourceTrigger=PropertyChanged}" PreviewMouseWheel="OnPreviewMouseWheel" />
                 </ctrl:SettingControl>
 
                 <ctrl:SettingControl Header="Font Size" IsSaved="{Binding SqlFontSize.IsSaved}">
-                    <ctrl:ClearableTextBox Text="{Binding SqlFontSize.Value, UpdateSourceTrigger=PropertyChanged}" />
+                    <Grid Width="100" HorizontalAlignment="Left">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding SqlFontSize.Value, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center" PreviewMouseWheel="OnPreviewMouseWheel" />
+                        <Grid Grid.Column="1" Width="20">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                            </Grid.RowDefinitions>
+                            <Button Content="▲" Grid.Row="0" Command="{Binding IncreaseFontSizeCommand}" FontSize="8" Padding="0" />
+                            <Button Content="▼" Grid.Row="1" Command="{Binding DecreaseFontSizeCommand}" FontSize="8" Padding="0" />
+                        </Grid>
+                    </Grid>
                 </ctrl:SettingControl>
             </StackPanel>
         </GroupBox>

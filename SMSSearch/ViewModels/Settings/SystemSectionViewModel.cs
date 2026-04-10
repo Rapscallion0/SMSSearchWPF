@@ -17,6 +17,13 @@ namespace SMS_Search.ViewModels.Settings
         private readonly ISettingsRepository _repository;
         private readonly ILoggerService _loggerService;
         private readonly IDialogService _dialogService;
+        private readonly UpdateChecker _updateChecker;
+
+        [ObservableProperty]
+        private string _updateStatusMessage = "";
+
+        [ObservableProperty]
+        private string? _updateStatusColor = null;
 
         public override string Title => "System";
         public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_Logging");
@@ -30,11 +37,13 @@ namespace SMS_Search.ViewModels.Settings
         public SystemSectionViewModel(
             ISettingsRepository repository,
             ILoggerService loggerService,
-            IDialogService dialogService)
+            IDialogService dialogService,
+            UpdateChecker updateChecker)
         {
             _repository = repository;
             _loggerService = loggerService;
             _dialogService = dialogService;
+            _updateChecker = updateChecker;
 
             // IsEnabled
             var enabledStr = repository.GetValue("LOGGING", "ENABLED");
@@ -90,11 +99,92 @@ namespace SMS_Search.ViewModels.Settings
 
             UpdateCurrentLogFile();
             CurrentSettingsFile = PathHelper.GetSettingsPath();
+
+            // Check Update
+            var checkUpdateStr = repository.GetValue("GENERAL", "CHECKUPDATE");
+            CheckUpdate = new ObservableSetting<bool>(
+                repository, "GENERAL", "CHECKUPDATE",
+                checkUpdateStr == "1",
+                v => v ? "1" : "0");
+
+            string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+            var version = exePath != null ? System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath).FileVersion : "Unknown";
+            UpdateStatusMessage = $"Your version: V{version}";
+
+            if (CheckUpdate.Value)
+            {
+                _ = CheckUpdateSilentAsync();
+            }
+
         }
 
         private void UpdateCurrentLogFile()
         {
             CurrentLogFile = _loggerService.GetCurrentLogPath();
+        }
+
+
+        public ObservableSetting<bool> CheckUpdate { get; }
+
+        private async Task CheckUpdateSilentAsync()
+        {
+            try
+            {
+                string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+                var version = exePath != null ? System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath).FileVersion : "Unknown";
+                var info = await _updateChecker.CheckForUpdatesAsync();
+
+                if (info.IsNewer)
+                {
+                    UpdateStatusMessage = $"An updated version is available!\n\nYour version: V{version}\nAvailable: V{info.Version}";
+                    UpdateStatusColor = "Red";
+                }
+                else
+                {
+                    UpdateStatusMessage = $"Application is up to date: V{version}";
+                    UpdateStatusColor = "Green";
+                }
+            }
+            catch (Exception)
+            {
+                // Silent fail
+            }
+        }
+
+        [RelayCommand]
+        private async Task CheckUpdateAsync()
+        {
+            string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+            var version = exePath != null ? System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath).FileVersion : "Unknown";
+            try
+            {
+                var info = await _updateChecker.CheckForUpdatesAsync();
+
+                if (info.IsNewer)
+                {
+                    UpdateStatusMessage = $"An updated version is available!\n\nYour version: V{version}\nAvailable: V{info.Version}";
+                    UpdateStatusColor = "Red";
+                    _dialogService.ShowToast("An update is available!", "Update", ToastType.Info);
+
+                    var msg = $"There is an update available for download.\n\nCurrent Version: {version}\nNew Version: {info.Version}\n\nWould you like to update now?";
+                    if (_dialogService.ShowConfirmation(msg, "SMS Search Update"))
+                    {
+                        await _updateChecker.PerformUpdate(info);
+                    }
+                }
+                else
+                {
+                    UpdateStatusMessage = $"Application is up to date: V{version}";
+                    UpdateStatusColor = "Green";
+                    _dialogService.ShowToast("You are on the latest version.", "Update", ToastType.Success);
+                }
+            }
+            catch (Exception ex)
+            {
+                UpdateStatusMessage = $"Failed to check for updates.";
+                UpdateStatusColor = "Red";
+                _dialogService.ShowToast("Failed to check for updates: " + ex.Message, "Update Error", ToastType.Error);
+            }
         }
 
         public ObservableSetting<bool> IsEnabled { get; }
@@ -222,6 +312,7 @@ namespace SMS_Search.ViewModels.Settings
              if (base.Matches(query)) return true;
 
              if ("Log".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Update".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Debug".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("EULA".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Agreement".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;

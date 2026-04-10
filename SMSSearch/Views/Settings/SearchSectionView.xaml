@@ -5,9 +5,14 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
              xmlns:vm="clr-namespace:SMS_Search.ViewModels.Settings"
+             xmlns:conv="clr-namespace:SMS_Search.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SearchSectionViewModel}"
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <conv:EnumDescriptionConverter x:Key="EnumDescriptionConverter" />
+    </UserControl.Resources>
+
     <StackPanel>
 
         <GroupBox Header="Default columns" Margin="0,0,0,10">
@@ -62,6 +67,26 @@
 
         <GroupBox Header="Behavior" Margin="0,0,0,10">
             <StackPanel Margin="5">
+                <ctrl:SettingControl Header="Default Search Tab" IsSaved="{Binding DefaultSearchTab.IsSaved}">
+                    <ComboBox ItemsSource="{Binding SearchModes}" SelectedItem="{Binding DefaultSearchTab.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </ctrl:SettingControl>
+
+                <ctrl:SettingControl Header="Default Table Action" IsSaved="{Binding DefaultTableAction.IsSaved}">
+                    <ComboBox ItemsSource="{Binding TableActions}" SelectedItem="{Binding DefaultTableAction.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </ctrl:SettingControl>
+
                 <ctrl:SettingControl Header="Build SQL Action" IsSaved="{Binding SelectCustomSqlOnBuild.IsSaved}">
                     <CheckBox IsChecked="{Binding SelectCustomSqlOnBuild.Value}" Content="Switch to Custom SQL tab when building query" />
                 </ctrl:SettingControl>
