@@ -41,35 +41,7 @@
                     </ComboBox>
                 </ctrl:SettingControl>
 
-                <ctrl:SettingControl Header="Default Search Tab" IsSaved="{Binding DefaultSearchTab.IsSaved}">
-                    <ComboBox ItemsSource="{Binding SearchModes}" SelectedItem="{Binding DefaultSearchTab.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                </ctrl:SettingControl>
 
-                <ctrl:SettingControl Header="Default Table Action" IsSaved="{Binding DefaultTableAction.IsSaved}">
-                    <ComboBox ItemsSource="{Binding TableActions}" SelectedItem="{Binding DefaultTableAction.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                </ctrl:SettingControl>
-
-                <ctrl:SettingControl Header="Check for Updates" IsSaved="{Binding CheckUpdate.IsSaved}">
-                    <StackPanel>
-                        <CheckBox IsChecked="{Binding CheckUpdate.Value}" Content="Automatically check for updates on startup" />
-                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                            <Button Content="Check Now" Command="{Binding CheckUpdateCommand}" Width="100" HorizontalAlignment="Left" />
-                            <TextBlock Text="{Binding UpdateStatusMessage}" Foreground="{Binding UpdateStatusColor}" Margin="10,0,0,0" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </StackPanel>
-                </ctrl:SettingControl>
             </StackPanel>
         </GroupBox>
 

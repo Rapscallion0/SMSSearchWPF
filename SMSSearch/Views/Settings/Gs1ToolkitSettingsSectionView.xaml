@@ -4,32 +4,42 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vm="clr-namespace:SMS_Search.ViewModels.Settings"
+             xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="600"
              d:DataContext="{d:DesignInstance vm:Gs1ToolkitSettingsSectionViewModel}">
     <Grid>
         <StackPanel>
-            <TextBlock Text="Clipboard Integration" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,10" Foreground="#333333"/>
-
-            <CheckBox IsChecked="{Binding MonitorClipboard.Value, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15">
-                <StackPanel>
-                    <TextBlock Text="Monitor clipboard for GS1 barcodes" FontWeight="SemiBold" />
-                    <TextBlock Text="Automatically prompts to open toolkit if a GS1 string is detected." Foreground="Gray" FontSize="12" TextWrapping="Wrap" />
+            <GroupBox Header="Clipboard Integration">
+                <StackPanel Margin="5">
+                    <ctrl:SettingControl Header="Monitor Clipboard" IsSaved="{Binding MonitorClipboard.IsSaved}">
+                        <CheckBox IsChecked="{Binding MonitorClipboard.Value, UpdateSourceTrigger=PropertyChanged}">
+                            <StackPanel>
+                                <TextBlock Text="Monitor clipboard for GS1 barcodes" />
+                                <TextBlock Text="Automatically prompts to open toolkit if a GS1 string is detected." Foreground="Gray" FontSize="12" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </CheckBox>
+                    </ctrl:SettingControl>
                 </StackPanel>
-            </CheckBox>
+            </GroupBox>
 
-            <GroupBox Header="GS1 Save History" Margin="0,15,0,0" Padding="10">
-                <StackPanel>
-                    <CheckBox IsChecked="{Binding SaveHistoryOnView.Value, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Content="Save history when viewing barcode" />
-                    <CheckBox IsChecked="{Binding SaveHistoryOnCopy.Value, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Content="Save history when copying barcode" />
-                    <CheckBox IsChecked="{Binding SaveHistoryOnParse.Value, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10">
-                        <TextBlock Text="Save history when a barcode is successfully parsed" TextWrapping="Wrap" />
-                    </CheckBox>
-                    <CheckBox IsChecked="{Binding SaveHistoryOnModify.Value, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5">
-                        <StackPanel>
-                            <TextBlock Text="Save history when barcode values are modified" />
-                        </StackPanel>
-                    </CheckBox>
+            <GroupBox Header="GS1 Save History" Margin="0,15,0,0">
+                <StackPanel Margin="5">
+                    <ctrl:SettingControl Header="Save On View" IsSaved="{Binding SaveHistoryOnView.IsSaved}">
+                        <CheckBox IsChecked="{Binding SaveHistoryOnView.Value, UpdateSourceTrigger=PropertyChanged}" Content="Save history when viewing barcode" />
+                    </ctrl:SettingControl>
+
+                    <ctrl:SettingControl Header="Save On Copy" IsSaved="{Binding SaveHistoryOnCopy.IsSaved}">
+                        <CheckBox IsChecked="{Binding SaveHistoryOnCopy.Value, UpdateSourceTrigger=PropertyChanged}" Content="Save history when copying barcode" />
+                    </ctrl:SettingControl>
+
+                    <ctrl:SettingControl Header="Save On Parse" IsSaved="{Binding SaveHistoryOnParse.IsSaved}">
+                        <CheckBox IsChecked="{Binding SaveHistoryOnParse.Value, UpdateSourceTrigger=PropertyChanged}" Content="Save history when a barcode is successfully parsed" />
+                    </ctrl:SettingControl>
+
+                    <ctrl:SettingControl Header="Save On Modify" IsSaved="{Binding SaveHistoryOnModify.IsSaved}">
+                        <CheckBox IsChecked="{Binding SaveHistoryOnModify.Value, UpdateSourceTrigger=PropertyChanged}" Content="Save history when barcode values are modified" />
+                    </ctrl:SettingControl>
                 </StackPanel>
             </GroupBox>
         </StackPanel>

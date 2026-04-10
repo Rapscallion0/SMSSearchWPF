@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using SMS_Search.Services;
 using SMS_Search.Utils;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Windows.Controls;
 
@@ -193,8 +194,30 @@ namespace SMS_Search.ViewModels.Settings
         public ObservableSetting<bool> FunctionalIntellisenseAuto { get; }
         public ObservableSetting<bool> FullIntellisenseAuto { get; }
 
+
         public ObservableSetting<string> SqlFontFamily { get; }
         public ObservableSetting<int> SqlFontSize { get; }
+
+        public IEnumerable<string> SystemFontFamilies => System.Windows.Media.Fonts.SystemFontFamilies.Select(f => f.Source).OrderBy(f => f);
+
+        [CommunityToolkit.Mvvm.Input.RelayCommand]
+        private void IncreaseFontSize()
+        {
+            if (SqlFontSize.Value < 72)
+            {
+                SqlFontSize.Value++;
+            }
+        }
+
+        [CommunityToolkit.Mvvm.Input.RelayCommand]
+        private void DecreaseFontSize()
+        {
+            if (SqlFontSize.Value > 8)
+            {
+                SqlFontSize.Value--;
+            }
+        }
+
 
         public override bool Matches(string query)
         {

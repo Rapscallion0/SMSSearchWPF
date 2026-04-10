@@ -46,6 +46,12 @@ namespace SMS_Search.ViewModels.Settings
 
         public ObservableSetting<bool> SelectCustomSqlOnBuild { get; }
         public ObservableSetting<bool> AnyMatchDefault { get; }
+        public ObservableSetting<DefaultSearchTabMode> DefaultSearchTab { get; }
+        public ObservableSetting<SMS_Search.Data.DefaultTableAction> DefaultTableAction { get; }
+
+        public System.Collections.Generic.IEnumerable<DefaultSearchTabMode> SearchModes => Enum.GetValues<DefaultSearchTabMode>();
+        public System.Collections.Generic.IEnumerable<SMS_Search.Data.DefaultTableAction> TableActions => Enum.GetValues<SMS_Search.Data.DefaultTableAction>();
+
 
         public SearchSectionViewModel(
             ISettingsRepository repository,
@@ -72,6 +78,25 @@ namespace SMS_Search.ViewModels.Settings
                 repository, "GENERAL", "ANY_MATCH_DEFAULT",
                 anyMatchDefaultStr != "False", // Default true
                 v => v.ToString());
+
+            // Default Search Tab
+            var defaultTabStr = repository.GetValue("GENERAL", "DEFAULT_TAB");
+            DefaultSearchTabMode defaultTab;
+            if (!Enum.TryParse(defaultTabStr, out defaultTab)) defaultTab = DefaultSearchTabMode.Function;
+            DefaultSearchTab = new ObservableSetting<DefaultSearchTabMode>(
+                repository, "GENERAL", "DEFAULT_TAB",
+                defaultTab,
+                v => v.ToString());
+
+            // Default Table Action
+            var defaultActionStr = repository.GetValue("GENERAL", "DEFAULT_TABLE_ACTION");
+            SMS_Search.Data.DefaultTableAction defaultAction;
+            if (!Enum.TryParse(defaultActionStr, out defaultAction)) defaultAction = SMS_Search.Data.DefaultTableAction.QueryFields;
+            DefaultTableAction = new ObservableSetting<SMS_Search.Data.DefaultTableAction>(
+                repository, "GENERAL", "DEFAULT_TABLE_ACTION",
+                defaultAction,
+                v => v.ToString());
+
         }
 
         partial void OnFunctionColumnsChanged(string value)
@@ -199,6 +224,8 @@ namespace SMS_Search.ViewModels.Settings
             if ("Function".Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
             if ("Totalizer".Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
             if ("Behavior".Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
+            if ("Tab".Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
+            if ("Action".Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
             if ("SQL".Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
 
             return false;

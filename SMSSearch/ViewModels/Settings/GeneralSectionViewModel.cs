@@ -17,22 +17,20 @@ namespace SMS_Search.ViewModels.Settings
     {
         private readonly ISettingsRepository _repository;
         private readonly IDialogService _dialogService;
-        private readonly UpdateChecker _updateChecker;
 
-        [ObservableProperty]
-        private string _updateStatusMessage = "";
 
-        [ObservableProperty]
-        private string? _updateStatusColor = null;
+
+
+
 
         public override string Title => "General";
         public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_General");
 
-        public GeneralSectionViewModel(ISettingsRepository repository, IDialogService dialogService, UpdateChecker updateChecker)
+        public GeneralSectionViewModel(ISettingsRepository repository, IDialogService dialogService)
         {
             _repository = repository;
             _dialogService = dialogService;
-            _updateChecker = updateChecker;
+
 
             // Always On Top
             var alwaysOnTopStr = repository.GetValue("GENERAL", "ALWAYSONTOP");
@@ -46,13 +44,6 @@ namespace SMS_Search.ViewModels.Settings
             ShowInTray = new ObservableSetting<bool>(
                 repository, "GENERAL", "SHOWINTRAY",
                 showInTrayStr == "1",
-                v => v ? "1" : "0");
-
-            // Check Update
-            var checkUpdateStr = repository.GetValue("GENERAL", "CHECKUPDATE");
-            CheckUpdate = new ObservableSetting<bool>(
-                repository, "GENERAL", "CHECKUPDATE",
-                checkUpdateStr == "1",
                 v => v ? "1" : "0");
 
             // Main Startup Location
@@ -71,24 +62,6 @@ namespace SMS_Search.ViewModels.Settings
             UnarchiveStartupLocation = new ObservableSetting<StartupLocationMode>(
                 repository, "GENERAL", "UNARCHIVE_STARTUP_LOCATION",
                 unarchiveStart,
-                v => v.ToString());
-
-            // Default Search Tab
-            var defaultTabStr = repository.GetValue("GENERAL", "DEFAULT_TAB");
-            DefaultSearchTabMode defaultTab;
-            if (!Enum.TryParse(defaultTabStr, out defaultTab)) defaultTab = DefaultSearchTabMode.Function;
-            DefaultSearchTab = new ObservableSetting<DefaultSearchTabMode>(
-                repository, "GENERAL", "DEFAULT_TAB",
-                defaultTab,
-                v => v.ToString());
-
-            // Default Table Action
-            var defaultActionStr = repository.GetValue("GENERAL", "DEFAULT_TABLE_ACTION");
-            SMS_Search.Data.DefaultTableAction defaultAction;
-            if (!Enum.TryParse(defaultActionStr, out defaultAction)) defaultAction = SMS_Search.Data.DefaultTableAction.QueryFields;
-            DefaultTableAction = new ObservableSetting<SMS_Search.Data.DefaultTableAction>(
-                repository, "GENERAL", "DEFAULT_TABLE_ACTION",
-                defaultAction,
                 v => v.ToString());
 
             // Remember Size
@@ -131,91 +104,26 @@ namespace SMS_Search.ViewModels.Settings
 
             string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
             var version = exePath != null ? System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath).FileVersion : "Unknown";
-            UpdateStatusMessage = $"Your version: V{version}";
 
-            if (CheckUpdate.Value)
-            {
-                _ = CheckUpdateSilentAsync();
-            }
+
+
         }
 
-        private async Task CheckUpdateSilentAsync()
-        {
-            try
-            {
-                string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
-                var version = exePath != null ? System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath).FileVersion : "Unknown";
-                var info = await _updateChecker.CheckForUpdatesAsync();
 
-                if (info.IsNewer)
-                {
-                    UpdateStatusMessage = $"An updated version is available!\n\nYour version: V{version}\nAvailable: V{info.Version}";
-                    UpdateStatusColor = "Red";
-                }
-                else
-                {
-                    UpdateStatusMessage = $"Application is up to date: V{version}";
-                    UpdateStatusColor = "Green";
-                }
-            }
-            catch (Exception)
-            {
-                // Silent fail
-            }
-        }
 
-        [RelayCommand]
-        private async Task CheckUpdateAsync()
-        {
-            string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
-            var version = exePath != null ? System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath).FileVersion : "Unknown";
-            try
-            {
-                var info = await _updateChecker.CheckForUpdatesAsync();
 
-                if (info.IsNewer)
-                {
-                    UpdateStatusMessage = $"An updated version is available!\n\nYour version: V{version}\nAvailable: V{info.Version}";
-                    UpdateStatusColor = "Red";
-                    _dialogService.ShowToast("An update is available!", "Update", ToastType.Info);
-
-                    var msg = $"There is an update available for download.\n\nCurrent Version: {version}\nNew Version: {info.Version}\n\nWould you like to update now?";
-                    if (_dialogService.ShowConfirmation(msg, "SMS Search Update"))
-                    {
-                        await _updateChecker.PerformUpdate(info);
-                    }
-                }
-                else
-                {
-                    UpdateStatusMessage = $"Application is up to date: V{version}";
-                    UpdateStatusColor = "Green";
-                    _dialogService.ShowToast("You are on the latest version.", "Update", ToastType.Success);
-                }
-            }
-            catch (Exception ex)
-            {
-                UpdateStatusMessage = $"Failed to check for updates.";
-                UpdateStatusColor = "Red";
-                _dialogService.ShowToast("Failed to check for updates: " + ex.Message, "Update Error", ToastType.Error);
-            }
-        }
 
         public ObservableSetting<bool> AlwaysOnTop { get; }
         public ObservableSetting<bool> ShowInTray { get; }
-        public ObservableSetting<bool> CheckUpdate { get; }
+
         public ObservableSetting<StartupLocationMode> MainStartupLocation { get; }
         public ObservableSetting<StartupLocationMode> UnarchiveStartupLocation { get; }
         public ObservableSetting<bool> RememberSize { get; }
-        public ObservableSetting<DefaultSearchTabMode> DefaultSearchTab { get; }
-        public ObservableSetting<SMS_Search.Data.DefaultTableAction> DefaultTableAction { get; }
         public ObservableSetting<string> CopyDelimiter { get; }
         public ObservableSetting<string> CustomDelimiter { get; }
         public ObservableSetting<int> ToastTimeout { get; }
 
         public IEnumerable<StartupLocationMode> StartupLocationModes => Enum.GetValues<StartupLocationMode>();
-        public IEnumerable<DefaultSearchTabMode> SearchModes => Enum.GetValues<DefaultSearchTabMode>();
-        public IEnumerable<SMS_Search.Data.DefaultTableAction> TableActions => Enum.GetValues<SMS_Search.Data.DefaultTableAction>();
-
         [ObservableProperty]
         private bool _isCustomDelimiterVisible;
 
@@ -241,10 +149,8 @@ namespace SMS_Search.ViewModels.Settings
              if ("Location".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Window".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Tray".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
-             if ("Update".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Export".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Delimiter".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
-             if ("Tab".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Toast".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Notification".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Query".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
