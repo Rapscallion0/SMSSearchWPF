@@ -23,7 +23,6 @@ namespace SMS_Search.ViewModels.Gs1
         private readonly IClipboardService _clipboard;
         private readonly IStateService _stateService;
         private readonly ISettingsRepository _settingsRepository;
-        private readonly string _historyFilePath;
 
         [ObservableProperty]
         private string _rawBarcode = "";
@@ -343,9 +342,6 @@ namespace SMS_Search.ViewModels.Gs1
             _logger = logger;
             _clipboard = clipboard;
             _stateService = stateService;
-
-            string baseDir = System.AppDomain.CurrentDomain.BaseDirectory;
-            _historyFilePath = System.IO.Path.Combine(baseDir, "gs1-history.json");
 
             _ = InitializeAsync();
         }
@@ -825,11 +821,11 @@ namespace SMS_Search.ViewModels.Gs1
 
         private async Task LoadHistoryAsync()
         {
-            if (!System.IO.File.Exists(_historyFilePath)) return;
-
             try
             {
-                string json = await System.IO.File.ReadAllTextAsync(_historyFilePath);
+                string? json = _stateService.GetValue("GS1", "HISTORY");
+                if (string.IsNullOrEmpty(json)) return;
+
                 var items = System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Gs1HistoryItem>>(json);
                 if (items != null)
                 {
@@ -843,6 +839,7 @@ namespace SMS_Search.ViewModels.Gs1
             {
                 _logger.LogError("Failed to load GS1 history.", ex);
             }
+            await Task.CompletedTask;
         }
 
         private async Task SaveHistoryAsync()
@@ -850,12 +847,14 @@ namespace SMS_Search.ViewModels.Gs1
             try
             {
                 string json = System.Text.Json.JsonSerializer.Serialize(History.ToList(), new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-                await System.IO.File.WriteAllTextAsync(_historyFilePath, json);
+                _stateService.SetValue("GS1", "HISTORY", json);
+                _stateService.Save();
             }
             catch (System.Exception ex)
             {
                 _logger.LogError("Failed to save GS1 history.", ex);
             }
+            await Task.CompletedTask;
         }
 
         // INotifyDataErrorInfo implementation
