@@ -15,13 +15,13 @@ namespace SMS_Search.Data
 
     public class QueryHistoryService : IQueryHistoryService
     {
-        private readonly IConfigService _config;
+        private readonly IStateService _state;
         private const int MaxHistory = 20;
         private const string SectionName = "QUERY_HISTORY";
 
-        public QueryHistoryService(IConfigService config)
+        public QueryHistoryService(IStateService state)
         {
-            _config = config;
+            _state = state;
         }
 
         public void AddQuery(string type, string sql)
@@ -43,7 +43,7 @@ namespace SMS_Search.Data
 
         public List<string> GetHistory(string type)
         {
-            string? json = _config.GetValue(SectionName, type);
+            string? json = _state.GetValue(SectionName, type);
             if (string.IsNullOrEmpty(json)) return new List<string>();
 
             try
@@ -66,8 +66,8 @@ namespace SMS_Search.Data
             try
             {
                 string json = JsonSerializer.Serialize(history);
-                _config.SetValue(SectionName, type, json);
-                _config.Save();
+                _state.SetValue(SectionName, type, json);
+                _state.Save();
             }
             catch { }
         }

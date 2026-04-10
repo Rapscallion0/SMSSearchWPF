@@ -93,6 +93,11 @@ namespace SMS_Search.Utils
             return Path.Combine(GetApplicationDirectory(), "SMSSearch_settings.json");
         }
 
+        public static string GetStatePath()
+        {
+            return Path.Combine(GetApplicationDirectory(), "SMSSearch_state.json");
+        }
+
         public static string GetLogDirectory()
         {
             string logDir = Path.Combine(GetApplicationDirectory(), "logs");

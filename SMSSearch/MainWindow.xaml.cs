@@ -14,13 +14,14 @@ namespace SMS_Search
     {
         private readonly MainViewModel _viewModel;
         private readonly IConfigService _config;
+        private readonly IStateService _state;
         private UnarchiveWindow? _unarchiveWindow;
         private System.Windows.Threading.DispatcherTimer _typingTimer;
         private string _lastTypedText = "";
         private bool _isDeleting = false;
         private string? _lastValidDatabase;
 
-        public MainWindow(MainViewModel viewModel, IConfigService config)
+        public MainWindow(MainViewModel viewModel, IConfigService config, IStateService state)
         {
             InitializeComponent();
             _typingTimer = new System.Windows.Threading.DispatcherTimer();
@@ -29,6 +30,7 @@ namespace SMS_Search
 
             _viewModel = viewModel;
             _config = config;
+            _state = state;
             DataContext = viewModel;
             viewModel.RequestOpenSettings += OnRequestOpenSettings;
             viewModel.RequestOpenGs1Toolkit += OnRequestOpenGs1Toolkit;
@@ -103,14 +105,14 @@ namespace SMS_Search
             if (rememberSize)
             {
                 // Restore Split Position
-                if (double.TryParse(_config.GetValue("MAIN", "SEARCH_HEIGHT"), out double h))
+                if (double.TryParse(_state.GetValue("MAIN", "SEARCH_HEIGHT"), out double h))
                 {
                     SearchRow.Height = new GridLength(h);
                 }
 
                 // Restore Size
-                if (double.TryParse(_config.GetValue("MAIN", "LAST_W"), out double w)) Width = w;
-                if (double.TryParse(_config.GetValue("MAIN", "LAST_H"), out double hVal)) Height = hVal;
+                if (double.TryParse(_state.GetValue("MAIN", "LAST_W"), out double w)) Width = w;
+                if (double.TryParse(_state.GetValue("MAIN", "LAST_H"), out double hVal)) Height = hVal;
             }
 
             if (Enum.TryParse(_config.GetValue("GENERAL", "MAIN_STARTUP_LOCATION"), out StartupLocationMode mode))
@@ -123,10 +125,10 @@ namespace SMS_Search
             }
 
             double? lastX = null;
-            if (double.TryParse(_config.GetValue("MAIN", "LAST_X"), out double x)) lastX = x;
+            if (double.TryParse(_state.GetValue("MAIN", "LAST_X"), out double x)) lastX = x;
 
             double? lastY = null;
-            if (double.TryParse(_config.GetValue("MAIN", "LAST_Y"), out double y)) lastY = y;
+            if (double.TryParse(_state.GetValue("MAIN", "LAST_Y"), out double y)) lastY = y;
 
             WindowPositioner.ApplyStartupLocation(this, mode, lastX, lastY);
         }
@@ -135,33 +137,33 @@ namespace SMS_Search
         {
             base.OnClosing(e);
 
-            _config.SetValue("MAIN", "LAST_TAB", _viewModel.SearchVm.SelectedMode.ToString());
+            _state.SetValue("MAIN", "LAST_TAB", _viewModel.SearchVm.SelectedMode.ToString());
 
             bool rememberSize = _config.GetValue("GENERAL", "MAIN_REMEMBER_SIZE") == "1";
 
             if (rememberSize)
             {
-                _config.SetValue("MAIN", "SEARCH_HEIGHT", SearchRow.Height.Value.ToString());
+                _state.SetValue("MAIN", "SEARCH_HEIGHT", SearchRow.Height.Value.ToString());
             }
             else
             {
-                _config.RemoveValue("MAIN", "SEARCH_HEIGHT");
-                _config.RemoveValue("MAIN", "LAST_W");
-                _config.RemoveValue("MAIN", "LAST_H");
+                _state.RemoveValue("MAIN", "SEARCH_HEIGHT");
+                _state.RemoveValue("MAIN", "LAST_W");
+                _state.RemoveValue("MAIN", "LAST_H");
             }
 
             if (WindowState == WindowState.Normal)
             {
-                _config.SetValue("MAIN", "LAST_X", Left.ToString());
-                _config.SetValue("MAIN", "LAST_Y", Top.ToString());
+                _state.SetValue("MAIN", "LAST_X", Left.ToString());
+                _state.SetValue("MAIN", "LAST_Y", Top.ToString());
 
                 if (rememberSize)
                 {
-                    _config.SetValue("MAIN", "LAST_W", ActualWidth.ToString());
-                    _config.SetValue("MAIN", "LAST_H", ActualHeight.ToString());
+                    _state.SetValue("MAIN", "LAST_W", ActualWidth.ToString());
+                    _state.SetValue("MAIN", "LAST_H", ActualHeight.ToString());
                 }
             }
-            _config.Save();
+            _state.Save();
         }
 
         protected override void OnClosed(EventArgs e)

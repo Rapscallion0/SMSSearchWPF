@@ -34,6 +34,9 @@ namespace SMS_Search
             services.AddSingleton<IConfigService>(provider =>
                 new ConfigManager(PathHelper.GetSettingsPath()));
 
+            services.AddSingleton<IStateService>(provider =>
+                new StateManager(PathHelper.GetStatePath()));
+
             services.AddSingleton<ISettingsRepository, SettingsRepository>();
 
             services.AddSingleton<ILoggerService, LoggerService>();

@@ -9,14 +9,14 @@ namespace SMS_Search.ViewModels
 {
     public partial class UnarchiveViewModel : ObservableObject
     {
-        private readonly IConfigService _config;
+        private readonly IStateService _state;
         private readonly ILoggerService _logger;
 
         public event Action? RequestClose;
 
-        public UnarchiveViewModel(IConfigService config, ILoggerService logger)
+        public UnarchiveViewModel(IStateService state, ILoggerService logger)
         {
-            _config = config;
+            _state = state;
             _logger = logger;
             LoadLocation();
         }
@@ -32,12 +32,12 @@ namespace SMS_Search.ViewModels
 
         private void LoadLocation()
         {
-            if (double.TryParse(_config.GetValue("UNARCHIVE", "LOCATIONX"), out double x))
+            if (double.TryParse(_state.GetValue("UNARCHIVE", "LOCATIONX"), out double x))
                 Left = x;
             else
                 Left = 100;
 
-            if (double.TryParse(_config.GetValue("UNARCHIVE", "LOCATIONY"), out double y))
+            if (double.TryParse(_state.GetValue("UNARCHIVE", "LOCATIONY"), out double y))
                 Top = y;
             else
                 Top = 100;
@@ -45,9 +45,9 @@ namespace SMS_Search.ViewModels
 
         public void SaveLocation(double left, double top)
         {
-            _config.SetValue("UNARCHIVE", "LOCATIONX", left.ToString());
-            _config.SetValue("UNARCHIVE", "LOCATIONY", top.ToString());
-            _config.Save();
+            _state.SetValue("UNARCHIVE", "LOCATIONX", left.ToString());
+            _state.SetValue("UNARCHIVE", "LOCATIONY", top.ToString());
+            _state.Save();
         }
 
         public async Task ProcessFiles(string[] files)
