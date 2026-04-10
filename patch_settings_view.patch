@@ -1,0 +1,24 @@
+--- SMSSearch/Views/Settings/Gs1ToolkitSettingsSectionView.xaml
++++ SMSSearch/Views/Settings/Gs1ToolkitSettingsSectionView.xaml
+@@ -16,6 +16,21 @@
+                     <TextBlock Text="Automatically prompts to open toolkit if a GS1 string is detected." Foreground="Gray" FontSize="12" TextWrapping="Wrap" />
+                 </StackPanel>
+             </CheckBox>
++
++            <GroupBox Header="GS1 Save History" Margin="0,15,0,0" Padding="10">
++                <StackPanel>
++                    <CheckBox IsChecked="{Binding SaveHistoryOnView.Value, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Content="Save history when viewing barcode" />
++                    <CheckBox IsChecked="{Binding SaveHistoryOnCopy.Value, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Content="Save history when copying barcode" />
++                    <CheckBox IsChecked="{Binding SaveHistoryOnParse.Value, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10">
++                        <TextBlock Text="Save history when a barcode is successfully parsed" TextWrapping="Wrap" />
++                    </CheckBox>
++                    <CheckBox IsChecked="{Binding SaveHistoryOnModify.Value, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5">
++                        <StackPanel>
++                            <TextBlock Text="Save history when barcode values are modified" />
++                        </StackPanel>
++                    </CheckBox>
++                </StackPanel>
++            </GroupBox>
+         </StackPanel>
+     </Grid>
+ </UserControl>
