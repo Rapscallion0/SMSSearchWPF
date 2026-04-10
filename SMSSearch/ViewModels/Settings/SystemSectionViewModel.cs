@@ -166,11 +166,12 @@ namespace SMS_Search.ViewModels.Settings
                     UpdateStatusColor = "Red";
                     _dialogService.ShowToast("An update is available!", "Update", ToastType.Info);
 
-                    var msg = $"There is an update available for download.\n\nCurrent Version: {version}\nNew Version: {info.Version}\n\nWould you like to update now?";
-                    if (_dialogService.ShowConfirmation(msg, "SMS Search Update"))
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
-                        await _updateChecker.PerformUpdate(info);
-                    }
+                        var updateWindow = new SMS_Search.Views.Windows.UpdateWindow(info, _updateChecker);
+                        updateWindow.Owner = System.Windows.Application.Current.MainWindow;
+                        updateWindow.ShowDialog();
+                    });
                 }
                 else
                 {

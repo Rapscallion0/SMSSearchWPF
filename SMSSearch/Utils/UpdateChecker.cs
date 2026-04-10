@@ -71,7 +71,7 @@ namespace SMS_Search.Utils
                                                 asset.TryGetProperty("browser_download_url", out JsonElement downloadUrlElement))
                                             {
                                                 string? name = nameElement.GetString();
-                                                if (!string.IsNullOrEmpty(name) && name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                                                if (!string.IsNullOrEmpty(name) && name.Equals("SMS_Search.zip", StringComparison.OrdinalIgnoreCase))
                                                 {
                                                     downloadUrl = downloadUrlElement.GetString();
                                                     break;
@@ -102,7 +102,7 @@ namespace SMS_Search.Utils
             return new UpdateInfo { IsNewer = false };
         }
 
-        public async Task PerformUpdate(UpdateInfo info)
+        public async Task DownloadAndInstallUpdateAsync(UpdateInfo info, IProgress<double>? progressCallback = null, IProgress<string>? statusCallback = null)
         {
             if (string.IsNullOrEmpty(info.DownloadUrl))
             {
@@ -118,43 +118,90 @@ namespace SMS_Search.Utils
             }
 
             string tempPath = Path.GetTempPath();
-            string installerPath = Path.Combine(tempPath, "SMS_Search_Update.exe");
+            string zipPath = Path.Combine(tempPath, "SMS_Search_Update.zip");
+            string scriptPath = Path.Combine(tempPath, "sms_update.ps1");
 
             try
             {
+                statusCallback?.Report("Downloading update...");
                 using (HttpClient client = new HttpClient())
                 {
                     client.DefaultRequestHeaders.Add("User-Agent", "SMS-Search-Updater");
-                    var data = await client.GetByteArrayAsync(info.DownloadUrl);
-                    File.WriteAllBytes(installerPath, data);
+
+                    using (var response = await client.GetAsync(info.DownloadUrl, HttpCompletionOption.ResponseHeadersRead))
+                    {
+                        response.EnsureSuccessStatusCode();
+
+                        long? totalBytes = response.Content.Headers.ContentLength;
+                        using (var stream = await response.Content.ReadAsStreamAsync())
+                        using (var fileStream = new FileStream(zipPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                        {
+                            var buffer = new byte[8192];
+                            long totalRead = 0;
+                            int bytesRead;
+
+                            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) != 0)
+                            {
+                                await fileStream.WriteAsync(buffer, 0, bytesRead);
+                                totalRead += bytesRead;
+
+                                if (totalBytes.HasValue && progressCallback != null)
+                                {
+                                    double percentage = (double)totalRead / totalBytes.Value * 100;
+                                    progressCallback.Report(percentage);
+                                }
+                            }
+                        }
+                    }
                 }
 
+                statusCallback?.Report("Preparing installation script...");
                 string? currentExe = Process.GetCurrentProcess().MainModule?.FileName;
                 if (currentExe == null) return;
 
-                string batchPath = Path.Combine(tempPath, "sms_update.bat");
+                string appDir = Path.GetDirectoryName(currentExe) ?? "";
                 string pid = Process.GetCurrentProcess().Id.ToString();
 
-                string batchContent =
-                    "@echo off\r\n" +
-                    "timeout /t 2 /nobreak > NUL\r\n" +
-                    ":loop\r\n" +
-                    "tasklist /FI \"PID eq " + pid + "\" 2>NUL | find /I /N \"" + pid + "\">NUL\r\n" +
-                    "if \"%ERRORLEVEL%\"==\"0\" (\r\n" +
-                    "    timeout /t 1 /nobreak > NUL\r\n" +
-                    "    goto loop\r\n" +
-                    ")\r\n" +
-                    "copy /Y \"" + installerPath + "\" \"" + currentExe + "\"\r\n" +
-                    "start \"\" \"" + currentExe + "\"\r\n" +
-                    "del \"" + installerPath + "\"\r\n" +
-                    "del \"%~f0\"\r\n";
+                string scriptContent = $@"
+$pidToWait = {pid}
+$appDir = '{appDir}'
+$zipPath = '{zipPath}'
+$exePath = '{currentExe}'
+$scriptPath = '{scriptPath}'
 
-                File.WriteAllText(batchPath, batchContent);
+# Wait for the main app to close
+Write-Host 'Waiting for SMS Search to exit...'
+$process = Get-Process -Id $pidToWait -ErrorAction SilentlyContinue
+if ($process) {{
+    $process.WaitForExit(10000)
+}}
 
-                ProcessStartInfo psi = new ProcessStartInfo(batchPath);
-                psi.CreateNoWindow = true;
-                psi.WindowStyle = ProcessWindowStyle.Hidden;
-                psi.UseShellExecute = false;
+# Extract the zip contents into the application directory
+Write-Host 'Extracting files...'
+Expand-Archive -Path $zipPath -DestinationPath $appDir -Force
+
+# Restart the application
+Write-Host 'Restarting application...'
+Start-Process -FilePath $exePath
+
+# Cleanup temporary files
+Remove-Item -Path $zipPath -Force -ErrorAction SilentlyContinue
+
+# We cannot easily delete the script file that is currently executing directly in the same process in some cases
+# so we start a small cmd to clean it up after a brief delay
+Start-Process -FilePath 'cmd.exe' -ArgumentList ""/c timeout /t 2 /nobreak > NUL & del `""$scriptPath`"""" -WindowStyle Hidden
+";
+
+                File.WriteAllText(scriptPath, scriptContent);
+
+                statusCallback?.Report("Restarting and installing...");
+                ProcessStartInfo psi = new ProcessStartInfo("powershell.exe")
+                {
+                    Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"",
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    UseShellExecute = false
+                };
                 Process.Start(psi);
 
                 System.Windows.Application.Current.Shutdown();

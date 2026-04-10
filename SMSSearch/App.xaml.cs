@@ -293,14 +293,11 @@ namespace SMS_Search
                                 var info = await updateChecker.CheckForUpdatesAsync();
                                 if (info.IsNewer)
                                 {
-                                    await Dispatcher.InvokeAsync(async () =>
+                                    await Dispatcher.InvokeAsync(() =>
                                     {
-                                        var msg = $"There is an update available for download.\n\nCurrent Version: {System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version}\nNew Version: {info.Version}\n\nWould you like to update now?";
-                                        if (System.Windows.MessageBox.Show(mainWindow, msg, "SMS Search Update", MessageBoxButton.YesNo, MessageBoxImage.Asterisk) == MessageBoxResult.Yes)
-                                        {
-                                            await updateChecker.PerformUpdate(info);
-                                            Shutdown();
-                                        }
+                                        var updateWindow = new SMS_Search.Views.Windows.UpdateWindow(info, updateChecker);
+                                        updateWindow.Owner = mainWindow;
+                                        updateWindow.ShowDialog();
                                     });
                                 }
                             }
