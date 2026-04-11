@@ -169,7 +169,10 @@ namespace SMS_Search.ViewModels.Settings
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
                         var updateWindow = new SMS_Search.Views.Windows.UpdateWindow(info, _updateChecker);
-                        updateWindow.Owner = System.Windows.Application.Current.MainWindow;
+
+                        var activeWindow = System.Linq.Enumerable.FirstOrDefault(System.Windows.Application.Current.Windows.OfType<System.Windows.Window>(), x => x.IsActive);
+                        updateWindow.Owner = activeWindow ?? System.Windows.Application.Current.MainWindow;
+
                         updateWindow.ShowDialog();
                     });
                 }

@@ -296,7 +296,10 @@ namespace SMS_Search
                                     await Dispatcher.InvokeAsync(() =>
                                     {
                                         var updateWindow = new SMS_Search.Views.Windows.UpdateWindow(info, updateChecker);
-                                        updateWindow.Owner = mainWindow;
+
+                                        var activeWindow = System.Linq.Enumerable.FirstOrDefault(System.Windows.Application.Current.Windows.OfType<Window>(), x => x.IsActive);
+                                        updateWindow.Owner = activeWindow ?? mainWindow;
+
                                         updateWindow.ShowDialog();
                                     });
                                 }
