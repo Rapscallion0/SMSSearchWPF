@@ -12,6 +12,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Linq;
 using System.Windows.Input;
 using System.Windows.Interop;
 
@@ -296,7 +297,7 @@ namespace SMS_Search
                                     await Dispatcher.InvokeAsync(() =>
                                     {
                                         var updateWindow = new SMS_Search.Views.Windows.UpdateWindow(info, updateChecker);
-                                        updateWindow.Owner = mainWindow;
+                                        updateWindow.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(x => x.IsActive) ?? mainWindow;
                                         updateWindow.ShowDialog();
                                     });
                                 }
