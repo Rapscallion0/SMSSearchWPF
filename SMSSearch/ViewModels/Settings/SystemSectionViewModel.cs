@@ -159,10 +159,12 @@ namespace SMS_Search.ViewModels.Settings
             var version = exePath != null ? System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath).FileVersion : "Unknown";
             try
             {
+                _loggerService.LogInfo("Manual update check triggered by user.");
                 var info = await _updateChecker.CheckForUpdatesAsync();
 
                 if (info.IsNewer)
                 {
+                    _loggerService.LogInfo($"Update found manually: {info.Version}");
                     UpdateStatusMessage = $"An updated version is available!\n\nYour version: V{version}\nAvailable: V{info.Version}";
                     UpdateStatusColor = "Red";
                     _dialogService.ShowToast("An update is available!", "Update", ToastType.Info);
@@ -170,12 +172,13 @@ namespace SMS_Search.ViewModels.Settings
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
                         var updateWindow = new SMS_Search.Views.Windows.UpdateWindow(info, _updateChecker);
-                        updateWindow.Owner = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(x => x.IsActive) ?? System.Windows.Application.Current.MainWindow;
+                        updateWindow.Owner = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(x => x.IsActive && !(x is SMS_Search.Views.ToastWindow)) ?? System.Windows.Application.Current.MainWindow;
                         updateWindow.ShowDialog();
                     });
                 }
                 else
                 {
+                    _loggerService.LogInfo($"No updates found manually. Current version is {version}");
                     UpdateStatusMessage = $"Application is up to date: V{version}";
                     UpdateStatusColor = "Green";
                     _dialogService.ShowToast("You are on the latest version.", "Update", ToastType.Success);
@@ -183,6 +186,7 @@ namespace SMS_Search.ViewModels.Settings
             }
             catch (Exception ex)
             {
+                _loggerService.LogError("Manual update check failed.", ex);
                 UpdateStatusMessage = $"Failed to check for updates.";
                 UpdateStatusColor = "Red";
                 _dialogService.ShowToast("Failed to check for updates: " + ex.Message, "Update Error", ToastType.Error);
