@@ -16,6 +16,16 @@ namespace SMS_Search.Views
             DataContext = viewModel;
         }
 
+        private void Window_LocationChanged(object? sender, System.EventArgs e)
+        {
+            ToastWindow.UpdateAllToastPositions(false, this);
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            ToastWindow.UpdateAllToastPositions(false, this);
+        }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             if (DataContext is SMS_Search.ViewModels.Settings.ModernSettingsViewModel vm)

@@ -40,6 +40,17 @@ namespace SMS_Search.Views.Windows
 
                 ParseAndAddMarkdown(changelog, ChangelogPanel);
             }
+
+        }
+
+        private void Window_LocationChanged(object? sender, System.EventArgs e)
+        {
+            ToastWindow.UpdateAllToastPositions(false, this);
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            ToastWindow.UpdateAllToastPositions(false, this);
         }
 
         private void ParseAndAddMarkdown(string markdown, StackPanel panel)

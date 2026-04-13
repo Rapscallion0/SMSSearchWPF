@@ -109,13 +109,13 @@ namespace SMS_Search.Views
 
         private void ToastWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            UpdateAllToastPositions(true);
+            UpdateAllToastPositions(true, this.Owner);
         }
 
         private void ToastWindow_Closed(object? sender, EventArgs e)
         {
             _activeToasts.Remove(this);
-            UpdateAllToastPositions(false);
+            UpdateAllToastPositions(false, this.Owner);
 
             if (_closeTimer != null)
             {
@@ -124,78 +124,89 @@ namespace SMS_Search.Views
             }
         }
 
-        public static void UpdateAllToastPositions(bool animateNewest)
+        public static void UpdateAllToastPositions(bool animateNewest, Window? targetWindow = null)
         {
             if (_activeToasts.Count == 0) return;
 
-            var mainWindow = System.Windows.Application.Current.MainWindow;
-            double targetLeft;
-            double initialBottom;
-            double availableHeight;
+            var toastsByOwner = _activeToasts.GroupBy(t => t.Owner).ToList();
 
-            if (mainWindow != null && mainWindow.Visibility == Visibility.Visible && mainWindow.WindowState != WindowState.Minimized)
+            foreach (var group in toastsByOwner)
             {
-                targetLeft = mainWindow.Left + mainWindow.ActualWidth - _activeToasts[0].ActualWidth - 20;
-                initialBottom = mainWindow.Top + mainWindow.ActualHeight - 50;
-                availableHeight = mainWindow.ActualHeight - 70; // 50px bottom margin + 20px top margin
-            }
-            else
-            {
-                var workArea = SystemParameters.WorkArea;
-                targetLeft = workArea.Right - _activeToasts[0].ActualWidth - 10;
-                initialBottom = workArea.Bottom - 10;
-                availableHeight = workArea.Height - 20;
-            }
+                var ownerWindow = group.Key;
 
-            double currentTop = initialBottom;
+                // If a specific target window was provided, only update that window's toasts.
+                if (targetWindow != null && ownerWindow != targetWindow) continue;
 
-            for (int i = _activeToasts.Count - 1; i >= 0; i--) // Iterate from oldest to newest
-            {
-                var toast = _activeToasts[i];
-                double toastHeight = toast.ActualHeight > 0 ? toast.ActualHeight : toast.Height;
+                var toastsInGroup = group.ToList();
 
-                currentTop -= toastHeight;
+                double targetLeft;
+                double initialBottom;
+                double availableHeight;
 
-                toast.Left = targetLeft;
-
-                // Handle layering if it goes too high
-                double targetTop = currentTop;
-                if (mainWindow != null && targetTop < mainWindow.Top + 20)
+                if (ownerWindow != null && ownerWindow.Visibility == Visibility.Visible && ownerWindow.WindowState != WindowState.Minimized)
                 {
-                    // If it goes above the window (plus a small margin), cap it
-                    // This creates an overlapping effect
-                    targetTop = mainWindow.Top + 20 + (i * 5); // Slight offset for layered effect
-                }
-
-                if (i == 0 && animateNewest)
-                {
-                    // Animate newest from bottom up
-                    toast.Top = initialBottom;
-                    var anim = new DoubleAnimation(toast.Top, targetTop, TimeSpan.FromSeconds(0.3))
-                    {
-                        EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-                    };
-                    toast.BeginAnimation(TopProperty, anim);
+                    targetLeft = ownerWindow.Left + ownerWindow.ActualWidth - toastsInGroup[0].ActualWidth - 20;
+                    initialBottom = ownerWindow.Top + ownerWindow.ActualHeight - 50;
+                    availableHeight = ownerWindow.ActualHeight - 70; // 50px bottom margin + 20px top margin
                 }
                 else
                 {
-                    // Animate existing toasts sliding down (or up, depending on the recalculation)
-                    if (toast.Top != targetTop && toast.IsLoaded && !toast._isClosing)
-                    {
-                         var anim = new DoubleAnimation(toast.Top, targetTop, TimeSpan.FromSeconds(0.3))
-                         {
-                             EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-                         };
-                         toast.BeginAnimation(TopProperty, anim);
-                    }
-                    else if (!toast.IsLoaded)
-                    {
-                         toast.Top = targetTop;
-                    }
+                    var workArea = SystemParameters.WorkArea;
+                    targetLeft = workArea.Right - toastsInGroup[0].ActualWidth - 10;
+                    initialBottom = workArea.Bottom - 10;
+                    availableHeight = workArea.Height - 20;
                 }
 
-                // Add spacing between toasts
-                currentTop -= 10;
+                double currentTop = initialBottom;
+
+                for (int i = toastsInGroup.Count - 1; i >= 0; i--) // Iterate from oldest to newest
+                {
+                    var toast = toastsInGroup[i];
+                    double toastHeight = toast.ActualHeight > 0 ? toast.ActualHeight : toast.Height;
+
+                    currentTop -= toastHeight;
+
+                    toast.Left = targetLeft;
+
+                    // Handle layering if it goes too high
+                    double targetTop = currentTop;
+                    if (ownerWindow != null && targetTop < ownerWindow.Top + 20)
+                    {
+                        // If it goes above the window (plus a small margin), cap it
+                        // This creates an overlapping effect
+                        targetTop = ownerWindow.Top + 20 + (i * 5); // Slight offset for layered effect
+                    }
+
+                    if (i == 0 && animateNewest)
+                    {
+                        // Animate newest from bottom up
+                        toast.Top = initialBottom;
+                        var anim = new DoubleAnimation(toast.Top, targetTop, TimeSpan.FromSeconds(0.3))
+                        {
+                            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                        };
+                        toast.BeginAnimation(TopProperty, anim);
+                    }
+                    else
+                    {
+                        // Animate existing toasts sliding down (or up, depending on the recalculation)
+                        if (toast.Top != targetTop && toast.IsLoaded && !toast._isClosing)
+                        {
+                             var anim = new DoubleAnimation(toast.Top, targetTop, TimeSpan.FromSeconds(0.3))
+                             {
+                                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                             };
+                             toast.BeginAnimation(TopProperty, anim);
+                        }
+                        else if (!toast.IsLoaded)
+                        {
+                             toast.Top = targetTop;
+                        }
+                    }
+
+                    // Add spacing between toasts
+                    currentTop -= 10;
+                }
             }
         }
 
@@ -378,7 +389,7 @@ namespace SMS_Search.Views
 
             if (sizeInfo.HeightChanged && this.IsLoaded)
             {
-                UpdateAllToastPositions(false);
+                UpdateAllToastPositions(false, this.Owner);
             }
         }
     }

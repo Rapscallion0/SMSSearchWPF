@@ -10,6 +10,16 @@ namespace SMS_Search.Views.Gs1
             DataContextChanged += Gs1ToolkitWindow_DataContextChanged;
         }
 
+        private void Window_LocationChanged(object? sender, System.EventArgs e)
+        {
+            ToastWindow.UpdateAllToastPositions(false, this);
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            ToastWindow.UpdateAllToastPositions(false, this);
+        }
+
         private void Gs1ToolkitWindow_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (e.OldValue is ViewModels.Gs1.Gs1ToolkitViewModel oldVm)

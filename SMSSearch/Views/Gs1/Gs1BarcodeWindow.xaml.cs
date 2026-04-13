@@ -8,5 +8,15 @@ namespace SMS_Search.Views.Gs1
         {
             InitializeComponent();
         }
+
+        private void Window_LocationChanged(object? sender, System.EventArgs e)
+        {
+            ToastWindow.UpdateAllToastPositions(false, this);
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            ToastWindow.UpdateAllToastPositions(false, this);
+        }
     }
 }
