@@ -26,16 +26,19 @@ namespace SMS_Search.Utils
         private const string GitHubApiUrl = "https://api.github.com/repos/" + RepoOwner + "/" + RepoName + "/releases/latest";
 
         private readonly IDialogService _dialogService;
+        private readonly ILoggerService _loggerService;
 
-        public UpdateChecker(IDialogService dialogService)
+        public UpdateChecker(IDialogService dialogService, ILoggerService loggerService)
         {
             _dialogService = dialogService;
+            _loggerService = loggerService;
         }
 
         public async Task<UpdateInfo> CheckForUpdatesAsync()
         {
             try
             {
+                _loggerService.LogDebug("Starting background check for updates...");
                 using (HttpClient client = new HttpClient())
                 {
                     client.DefaultRequestHeaders.Add("User-Agent", "SMS-Search-Updater");
@@ -74,12 +77,14 @@ namespace SMS_Search.Utils
                                                 if (!string.IsNullOrEmpty(name) && name.Equals("SMS_Search.zip", StringComparison.OrdinalIgnoreCase))
                                                 {
                                                     downloadUrl = downloadUrlElement.GetString();
+                                                    _loggerService.LogDebug($"Found download asset: {name} -> {downloadUrl}");
                                                     break;
                                                 }
                                             }
                                         }
                                     }
 
+                                    _loggerService.LogInfo($"Update check: New version found ({tagName})");
                                     return new UpdateInfo
                                     {
                                         Version = tagName,
@@ -89,14 +94,26 @@ namespace SMS_Search.Utils
                                         IsNewer = true
                                     };
                                 }
+                                else
+                                {
+                                    _loggerService.LogDebug($"Update check: Current version is up to date or newer. Remote: {remoteVersion}, Current: {currentVersion}");
+                                }
                             }
+                            else
+                            {
+                                _loggerService.LogDebug($"Update check: Could not parse remote version '{versionStr}'");
+                            }
+                        }
+                        else
+                        {
+                            _loggerService.LogDebug("Update check: 'tag_name' property not found in JSON response.");
                         }
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Silently fail
+                _loggerService.LogError("Update check threw an exception.", ex);
             }
 
             return new UpdateInfo { IsNewer = false };
@@ -104,14 +121,18 @@ namespace SMS_Search.Utils
 
         public async Task DownloadAndInstallUpdateAsync(UpdateInfo info, IProgress<double>? progressCallback = null, IProgress<string>? statusCallback = null)
         {
+            _loggerService.LogInfo("Starting download and install for new update...");
+
             if (string.IsNullOrEmpty(info.DownloadUrl))
             {
+                _loggerService.LogWarning("Download URL is empty. Opening release URL in browser.");
                 if (!string.IsNullOrEmpty(info.ReleaseUrl))
                 {
                     Process.Start(new ProcessStartInfo(info.ReleaseUrl) { UseShellExecute = true });
                 }
                 else
                 {
+                    _loggerService.LogError("No download URL and no release URL found.");
                     _dialogService.ShowError("No download URL found for the new version.", "Update Error");
                 }
                 return;
@@ -123,6 +144,7 @@ namespace SMS_Search.Utils
 
             try
             {
+                _loggerService.LogDebug($"Downloading update from {info.DownloadUrl} to {zipPath}");
                 statusCallback?.Report("Downloading update...");
                 using (HttpClient client = new HttpClient())
                 {
@@ -155,6 +177,7 @@ namespace SMS_Search.Utils
                     }
                 }
 
+                _loggerService.LogDebug("Download complete. Preparing installation script...");
                 statusCallback?.Report("Preparing installation script...");
                 string? currentExe = Process.GetCurrentProcess().MainModule?.FileName;
                 if (currentExe == null) return;
@@ -194,6 +217,7 @@ Start-Process -FilePath 'cmd.exe' -ArgumentList ""/c timeout /t 2 /nobreak > NUL
 
                 File.WriteAllText(scriptPath, scriptContent);
 
+                _loggerService.LogInfo("Starting Powershell installation script and shutting down application.");
                 statusCallback?.Report("Restarting and installing...");
                 ProcessStartInfo psi = new ProcessStartInfo("powershell.exe")
                 {
@@ -208,6 +232,7 @@ Start-Process -FilePath 'cmd.exe' -ArgumentList ""/c timeout /t 2 /nobreak > NUL
             }
             catch (Exception ex)
             {
+                _loggerService.LogError("Update failed during download/install phase.", ex);
                 _dialogService.ShowError("Update failed: " + ex.Message, "Update Error");
             }
         }
