@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.Generic;
@@ -169,7 +170,7 @@ namespace SMS_Search.ViewModels.Settings
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
                         var updateWindow = new SMS_Search.Views.Windows.UpdateWindow(info, _updateChecker);
-                        updateWindow.Owner = System.Windows.Application.Current.MainWindow;
+                        updateWindow.Owner = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(x => x.IsActive) ?? System.Windows.Application.Current.MainWindow;
                         updateWindow.ShowDialog();
                     });
                 }
