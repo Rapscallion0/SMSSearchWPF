@@ -167,7 +167,6 @@ namespace SMS_Search.ViewModels.Settings
                     _loggerService.LogInfo($"Update found manually: {info.Version}");
                     UpdateStatusMessage = $"An updated version is available!\n\nYour version: V{version}\nAvailable: V{info.Version}";
                     UpdateStatusColor = "Red";
-                    _dialogService.ShowToast("An update is available!", "Update", ToastType.Info);
 
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
