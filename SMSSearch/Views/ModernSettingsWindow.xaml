@@ -10,7 +10,9 @@
         Title="Settings" Height="600" Width="900"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Loaded="Window_Loaded">
+        Loaded="Window_Loaded"
+        LocationChanged="Window_LocationChanged"
+        SizeChanged="Window_SizeChanged">
 
     <Window.Resources>
         <DataTemplate DataType="{x:Type vm:GeneralSectionViewModel}">

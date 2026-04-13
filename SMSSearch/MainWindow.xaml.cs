@@ -56,7 +56,7 @@ namespace SMS_Search
 
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            ToastWindow.UpdateAllToastPositions(false);
+            ToastWindow.UpdateAllToastPositions(false, this);
         }
 
         private void MainStatusBar_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -93,7 +93,7 @@ namespace SMS_Search
 
         private void MainWindow_LocationChanged(object? sender, EventArgs e)
         {
-            ToastWindow.UpdateAllToastPositions(false);
+            ToastWindow.UpdateAllToastPositions(false, this);
         }
 
         protected override void OnSourceInitialized(EventArgs e)
