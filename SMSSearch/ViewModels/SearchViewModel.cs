@@ -24,6 +24,8 @@ namespace SMS_Search.ViewModels
 
         private System.Collections.Generic.List<SqlCleaningRule> _cleanSqlRules = new();
 
+        private bool _isInitializing = true;
+
         public SearchViewModel(
             IDataRepository repository,
             IDialogService dialogService,
@@ -86,6 +88,8 @@ namespace SMS_Search.ViewModels
             InitializeIntellisense();
 
             TablesView = CollectionViewSource.GetDefaultView(Tables);
+
+            _isInitializing = false;
         }
 
         public void Dispose()
@@ -309,8 +313,11 @@ namespace SMS_Search.ViewModels
             if (value)
             {
                 ShowFields = false;
-                IsFieldTable = true;
-                WeakReferenceMessenger.Default.Send(new FocusTableMessage(true));
+                if (!_isInitializing)
+                {
+                    IsFieldTable = true;
+                    WeakReferenceMessenger.Default.Send(new FocusTableMessage(true));
+                }
             }
         }
 
@@ -319,8 +326,11 @@ namespace SMS_Search.ViewModels
             if (value)
             {
                 ShowRecords = false;
-                IsFieldTable = true;
-                WeakReferenceMessenger.Default.Send(new FocusTableMessage(true));
+                if (!_isInitializing)
+                {
+                    IsFieldTable = true;
+                    WeakReferenceMessenger.Default.Send(new FocusTableMessage(true));
+                }
             }
         }
 
@@ -331,11 +341,14 @@ namespace SMS_Search.ViewModels
         {
             if (value)
             {
-                IsFieldTable = true;
-                ShowRecords = true;
-                if (IsLastTransactionVisible)
+                if (!_isInitializing)
                 {
-                    WeakReferenceMessenger.Default.Send(new FocusTableMessage(true));
+                    IsFieldTable = true;
+                    ShowRecords = true;
+                    if (IsLastTransactionVisible)
+                    {
+                        WeakReferenceMessenger.Default.Send(new FocusTableMessage(true));
+                    }
                 }
             }
         }
