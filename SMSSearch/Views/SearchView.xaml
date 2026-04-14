@@ -246,6 +246,10 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Table" Tag="Table" IsChecked="{Binding IsFieldTable}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
                         <ComboBox Grid.Column="1" x:Name="TableComboBox" ItemsSource="{Binding TablesView}" SelectedItem="{Binding SelectedTable}" Height="25" GotFocus="ComboBox_GotFocus" Margin="0,0,5,0"
@@ -285,17 +289,14 @@
                             </Control>
                         </Button>
 
-                    </Grid>
-
-                    <!-- Table Options -->
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="234,5,0,10" HorizontalAlignment="Right" Width="309" VerticalAlignment="Bottom">
-                        <RadioButton Content="Query Fields" IsChecked="{Binding ShowFields}" GroupName="FldAction"/>
-                        <RadioButton Content="Query Records" IsChecked="{Binding ShowRecords}" GroupName="FldAction" Margin="10,0,0,0"/>
-                        <Button Command="{Binding BuildSqlCommand}" CommandParameter="Table" Margin="10,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
+                        <RadioButton Grid.Column="3" Content="Query Fields" IsChecked="{Binding ShowFields}" GroupName="FldAction" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                        <RadioButton Grid.Column="4" Content="Query Records" IsChecked="{Binding ShowRecords}" GroupName="FldAction" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        <Button Grid.Column="5" Command="{Binding BuildSqlCommand}" CommandParameter="Table" Margin="10,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}" VerticalAlignment="Center">
                             <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
                         </Button>
-                        <CheckBox Content="Last Transaction" IsChecked="{Binding LastTransaction}" Margin="10,0,0,0" Visibility="{Binding IsLastTransactionVisible, Converter={StaticResource BoolToVis}}"/>
-                    </StackPanel>
+                        <CheckBox Grid.Column="6" Content="Last Transaction" IsChecked="{Binding LastTransaction}" Margin="10,0,0,0" Visibility="{Binding IsLastTransactionVisible, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center"/>
+
+                    </Grid>
 
                     <!-- Custom SQL -->
                     <Grid Grid.Row="4" Margin="0,0,0,5">
