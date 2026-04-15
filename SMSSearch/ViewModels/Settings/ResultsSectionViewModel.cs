@@ -25,8 +25,8 @@ namespace SMS_Search.ViewModels.Settings
 
             // Show Row Numbers
             ShowRowNumbers = new ObservableSetting<bool>(
-                repository, "GENERAL", "SHOW_ROW_NUMBERS",
-                repository.GetValue("GENERAL", "SHOW_ROW_NUMBERS") == "1",
+                repository, "RESULTS", "SHOW_ROW_NUMBERS",
+                repository.GetValue("RESULTS", "SHOW_ROW_NUMBERS") == "1",
                 v => v ? "1" : "0");
 
             ShowRowNumbers.PropertyChanged += (s, e) =>
@@ -39,8 +39,8 @@ namespace SMS_Search.ViewModels.Settings
 
             // Highlight Matches
             HighlightMatches = new ObservableSetting<bool>(
-                repository, "GENERAL", "HIGHLIGHT_MATCHES",
-                repository.GetValue("GENERAL", "HIGHLIGHT_MATCHES") == "1",
+                repository, "RESULTS", "HIGHLIGHT_MATCHES",
+                repository.GetValue("RESULTS", "HIGHLIGHT_MATCHES") == "1",
                 v => v ? "1" : "0");
 
             HighlightMatches.PropertyChanged += (s, e) =>
@@ -52,11 +52,11 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             // Highlight Color
-            string? highlightColor = repository.GetValue("GENERAL", "HIGHLIGHT_COLOR");
+            string? highlightColor = repository.GetValue("RESULTS", "HIGHLIGHT_COLOR");
             if (string.IsNullOrEmpty(highlightColor)) highlightColor = "#FFFFE0"; // Light Yellow
 
             HighlightColor = new ObservableSetting<string>(
-                repository, "GENERAL", "HIGHLIGHT_COLOR",
+                repository, "RESULTS", "HIGHLIGHT_COLOR",
                 highlightColor,
                 v => v);
 
@@ -70,33 +70,33 @@ namespace SMS_Search.ViewModels.Settings
 
             // Resize Columns
             ResizeColumns = new ObservableSetting<bool>(
-                repository, "GENERAL", "RESIZECOLUMNS",
-                repository.GetValue("GENERAL", "RESIZECOLUMNS") == "1",
+                repository, "RESULTS", "RESIZECOLUMNS",
+                repository.GetValue("RESULTS", "RESIZECOLUMNS") == "1",
                 v => v ? "1" : "0");
 
             // Description Columns
             DescriptionColumns = new ObservableSetting<bool>(
-                repository, "GENERAL", "DESCRIPTIONCOLUMNS",
-                repository.GetValue("GENERAL", "DESCRIPTIONCOLUMNS") == "1",
+                repository, "RESULTS", "DESCRIPTIONCOLUMNS",
+                repository.GetValue("RESULTS", "DESCRIPTIONCOLUMNS") == "1",
                 v => v ? "1" : "0");
 
             // Auto Resize Limit
             int limit = 5000;
-            if (int.TryParse(repository.GetValue("GENERAL", "AUTO_RESIZE_LIMIT"), out int l))
+            if (int.TryParse(repository.GetValue("RESULTS", "AUTO_RESIZE_LIMIT"), out int l))
                 limit = l;
 
             AutoResizeLimit = new ObservableSetting<int>(
-                repository, "GENERAL", "AUTO_RESIZE_LIMIT",
+                repository, "RESULTS", "AUTO_RESIZE_LIMIT",
                 limit,
                 v => v.ToString());
 
             // Horizontal Scroll Speed
             int scrollSpeed = 16;
-            if (int.TryParse(repository.GetValue("GENERAL", "HORIZONTAL_SCROLL_SPEED"), out int s))
+            if (int.TryParse(repository.GetValue("RESULTS", "HORIZONTAL_SCROLL_SPEED"), out int s))
                 scrollSpeed = s;
 
             HorizontalScrollSpeed = new ObservableSetting<int>(
-                repository, "GENERAL", "HORIZONTAL_SCROLL_SPEED",
+                repository, "RESULTS", "HORIZONTAL_SCROLL_SPEED",
                 scrollSpeed,
                 v => v.ToString());
 
