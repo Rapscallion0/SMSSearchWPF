@@ -102,9 +102,9 @@ namespace SMS_Search.ViewModels.Settings
             CurrentSettingsFile = PathHelper.GetSettingsPath();
 
             // Check Update
-            var checkUpdateStr = repository.GetValue("GENERAL", "CHECKUPDATE");
+            var checkUpdateStr = repository.GetValue("SYSTEM", "CHECKUPDATE");
             CheckUpdate = new ObservableSetting<bool>(
-                repository, "GENERAL", "CHECKUPDATE",
+                repository, "SYSTEM", "CHECKUPDATE",
                 checkUpdateStr == "1",
                 v => v ? "1" : "0");
 
@@ -308,7 +308,7 @@ namespace SMS_Search.ViewModels.Settings
         [RelayCommand]
         private async Task ResetEula()
         {
-            await _repository.SaveAsync("GENERAL", "EULA", "0");
+            await _repository.SaveAsync("SYSTEM", "EULA", "0");
             _dialogService.ShowToast("EULA has been reset. It will appear on next startup.", "Settings", ToastType.Info);
         }
 

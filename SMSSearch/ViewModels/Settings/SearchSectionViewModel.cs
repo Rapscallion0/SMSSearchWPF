@@ -67,33 +67,33 @@ namespace SMS_Search.ViewModels.Settings
             FunctionColumns = _repository.GetValue("QUERY", "FUNCTION") ?? "F1063, F1064, F1051, F1050, F1081";
             TotalizerColumns = _repository.GetValue("QUERY", "TOTALIZER") ?? "F1034, F1039, F1128, F1129, F1179, F1253, F1710, F1131, F1048, F1709";
 
-            var selectCustomSqlStr = repository.GetValue("GENERAL", "SELECT_CUSTOM_SQL_ON_BUILD");
+            var selectCustomSqlStr = repository.GetValue("SEARCH", "SELECT_CUSTOM_SQL_ON_BUILD");
             SelectCustomSqlOnBuild = new ObservableSetting<bool>(
-                repository, "GENERAL", "SELECT_CUSTOM_SQL_ON_BUILD",
+                repository, "SEARCH", "SELECT_CUSTOM_SQL_ON_BUILD",
                 selectCustomSqlStr != "0", // Default true
                 v => v ? "1" : "0");
 
-            var anyMatchDefaultStr = repository.GetValue("GENERAL", "ANY_MATCH_DEFAULT");
+            var anyMatchDefaultStr = repository.GetValue("SEARCH", "ANY_MATCH_DEFAULT");
             AnyMatchDefault = new ObservableSetting<bool>(
-                repository, "GENERAL", "ANY_MATCH_DEFAULT",
+                repository, "SEARCH", "ANY_MATCH_DEFAULT",
                 anyMatchDefaultStr != "False", // Default true
                 v => v.ToString());
 
             // Default Search Tab
-            var defaultTabStr = repository.GetValue("GENERAL", "DEFAULT_TAB");
+            var defaultTabStr = repository.GetValue("SEARCH", "DEFAULT_TAB");
             DefaultSearchTabMode defaultTab;
             if (!Enum.TryParse(defaultTabStr, out defaultTab)) defaultTab = DefaultSearchTabMode.Function;
             DefaultSearchTab = new ObservableSetting<DefaultSearchTabMode>(
-                repository, "GENERAL", "DEFAULT_TAB",
+                repository, "SEARCH", "DEFAULT_TAB",
                 defaultTab,
                 v => v.ToString());
 
             // Default Table Action
-            var defaultActionStr = repository.GetValue("GENERAL", "DEFAULT_TABLE_ACTION");
+            var defaultActionStr = repository.GetValue("SEARCH", "DEFAULT_TABLE_ACTION");
             SMS_Search.Data.DefaultTableAction defaultAction;
             if (!Enum.TryParse(defaultActionStr, out defaultAction)) defaultAction = SMS_Search.Data.DefaultTableAction.QueryFields;
             DefaultTableAction = new ObservableSetting<SMS_Search.Data.DefaultTableAction>(
-                repository, "GENERAL", "DEFAULT_TABLE_ACTION",
+                repository, "SEARCH", "DEFAULT_TABLE_ACTION",
                 defaultAction,
                 v => v.ToString());
 

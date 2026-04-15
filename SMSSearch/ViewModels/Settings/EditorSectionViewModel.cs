@@ -23,9 +23,9 @@ namespace SMS_Search.ViewModels.Settings
             _intellisenseService = intellisenseService;
 
             // Enable IntelliSense
-            var enableIntellisenseStr = repository.GetValue("GENERAL", "ENABLE_INTELLISENSE");
+            var enableIntellisenseStr = repository.GetValue("EDITOR", "ENABLE_INTELLISENSE");
             EnableIntellisense = new ObservableSetting<bool>(
-                repository, "GENERAL", "ENABLE_INTELLISENSE",
+                repository, "EDITOR", "ENABLE_INTELLISENSE",
                 enableIntellisenseStr != "0", // Default true
                 v => v ? "1" : "0");
 
@@ -38,9 +38,9 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             // Auto Trigger IntelliSense
-            var autoTriggerStr = repository.GetValue("GENERAL", "AUTO_TRIGGER_INTELLISENSE");
+            var autoTriggerStr = repository.GetValue("EDITOR", "AUTO_TRIGGER_INTELLISENSE");
             AutoTriggerIntellisense = new ObservableSetting<bool>(
-                repository, "GENERAL", "AUTO_TRIGGER_INTELLISENSE",
+                repository, "EDITOR", "AUTO_TRIGGER_INTELLISENSE",
                 autoTriggerStr != "0", // Default true
                 v => v ? "1" : "0");
 
@@ -53,9 +53,9 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             // Standard IntelliSense
-            var standardStr = repository.GetValue("GENERAL", "INTELLISENSE_STANDARD");
+            var standardStr = repository.GetValue("EDITOR", "INTELLISENSE_STANDARD");
             StandardIntellisenseEnabled = new ObservableSetting<bool>(
-                repository, "GENERAL", "INTELLISENSE_STANDARD",
+                repository, "EDITOR", "INTELLISENSE_STANDARD",
                 standardStr != "0", // Default true
                 v => v ? "1" : "0");
 
@@ -68,9 +68,9 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             // Functional IntelliSense
-            var functionalStr = repository.GetValue("GENERAL", "INTELLISENSE_FUNCTIONAL");
+            var functionalStr = repository.GetValue("EDITOR", "INTELLISENSE_FUNCTIONAL");
             FunctionalIntellisenseEnabled = new ObservableSetting<bool>(
-                repository, "GENERAL", "INTELLISENSE_FUNCTIONAL",
+                repository, "EDITOR", "INTELLISENSE_FUNCTIONAL",
                 functionalStr != "0", // Default true
                 v => v ? "1" : "0");
 
@@ -83,9 +83,9 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             // Full IntelliSense
-            var fullStr = repository.GetValue("GENERAL", "INTELLISENSE_FULL");
+            var fullStr = repository.GetValue("EDITOR", "INTELLISENSE_FULL");
             FullIntellisenseEnabled = new ObservableSetting<bool>(
-                repository, "GENERAL", "INTELLISENSE_FULL",
+                repository, "EDITOR", "INTELLISENSE_FULL",
                 fullStr != "0", // Default true
                 v => v ? "1" : "0");
 
@@ -98,9 +98,9 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             // Standard IntelliSense Auto
-            var standardAutoStr = repository.GetValue("GENERAL", "INTELLISENSE_STANDARD_AUTO");
+            var standardAutoStr = repository.GetValue("EDITOR", "INTELLISENSE_STANDARD_AUTO");
             StandardIntellisenseAuto = new ObservableSetting<bool>(
-                repository, "GENERAL", "INTELLISENSE_STANDARD_AUTO",
+                repository, "EDITOR", "INTELLISENSE_STANDARD_AUTO",
                 standardAutoStr != "0", // Default true
                 v => v ? "1" : "0");
 
@@ -113,9 +113,9 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             // Functional IntelliSense Auto
-            var functionalAutoStr = repository.GetValue("GENERAL", "INTELLISENSE_FUNCTIONAL_AUTO");
+            var functionalAutoStr = repository.GetValue("EDITOR", "INTELLISENSE_FUNCTIONAL_AUTO");
             FunctionalIntellisenseAuto = new ObservableSetting<bool>(
-                repository, "GENERAL", "INTELLISENSE_FUNCTIONAL_AUTO",
+                repository, "EDITOR", "INTELLISENSE_FUNCTIONAL_AUTO",
                 functionalAutoStr != "0", // Default true
                 v => v ? "1" : "0");
 
@@ -128,9 +128,9 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             // Full IntelliSense Auto
-            var fullAutoStr = repository.GetValue("GENERAL", "INTELLISENSE_FULL_AUTO");
+            var fullAutoStr = repository.GetValue("EDITOR", "INTELLISENSE_FULL_AUTO");
             FullIntellisenseAuto = new ObservableSetting<bool>(
-                repository, "GENERAL", "INTELLISENSE_FULL_AUTO",
+                repository, "EDITOR", "INTELLISENSE_FULL_AUTO",
                 fullAutoStr != "0", // Default true
                 v => v ? "1" : "0");
 
@@ -143,11 +143,11 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             // Sql Font Family
-            string? font = repository.GetValue("GENERAL", "SQL_FONT_FAMILY");
+            string? font = repository.GetValue("EDITOR", "SQL_FONT_FAMILY");
             if (string.IsNullOrEmpty(font)) font = "Consolas";
 
             SqlFontFamily = new ObservableSetting<string>(
-                repository, "GENERAL", "SQL_FONT_FAMILY",
+                repository, "EDITOR", "SQL_FONT_FAMILY",
                 font,
                 v => v);
 
@@ -161,11 +161,11 @@ namespace SMS_Search.ViewModels.Settings
 
             // Sql Font Size
             int fontSize = 14;
-            if (int.TryParse(repository.GetValue("GENERAL", "SQL_FONT_SIZE"), out int fs))
+            if (int.TryParse(repository.GetValue("EDITOR", "SQL_FONT_SIZE"), out int fs))
                 fontSize = fs;
 
             SqlFontSize = new ObservableSetting<int>(
-                repository, "GENERAL", "SQL_FONT_SIZE",
+                repository, "EDITOR", "SQL_FONT_SIZE",
                 fontSize,
                 v => v.ToString());
 
