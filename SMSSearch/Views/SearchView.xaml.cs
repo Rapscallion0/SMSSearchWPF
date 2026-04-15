@@ -14,7 +14,7 @@ namespace SMS_Search.Views
         {
             InitializeComponent();
             _typingTimer = new System.Windows.Threading.DispatcherTimer();
-            _typingTimer.Interval = TimeSpan.FromMilliseconds(300);
+            _typingTimer.Interval = TimeSpan.FromMilliseconds(100);
             _typingTimer.Tick += TypingTimer_Tick;
 
             CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.Register<SMS_Search.Utils.SearchExecutedMessage>(this, (r, m) =>

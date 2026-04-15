@@ -244,13 +244,6 @@ namespace SMS_Search.ViewModels
         {
             if (TablesView == null) return;
 
-            // When applying filter, we also want to sort the items so that StartsWith items come first.
-            // ICollectionView Custom Sorting in WPF is done via CustomSort (ListCollectionView).
-            if (TablesView is System.Windows.Data.ListCollectionView lcv)
-            {
-                lcv.CustomSort = new TableSortComparer(searchText);
-            }
-
             TablesView.Filter = (obj) =>
             {
                 if (string.IsNullOrEmpty(searchText)) return true;
