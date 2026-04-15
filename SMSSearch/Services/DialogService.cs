@@ -85,7 +85,7 @@ namespace SMS_Search.Services
                  {
                      // Get Timeout
                      int timeout = 5;
-                     string? val = _settingsRepository.GetValue("GENERAL", "TOAST_TIMEOUT");
+                     string? val = _settingsRepository.GetValue(AppSettings.Sections.General, AppSettings.Keys.ToastTimeout);
                      if (!string.IsNullOrEmpty(val) && int.TryParse(val, out int t))
                      {
                          timeout = t;

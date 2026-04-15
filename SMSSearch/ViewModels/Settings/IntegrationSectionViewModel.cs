@@ -38,8 +38,8 @@ namespace SMS_Search.ViewModels.Settings
             _dialogService = dialogService;
 
             StartWithWindows = new ObservableSetting<bool>(
-                repository, "LAUNCHER", "START_WITH_WINDOWS",
-                repository.GetValue("LAUNCHER", "START_WITH_WINDOWS") == "1",
+                repository, AppSettings.Sections.Launcher, AppSettings.Keys.StartWithWindows,
+                repository.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.StartWithWindows) == "1",
                 v => v ? "1" : "0");
 
             StartWithWindows.PropertyChanged += (s, e) =>
@@ -51,9 +51,9 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             // Load Hotkey
-            string? hotkeyStr = repository.GetValue("LAUNCHER", "HOTKEY");
+            string? hotkeyStr = repository.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.Hotkey);
             StoredHotkey = new ObservableSetting<string>(
-                repository, "LAUNCHER", "HOTKEY",
+                repository, AppSettings.Sections.Launcher, AppSettings.Keys.Hotkey,
                 hotkeyStr ?? "");
 
             if (!string.IsNullOrEmpty(hotkeyStr))

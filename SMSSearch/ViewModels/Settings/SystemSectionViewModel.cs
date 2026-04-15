@@ -47,9 +47,9 @@ namespace SMS_Search.ViewModels.Settings
             _updateChecker = updateChecker;
 
             // IsEnabled
-            var enabledStr = repository.GetValue("LOGGING", "ENABLED");
+            var enabledStr = repository.GetValue(AppSettings.Sections.Logging, AppSettings.Keys.Enabled);
             IsEnabled = new ObservableSetting<bool>(
-                repository, "LOGGING", "ENABLED",
+                repository, AppSettings.Sections.Logging, AppSettings.Keys.Enabled,
                 enabledStr != "0", // Default true
                 v => v ? "1" : "0");
 
@@ -58,17 +58,17 @@ namespace SMS_Search.ViewModels.Settings
                 if (e.PropertyName == nameof(ObservableSetting<bool>.Value))
                 {
                     // Update config immediately so LoggerService sees the change
-                    _repository.SetValue("LOGGING", "ENABLED", IsEnabled.Value ? "1" : "0");
+                    _repository.SetValue(AppSettings.Sections.Logging, AppSettings.Keys.Enabled, IsEnabled.Value ? "1" : "0");
                     _loggerService.ApplyConfig();
                     UpdateCurrentLogFile();
                 }
             };
 
             // LogLevel
-            var levelStr = repository.GetValue("LOGGING", "LEVEL");
+            var levelStr = repository.GetValue(AppSettings.Sections.Logging, AppSettings.Keys.Level);
             if (!Enum.TryParse(levelStr, out SMS_Search.Utils.LogLevel level)) level = SMS_Search.Utils.LogLevel.Info;
             LogLevel = new ObservableSetting<SMS_Search.Utils.LogLevel>(
-                repository, "LOGGING", "LEVEL",
+                repository, AppSettings.Sections.Logging, AppSettings.Keys.Level,
                 level,
                 v => v.ToString());
 
@@ -76,16 +76,16 @@ namespace SMS_Search.ViewModels.Settings
             {
                 if (e.PropertyName == nameof(ObservableSetting<SMS_Search.Utils.LogLevel>.Value))
                 {
-                    _repository.SetValue("LOGGING", "LEVEL", LogLevel.Value.ToString());
+                    _repository.SetValue(AppSettings.Sections.Logging, AppSettings.Keys.Level, LogLevel.Value.ToString());
                     _loggerService.ApplyConfig();
                 }
             };
 
             // RetentionDays
-            var retentionStr = repository.GetValue("LOGGING", "RETENTION");
+            var retentionStr = repository.GetValue(AppSettings.Sections.Logging, AppSettings.Keys.Retention);
             if (!int.TryParse(retentionStr, out int retention)) retention = 14;
             RetentionDays = new ObservableSetting<int>(
-                repository, "LOGGING", "RETENTION",
+                repository, AppSettings.Sections.Logging, AppSettings.Keys.Retention,
                 retention,
                 v => v.ToString());
 
@@ -93,7 +93,7 @@ namespace SMS_Search.ViewModels.Settings
             {
                 if (e.PropertyName == nameof(ObservableSetting<int>.Value))
                 {
-                    _repository.SetValue("LOGGING", "RETENTION", RetentionDays.Value.ToString());
+                    _repository.SetValue(AppSettings.Sections.Logging, AppSettings.Keys.Retention, RetentionDays.Value.ToString());
                     _loggerService.ApplyConfig();
                 }
             };
@@ -102,9 +102,9 @@ namespace SMS_Search.ViewModels.Settings
             CurrentSettingsFile = PathHelper.GetSettingsPath();
 
             // Check Update
-            var checkUpdateStr = repository.GetValue("SYSTEM", "CHECKUPDATE");
+            var checkUpdateStr = repository.GetValue(AppSettings.Sections.System, AppSettings.Keys.CheckUpdate);
             CheckUpdate = new ObservableSetting<bool>(
-                repository, "SYSTEM", "CHECKUPDATE",
+                repository, AppSettings.Sections.System, AppSettings.Keys.CheckUpdate,
                 checkUpdateStr == "1",
                 v => v ? "1" : "0");
 
@@ -308,7 +308,7 @@ namespace SMS_Search.ViewModels.Settings
         [RelayCommand]
         private async Task ResetEula()
         {
-            await _repository.SaveAsync("SYSTEM", "EULA", "0");
+            await _repository.SaveAsync(AppSettings.Sections.General, AppSettings.Keys.Eula, "0");
             _dialogService.ShowToast("EULA has been reset. It will appear on next startup.", "Settings", ToastType.Info);
         }
 

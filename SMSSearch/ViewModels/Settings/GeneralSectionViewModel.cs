@@ -33,48 +33,48 @@ namespace SMS_Search.ViewModels.Settings
 
 
             // Always On Top
-            var alwaysOnTopStr = repository.GetValue("GENERAL", "ALWAYSONTOP");
+            var alwaysOnTopStr = repository.GetValue(AppSettings.Sections.General, AppSettings.Keys.AlwaysOnTop);
             AlwaysOnTop = new ObservableSetting<bool>(
-                repository, "GENERAL", "ALWAYSONTOP",
+                repository, AppSettings.Sections.General, AppSettings.Keys.AlwaysOnTop,
                 alwaysOnTopStr == "1",
                 v => v ? "1" : "0");
 
             // Show In Tray
-            var showInTrayStr = repository.GetValue("GENERAL", "SHOWINTRAY");
+            var showInTrayStr = repository.GetValue(AppSettings.Sections.General, AppSettings.Keys.ShowInTray);
             ShowInTray = new ObservableSetting<bool>(
-                repository, "GENERAL", "SHOWINTRAY",
+                repository, AppSettings.Sections.General, AppSettings.Keys.ShowInTray,
                 showInTrayStr == "1",
                 v => v ? "1" : "0");
 
             // Main Startup Location
-            var mainStartStr = repository.GetValue("GENERAL", "MAIN_STARTUP_LOCATION");
+            var mainStartStr = repository.GetValue(AppSettings.Sections.General, AppSettings.Keys.MainStartupLocation);
             StartupLocationMode mainStart;
             if (!Enum.TryParse(mainStartStr, out mainStart)) mainStart = StartupLocationMode.Last;
             MainStartupLocation = new ObservableSetting<StartupLocationMode>(
-                repository, "GENERAL", "MAIN_STARTUP_LOCATION",
+                repository, AppSettings.Sections.General, AppSettings.Keys.MainStartupLocation,
                 mainStart,
                 v => v.ToString());
 
             // Unarchive Startup Location
-            var unarchiveStartStr = repository.GetValue("GENERAL", "UNARCHIVE_STARTUP_LOCATION");
+            var unarchiveStartStr = repository.GetValue(AppSettings.Sections.General, AppSettings.Keys.UnarchiveStartupLocation);
             StartupLocationMode unarchiveStart;
             if (!Enum.TryParse(unarchiveStartStr, out unarchiveStart)) unarchiveStart = StartupLocationMode.Last;
             UnarchiveStartupLocation = new ObservableSetting<StartupLocationMode>(
-                repository, "GENERAL", "UNARCHIVE_STARTUP_LOCATION",
+                repository, AppSettings.Sections.General, AppSettings.Keys.UnarchiveStartupLocation,
                 unarchiveStart,
                 v => v.ToString());
 
             // Remember Size
-            var rememberSizeStr = repository.GetValue("GENERAL", "MAIN_REMEMBER_SIZE");
+            var rememberSizeStr = repository.GetValue(AppSettings.Sections.General, AppSettings.Keys.MainRememberSize);
             RememberSize = new ObservableSetting<bool>(
-                repository, "GENERAL", "MAIN_REMEMBER_SIZE",
+                repository, AppSettings.Sections.General, AppSettings.Keys.MainRememberSize,
                 rememberSizeStr == "1",
                 v => v ? "1" : "0");
 
             // Copy Delimiter
-            var copyDelimStr = repository.GetValue("GENERAL", "COPY_DELIMITER");
+            var copyDelimStr = repository.GetValue(AppSettings.Sections.General, AppSettings.Keys.CopyDelimiter);
             CopyDelimiter = new ObservableSetting<string>(
-                repository, "GENERAL", "COPY_DELIMITER",
+                repository, AppSettings.Sections.General, AppSettings.Keys.CopyDelimiter,
                 !string.IsNullOrEmpty(copyDelimStr) ? copyDelimStr! : "TAB");
 
             CopyDelimiter.PropertyChanged += (s, e) =>
@@ -86,17 +86,17 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             // Custom Delimiter
-            var customDelimStr = repository.GetValue("GENERAL", "COPY_DELIMITER_CUSTOM");
+            var customDelimStr = repository.GetValue(AppSettings.Sections.General, AppSettings.Keys.CopyDelimiterCustom);
             CustomDelimiter = new ObservableSetting<string>(
-                repository, "GENERAL", "COPY_DELIMITER_CUSTOM",
+                repository, AppSettings.Sections.General, AppSettings.Keys.CopyDelimiterCustom,
                 customDelimStr ?? "");
 
             // Toast Timeout
-            var toastTimeoutStr = repository.GetValue("GENERAL", "TOAST_TIMEOUT");
+            var toastTimeoutStr = repository.GetValue(AppSettings.Sections.General, AppSettings.Keys.ToastTimeout);
             int toastTimeout;
             if (!int.TryParse(toastTimeoutStr, out toastTimeout)) toastTimeout = 5;
             ToastTimeout = new ObservableSetting<int>(
-                repository, "GENERAL", "TOAST_TIMEOUT",
+                repository, AppSettings.Sections.General, AppSettings.Keys.ToastTimeout,
                 toastTimeout,
                 v => v.ToString());
 

@@ -67,7 +67,7 @@ namespace SMS_Search.Services
             _configService = configService;
 
             // Load initial setting
-            var enabledStr = _configService.GetValue("GENERAL", "ENABLE_INTELLISENSE");
+            var enabledStr = _configService.GetValue(AppSettings.Sections.Editor, AppSettings.Keys.EnableIntellisense);
             if (enabledStr != null)
             {
                 if (enabledStr == "0") IsEnabled = false;
@@ -81,7 +81,7 @@ namespace SMS_Search.Services
             }
 
             // Load Auto Trigger Setting
-            var autoTriggerStr = _configService.GetValue("GENERAL", "AUTO_TRIGGER_INTELLISENSE");
+            var autoTriggerStr = _configService.GetValue(AppSettings.Sections.Editor, AppSettings.Keys.AutoTriggerIntellisense);
             if (autoTriggerStr != null)
             {
                 if (autoTriggerStr == "0") AutoTriggerEnabled = false;
@@ -107,7 +107,7 @@ namespace SMS_Search.Services
 
         private bool GetBoolSetting(string key, bool defaultValue)
         {
-            var val = _configService.GetValue("GENERAL", key);
+            var val = _configService.GetValue(AppSettings.Sections.Editor, key);
             if (val == "1") return true;
             if (val == "0") return false;
             return defaultValue;

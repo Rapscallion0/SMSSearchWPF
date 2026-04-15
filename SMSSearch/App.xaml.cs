@@ -148,7 +148,7 @@ namespace SMS_Search
                 };
 
                 // EULA Check
-                if (configService.GetValue("GENERAL", "EULA") != "1")
+                if (configService.GetValue(AppSettings.Sections.General, AppSettings.Keys.Eula) != "1")
                 {
                     var eulaWindow = Services.GetRequiredService<EulaWindow>();
                     bool? result = eulaWindow.ShowDialog();
@@ -162,8 +162,8 @@ namespace SMS_Search
                 // Connection Check
                 while (true)
                 {
-                    string server = configService.GetValue("CONNECTION", "SERVER") ?? "";
-                    string database = configService.GetValue("CONNECTION", "DATABASE") ?? "";
+                    string server = configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
+                    string database = configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "";
 
                     if (string.IsNullOrWhiteSpace(server) || string.IsNullOrWhiteSpace(database))
                     {
@@ -186,8 +186,8 @@ namespace SMS_Search
                         settingsWindow.ShowDialog();
 
                         // Re-check after window closes
-                        string newServer = configService.GetValue("CONNECTION", "SERVER") ?? "";
-                        string newDatabase = configService.GetValue("CONNECTION", "DATABASE") ?? "";
+                        string newServer = configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
+                        string newDatabase = configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "";
 
                         if (string.IsNullOrWhiteSpace(newServer) || string.IsNullOrWhiteSpace(newDatabase))
                         {
@@ -241,7 +241,7 @@ namespace SMS_Search
                     var hotkeyService = Services.GetRequiredService<IHotkeyService>();
                     var config = Services.GetRequiredService<IConfigService>();
 
-                    string? hotkeyStr = config.GetValue("LAUNCHER", "HOTKEY");
+                    string? hotkeyStr = config.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.Hotkey);
                     if (!string.IsNullOrEmpty(hotkeyStr))
                     {
                         try
@@ -284,7 +284,7 @@ namespace SMS_Search
                     mainWindow.Show();
 
                     // Update Check after window is shown to avoid blocking startup
-                    if (configService.GetValue("GENERAL", "CHECKUPDATE") == "1")
+                    if (configService.GetValue(AppSettings.Sections.System, AppSettings.Keys.CheckUpdate) == "1")
                     {
                         _ = Task.Run(async () =>
                         {

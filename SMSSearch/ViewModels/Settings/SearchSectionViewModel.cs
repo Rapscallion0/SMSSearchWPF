@@ -64,36 +64,36 @@ namespace SMS_Search.ViewModels.Settings
             _logger = logger;
             _dialogService = dialogService;
 
-            FunctionColumns = _repository.GetValue("QUERY", "FUNCTION") ?? "F1063, F1064, F1051, F1050, F1081";
-            TotalizerColumns = _repository.GetValue("QUERY", "TOTALIZER") ?? "F1034, F1039, F1128, F1129, F1179, F1253, F1710, F1131, F1048, F1709";
+            FunctionColumns = _repository.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Function) ?? "F1063, F1064, F1051, F1050, F1081";
+            TotalizerColumns = _repository.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Totalizer) ?? "F1034, F1039, F1128, F1129, F1179, F1253, F1710, F1131, F1048, F1709";
 
-            var selectCustomSqlStr = repository.GetValue("SEARCH", "SELECT_CUSTOM_SQL_ON_BUILD");
+            var selectCustomSqlStr = repository.GetValue(AppSettings.Sections.Search, AppSettings.Keys.SelectCustomSqlOnBuild);
             SelectCustomSqlOnBuild = new ObservableSetting<bool>(
-                repository, "SEARCH", "SELECT_CUSTOM_SQL_ON_BUILD",
+                repository, AppSettings.Sections.Search, AppSettings.Keys.SelectCustomSqlOnBuild,
                 selectCustomSqlStr != "0", // Default true
                 v => v ? "1" : "0");
 
-            var anyMatchDefaultStr = repository.GetValue("SEARCH", "ANY_MATCH_DEFAULT");
+            var anyMatchDefaultStr = repository.GetValue(AppSettings.Sections.Search, AppSettings.Keys.AnyMatchDefault);
             AnyMatchDefault = new ObservableSetting<bool>(
-                repository, "SEARCH", "ANY_MATCH_DEFAULT",
+                repository, AppSettings.Sections.Search, AppSettings.Keys.AnyMatchDefault,
                 anyMatchDefaultStr != "False", // Default true
                 v => v.ToString());
 
             // Default Search Tab
-            var defaultTabStr = repository.GetValue("SEARCH", "DEFAULT_TAB");
+            var defaultTabStr = repository.GetValue(AppSettings.Sections.Search, AppSettings.Keys.DefaultTab);
             DefaultSearchTabMode defaultTab;
             if (!Enum.TryParse(defaultTabStr, out defaultTab)) defaultTab = DefaultSearchTabMode.Function;
             DefaultSearchTab = new ObservableSetting<DefaultSearchTabMode>(
-                repository, "SEARCH", "DEFAULT_TAB",
+                repository, AppSettings.Sections.Search, AppSettings.Keys.DefaultTab,
                 defaultTab,
                 v => v.ToString());
 
             // Default Table Action
-            var defaultActionStr = repository.GetValue("SEARCH", "DEFAULT_TABLE_ACTION");
+            var defaultActionStr = repository.GetValue(AppSettings.Sections.Search, AppSettings.Keys.DefaultTableAction);
             SMS_Search.Data.DefaultTableAction defaultAction;
             if (!Enum.TryParse(defaultActionStr, out defaultAction)) defaultAction = SMS_Search.Data.DefaultTableAction.QueryFields;
             DefaultTableAction = new ObservableSetting<SMS_Search.Data.DefaultTableAction>(
-                repository, "SEARCH", "DEFAULT_TABLE_ACTION",
+                repository, AppSettings.Sections.Search, AppSettings.Keys.DefaultTableAction,
                 defaultAction,
                 v => v.ToString());
 
@@ -122,8 +122,8 @@ namespace SMS_Search.ViewModels.Settings
 
             try
             {
-                var server = _repository.GetValue("CONNECTION", "SERVER") ?? "";
-                var database = _repository.GetValue("CONNECTION", "DATABASE") ?? "";
+                var server = _repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
+                var database = _repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "";
 
                 if (string.IsNullOrEmpty(server) || string.IsNullOrEmpty(database))
                 {
@@ -134,10 +134,10 @@ namespace SMS_Search.ViewModels.Settings
                 string? user = null;
                 string? pass = null;
 
-                if (bool.TryParse(_repository.GetValue("CONNECTION", "WINDOWSAUTH"), out bool windowsAuth) && !windowsAuth)
+                if (bool.TryParse(_repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool windowsAuth) && !windowsAuth)
                 {
-                    user = _repository.GetValue("CONNECTION", "SQLUSER") ?? "";
-                    var encryptedPass = _repository.GetValue("CONNECTION", "SQLPASSWORD");
+                    user = _repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
+                    var encryptedPass = _repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
                     pass = !string.IsNullOrEmpty(encryptedPass) ? GeneralUtils.Decrypt(encryptedPass) : null;
                 }
 
@@ -196,8 +196,8 @@ namespace SMS_Search.ViewModels.Settings
                 }
 
                 // Both valid, save
-                _repository.SetValue("QUERY", "FUNCTION", FunctionColumns);
-                _repository.SetValue("QUERY", "TOTALIZER", TotalizerColumns);
+                _repository.SetValue(AppSettings.Sections.Query, AppSettings.Keys.Function, FunctionColumns);
+                _repository.SetValue(AppSettings.Sections.Query, AppSettings.Keys.Totalizer, TotalizerColumns);
                 await _repository.SaveAsync();
 
                 IsSaved = true;
