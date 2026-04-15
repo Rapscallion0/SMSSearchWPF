@@ -28,7 +28,7 @@ namespace SMS_Search.ViewModels
         [RelayCommand(CanExecute = nameof(CanAccept))]
         private void Accept()
         {
-            _configService.SetValue("GENERAL", "EULA", "1");
+            _configService.SetValue(AppSettings.Sections.General, AppSettings.Keys.Eula, "1");
             _configService.Save();
             RequestClose?.Invoke();
         }

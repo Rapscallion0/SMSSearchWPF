@@ -87,18 +87,18 @@ namespace SMS_Search.ViewModels
             {
                 string actualDbName = Databases.First(d => d.Equals(fullTargetDbName, StringComparison.OrdinalIgnoreCase));
 
-                var server = _config.GetValue("CONNECTION", "SERVER") ?? "";
+                var server = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
                 string user = "";
                 string? decryptedPass = null;
 
                 bool isWindowsAuth = true;
-                if (bool.TryParse(_config.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b))
+                if (bool.TryParse(_config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
                     isWindowsAuth = b;
 
                 if (!isWindowsAuth)
                 {
-                    user = _config.GetValue("CONNECTION", "SQLUSER") ?? "";
-                    var pass = _config.GetValue("CONNECTION", "SQLPASSWORD");
+                    user = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
+                    var pass = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
                     decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
                 }
 
@@ -129,18 +129,18 @@ namespace SMS_Search.ViewModels
         {
             try
             {
-                var server = _config.GetValue("CONNECTION", "SERVER") ?? "";
+                var server = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
                 string user = "";
                 string? decryptedPass = null;
 
                 bool isWindowsAuth = true;
-                if (bool.TryParse(_config.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b))
+                if (bool.TryParse(_config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
                     isWindowsAuth = b;
 
                 if (!isWindowsAuth)
                 {
-                    user = _config.GetValue("CONNECTION", "SQLUSER") ?? "";
-                    var pass = _config.GetValue("CONNECTION", "SQLPASSWORD");
+                    user = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
+                    var pass = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
                     decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
                 }
 
@@ -229,18 +229,18 @@ namespace SMS_Search.ViewModels
 
             try
             {
-                var server = _config.GetValue("CONNECTION", "SERVER") ?? "";
+                var server = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
                 string user = "";
                 string? decryptedPass = null;
 
                 bool isWindowsAuth = true;
-                if (bool.TryParse(_config.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b))
+                if (bool.TryParse(_config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
                     isWindowsAuth = b;
 
                 if (!isWindowsAuth)
                 {
-                    user = _config.GetValue("CONNECTION", "SQLUSER") ?? "";
-                    var pass = _config.GetValue("CONNECTION", "SQLPASSWORD");
+                    user = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
+                    var pass = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
                     decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
                 }
 
@@ -293,18 +293,18 @@ namespace SMS_Search.ViewModels
 
             try
             {
-                var server = _config.GetValue("CONNECTION", "SERVER") ?? "";
+                var server = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
                 string user = "";
                 string? decryptedPass = null;
 
                 bool isWindowsAuth = true;
-                if (bool.TryParse(_config.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b))
+                if (bool.TryParse(_config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
                     isWindowsAuth = b;
 
                 if (!isWindowsAuth)
                 {
-                    user = _config.GetValue("CONNECTION", "SQLUSER") ?? "";
-                    var pass = _config.GetValue("CONNECTION", "SQLPASSWORD");
+                    user = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
+                    var pass = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
                     decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
                 }
 

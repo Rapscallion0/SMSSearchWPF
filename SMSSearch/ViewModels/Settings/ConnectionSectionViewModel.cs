@@ -35,11 +35,11 @@ namespace SMS_Search.ViewModels.Settings
             _logger = logger;
             _dialogService = dialogService;
 
-            WindowsAuth = new ObservableSetting<bool>(repository, "CONNECTION", "WINDOWSAUTH",
-                bool.TryParse(repository.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b) ? b : true);
+            WindowsAuth = new ObservableSetting<bool>(repository, AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth,
+                bool.TryParse(repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b) ? b : true);
 
-            Server = new ObservableSetting<string>(repository, "CONNECTION", "SERVER",
-                repository.GetValue("CONNECTION", "SERVER") ?? "",
+            Server = new ObservableSetting<string>(repository, AppSettings.Sections.Connection, AppSettings.Keys.Server,
+                repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "",
                 validator: v =>
                 {
                     bool isValid = !string.IsNullOrWhiteSpace(v);
@@ -47,8 +47,8 @@ namespace SMS_Search.ViewModels.Settings
                     return isValid;
                 });
 
-            Database = new ObservableSetting<string>(repository, "CONNECTION", "DATABASE",
-                repository.GetValue("CONNECTION", "DATABASE") ?? "",
+            Database = new ObservableSetting<string>(repository, AppSettings.Sections.Connection, AppSettings.Keys.Database,
+                repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "",
                 validator: v =>
                 {
                     bool isValid = !string.IsNullOrWhiteSpace(v) && Databases.Contains(v);
@@ -56,8 +56,8 @@ namespace SMS_Search.ViewModels.Settings
                     return isValid;
                 });
 
-            User = new ObservableSetting<string>(repository, "CONNECTION", "SQLUSER",
-                repository.GetValue("CONNECTION", "SQLUSER") ?? "");
+            User = new ObservableSetting<string>(repository, AppSettings.Sections.Connection, AppSettings.Keys.SqlUser,
+                repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "");
 
             DatabasesView = CollectionViewSource.GetDefaultView(Databases);
 
@@ -111,7 +111,7 @@ namespace SMS_Search.ViewModels.Settings
 
         public string GetSavedDatabase()
         {
-            return _repository.GetValue("CONNECTION", "DATABASE") ?? "";
+            return _repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "";
         }
 
         [ObservableProperty]
@@ -166,7 +166,7 @@ namespace SMS_Search.ViewModels.Settings
                 IsPasswordSaved = false;
 
                 var encrypted = GeneralUtils.Encrypt(Password);
-                await _repository.SaveAsync("CONNECTION", "SQLPASSWORD", encrypted);
+                await _repository.SaveAsync(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword, encrypted);
 
                 if (token.IsCancellationRequested) return;
 
@@ -191,7 +191,7 @@ namespace SMS_Search.ViewModels.Settings
             try
             {
                  var user = WindowsAuth.Value ? null : (User.Value ?? "");
-                 var pass = WindowsAuth.Value ? null : _repository.GetValue("CONNECTION", "SQLPASSWORD");
+                 var pass = WindowsAuth.Value ? null : _repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
                  string? decryptedPass = (!WindowsAuth.Value && !string.IsNullOrEmpty(pass)) ? GeneralUtils.Decrypt(pass) : null;
 
                  if (string.IsNullOrEmpty(server))

@@ -115,67 +115,71 @@ namespace SMS_Search.Utils
         private void PopulateDefaults()
         {
             // General
-            SetValue("GENERAL", "EULA", "0");
-            SetValue("GENERAL", "CHECKUPDATE", "1");
-            SetValue("GENERAL", "MAIN_STARTUP_LOCATION", "Last");
-            SetValue("GENERAL", "UNARCHIVE_STARTUP_LOCATION", "Last");
-            SetValue("GENERAL", "DEFAULT_TAB", "Function");
-            SetValue("GENERAL", "DEFAULT_TABLE_ACTION", "QueryFields");
-            SetValue("GENERAL", "MAIN_REMEMBER_SIZE", "0");
-            SetValue("GENERAL", "COPY_DELIMITER", "TAB");
-            SetValue("GENERAL", "TOAST_TIMEOUT", "5");
+            SetValue(AppSettings.Sections.General, AppSettings.Keys.Eula, "0");
+            SetValue(AppSettings.Sections.General, AppSettings.Keys.MainStartupLocation, "Last");
+            SetValue(AppSettings.Sections.General, AppSettings.Keys.UnarchiveStartupLocation, "Last");
+            SetValue(AppSettings.Sections.General, AppSettings.Keys.MainRememberSize, "0");
+            SetValue(AppSettings.Sections.General, AppSettings.Keys.CopyDelimiter, "TAB");
+            SetValue(AppSettings.Sections.General, AppSettings.Keys.ToastTimeout, "5");
 
-            // General - Grid/Results
-            SetValue("GENERAL", "SHOW_ROW_NUMBERS", "1");
-            SetValue("GENERAL", "HIGHLIGHT_MATCHES", "1");
-            SetValue("GENERAL", "HIGHLIGHT_COLOR", "#FFFFE0");
-            SetValue("GENERAL", "RESIZECOLUMNS", "1");
-            SetValue("GENERAL", "DESCRIPTIONCOLUMNS", "1");
-            SetValue("GENERAL", "AUTO_RESIZE_LIMIT", "5000");
-            SetValue("GENERAL", "HORIZONTAL_SCROLL_SPEED", "16");
+            // System
+            SetValue(AppSettings.Sections.System, AppSettings.Keys.CheckUpdate, "1");
 
-            // General - Editor
-            SetValue("GENERAL", "ENABLE_INTELLISENSE", "1");
-            SetValue("GENERAL", "AUTO_TRIGGER_INTELLISENSE", "1");
-            SetValue("GENERAL", "INTELLISENSE_STANDARD", "1");
-            SetValue("GENERAL", "INTELLISENSE_FUNCTIONAL", "1");
-            SetValue("GENERAL", "INTELLISENSE_FULL", "1");
-            SetValue("GENERAL", "INTELLISENSE_STANDARD_AUTO", "1");
-            SetValue("GENERAL", "INTELLISENSE_FUNCTIONAL_AUTO", "1");
-            SetValue("GENERAL", "INTELLISENSE_FULL_AUTO", "1");
-            SetValue("GENERAL", "SQL_FONT_FAMILY", "Consolas");
-            SetValue("GENERAL", "SQL_FONT_SIZE", "14");
-            SetValue("GENERAL", "SELECT_CUSTOM_SQL_ON_BUILD", "1");
-            SetValue("GENERAL", "ANY_MATCH_DEFAULT", "True");
+            // Results
+            SetValue(AppSettings.Sections.Results, AppSettings.Keys.ShowRowNumbers, "1");
+            SetValue(AppSettings.Sections.Results, AppSettings.Keys.HighlightMatches, "1");
+            SetValue(AppSettings.Sections.Results, AppSettings.Keys.HighlightColor, "#FFFFE0");
+            SetValue(AppSettings.Sections.Results, AppSettings.Keys.ResizeColumns, "1");
+            SetValue(AppSettings.Sections.Results, AppSettings.Keys.DescriptionColumns, "1");
+            SetValue(AppSettings.Sections.Results, AppSettings.Keys.AutoResizeLimit, "5000");
+            SetValue(AppSettings.Sections.Results, AppSettings.Keys.HorizontalScrollSpeed, "16");
+
+            // Editor
+            SetValue(AppSettings.Sections.Editor, AppSettings.Keys.EnableIntellisense, "1");
+            SetValue(AppSettings.Sections.Editor, AppSettings.Keys.AutoTriggerIntellisense, "1");
+            SetValue(AppSettings.Sections.Editor, AppSettings.Keys.IntellisenseStandard, "1");
+            SetValue(AppSettings.Sections.Editor, AppSettings.Keys.IntellisenseFunctional, "1");
+            SetValue(AppSettings.Sections.Editor, AppSettings.Keys.IntellisenseFull, "1");
+            SetValue(AppSettings.Sections.Editor, AppSettings.Keys.IntellisenseStandardAuto, "1");
+            SetValue(AppSettings.Sections.Editor, AppSettings.Keys.IntellisenseFunctionalAuto, "1");
+            SetValue(AppSettings.Sections.Editor, AppSettings.Keys.IntellisenseFullAuto, "1");
+            SetValue(AppSettings.Sections.Editor, AppSettings.Keys.SqlFontFamily, "Consolas");
+            SetValue(AppSettings.Sections.Editor, AppSettings.Keys.SqlFontSize, "14");
+
+            // Search
+            SetValue(AppSettings.Sections.Search, AppSettings.Keys.SelectCustomSqlOnBuild, "1");
+            SetValue(AppSettings.Sections.Search, AppSettings.Keys.AnyMatchDefault, "True");
+            SetValue(AppSettings.Sections.Search, AppSettings.Keys.DefaultTab, "Function");
+            SetValue(AppSettings.Sections.Search, AppSettings.Keys.DefaultTableAction, "QueryFields");
 
             // Connection
-            SetValue("CONNECTION", "WINDOWSAUTH", "True");
+            SetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth, "True");
 
             // Clean SQL
-            SetValue("CLEAN_SQL", "BEAUTIFY_SQL", "1");
-            SetValue("CLEAN_SQL", "INDENT_STRING_SPACES", "2");
-            SetValue("CLEAN_SQL", "EXPAND_COMMA_LISTS", "1");
-            SetValue("CLEAN_SQL", "EXPAND_BOOLEAN_EXPRESSIONS", "1");
-            SetValue("CLEAN_SQL", "EXPAND_CASE_EXPRESSIONS", "1");
-            SetValue("CLEAN_SQL", "EXPAND_BETWEEN_CONDITIONS", "1");
-            SetValue("CLEAN_SQL", "BREAK_JOIN_ON_SECTIONS", "0");
-            SetValue("CLEAN_SQL", "UPPERCASE_KEYWORDS", "1");
-            SetValue("CLEAN_SQL", "KEYWORD_STANDARDIZATION", "0");
+            SetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.BeautifySql, "1");
+            SetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.IndentStringSpaces, "2");
+            SetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandCommaLists, "1");
+            SetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandBooleanExpressions, "1");
+            SetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandCaseExpressions, "1");
+            SetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandBetweenConditions, "1");
+            SetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.BreakJoinOnSections, "0");
+            SetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.UppercaseKeywords, "1");
+            SetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.KeywordStandardization, "0");
 
             // Launcher
-            SetValue("LAUNCHER", "START_WITH_WINDOWS", "0");
+            SetValue(AppSettings.Sections.Launcher, AppSettings.Keys.StartWithWindows, "0");
 
             // Logging
-            SetValue("LOGGING", "ENABLED", "1");
-            SetValue("LOGGING", "LEVEL", "Info");
-            SetValue("LOGGING", "RETENTION", "14");
+            SetValue(AppSettings.Sections.Logging, AppSettings.Keys.Enabled, "1");
+            SetValue(AppSettings.Sections.Logging, AppSettings.Keys.Level, "Info");
+            SetValue(AppSettings.Sections.Logging, AppSettings.Keys.Retention, "14");
 
             // GS1
-            SetValue("GS1", "MONITOR_CLIPBOARD", "False");
+            SetValue(AppSettings.Sections.Gs1, AppSettings.Keys.MonitorClipboard, "False");
 
             // Query
-            SetValue("QUERY", "FUNCTION", "F1063, F1064, F1051, F1050, F1081");
-            SetValue("QUERY", "TOTALIZER", "F1034, F1039, F1128, F1129, F1179, F1253, F1710, F1131, F1048, F1709");
+            SetValue(AppSettings.Sections.Query, AppSettings.Keys.Function, "F1063, F1064, F1051, F1050, F1081");
+            SetValue(AppSettings.Sections.Query, AppSettings.Keys.Totalizer, "F1034, F1039, F1128, F1129, F1179, F1253, F1710, F1131, F1048, F1709");
         }
 
         public void Save()

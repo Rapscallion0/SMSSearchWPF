@@ -40,20 +40,20 @@ namespace SMS_Search.ViewModels
             _clipboardService = clipboardService;
 
             // Initialize HeadersVisibility based on config
-            bool showRowNumbers = _configService.GetValue("GENERAL", "SHOW_ROW_NUMBERS") == "1";
+            bool showRowNumbers = _configService.GetValue(AppSettings.Sections.Results, AppSettings.Keys.ShowRowNumbers) == "1";
             HeadersVisibility = showRowNumbers ? DataGridHeadersVisibility.All : DataGridHeadersVisibility.Column;
 
-            IsHighlightEnabled = _configService.GetValue("GENERAL", "HIGHLIGHT_MATCHES") == "1";
+            IsHighlightEnabled = _configService.GetValue(AppSettings.Sections.Results, AppSettings.Keys.HighlightMatches) == "1";
             UpdateFilterNavigationVisibility();
-            UpdateHighlightColor(_configService.GetValue("GENERAL", "HIGHLIGHT_COLOR"));
+            UpdateHighlightColor(_configService.GetValue(AppSettings.Sections.Results, AppSettings.Keys.HighlightColor));
 
-            if (int.TryParse(_configService.GetValue("GENERAL", "HORIZONTAL_SCROLL_SPEED"), out int speed))
+            if (int.TryParse(_configService.GetValue(AppSettings.Sections.Results, AppSettings.Keys.HorizontalScrollSpeed), out int speed))
             {
                 _horizontalScrollSpeed = speed;
             }
 
-            string fctFields = _configService.GetValue("QUERY", "FUNCTION") ?? "";
-            string tlzFields = _configService.GetValue("QUERY", "TOTALIZER") ?? "";
+            string fctFields = _configService.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Function) ?? "";
+            string tlzFields = _configService.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Totalizer) ?? "";
             _queryBuilder = new QueryBuilder(fctFields, tlzFields);
 
             _gridContext.DataReady += OnDataReady;
@@ -348,22 +348,22 @@ namespace SMS_Search.ViewModels
             {
                 var queryResult = _queryBuilder.Build(criteria);
 
-                var server = _configService.GetValue("CONNECTION", "SERVER") ?? "";
-                var database = _configService.GetValue("CONNECTION", "DATABASE") ?? "";
+                var server = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
+                var database = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "";
 
                 string user = "";
                 string? decryptedPass = null;
 
                 bool isWindowsAuth = true;
-                if (bool.TryParse(_configService.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b))
+                if (bool.TryParse(_configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
                 {
                     isWindowsAuth = b;
                 }
 
                 if (!isWindowsAuth)
                 {
-                    user = _configService.GetValue("CONNECTION", "SQLUSER") ?? "";
-                    var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
+                    user = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
+                    var pass = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
                     decryptedPass = !string.IsNullOrEmpty(pass) ? SMS_Search.Utils.GeneralUtils.Decrypt(pass) : null;
                 }
 

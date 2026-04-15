@@ -100,22 +100,22 @@ namespace SMS_Search
         {
             base.OnSourceInitialized(e);
 
-            bool rememberSize = _config.GetValue("GENERAL", "MAIN_REMEMBER_SIZE") == "1";
+            bool rememberSize = _config.GetValue(AppSettings.Sections.General, AppSettings.Keys.MainRememberSize) == "1";
 
             if (rememberSize)
             {
                 // Restore Split Position
-                if (double.TryParse(_state.GetValue("MAIN", "SEARCH_HEIGHT"), out double h))
+                if (double.TryParse(_state.GetValue(AppSettings.Sections.Main, AppSettings.Keys.SearchHeight), out double h))
                 {
                     SearchRow.Height = new GridLength(h);
                 }
 
                 // Restore Size
-                if (double.TryParse(_state.GetValue("MAIN", "LAST_W"), out double w)) Width = w;
-                if (double.TryParse(_state.GetValue("MAIN", "LAST_H"), out double hVal)) Height = hVal;
+                if (double.TryParse(_state.GetValue(AppSettings.Sections.Main, AppSettings.Keys.LastW), out double w)) Width = w;
+                if (double.TryParse(_state.GetValue(AppSettings.Sections.Main, AppSettings.Keys.LastH), out double hVal)) Height = hVal;
             }
 
-            if (Enum.TryParse(_config.GetValue("GENERAL", "MAIN_STARTUP_LOCATION"), out StartupLocationMode mode))
+            if (Enum.TryParse(_config.GetValue(AppSettings.Sections.General, AppSettings.Keys.MainStartupLocation), out StartupLocationMode mode))
             {
                 // good
             }
@@ -125,10 +125,10 @@ namespace SMS_Search
             }
 
             double? lastX = null;
-            if (double.TryParse(_state.GetValue("MAIN", "LAST_X"), out double x)) lastX = x;
+            if (double.TryParse(_state.GetValue(AppSettings.Sections.Main, AppSettings.Keys.LastX), out double x)) lastX = x;
 
             double? lastY = null;
-            if (double.TryParse(_state.GetValue("MAIN", "LAST_Y"), out double y)) lastY = y;
+            if (double.TryParse(_state.GetValue(AppSettings.Sections.Main, AppSettings.Keys.LastY), out double y)) lastY = y;
 
             WindowPositioner.ApplyStartupLocation(this, mode, lastX, lastY);
         }
@@ -137,30 +137,30 @@ namespace SMS_Search
         {
             base.OnClosing(e);
 
-            _state.SetValue("MAIN", "LAST_TAB", _viewModel.SearchVm.SelectedMode.ToString());
+            _state.SetValue(AppSettings.Sections.Main, AppSettings.Keys.LastTab, _viewModel.SearchVm.SelectedMode.ToString());
 
-            bool rememberSize = _config.GetValue("GENERAL", "MAIN_REMEMBER_SIZE") == "1";
+            bool rememberSize = _config.GetValue(AppSettings.Sections.General, AppSettings.Keys.MainRememberSize) == "1";
 
             if (rememberSize)
             {
-                _state.SetValue("MAIN", "SEARCH_HEIGHT", SearchRow.Height.Value.ToString());
+                _state.SetValue(AppSettings.Sections.Main, AppSettings.Keys.SearchHeight, SearchRow.Height.Value.ToString());
             }
             else
             {
-                _state.RemoveValue("MAIN", "SEARCH_HEIGHT");
-                _state.RemoveValue("MAIN", "LAST_W");
-                _state.RemoveValue("MAIN", "LAST_H");
+                _state.RemoveValue(AppSettings.Sections.Main, AppSettings.Keys.SearchHeight);
+                _state.RemoveValue(AppSettings.Sections.Main, AppSettings.Keys.LastW);
+                _state.RemoveValue(AppSettings.Sections.Main, AppSettings.Keys.LastH);
             }
 
             if (WindowState == WindowState.Normal)
             {
-                _state.SetValue("MAIN", "LAST_X", Left.ToString());
-                _state.SetValue("MAIN", "LAST_Y", Top.ToString());
+                _state.SetValue(AppSettings.Sections.Main, AppSettings.Keys.LastX, Left.ToString());
+                _state.SetValue(AppSettings.Sections.Main, AppSettings.Keys.LastY, Top.ToString());
 
                 if (rememberSize)
                 {
-                    _state.SetValue("MAIN", "LAST_W", ActualWidth.ToString());
-                    _state.SetValue("MAIN", "LAST_H", ActualHeight.ToString());
+                    _state.SetValue(AppSettings.Sections.Main, AppSettings.Keys.LastW, ActualWidth.ToString());
+                    _state.SetValue(AppSettings.Sections.Main, AppSettings.Keys.LastH, ActualHeight.ToString());
                 }
             }
             _state.Save();

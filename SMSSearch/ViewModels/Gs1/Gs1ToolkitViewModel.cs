@@ -26,7 +26,7 @@ namespace SMS_Search.ViewModels.Gs1
 
         private bool GetSetting(string key, bool defaultValue = true)
         {
-            string? value = _settingsRepository.GetValue("GS1", key);
+            string? value = _settingsRepository.GetValue(AppSettings.Sections.Gs1, key);
             return string.IsNullOrEmpty(value) ? defaultValue : bool.TryParse(value, out bool result) ? result : defaultValue;
         }
 
@@ -300,13 +300,13 @@ namespace SMS_Search.ViewModels.Gs1
 
         partial void OnIsHistoryPanelOpenChanged(bool value)
         {
-            _stateService.SetValue("GS1", "HISTORY_PANEL_OPEN", value.ToString());
+            _stateService.SetValue(AppSettings.Sections.Gs1, "HISTORY_PANEL_OPEN", value.ToString());
             _stateService.Save();
         }
 
         partial void OnIsHistoryPanelPinnedChanged(bool value)
         {
-            _stateService.SetValue("GS1", "HISTORY_PANEL_PINNED", value.ToString());
+            _stateService.SetValue(AppSettings.Sections.Gs1, "HISTORY_PANEL_PINNED", value.ToString());
             _stateService.Save();
         }
 
@@ -314,7 +314,7 @@ namespace SMS_Search.ViewModels.Gs1
         {
             if (value >= 200)
             {
-                _stateService.SetValue("GS1", "HISTORY_PANEL_WIDTH", value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                _stateService.SetValue(AppSettings.Sections.Gs1, "HISTORY_PANEL_WIDTH", value.ToString(System.Globalization.CultureInfo.InvariantCulture));
                 _stateService.Save();
             }
         }
@@ -359,7 +359,7 @@ namespace SMS_Search.ViewModels.Gs1
 
         private void LoadPanelSettings()
         {
-            if (bool.TryParse(_stateService.GetValue("GS1", "HISTORY_PANEL_OPEN"), out bool isOpen))
+            if (bool.TryParse(_stateService.GetValue(AppSettings.Sections.Gs1, "HISTORY_PANEL_OPEN"), out bool isOpen))
             {
                 IsHistoryPanelOpen = isOpen;
             }
@@ -368,7 +368,7 @@ namespace SMS_Search.ViewModels.Gs1
                 IsHistoryPanelOpen = true; // default
             }
 
-            if (bool.TryParse(_stateService.GetValue("GS1", "HISTORY_PANEL_PINNED"), out bool isPinned))
+            if (bool.TryParse(_stateService.GetValue(AppSettings.Sections.Gs1, "HISTORY_PANEL_PINNED"), out bool isPinned))
             {
                 IsHistoryPanelPinned = isPinned;
             }
@@ -377,7 +377,7 @@ namespace SMS_Search.ViewModels.Gs1
                 IsHistoryPanelPinned = true; // default
             }
 
-            if (double.TryParse(_stateService.GetValue("GS1", "HISTORY_PANEL_WIDTH"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double width) && width >= 200)
+            if (double.TryParse(_stateService.GetValue(AppSettings.Sections.Gs1, "HISTORY_PANEL_WIDTH"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double width) && width >= 200)
             {
                 HistoryPanelWidth = width;
             }
@@ -846,7 +846,7 @@ namespace SMS_Search.ViewModels.Gs1
         {
             try
             {
-                string? json = _stateService.GetValue("GS1", "HISTORY");
+                string? json = _stateService.GetValue(AppSettings.Sections.Gs1, "HISTORY");
                 if (string.IsNullOrEmpty(json)) return;
 
                 var items = System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Gs1HistoryItem>>(json);
@@ -870,7 +870,7 @@ namespace SMS_Search.ViewModels.Gs1
             try
             {
                 string json = System.Text.Json.JsonSerializer.Serialize(History.ToList(), new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-                _stateService.SetValue("GS1", "HISTORY", json);
+                _stateService.SetValue(AppSettings.Sections.Gs1, "HISTORY", json);
                 _stateService.Save();
             }
             catch (System.Exception ex)

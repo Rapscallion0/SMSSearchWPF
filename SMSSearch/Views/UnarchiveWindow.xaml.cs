@@ -28,7 +28,7 @@ namespace SMS_Search.Views
             base.OnSourceInitialized(e);
 
             StartupLocationMode mode = StartupLocationMode.Last;
-            if (Enum.TryParse(_config.GetValue("GENERAL", "UNARCHIVE_STARTUP_LOCATION"), out StartupLocationMode m))
+            if (Enum.TryParse(_config.GetValue(AppSettings.Sections.General, AppSettings.Keys.UnarchiveStartupLocation), out StartupLocationMode m))
                 mode = m;
 
             // Load logic from VM

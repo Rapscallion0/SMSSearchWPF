@@ -75,7 +75,7 @@ namespace SMS_Search.ViewModels
             RefreshDatabasesCommand = new AsyncRelayCommand(RefreshDatabasesAsync);
 
             // Initial load of databases
-            SelectedDatabase = _config.GetValue("CONNECTION", "DATABASE");
+            SelectedDatabase = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database);
             _ = LoadDatabasesCommand.ExecuteAsync(null);
 
             WeakReferenceMessenger.Default.Register<ConnectionSettingsChangedMessage>(this, (r, m) =>
@@ -141,11 +141,11 @@ namespace SMS_Search.ViewModels
         {
             // Update the connection string database for the repository logic to use this session database
             // This does NOT save to settings, but is used by ResultsViewModel when executing a search
-            if (!string.IsNullOrEmpty(value) && _config.GetValue("CONNECTION", "DATABASE") != value)
+            if (!string.IsNullOrEmpty(value) && _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) != value)
             {
                 // To safely pass this to ResultsVm without modifying settings on disk,
                 // we'll update it in memory via config service but not call Save.
-                _config.SetValue("CONNECTION", "DATABASE", value);
+                _config.SetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database, value);
 
                 // Clear tables in SearchVm so it reloads for the new database
                 SearchVm.Tables.Clear();
@@ -186,20 +186,20 @@ namespace SMS_Search.ViewModels
             if (Databases.Count > 0) return;
             try
             {
-                 var server = _config.GetValue("CONNECTION", "SERVER") ?? "";
+                 var server = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
                  string user = "";
                  string? decryptedPass = null;
 
                  bool isWindowsAuth = true;
-                 if (bool.TryParse(_config.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b))
+                 if (bool.TryParse(_config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
                  {
                      isWindowsAuth = b;
                  }
 
                  if (!isWindowsAuth)
                  {
-                     user = _config.GetValue("CONNECTION", "SQLUSER") ?? "";
-                     var pass = _config.GetValue("CONNECTION", "SQLPASSWORD");
+                     user = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
+                     var pass = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
                      decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
                  }
 

@@ -61,7 +61,7 @@ namespace SMS_Search.Services.Gs1
         {
             if (msg == WM_CLIPBOARDUPDATE)
             {
-                var monitorSetting = _config.GetValue("GS1", "MONITOR_CLIPBOARD");
+                var monitorSetting = _config.GetValue(AppSettings.Sections.Gs1, AppSettings.Keys.MonitorClipboard);
                 if (string.Equals(monitorSetting, "True", StringComparison.OrdinalIgnoreCase) || monitorSetting == "1")
                 {
                     CheckClipboardForGs1();

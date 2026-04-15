@@ -52,7 +52,7 @@ namespace SMS_Search.ViewModels
             LoadFontSettings();
             LoadAnyMatchConfig();
 
-            if (System.Enum.TryParse(_configService.GetValue("GENERAL", "DEFAULT_TABLE_ACTION"), out DefaultTableAction tableAction))
+            if (System.Enum.TryParse(_configService.GetValue(AppSettings.Sections.Search, AppSettings.Keys.DefaultTableAction), out DefaultTableAction tableAction))
             {
                 if (tableAction == DefaultTableAction.QueryRecords)
                 {
@@ -64,11 +64,11 @@ namespace SMS_Search.ViewModels
                 }
             }
 
-            if (System.Enum.TryParse(_configService.GetValue("GENERAL", "DEFAULT_TAB"), out DefaultSearchTabMode tabMode))
+            if (System.Enum.TryParse(_configService.GetValue(AppSettings.Sections.Search, AppSettings.Keys.DefaultTab), out DefaultSearchTabMode tabMode))
             {
                 if (tabMode == DefaultSearchTabMode.Last)
                 {
-                    if (System.Enum.TryParse(_configService.GetValue("MAIN", "LAST_TAB"), out SearchMode lastMode))
+                    if (System.Enum.TryParse(_configService.GetValue(AppSettings.Sections.Main, AppSettings.Keys.LastTab), out SearchMode lastMode))
                     {
                         SelectedMode = lastMode;
                     }
@@ -99,22 +99,22 @@ namespace SMS_Search.ViewModels
 
         private void InitializeIntellisense()
         {
-            var server = _configService.GetValue("CONNECTION", "SERVER") ?? "";
-            var database = _configService.GetValue("CONNECTION", "DATABASE") ?? "";
+            var server = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
+            var database = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "";
 
             string user = "";
             string? decryptedPass = null;
 
             bool isWindowsAuth = true;
-            if (bool.TryParse(_configService.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b))
+            if (bool.TryParse(_configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
             {
                 isWindowsAuth = b;
             }
 
             if (!isWindowsAuth)
             {
-                user = _configService.GetValue("CONNECTION", "SQLUSER") ?? "";
-                var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
+                user = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
+                var pass = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
                 decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
             }
 
@@ -124,10 +124,10 @@ namespace SMS_Search.ViewModels
 
         private void LoadFontSettings()
         {
-            string? font = _configService.GetValue("GENERAL", "SQL_FONT_FAMILY");
+            string? font = _configService.GetValue(AppSettings.Sections.Editor, AppSettings.Keys.SqlFontFamily);
             SqlFontFamily = string.IsNullOrEmpty(font) ? "Consolas" : font;
 
-            if (int.TryParse(_configService.GetValue("GENERAL", "SQL_FONT_SIZE"), out int size))
+            if (int.TryParse(_configService.GetValue(AppSettings.Sections.Editor, AppSettings.Keys.SqlFontSize), out int size))
             {
                 SqlFontSize = size;
             }
@@ -136,7 +136,7 @@ namespace SMS_Search.ViewModels
         private void LoadAnyMatchConfig()
         {
             bool defaultMatch = true;
-            if (bool.TryParse(_configService.GetValue("GENERAL", "ANY_MATCH_DEFAULT"), out bool result))
+            if (bool.TryParse(_configService.GetValue(AppSettings.Sections.Search, AppSettings.Keys.AnyMatchDefault), out bool result))
             {
                 defaultMatch = result;
             }
@@ -377,13 +377,13 @@ namespace SMS_Search.ViewModels
         private void LoadCleanSqlRules()
         {
              _cleanSqlRules.Clear();
-             string? countStr = _configService.GetValue("CLEAN_SQL", "Count");
+             string? countStr = _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.CleanSqlCount);
              if (int.TryParse(countStr, out int count) && count > 0)
              {
                  for (int i = 0; i < count; i++)
                  {
-                     string? pattern = _configService.GetValue("CLEAN_SQL", "Rule_" + i + "_Regex");
-                     string? replacement = _configService.GetValue("CLEAN_SQL", "Rule_" + i + "_Replace");
+                     string? pattern = _configService.GetValue(AppSettings.Sections.CleanSql, "Rule_" + i + "_Regex");
+                     string? replacement = _configService.GetValue(AppSettings.Sections.CleanSql, "Rule_" + i + "_Replace");
                      if (!string.IsNullOrEmpty(pattern))
                      {
                          _cleanSqlRules.Add(new SqlCleaningRule { Pattern = pattern, Replacement = replacement ?? "" });
@@ -493,7 +493,7 @@ namespace SMS_Search.ViewModels
              }
 
              // Apply Formatting if enabled
-             if (_configService.GetValue("CLEAN_SQL", "BEAUTIFY_SQL") != "0")
+             if (_configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.BeautifySql) != "0")
              {
                  cleaned = BeautifySql(cleaned);
              }
@@ -502,7 +502,7 @@ namespace SMS_Search.ViewModels
              else if (SelectedMode == SearchMode.Totalizer) TotalizerSqlText = cleaned;
              else if (SelectedMode == SearchMode.Field) FieldSqlText = cleaned;
 
-             if (_configService.GetValue("GENERAL", "COPYCLEANSQL") == "1")
+             if (_configService.GetValue(AppSettings.Sections.General, AppSettings.Keys.CopyCleanSql) == "1")
              {
                  _clipboardService.SetText(cleaned);
              }
@@ -513,17 +513,17 @@ namespace SMS_Search.ViewModels
         {
             try
             {
-                int indentSpaces = int.TryParse(_configService.GetValue("CLEAN_SQL", "INDENT_STRING_SPACES"), out int val) ? val : 2;
+                int indentSpaces = int.TryParse(_configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.IndentStringSpaces), out int val) ? val : 2;
                 string indentStr = new string(' ', indentSpaces);
 
-                bool expandCommaLists = _configService.GetValue("CLEAN_SQL", "EXPAND_COMMA_LISTS") != null ? _configService.GetValue("CLEAN_SQL", "EXPAND_COMMA_LISTS") == "1" : true;
-                bool expandBooleanExpressions = _configService.GetValue("CLEAN_SQL", "EXPAND_BOOLEAN_EXPRESSIONS") != null ? _configService.GetValue("CLEAN_SQL", "EXPAND_BOOLEAN_EXPRESSIONS") == "1" : true;
-                bool expandCaseExpressions = _configService.GetValue("CLEAN_SQL", "EXPAND_CASE_EXPRESSIONS") != null ? _configService.GetValue("CLEAN_SQL", "EXPAND_CASE_EXPRESSIONS") == "1" : true;
-                bool expandBetweenConditions = _configService.GetValue("CLEAN_SQL", "EXPAND_BETWEEN_CONDITIONS") != null ? _configService.GetValue("CLEAN_SQL", "EXPAND_BETWEEN_CONDITIONS") == "1" : true;
-                bool expandInLists = _configService.GetValue("CLEAN_SQL", "EXPAND_IN_LISTS") != null ? _configService.GetValue("CLEAN_SQL", "EXPAND_IN_LISTS") == "1" : true;
-                bool breakJoinOnSections = _configService.GetValue("CLEAN_SQL", "BREAK_JOIN_ON_SECTIONS") != null ? _configService.GetValue("CLEAN_SQL", "BREAK_JOIN_ON_SECTIONS") == "1" : false;
-                bool uppercaseKeywords = _configService.GetValue("CLEAN_SQL", "UPPERCASE_KEYWORDS") != null ? _configService.GetValue("CLEAN_SQL", "UPPERCASE_KEYWORDS") == "1" : true;
-                bool keywordStandardization = _configService.GetValue("CLEAN_SQL", "KEYWORD_STANDARDIZATION") != null ? _configService.GetValue("CLEAN_SQL", "KEYWORD_STANDARDIZATION") == "1" : false;
+                bool expandCommaLists = _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandCommaLists) != null ? _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandCommaLists) == "1" : true;
+                bool expandBooleanExpressions = _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandBooleanExpressions) != null ? _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandBooleanExpressions) == "1" : true;
+                bool expandCaseExpressions = _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandCaseExpressions) != null ? _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandCaseExpressions) == "1" : true;
+                bool expandBetweenConditions = _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandBetweenConditions) != null ? _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandBetweenConditions) == "1" : true;
+                bool expandInLists = _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandInLists) != null ? _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.ExpandInLists) == "1" : true;
+                bool breakJoinOnSections = _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.BreakJoinOnSections) != null ? _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.BreakJoinOnSections) == "1" : false;
+                bool uppercaseKeywords = _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.UppercaseKeywords) != null ? _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.UppercaseKeywords) == "1" : true;
+                bool keywordStandardization = _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.KeywordStandardization) != null ? _configService.GetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.KeywordStandardization) == "1" : false;
 
                 var treeFormatter = new PoorMansTSqlFormatterLib.Formatters.TSqlStandardFormatter(
                     indentString: indentStr,
@@ -591,8 +591,8 @@ namespace SMS_Search.ViewModels
 
             if (criteria.Type == SearchType.CustomSql) return;
 
-            string fctFields = _configService.GetValue("QUERY", "FUNCTION") ?? "";
-            string tlzFields = _configService.GetValue("QUERY", "TOTALIZER") ?? "";
+            string fctFields = _configService.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Function) ?? "";
+            string tlzFields = _configService.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Totalizer) ?? "";
             var qb = new QueryBuilder(fctFields, tlzFields);
 
             var result = qb.Build(criteria);
@@ -633,7 +633,7 @@ namespace SMS_Search.ViewModels
             }
 
             // Only switch to Custom SQL mode if setting is enabled (default: true)
-            string? selectCustomSqlStr = _configService.GetValue("GENERAL", "SELECT_CUSTOM_SQL_ON_BUILD");
+            string? selectCustomSqlStr = _configService.GetValue(AppSettings.Sections.Search, AppSettings.Keys.SelectCustomSqlOnBuild);
             bool selectCustomSql = selectCustomSqlStr != "0"; // Default true if null or "1"
 
             if (selectCustomSql)
@@ -673,21 +673,21 @@ namespace SMS_Search.ViewModels
 
             try
             {
-                 var server = _configService.GetValue("CONNECTION", "SERVER") ?? "";
-                 var database = _configService.GetValue("CONNECTION", "DATABASE") ?? "";
+                 var server = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
+                 var database = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "";
                  string user = "";
                  string? decryptedPass = null;
 
                  bool isWindowsAuth = true;
-                 if (bool.TryParse(_configService.GetValue("CONNECTION", "WINDOWSAUTH"), out bool b))
+                 if (bool.TryParse(_configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
                  {
                      isWindowsAuth = b;
                  }
 
                  if (!isWindowsAuth)
                  {
-                     user = _configService.GetValue("CONNECTION", "SQLUSER") ?? "";
-                     var pass = _configService.GetValue("CONNECTION", "SQLPASSWORD");
+                     user = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
+                     var pass = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
                      decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
                  }
 

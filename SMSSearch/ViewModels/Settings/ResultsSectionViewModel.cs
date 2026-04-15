@@ -25,8 +25,8 @@ namespace SMS_Search.ViewModels.Settings
 
             // Show Row Numbers
             ShowRowNumbers = new ObservableSetting<bool>(
-                repository, "RESULTS", "SHOW_ROW_NUMBERS",
-                repository.GetValue("RESULTS", "SHOW_ROW_NUMBERS") == "1",
+                repository, AppSettings.Sections.Results, AppSettings.Keys.ShowRowNumbers,
+                repository.GetValue(AppSettings.Sections.Results, AppSettings.Keys.ShowRowNumbers) == "1",
                 v => v ? "1" : "0");
 
             ShowRowNumbers.PropertyChanged += (s, e) =>
@@ -39,8 +39,8 @@ namespace SMS_Search.ViewModels.Settings
 
             // Highlight Matches
             HighlightMatches = new ObservableSetting<bool>(
-                repository, "RESULTS", "HIGHLIGHT_MATCHES",
-                repository.GetValue("RESULTS", "HIGHLIGHT_MATCHES") == "1",
+                repository, AppSettings.Sections.Results, AppSettings.Keys.HighlightMatches,
+                repository.GetValue(AppSettings.Sections.Results, AppSettings.Keys.HighlightMatches) == "1",
                 v => v ? "1" : "0");
 
             HighlightMatches.PropertyChanged += (s, e) =>
@@ -52,11 +52,11 @@ namespace SMS_Search.ViewModels.Settings
             };
 
             // Highlight Color
-            string? highlightColor = repository.GetValue("RESULTS", "HIGHLIGHT_COLOR");
+            string? highlightColor = repository.GetValue(AppSettings.Sections.Results, AppSettings.Keys.HighlightColor);
             if (string.IsNullOrEmpty(highlightColor)) highlightColor = "#FFFFE0"; // Light Yellow
 
             HighlightColor = new ObservableSetting<string>(
-                repository, "RESULTS", "HIGHLIGHT_COLOR",
+                repository, AppSettings.Sections.Results, AppSettings.Keys.HighlightColor,
                 highlightColor,
                 v => v);
 
@@ -70,33 +70,33 @@ namespace SMS_Search.ViewModels.Settings
 
             // Resize Columns
             ResizeColumns = new ObservableSetting<bool>(
-                repository, "RESULTS", "RESIZECOLUMNS",
-                repository.GetValue("RESULTS", "RESIZECOLUMNS") == "1",
+                repository, AppSettings.Sections.Results, AppSettings.Keys.ResizeColumns,
+                repository.GetValue(AppSettings.Sections.Results, AppSettings.Keys.ResizeColumns) == "1",
                 v => v ? "1" : "0");
 
             // Description Columns
             DescriptionColumns = new ObservableSetting<bool>(
-                repository, "RESULTS", "DESCRIPTIONCOLUMNS",
-                repository.GetValue("RESULTS", "DESCRIPTIONCOLUMNS") == "1",
+                repository, AppSettings.Sections.Results, AppSettings.Keys.DescriptionColumns,
+                repository.GetValue(AppSettings.Sections.Results, AppSettings.Keys.DescriptionColumns) == "1",
                 v => v ? "1" : "0");
 
             // Auto Resize Limit
             int limit = 5000;
-            if (int.TryParse(repository.GetValue("RESULTS", "AUTO_RESIZE_LIMIT"), out int l))
+            if (int.TryParse(repository.GetValue(AppSettings.Sections.Results, AppSettings.Keys.AutoResizeLimit), out int l))
                 limit = l;
 
             AutoResizeLimit = new ObservableSetting<int>(
-                repository, "RESULTS", "AUTO_RESIZE_LIMIT",
+                repository, AppSettings.Sections.Results, AppSettings.Keys.AutoResizeLimit,
                 limit,
                 v => v.ToString());
 
             // Horizontal Scroll Speed
             int scrollSpeed = 16;
-            if (int.TryParse(repository.GetValue("RESULTS", "HORIZONTAL_SCROLL_SPEED"), out int s))
+            if (int.TryParse(repository.GetValue(AppSettings.Sections.Results, AppSettings.Keys.HorizontalScrollSpeed), out int s))
                 scrollSpeed = s;
 
             HorizontalScrollSpeed = new ObservableSetting<int>(
-                repository, "RESULTS", "HORIZONTAL_SCROLL_SPEED",
+                repository, AppSettings.Sections.Results, AppSettings.Keys.HorizontalScrollSpeed,
                 scrollSpeed,
                 v => v.ToString());
 
