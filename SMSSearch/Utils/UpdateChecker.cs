@@ -87,7 +87,7 @@ namespace SMS_Search.Utils
                                     _loggerService.LogInfo($"Update check: New version found ({tagName})");
                                     return new UpdateInfo
                                     {
-                                        Version = tagName,
+                                        Version = $"v{versionStr}",
                                         DownloadUrl = downloadUrl,
                                         ReleaseUrl = releaseUrl,
                                         Changelog = body,

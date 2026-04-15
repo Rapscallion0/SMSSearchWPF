@@ -24,9 +24,9 @@ namespace SMS_Search.Views.Windows
             string currentVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "Unknown";
 
             var headerText = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 10) };
-            headerText.Inlines.Add(new Run("Current Version: ") { FontWeight = FontWeights.Bold });
-            headerText.Inlines.Add(new Run($"{currentVersion}\n"));
-            headerText.Inlines.Add(new Run("New Version: ") { FontWeight = FontWeights.Bold });
+            headerText.Inlines.Add(new Run("Your Version: ") { FontWeight = FontWeights.Bold });
+            headerText.Inlines.Add(new Run($"v{currentVersion}\n"));
+            headerText.Inlines.Add(new Run("Available Version: ") { FontWeight = FontWeights.Bold });
             headerText.Inlines.Add(new Run($"{updateInfo.Version}\n\n"));
             headerText.Inlines.Add(new Run("Changelog:") { FontWeight = FontWeights.Bold });
             ChangelogPanel.Children.Add(headerText);
