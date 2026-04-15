@@ -66,16 +66,14 @@ namespace SMS_Search.Views
                     actualTypedText = text.Substring(0, textBox.SelectionStart);
                 }
 
-                vm.FilterTables(actualTypedText);
-
-                bool isTypingForward = !_isDeleting && actualTypedText.Length > _lastTypedText.Length && actualTypedText.StartsWith(_lastTypedText, StringComparison.OrdinalIgnoreCase);
+                bool isTypingForward = !_isDeleting && actualTypedText.Length >= _lastTypedText.Length && actualTypedText.StartsWith(_lastTypedText, StringComparison.OrdinalIgnoreCase);
                 _lastTypedText = actualTypedText;
                 _isDeleting = false;
 
                 string? startsWithMatch = null;
-                if (isTypingForward && !string.IsNullOrEmpty(actualTypedText))
+                if (!string.IsNullOrEmpty(actualTypedText))
                 {
-                    foreach (var item in vm.TablesView)
+                    foreach (var item in vm.Tables)
                     {
                         if (item is string str && str.StartsWith(actualTypedText, StringComparison.OrdinalIgnoreCase))
                         {

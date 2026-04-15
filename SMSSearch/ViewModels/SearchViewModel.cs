@@ -240,22 +240,6 @@ namespace SMS_Search.ViewModels
 
         public ICollectionView TablesView { get; private set; }
 
-        public void FilterTables(string searchText)
-        {
-            if (TablesView == null) return;
-
-            TablesView.Filter = (obj) =>
-            {
-                if (string.IsNullOrEmpty(searchText)) return true;
-                if (obj is string str)
-                {
-                    return str.IndexOf(searchText, System.StringComparison.OrdinalIgnoreCase) >= 0;
-                }
-                return false;
-            };
-            TablesView.Refresh();
-        }
-
         private class TableSortComparer : System.Collections.IComparer
         {
             private readonly string _searchText;
