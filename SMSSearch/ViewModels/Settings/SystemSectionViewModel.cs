@@ -110,7 +110,7 @@ namespace SMS_Search.ViewModels.Settings
 
             string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
             var version = exePath != null ? System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath).FileVersion : "Unknown";
-            UpdateStatusMessage = $"Your version: V{version}";
+            UpdateStatusMessage = $"Your Version: v{version}";
 
             if (CheckUpdate.Value)
             {
@@ -137,12 +137,12 @@ namespace SMS_Search.ViewModels.Settings
 
                 if (info.IsNewer)
                 {
-                    UpdateStatusMessage = $"An updated version is available!\n\nYour version: V{version}\nAvailable: V{info.Version}";
+                    UpdateStatusMessage = $"An updated version is available!\n\nYour Version: v{version}\nAvailable Version: {info.Version}";
                     UpdateStatusColor = "Red";
                 }
                 else
                 {
-                    UpdateStatusMessage = $"Application is up to date: V{version}";
+                    UpdateStatusMessage = $"Application is up to date: v{version}";
                     UpdateStatusColor = "Green";
                 }
             }
@@ -165,7 +165,7 @@ namespace SMS_Search.ViewModels.Settings
                 if (info.IsNewer)
                 {
                     _loggerService.LogInfo($"Update found manually: {info.Version}");
-                    UpdateStatusMessage = $"An updated version is available!\n\nYour version: V{version}\nAvailable: V{info.Version}";
+                    UpdateStatusMessage = $"An updated version is available!\n\nYour Version: v{version}\nAvailable Version: {info.Version}";
                     UpdateStatusColor = "Red";
 
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -178,7 +178,7 @@ namespace SMS_Search.ViewModels.Settings
                 else
                 {
                     _loggerService.LogInfo($"No updates found manually. Current version is {version}");
-                    UpdateStatusMessage = $"Application is up to date: V{version}";
+                    UpdateStatusMessage = $"Application is up to date: v{version}";
                     UpdateStatusColor = "Green";
                     _dialogService.ShowToast("You are on the latest version.", "Update", ToastType.Success);
                 }

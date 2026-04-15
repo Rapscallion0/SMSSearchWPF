@@ -57,7 +57,7 @@ namespace SMS_Search.ViewModels
             ImportVm = new ImportViewModel(repository, logger, dialogService, config, this);
 
             var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version;
-            Title = $"SMS Search - V{version}";
+            Title = $"SMS Search - v{version}";
 
             _lastKnownDate = DateTime.Today;
             GregorianDate = _lastKnownDate;
