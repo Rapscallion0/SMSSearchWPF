@@ -99,37 +99,11 @@
                                Width="16" Height="16"/>
                     </Button>
                     <ToggleButton Command="{Binding OpenImportCommand}" IsChecked="{Binding IsImportTargetVisible, Mode=OneWay}" ToolTip="Import Files"
-                                  Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,10,0">
-                        <ToggleButton.Style>
-                             <Style TargetType="ToggleButton">
-                                 <Setter Property="Template">
-                                     <Setter.Value>
-                                         <ControlTemplate TargetType="ToggleButton">
-                                             <Border Background="Transparent">
-                                                 <ContentPresenter/>
-                                             </Border>
-                                         </ControlTemplate>
-                                     </Setter.Value>
-                                 </Setter>
-                             </Style>
-                        </ToggleButton.Style>
+                                  Style="{StaticResource TransparentIconToggleButtonStyle}" Margin="0,0,10,0">
                         <Control Template="{StaticResource Icon_Import}" Width="16" Height="16"/>
                     </ToggleButton>
                     <ToggleButton Command="{Binding OpenUnarchiveCommand}" IsChecked="{Binding IsUnarchiveTargetVisible, Mode=OneWay}" ToolTip="Unarchive Target"
-                                  Background="Transparent" BorderThickness="0" Padding="0">
-                        <ToggleButton.Style>
-                             <Style TargetType="ToggleButton">
-                                 <Setter Property="Template">
-                                     <Setter.Value>
-                                         <ControlTemplate TargetType="ToggleButton">
-                                             <Border Background="Transparent">
-                                                 <ContentPresenter/>
-                                             </Border>
-                                         </ControlTemplate>
-                                     </Setter.Value>
-                                 </Setter>
-                             </Style>
-                        </ToggleButton.Style>
+                                  Style="{StaticResource TransparentIconToggleButtonStyle}">
                         <Image Source="/Resources/Unarchive.png" Width="16" Height="16"/>
                     </ToggleButton>
                 </StackPanel>
