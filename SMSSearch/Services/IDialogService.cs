@@ -23,5 +23,6 @@ namespace SMS_Search.Services
         string? PickColor(string? defaultColor = null);
         void ShowToast(string message, string title, ToastType type = ToastType.Info, string? details = null, string? filePath = null, System.Windows.Window? owner = null);
         ExistingTableAction ShowTableExistsPrompt(string tableName);
+        SMS_Search.Models.MissingColumnDialogResult ShowMissingColumnsPrompt(string tableName, System.Collections.Generic.List<SMS_Search.Models.MissingColumnInfo> missingColumns);
     }
 }

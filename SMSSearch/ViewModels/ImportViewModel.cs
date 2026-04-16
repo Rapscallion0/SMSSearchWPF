@@ -327,6 +327,9 @@ namespace SMS_Search.ViewModels
                     },
                     tableName => {
                         return Task.FromResult(_dialogService.ShowTableExistsPrompt(tableName));
+                    },
+                    (tableName, missingColumns) => {
+                        return Task.FromResult(_dialogService.ShowMissingColumnsPrompt(tableName, missingColumns));
                     });
 
                 _dialogService.ShowToast("Import completed successfully.", "Import", Views.ToastType.Success);

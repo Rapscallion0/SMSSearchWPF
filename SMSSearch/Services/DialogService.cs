@@ -125,5 +125,27 @@ namespace SMS_Search.Services
             // Fallback if no UI thread context exists
             return ExistingTableAction.Skip;
         }
+
+        public Models.MissingColumnDialogResult ShowMissingColumnsPrompt(string tableName, System.Collections.Generic.List<Models.MissingColumnInfo> missingColumns)
+        {
+            if (System.Windows.Application.Current != null && System.Windows.Application.Current.Dispatcher != null)
+            {
+                return System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    var dlg = new Views.Windows.MissingColumnsDialog(tableName, missingColumns);
+                    var mainWindow = System.Windows.Application.Current.MainWindow;
+                    if (mainWindow != null && mainWindow.IsVisible)
+                    {
+                        dlg.Owner = mainWindow;
+                    }
+
+                    dlg.ShowDialog();
+                    return dlg.Result;
+                });
+            }
+
+            // Fallback if no UI thread context exists
+            return new Models.MissingColumnDialogResult { Action = Models.MissingColumnAction.Cancel, Columns = missingColumns };
+        }
     }
 }
