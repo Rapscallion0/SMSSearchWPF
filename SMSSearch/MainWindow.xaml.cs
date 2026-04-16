@@ -330,7 +330,29 @@ namespace SMS_Search
 
         private void DatabaseComboBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if (e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Tab)
+            if (e.Key == System.Windows.Input.Key.Back)
+            {
+                if (sender is System.Windows.Controls.ComboBox cmb)
+                {
+                    var textBox = cmb.Template.FindName("PART_EditableTextBox", cmb) as System.Windows.Controls.TextBox;
+                    if (textBox != null && textBox.SelectionLength > 0 && textBox.SelectionStart + textBox.SelectionLength == textBox.Text.Length)
+                    {
+                        if (textBox.SelectionStart > 0)
+                        {
+                            string newText = textBox.Text.Substring(0, textBox.SelectionStart - 1);
+                            textBox.Text = newText;
+                            textBox.CaretIndex = newText.Length;
+                            _lastTypedText = newText;
+                            _isDeleting = false;
+                            _typingTimer.Stop();
+                            _typingTimer.Start();
+                            e.Handled = true;
+                            return;
+                        }
+                    }
+                }
+            }
+            else if (e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Tab)
             {
                 if (sender is System.Windows.Controls.ComboBox cmb)
                 {
