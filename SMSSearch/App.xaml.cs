@@ -64,7 +64,7 @@ namespace SMS_Search
             services.AddTransient<ResultsViewModel>();
             services.AddTransient<EulaViewModel>();
             services.AddTransient<UnarchiveViewModel>();
-            services.AddTransient<Gs1ToolkitViewModel>();
+            services.AddSingleton<Gs1ToolkitViewModel>();
 
             // New Settings ViewModels
             services.AddTransient<GeneralSectionViewModel>();

@@ -87,13 +87,24 @@ namespace SMS_Search.Services.Gs1
                         {
                             if (_dialogService.ShowConfirmation($"GS1 code detected on clipboard:\n\n{text}\n\nDo you want to open it in the GS1 Toolkit?", "GS1 Code Detected"))
                             {
-                                var window = _serviceProvider.GetRequiredService<SMS_Search.Views.Gs1.Gs1ToolkitWindow>();
-                                var vm = _serviceProvider.GetRequiredService<Gs1ToolkitViewModel>();
-                                window.DataContext = vm;
-                                window.Owner = System.Windows.Application.Current.MainWindow;
+                                var window = System.Windows.Application.Current.Windows.OfType<SMS_Search.Views.Gs1.Gs1ToolkitWindow>().FirstOrDefault();
+                                if (window == null || !window.IsLoaded)
+                                {
+                                    window = _serviceProvider.GetRequiredService<SMS_Search.Views.Gs1.Gs1ToolkitWindow>();
+                                    window.DataContext = _serviceProvider.GetRequiredService<Gs1ToolkitViewModel>();
+                                    window.Show();
+                                }
 
-                                vm.RawBarcode = text;
-                                window.ShowDialog();
+                                if (window.DataContext is Gs1ToolkitViewModel vm)
+                                {
+                                    vm.RawBarcode = text;
+                                }
+
+                                if (window.WindowState == System.Windows.WindowState.Minimized)
+                                {
+                                    window.WindowState = System.Windows.WindowState.Normal;
+                                }
+                                window.Activate();
                             }
                         }));
                     }
