@@ -762,7 +762,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task PerformImportProcessAsync(string server, string? user, string? pass, string targetDatabase, string templateDatabase, List<string> sqlFiles, Action<ViewModels.ImportProgressInfo> progressCallback, Func<string, Task<Services.ExistingTableAction>> tableExistsPromptCallback, CancellationToken cancellationToken = default)
+        public async Task PerformImportProcessAsync(string server, string? user, string? pass, string targetDatabase, string templateDatabase, List<string> sqlFiles, Action<ViewModels.ImportProgressInfo> progressCallback, Func<string, Task<Services.ExistingTableAction>> tableExistsPromptCallback, Func<string, List<Models.MissingColumnInfo>, Task<Models.MissingColumnDialogResult>> missingColumnsPromptCallback, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1048,6 +1048,104 @@ namespace SMS_Search.Data
                                 try
                                 {
                                     await targetConn.ExecuteAsync(new CommandDefinition(processedStmt, cancellationToken: cancellationToken));
+                                }
+                                catch (SqlException sqlEx) when (sqlEx.Number == 207)
+                                {
+                                    // Error 207: Invalid column name.
+                                    var viewMatch = System.Text.RegularExpressions.Regex.Match(processedStmt, @"CREATE\s+VIEW\s+(?:\[?[a-zA-Z0-9_]+\]?)\s+AS\s+SELECT\s+(.+?)\s+FROM\s+\[?([a-zA-Z0-9_]+)\]?", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                                    if (viewMatch.Success)
+                                    {
+                                        string viewColsStr = viewMatch.Groups[1].Value;
+                                        string tableName = viewMatch.Groups[2].Value;
+                                        var viewCols = viewColsStr.Split(',').Select(c => c.Trim().Trim('[', ']')).ToList();
+
+                                        var existingCols = new List<string>();
+                                        try
+                                        {
+                                            var cmdDef = new CommandDefinition($"SELECT TOP 0 * FROM [{tableName}]", cancellationToken: cancellationToken);
+                                            using (var reader = await targetConn.ExecuteReaderAsync(cmdDef))
+                                            {
+                                                for (int i = 0; i < reader.FieldCount; i++)
+                                                {
+                                                    existingCols.Add(reader.GetName(i));
+                                                }
+                                            }
+                                        }
+                                        catch
+                                        {
+                                            // Table doesn't exist or we can't read it, just throw
+                                            throw new Exception($"Statement failed: {processedStmt}. Error: {sqlEx.Message}", sqlEx);
+                                        }
+
+                                        var missingColsInfo = new List<Models.MissingColumnInfo>();
+                                        foreach (var col in viewCols)
+                                        {
+                                            bool existsInTarget = existingCols.Any(c => c.Equals(col, StringComparison.OrdinalIgnoreCase));
+                                            if (!existsInTarget)
+                                            {
+                                                missingColsInfo.Add(new Models.MissingColumnInfo
+                                                {
+                                                    ColumnName = col,
+                                                    IsInSource = true,
+                                                    IsInTarget = false,
+                                                    ShouldImport = true,
+                                                    SuggestedDataType = "VARCHAR(MAX)"
+                                                });
+                                            }
+                                        }
+
+                                        if (missingColsInfo.Count > 0)
+                                        {
+                                            var dialogResult = await missingColumnsPromptCallback(tableName, missingColsInfo);
+
+                                            if (dialogResult.Action == Models.MissingColumnAction.Cancel)
+                                            {
+                                                throw new Exception("Import cancelled by user due to missing columns.");
+                                            }
+
+                                            // Apply chosen column additions
+                                            var colsToKeepInView = new List<string>();
+                                            foreach (var col in viewCols)
+                                            {
+                                                var missingInfo = dialogResult.Columns.FirstOrDefault(c => c.ColumnName.Equals(col, StringComparison.OrdinalIgnoreCase));
+                                                if (missingInfo != null)
+                                                {
+                                                    if (missingInfo.ShouldImport)
+                                                    {
+                                                        string addColSql = $"ALTER TABLE [{tableName}] ADD [{col}] {missingInfo.SuggestedDataType}";
+                                                        await targetConn.ExecuteAsync(new CommandDefinition(addColSql, cancellationToken: cancellationToken));
+                                                        colsToKeepInView.Add(col);
+                                                    }
+                                                    // if !ShouldImport, we just don't add it to colsToKeepInView
+                                                }
+                                                else
+                                                {
+                                                    // Was already existing in target, so keep it
+                                                    colsToKeepInView.Add(col);
+                                                }
+                                            }
+
+                                            // Reconstruct the CREATE VIEW statement without the skipped columns
+                                            string reconstructedStmt = System.Text.RegularExpressions.Regex.Replace(processedStmt, @"(CREATE\s+VIEW\s+(?:\[?[a-zA-Z0-9_]+\]?)\s+AS\s+SELECT\s+).+?(\s+FROM\s+\[?[a-zA-Z0-9_]+\]?)", $"${{1}}{string.Join(",", colsToKeepInView)}${{2}}", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                                            try
+                                            {
+                                                await targetConn.ExecuteAsync(new CommandDefinition(reconstructedStmt, cancellationToken: cancellationToken));
+                                            }
+                                            catch (Exception ex2)
+                                            {
+                                                throw new Exception($"Statement failed after resolving columns: {reconstructedStmt}. Error: {ex2.Message}", ex2);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            throw new Exception($"Statement failed: {processedStmt}. Error: {sqlEx.Message}", sqlEx);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        throw new Exception($"Statement failed: {processedStmt}. Error: {sqlEx.Message}", sqlEx);
+                                    }
                                 }
                                 catch (Exception ex)
                                 {
