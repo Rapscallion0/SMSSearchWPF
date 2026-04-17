@@ -19,9 +19,50 @@
 
         <DataGrid x:Name="ColumnsGrid" Grid.Row="2" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" Margin="0,0,0,20" HeadersVisibility="Column" SelectionMode="Single">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Column Name" Binding="{Binding ColumnName}" IsReadOnly="True" Width="1.5*"/>
-                <DataGridCheckBoxColumn Header="In Template" Binding="{Binding IsInTarget}" IsReadOnly="True" Width="*"/>
-                <DataGridCheckBoxColumn Header="In Source" Binding="{Binding IsInSource}" IsReadOnly="True" Width="*"/>
+                <DataGridTextColumn Header="Column Name" Binding="{Binding ColumnName}" IsReadOnly="True" Width="1.5*">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTemplateColumn Header="In Template" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ContentControl HorizontalAlignment="Center" VerticalAlignment="Center" Width="16" Height="16">
+                                <ContentControl.Style>
+                                    <Style TargetType="ContentControl">
+                                        <Setter Property="Template" Value="{StaticResource Icon_Clear}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsInTarget}" Value="True">
+                                                <Setter Property="Template" Value="{StaticResource Icon_Check}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ContentControl.Style>
+                            </ContentControl>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="In Source" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ContentControl HorizontalAlignment="Center" VerticalAlignment="Center" Width="16" Height="16">
+                                <ContentControl.Style>
+                                    <Style TargetType="ContentControl">
+                                        <Setter Property="Template" Value="{StaticResource Icon_Clear}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsInSource}" Value="True">
+                                                <Setter Property="Template" Value="{StaticResource Icon_Check}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ContentControl.Style>
+                            </ContentControl>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
 
                 <DataGridTemplateColumn Header="Import" Width="60">
                     <DataGridTemplateColumn.CellTemplate>
@@ -38,7 +79,8 @@
                         <DataTemplate>
                             <ComboBox SelectedValue="{Binding SuggestedDataType, UpdateSourceTrigger=PropertyChanged}"
                                       IsEnabled="{Binding ShouldImport}"
-                                      IsEditable="True">
+                                      IsEditable="True"
+                                      VerticalAlignment="Center">
                                 <ComboBoxItem Content="VARCHAR(MAX)"/>
                                 <ComboBoxItem Content="INT"/>
                                 <ComboBoxItem Content="FLOAT"/>

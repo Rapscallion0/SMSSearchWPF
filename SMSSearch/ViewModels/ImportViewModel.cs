@@ -310,27 +310,59 @@ namespace SMS_Search.ViewModels
 
                 // Call the actual logic (which we will implement next in DataRepository)
                 // For now, let's just create a shell method in DataRepository to handle this.
+                _logger.LogInfo($"Starting import process for target DB: {fullTargetDbName} from template DB: {TemplateDatabaseName}");
                 await _repository.PerformImportProcessAsync(server, user, decryptedPass, fullTargetDbName, TemplateDatabaseName, SelectedFiles.ToList(),
                     progress => {
-                        App.Current.Dispatcher.Invoke(() => {
-                            if (progress.IsIndeterminate)
-                            {
-                                IsProgressIndeterminate = true;
-                            }
-                            else
-                            {
-                                IsProgressIndeterminate = false;
-                                ProgressValue = progress.Percentage;
-                            }
-                            ProgressStatusText = progress.Message;
-                        });
+                        try
+                        {
+                            App.Current.Dispatcher.Invoke(() => {
+                                if (progress.IsIndeterminate)
+                                {
+                                    IsProgressIndeterminate = true;
+                                }
+                                else
+                                {
+                                    IsProgressIndeterminate = false;
+                                    ProgressValue = progress.Percentage;
+                                }
+                                ProgressStatusText = progress.Message;
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError("Error updating UI progress during import", ex);
+                        }
                     },
                     tableName => {
-                        return Task.FromResult(_dialogService.ShowTableExistsPrompt(tableName));
+                        try
+                        {
+                            _logger.LogInfo($"Prompting user for existing table action: {tableName}");
+                            var result = _dialogService.ShowTableExistsPrompt(tableName);
+                            _logger.LogInfo($"User selected action for existing table {tableName}: {result}");
+                            return Task.FromResult(result);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Error displaying TableExistsPrompt for table {tableName}", ex);
+                            throw;
+                        }
                     },
                     (tableName, missingColumns) => {
-                        return Task.FromResult(_dialogService.ShowMissingColumnsPrompt(tableName, missingColumns));
+                        try
+                        {
+                            _logger.LogInfo($"Prompting user for missing columns on table: {tableName}. Missing count: {missingColumns?.Count ?? 0}");
+                            var result = _dialogService.ShowMissingColumnsPrompt(tableName, missingColumns ?? new List<Models.MissingColumnInfo>());
+                            _logger.LogInfo($"User completed missing columns prompt for table {tableName}. Action selected: {result.Action}");
+                            return Task.FromResult(result);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Error displaying MissingColumnsPrompt for table {tableName}", ex);
+                            throw;
+                        }
                     });
+
+                _logger.LogInfo("Import process completed successfully from view model perspective.");
 
                 _dialogService.ShowToast("Import completed successfully.", "Import", Views.ToastType.Success);
 
