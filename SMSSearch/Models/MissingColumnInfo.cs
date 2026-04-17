@@ -18,7 +18,7 @@ namespace SMS_Search.Models
         // Per-column selection for columns that are in Source but not in Target
         public bool ShouldImport { get; set; } = true;
 
-        public string SuggestedDataType { get; set; } = "VARCHAR(MAX)";
+        public string SuggestedDataType { get; set; } = "varchar(max)";
     }
 
     public class MissingColumnDialogResult

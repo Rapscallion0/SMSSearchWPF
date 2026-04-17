@@ -1089,7 +1089,7 @@ namespace SMS_Search.Data
                                                     IsInSource = true,
                                                     IsInTarget = false,
                                                     ShouldImport = true,
-                                                    SuggestedDataType = "VARCHAR(MAX)"
+                                                    SuggestedDataType = "varchar(max)"
                                                 });
                                             }
                                         }
