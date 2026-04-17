@@ -21,6 +21,57 @@ namespace SMS_Search.Views
             DataContext = viewModel;
 
             _viewModel.RequestClose += () => Close();
+            _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+        }
+
+        private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(UnarchiveViewModel.IsCompleted))
+            {
+                if (_viewModel.IsCompleted)
+                {
+                    // Animate the checkmark
+                    System.Windows.Media.Animation.Storyboard sb = new System.Windows.Media.Animation.Storyboard();
+
+                    // 1. Fade in immediately
+                    System.Windows.Media.Animation.DoubleAnimation fadeIn = new System.Windows.Media.Animation.DoubleAnimation
+                    {
+                        From = 0,
+                        To = 1,
+                        Duration = new Duration(TimeSpan.FromMilliseconds(50))
+                    };
+                    System.Windows.Media.Animation.Storyboard.SetTarget(fadeIn, CheckmarkPath);
+                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(fadeIn, new PropertyPath("Opacity"));
+
+                    // 2. Draw the path
+                    System.Windows.Media.Animation.DoubleAnimation drawPath = new System.Windows.Media.Animation.DoubleAnimation
+                    {
+                        From = 120,
+                        To = 0,
+                        Duration = new Duration(TimeSpan.FromMilliseconds(400)),
+                        EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+                    };
+                    System.Windows.Media.Animation.Storyboard.SetTarget(drawPath, CheckmarkPath);
+                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(drawPath, new PropertyPath("StrokeDashOffset"));
+
+                    // 3. Fade out after the 3 seconds (IsCompleted duration is 4000ms now)
+                    System.Windows.Media.Animation.DoubleAnimation fadeOut = new System.Windows.Media.Animation.DoubleAnimation
+                    {
+                        From = 1,
+                        To = 0,
+                        BeginTime = TimeSpan.FromMilliseconds(3000), // Start fading out after 3 seconds
+                        Duration = new Duration(TimeSpan.FromMilliseconds(1000))
+                    };
+                    System.Windows.Media.Animation.Storyboard.SetTarget(fadeOut, CheckmarkPath);
+                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(fadeOut, new PropertyPath("Opacity"));
+
+                    sb.Children.Add(fadeIn);
+                    sb.Children.Add(drawPath);
+                    sb.Children.Add(fadeOut);
+
+                    sb.Begin();
+                }
+            }
         }
 
         protected override void OnSourceInitialized(EventArgs e)

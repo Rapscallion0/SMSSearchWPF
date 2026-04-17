@@ -19,5 +19,9 @@
             </ContextMenu>
         </Grid.ContextMenu>
         <Control Template="{StaticResource Icon_UnarchiveNew}" ToolTip="Drop files here to unarchive" />
+        <Path x:Name="CheckmarkPath" Stroke="Green" StrokeThickness="15" StrokeEndLineCap="Round" StrokeStartLineCap="Round" StrokeLineJoin="Round"
+              Data="M25,65 L50,90 L95,25" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center"
+              StrokeDashArray="120" StrokeDashOffset="120" Opacity="0">
+        </Path>
     </Grid>
 </Window>
