@@ -10,9 +10,8 @@
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <AssemblyVersion>3.0.9.26107</AssemblyVersion>
-    <FileVersion>3.0.9.26107</FileVersion>
-    <InformationalVersion>3.0.3.26065</InformationalVersion>
+    <AssemblyVersion>3.0.7.26107</AssemblyVersion>
+    <FileVersion>3.0.7.26107</FileVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <ApplicationIcon>Resources\SMS Search.ico</ApplicationIcon>
     <AssemblyName>SMS Search</AssemblyName>
