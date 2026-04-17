@@ -23,6 +23,12 @@ namespace SMS_Search
         public new static App Current => (App)System.Windows.Application.Current;
         public IServiceProvider Services { get; }
 
+        private static System.Threading.Mutex? _mutex = null;
+        private static System.Threading.EventWaitHandle? _showEvent = null;
+        public static bool IsListenerRunning { get; private set; } = false;
+        private Window? _hiddenWindow = null;
+
+
         public App()
         {
             Services = ConfigureServices();
@@ -87,6 +93,137 @@ namespace SMS_Search
             return services.BuildServiceProvider();
         }
 
+
+        public void StartListener()
+        {
+            if (IsListenerRunning) return;
+
+            if (_hiddenWindow == null)
+            {
+                _hiddenWindow = new Window
+                {
+                    Title = "SMS_Search_Listener_Hidden_Window",
+                    Width = 0,
+                    Height = 0,
+                    WindowStyle = WindowStyle.None,
+                    ShowInTaskbar = false,
+                    Visibility = Visibility.Hidden
+                };
+                _hiddenWindow.Show();
+                _hiddenWindow.Hide();
+            }
+
+            var hotkeyService = Services.GetRequiredService<IHotkeyService>();
+            var config = Services.GetRequiredService<IConfigService>();
+            var logger = Services.GetRequiredService<ILoggerService>();
+
+            string? hotkeyStr = config.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.Hotkey);
+            if (!string.IsNullOrEmpty(hotkeyStr))
+            {
+                try
+                {
+                    var (key, modifiers) = HotkeyUtils.Parse(hotkeyStr);
+                    if (key != Key.None)
+                    {
+                        var helper = new WindowInteropHelper(_hiddenWindow);
+                        HwndSource.FromHwnd(helper.Handle).AddHook(hotkeyService.ProcessMessage);
+                        hotkeyService.Register(helper.Handle, key, modifiers, () =>
+                        {
+                            try
+                            {
+                                ShowMainWindow();
+                            }
+                            catch (Exception ex)
+                            {
+                                logger.LogError("Failed to launch application from hotkey", ex);
+                            }
+                        });
+                        IsListenerRunning = true;
+                        logger.LogInfo("Listener mode started.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError("Error registering hotkey", ex);
+                }
+            }
+        }
+
+        public void StopListener()
+        {
+            if (!IsListenerRunning) return;
+
+            var hotkeyService = Services.GetRequiredService<IHotkeyService>();
+            if (hotkeyService is IDisposable disposableHotkey)
+            {
+                disposableHotkey.Dispose();
+            }
+
+            if (_hiddenWindow != null)
+            {
+                _hiddenWindow.Close();
+                _hiddenWindow = null;
+            }
+
+            IsListenerRunning = false;
+            var logger = Services.GetRequiredService<ILoggerService>();
+            logger.LogInfo("Listener mode stopped.");
+        }
+
+        public void ShowMainWindow()
+        {
+            if (this.MainWindow != null && this.MainWindow.IsLoaded)
+            {
+                if (this.MainWindow.WindowState == WindowState.Minimized)
+                {
+                    this.MainWindow.WindowState = WindowState.Normal;
+                }
+                this.MainWindow.Activate();
+                this.MainWindow.Focus();
+            }
+            else
+            {
+                var mainWindow = Services.GetRequiredService<MainWindow>();
+                this.MainWindow = mainWindow;
+                mainWindow.Closed += (s, e) =>
+                {
+                    if (!IsListenerRunning)
+                    {
+                        Shutdown();
+                    }
+                };
+                mainWindow.Show();
+
+                // Update Check
+                var configService = Services.GetRequiredService<IConfigService>();
+                var logger = Services.GetRequiredService<ILoggerService>();
+                if (configService.GetValue(AppSettings.Sections.System, AppSettings.Keys.CheckUpdate) == "1")
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var updateChecker = Services.GetRequiredService<UpdateChecker>();
+                            var info = await updateChecker.CheckForUpdatesAsync();
+                            if (info.IsNewer)
+                            {
+                                await Dispatcher.InvokeAsync(() =>
+                                {
+                                    var updateWindow = new SMS_Search.Views.Windows.UpdateWindow(info, updateChecker);
+                                    updateWindow.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(x => x.IsActive && !(x is SMS_Search.Views.ToastWindow)) ?? mainWindow;
+                                    updateWindow.ShowDialog();
+                                });
+                            }
+                        }
+                        catch (Exception updateEx)
+                        {
+                            logger.LogError("Background update check failed", updateEx);
+                        }
+                    });
+                }
+            }
+        }
+
         protected override void OnExit(ExitEventArgs e)
         {
             try
@@ -107,6 +244,41 @@ namespace SMS_Search
 
         protected override async void OnStartup(StartupEventArgs e)
         {
+            const string mutexName = "Local\\SMS_Search_App_Mutex";
+            const string eventName = "Local\\SMS_Search_Show_Event";
+
+            bool createdNew;
+            _mutex = new System.Threading.Mutex(true, mutexName, out createdNew);
+
+            if (!createdNew)
+            {
+                // App is already running. Signal it to wake up.
+                try
+                {
+                    var showEvent = System.Threading.EventWaitHandle.OpenExisting(eventName);
+                    showEvent.Set();
+                }
+                catch { }
+
+                // Exit this instance
+                Environment.Exit(0);
+                return;
+            }
+
+            // We are the first instance. Create the event listener for future instances.
+            _showEvent = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.AutoReset, eventName);
+            _ = Task.Run(() =>
+            {
+                while (true)
+                {
+                    _showEvent.WaitOne();
+                    Dispatcher.Invoke(() =>
+                    {
+                        ShowMainWindow();
+                    });
+                }
+            });
+
             try
             {
                 base.OnStartup(e);
@@ -214,101 +386,19 @@ namespace SMS_Search
 
                 logger.LogInfo("Application starting...");
 
-                bool isListener = false;
-                foreach (var arg in e.Args)
+                string? hotkeyStr = configService.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.Hotkey);
+                if (!string.IsNullOrEmpty(hotkeyStr))
                 {
-                    if (arg == "--listener")
-                    {
-                        isListener = true;
-                        break;
-                    }
+                    StartListener();
                 }
 
-                if (isListener)
+                // If not started with --listener, show the main window immediately.
+                bool isListenerArg = e.Args.Contains("--listener");
+                if (!isListenerArg)
                 {
-                    var hiddenWindow = new Window
-                    {
-                        Title = "SMS_Search_Listener_Hidden_Window",
-                        Width = 0,
-                        Height = 0,
-                        WindowStyle = WindowStyle.None,
-                        ShowInTaskbar = false,
-                        Visibility = Visibility.Hidden
-                    };
-                    hiddenWindow.Show();
-                    hiddenWindow.Hide();
-
-                    var hotkeyService = Services.GetRequiredService<IHotkeyService>();
-                    var config = Services.GetRequiredService<IConfigService>();
-
-                    string? hotkeyStr = config.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.Hotkey);
-                    if (!string.IsNullOrEmpty(hotkeyStr))
-                    {
-                        try
-                        {
-                            var (key, modifiers) = HotkeyUtils.Parse(hotkeyStr);
-                            if (key != Key.None)
-                            {
-                                var helper = new WindowInteropHelper(hiddenWindow);
-                                HwndSource.FromHwnd(helper.Handle).AddHook(hotkeyService.ProcessMessage);
-                                hotkeyService.Register(helper.Handle, key, modifiers, () =>
-                                {
-                                    try
-                                    {
-                                        string? fileName = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
-                                        if (fileName != null)
-                                        {
-                                            System.Diagnostics.Process.Start(fileName);
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        logger.LogError("Failed to launch application", ex);
-                                    }
-                                });
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.LogError("Error registering hotkey", ex);
-                        }
-                    }
-
-                    logger.LogInfo("Listener mode started.");
+                    ShowMainWindow();
                 }
-                else
-                {
-                    var mainWindow = Services.GetRequiredService<MainWindow>();
-                    this.MainWindow = mainWindow;
-                    this.ShutdownMode = ShutdownMode.OnMainWindowClose;
-                    mainWindow.Show();
 
-                    // Update Check after window is shown to avoid blocking startup
-                    if (configService.GetValue(AppSettings.Sections.System, AppSettings.Keys.CheckUpdate) == "1")
-                    {
-                        _ = Task.Run(async () =>
-                        {
-                            try
-                            {
-                                var updateChecker = Services.GetRequiredService<UpdateChecker>();
-                                var info = await updateChecker.CheckForUpdatesAsync();
-                                if (info.IsNewer)
-                                {
-                                    await Dispatcher.InvokeAsync(() =>
-                                    {
-                                        var updateWindow = new SMS_Search.Views.Windows.UpdateWindow(info, updateChecker);
-                                        updateWindow.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(x => x.IsActive && !(x is SMS_Search.Views.ToastWindow)) ?? mainWindow;
-                                        updateWindow.ShowDialog();
-                                    });
-                                }
-                            }
-                            catch (Exception updateEx)
-                            {
-                                logger.LogError("Background update check failed", updateEx);
-                            }
-                        });
-                    }
-                }
             }
             catch (Exception ex)
             {
