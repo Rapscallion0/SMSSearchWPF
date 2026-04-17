@@ -804,7 +804,7 @@ namespace SMS_Search.Data
                 }
 
                 // 2. Base tables to copy from Template DB to Target DB
-                string[] baseTables = new[] { "RB_FIELDS", "RB_TABLES", "INFORMATION_SCHEMA.KEY_COLUMN_USAGE" };
+                string[] baseTables = new[] { "RB_FIELDS", "RB_TABLES" };
 
                 int totalSteps = baseTables.Length + sqlFiles.Count;
                 int currentStep = 0;
@@ -820,9 +820,6 @@ namespace SMS_Search.Data
 
                     // We need to copy these into the target database.
                     // For standard tables we can use SELECT * INTO
-                    // For INFORMATION_SCHEMA we can't do SELECT * INTO Target.INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-                    // So we skip system views if requested, but user specifically asked for INFORMATION_SCHEMA.KEY_COLUMN_USAGE.
-                    // Let's create a snapshot of it in dbo if they want it.
                     string targetTableName = table.Contains(".") ? table.Split('.')[1] : table;
                     string sourceTableName = table.Contains(".") ? table : $"[dbo].[{table}]";
 
