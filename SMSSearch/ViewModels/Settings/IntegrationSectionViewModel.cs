@@ -203,12 +203,11 @@ namespace SMS_Search.ViewModels.Settings
             ServiceStatusText = "Starting...";
             try
             {
-                string? fileName = Process.GetCurrentProcess().MainModule?.FileName;
-                if (fileName != null)
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
-                    Process.Start(new ProcessStartInfo(fileName, "--listener") { UseShellExecute = true });
-                    _logger.LogInfo("Service started manually.");
-                }
+                    ((App)System.Windows.Application.Current).StartListener();
+                });
+                _logger.LogInfo("Service started manually.");
             }
             catch (Exception ex)
             {
@@ -228,14 +227,11 @@ namespace SMS_Search.ViewModels.Settings
             ServiceStatusText = "Stopping...";
             try
             {
-                IntPtr hWnd = FindWindow(null, "SMS_Search_Listener_Hidden_Window");
-                if (hWnd != IntPtr.Zero)
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
-                    GetWindowThreadProcessId(hWnd, out uint pid);
-                    var proc = Process.GetProcessById((int)pid);
-                    proc.Kill();
-                    _logger.LogInfo("Service stopped manually.");
-                }
+                    ((App)System.Windows.Application.Current).StopListener();
+                });
+                _logger.LogInfo("Service stopped manually.");
             }
             catch (Exception ex)
             {
@@ -263,11 +259,9 @@ namespace SMS_Search.ViewModels.Settings
 
         private void CheckServiceStatus()
         {
-            IntPtr hWnd = FindWindow(null, "SMS_Search_Listener_Hidden_Window");
-            bool running = hWnd != IntPtr.Zero;
-
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
+                bool running = App.IsListenerRunning;
                 if (running)
                 {
                     ServiceStatusText = "Running";
