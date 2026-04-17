@@ -1100,6 +1100,7 @@ namespace SMS_Search.Data
 
                                             if (dialogResult.Action == Models.MissingColumnAction.Cancel)
                                             {
+                                                _logger.LogWarning("User cancelled import during Missing Columns dialog.");
                                                 throw new Exception("Import cancelled by user due to missing columns.");
                                             }
 
@@ -1130,25 +1131,31 @@ namespace SMS_Search.Data
 
                                             try
                                             {
+                                                _logger.LogDebug($"Executing reconstructed CREATE VIEW statement: {reconstructedStmt}");
                                                 await targetConn.ExecuteAsync(new CommandDefinition(reconstructedStmt, cancellationToken: cancellationToken));
+                                                _logger.LogInfo("Successfully created view after resolving missing columns.");
                                             }
                                             catch (Exception ex2)
                                             {
+                                                _logger.LogError($"Statement failed after resolving columns: {reconstructedStmt}", ex2);
                                                 throw new Exception($"Statement failed after resolving columns: {reconstructedStmt}. Error: {ex2.Message}", ex2);
                                             }
                                         }
                                         else
                                         {
+                                            _logger.LogError($"Statement failed (could not parse missing columns): {processedStmt}", sqlEx);
                                             throw new Exception($"Statement failed: {processedStmt}. Error: {sqlEx.Message}", sqlEx);
                                         }
                                     }
                                     else
                                     {
+                                        _logger.LogError($"Statement failed (regex match failed for view creation): {processedStmt}", sqlEx);
                                         throw new Exception($"Statement failed: {processedStmt}. Error: {sqlEx.Message}", sqlEx);
                                     }
                                 }
                                 catch (Exception ex)
                                 {
+                                    _logger.LogError($"Statement failed: {processedStmt}", ex);
                                     throw new Exception($"Statement failed: {processedStmt}. Error: {ex.Message}", ex);
                                 }
                             }
