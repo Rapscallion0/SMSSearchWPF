@@ -18,7 +18,6 @@
                 <MenuItem Header="Close target" Command="{Binding CloseCommand}"/>
             </ContextMenu>
         </Grid.ContextMenu>
-        <Control Template="{StaticResource Icon_Unarchive}" ToolTip="Drop files here to unarchive"
-                 Tag="{Binding IsCompleted}" />
+        <Control Template="{StaticResource Icon_UnarchiveNew}" ToolTip="Drop files here to unarchive" />
     </Grid>
 </Window>

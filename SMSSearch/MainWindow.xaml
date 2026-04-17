@@ -104,7 +104,7 @@
                     </ToggleButton>
                     <ToggleButton Command="{Binding OpenUnarchiveCommand}" IsChecked="{Binding IsUnarchiveTargetVisible, Mode=OneWay}" ToolTip="Unarchive Target"
                                   Style="{StaticResource TransparentIconToggleButtonStyle}">
-                        <Image Source="/Resources/Unarchive.png" Width="16" Height="16"/>
+                        <Control Template="{StaticResource Icon_UnarchiveNew}" Width="16" Height="16"/>
                     </ToggleButton>
                 </StackPanel>
             </StatusBarItem>
