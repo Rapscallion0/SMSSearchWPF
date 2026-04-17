@@ -82,7 +82,7 @@ namespace SMS_Search.ViewModels
                 // Optional: Notify user or just log
                 _logger.LogInfo($"Unarchived {count} files.");
                 IsCompleted = true;
-                await Task.Delay(3000);
+                await Task.Delay(4000);
                 IsCompleted = false;
             }
         }
