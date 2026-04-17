@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:SMS_Search.ViewModels"
         mc:Ignorable="d"
-        Title="Unarchive" Height="100" Width="100"
+        Title="Unarchive" Height="130" Width="130"
         WindowStyle="None" ResizeMode="NoResize"
         AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False"

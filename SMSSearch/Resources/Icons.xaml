@@ -472,91 +472,91 @@
             <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Control}}" Data="{StaticResource Geometry_Chevron_Double_Right}" />
         </Viewbox>
     </ControlTemplate>
+
+    <!-- Unarchive Target -->
     <ControlTemplate x:Key="Icon_UnarchiveNew" TargetType="Control">
         <Viewbox Stretch="Uniform">
             <Canvas Width="101" Height="104">
-                <Path Data="M 99.732334,51.965958 A 49.35717,50.915817 0 0 1 50.375164,102.88177 49.35717,50.915817 0 0 1 1.0179939,51.965958 49.35717,50.915817 0 0 1 50.375164,1.0501404 49.35717,50.915817 0 0 1 99.732334,51.965958 Z" Fill="#800000" />
-                <Path Data="M 87.670795,51.965958 A 37.295631,38.473389 0 0 1 50.375164,90.439346 37.295631,38.473389 0 0 1 13.079533,51.965958 37.295631,38.473389 0 0 1 50.375164,13.492569 37.295631,38.473389 0 0 1 87.670795,51.965958 Z" Fill="Transparent" Stroke="Black" StrokeThickness="0.408141" />
-                <Path Data="M 75.915426,51.965958 A 25.540262,26.346794 0 0 1 50.375164,78.312752 25.540262,26.346794 0 0 1 24.834902,51.965958 25.540262,26.346794 0 0 1 50.375164,25.619164 25.540262,26.346794 0 0 1 75.915426,51.965958 Z" Fill="#800000" />
+
+                <Path Data="M 50.5,2 A 50,50 0 1 1 50.4,2 Z" Fill="#800000" />
+
+                <Path Data="M 50.5,14 A 38,38 0 1 1 50.4,14 Z" Fill="Black" />
+
+                <Path Data="M 50.5,26 A 26,26 0 1 1 50.4,26 Z" Fill="#800000" />
+
                 <Canvas>
                     <Canvas.RenderTransform>
-                        <MatrixTransform Matrix="0.97979173,0,0,0.97979173,-50.002098,-107.16828" />
+                        <MatrixTransform Matrix="0.9797,0,0,0.9797,-50.0, -107.5" />
                     </Canvas.RenderTransform>
+
                     <Canvas>
                         <Path Data="M 73.4,140.6 L 147,105.1 L 147,84.7 L 73.4,102.5 L 0,84.5 L 0,104.6 Z" Fill="#2a2a2a">
                             <Path.RenderTransform>
-                                <MatrixTransform Matrix="0.26458333,0,0,0.26458333,83.000675,143.81618" />
+                                <MatrixTransform Matrix="0.2645,0,0,0.2645,83.0,143.8" />
                             </Path.RenderTransform>
                         </Path>
                         <Path Data="M 73.4,102.5 L 57.5,98.6 L 73.4,140.6 Z" Fill="#3b3b3b">
                             <Path.RenderTransform>
-                                <MatrixTransform Matrix="0.26458333,0,0,0.26458333,83.000675,143.81618" />
+                                <MatrixTransform Matrix="0.2645,0,0,0.2645,83.0,143.8" />
                             </Path.RenderTransform>
                         </Path>
                         <Path Data="M 73.4,140.6 L 147,105.1 L 147,84.7 L 73.4,102.5 Z">
                             <Path.Fill>
-                                <LinearGradientBrush StartPoint="73.400002,29.299999" EndPoint="147.0,29.299999" MappingMode="Absolute">
-                                    <LinearGradientBrush.Transform>
-                                        <MatrixTransform Matrix="1,0,0,-1,0,142" />
-                                    </LinearGradientBrush.Transform>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                                     <GradientStop Offset="0.0" Color="#000000" />
                                     <GradientStop Offset="1.0" Color="#2a2a2a" />
                                 </LinearGradientBrush>
                             </Path.Fill>
                             <Path.RenderTransform>
-                                <MatrixTransform Matrix="0.26458333,0,0,0.26458333,83.000675,143.81618" />
+                                <MatrixTransform Matrix="0.2645,0,0,0.2645,83.0,143.8" />
                             </Path.RenderTransform>
                         </Path>
                     </Canvas>
+
                     <Canvas>
                         <Path Data="M 73.4,48.4 L 147,60.2 L 147,80.5 L 73.4,92.4 L 0,80.3 L 0,60.4 Z" Fill="#d60015">
                             <Path.RenderTransform>
-                                <MatrixTransform Matrix="0.26458333,0,0,0.26458333,83.000675,143.81618" />
+                                <MatrixTransform Matrix="0.2645,0,0,0.2645,83.0,143.8" />
                             </Path.RenderTransform>
                         </Path>
                         <Path Data="M 54,89.2 L 73.4,92.4 L 73.4,48.4 L 40.6,53.7 Z" Fill="#e6001d">
                             <Path.RenderTransform>
-                                <MatrixTransform Matrix="0.26458333,0,0,0.26458333,83.000675,143.81618" />
+                                <MatrixTransform Matrix="0.2645,0,0,0.2645,83.0,143.8" />
                             </Path.RenderTransform>
                         </Path>
                         <Path Data="M 73.4,92.4 L 147,80.5 L 147,60.2 L 73.4,48.4 Z">
                             <Path.Fill>
-                                <LinearGradientBrush StartPoint="73.400002,71.599998" EndPoint="147.0,71.599998" MappingMode="Absolute">
-                                    <LinearGradientBrush.Transform>
-                                        <MatrixTransform Matrix="1,0,0,-1,0,142" />
-                                    </LinearGradientBrush.Transform>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                                     <GradientStop Offset="0.0" Color="#930012" />
                                     <GradientStop Offset="1.0" Color="#d60015" />
                                 </LinearGradientBrush>
                             </Path.Fill>
                             <Path.RenderTransform>
-                                <MatrixTransform Matrix="0.26458333,0,0,0.26458333,83.000675,143.81618" />
+                                <MatrixTransform Matrix="0.2645,0,0,0.2645,83.0,143.8" />
                             </Path.RenderTransform>
                         </Path>
                     </Canvas>
+
                     <Canvas>
                         <Path Data="M 147,35.7 L 73.4,0 L 0,36 L 0,56.1 L 73.4,38.1 L 147,55.9 Z" Fill="#f1b100">
                             <Path.RenderTransform>
-                                <MatrixTransform Matrix="0.26458333,0,0,0.26458333,83.000675,143.81618" />
+                                <MatrixTransform Matrix="0.2645,0,0,0.2645,83.0,143.8" />
                             </Path.RenderTransform>
                         </Path>
                         <Path Data="M 38,46.8 L 73.4,38.1 L 73.4,0 L 28.6,22 Z" Fill="#f7d000">
                             <Path.RenderTransform>
-                                <MatrixTransform Matrix="0.26458333,0,0,0.26458333,83.000675,143.81618" />
+                                <MatrixTransform Matrix="0.2645,0,0,0.2645,83.0,143.8" />
                             </Path.RenderTransform>
                         </Path>
                         <Path Data="M 73.4,38.1 L 147,55.9 L 147,35.7 L 73.4,0 Z">
                             <Path.Fill>
-                                <LinearGradientBrush StartPoint="73.400002,114.0" EndPoint="147.0,114.0" MappingMode="Absolute">
-                                    <LinearGradientBrush.Transform>
-                                        <MatrixTransform Matrix="1,0,0,-1,0,142" />
-                                    </LinearGradientBrush.Transform>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                                     <GradientStop Offset="0.0" Color="#aa7900" />
                                     <GradientStop Offset="1.0" Color="#f1b100" />
                                 </LinearGradientBrush>
                             </Path.Fill>
                             <Path.RenderTransform>
-                                <MatrixTransform Matrix="0.26458333,0,0,0.26458333,83.000675,143.81618" />
+                                <MatrixTransform Matrix="0.2645,0,0,0.2645,83.0,143.8" />
                             </Path.RenderTransform>
                         </Path>
                     </Canvas>
