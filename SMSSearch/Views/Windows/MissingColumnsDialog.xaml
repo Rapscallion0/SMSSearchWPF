@@ -77,15 +77,20 @@
                 <DataGridTemplateColumn Header="Data Type" Width="1.5*">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <ComboBox SelectedValue="{Binding SuggestedDataType, UpdateSourceTrigger=PropertyChanged}"
+                            <ComboBox Text="{Binding SuggestedDataType, UpdateSourceTrigger=PropertyChanged}"
                                       IsEnabled="{Binding ShouldImport}"
                                       IsEditable="True"
                                       VerticalAlignment="Center">
-                                <ComboBoxItem Content="VARCHAR(MAX)"/>
-                                <ComboBoxItem Content="INT"/>
-                                <ComboBoxItem Content="FLOAT"/>
-                                <ComboBoxItem Content="DATETIME"/>
-                                <ComboBoxItem Content="BIT"/>
+                                <ComboBoxItem Content="int"/>
+                                <ComboBoxItem Content="bigint"/>
+                                <ComboBoxItem Content="decimal(18,2)"/>
+                                <ComboBoxItem Content="float"/>
+                                <ComboBoxItem Content="bit"/>
+                                <ComboBoxItem Content="varchar(max)"/>
+                                <ComboBoxItem Content="nvarchar(255)"/>
+                                <ComboBoxItem Content="char(n)"/>
+                                <ComboBoxItem Content="date"/>
+                                <ComboBoxItem Content="datetime2"/>
                             </ComboBox>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
