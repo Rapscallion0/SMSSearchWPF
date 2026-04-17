@@ -202,10 +202,22 @@ namespace SMS_Search
 
         private void OnRequestOpenGs1Toolkit()
         {
-            var gs1Window = App.Current.Services.GetRequiredService<SMS_Search.Views.Gs1.Gs1ToolkitWindow>();
-            gs1Window.DataContext = App.Current.Services.GetRequiredService<SMS_Search.ViewModels.Gs1.Gs1ToolkitViewModel>();
-            gs1Window.Owner = this;
-            gs1Window.Show();
+            var gs1Window = System.Windows.Application.Current.Windows.OfType<SMS_Search.Views.Gs1.Gs1ToolkitWindow>().FirstOrDefault();
+
+            if (gs1Window != null && gs1Window.IsLoaded)
+            {
+                if (gs1Window.WindowState == WindowState.Minimized)
+                {
+                    gs1Window.WindowState = WindowState.Normal;
+                }
+                gs1Window.Activate();
+            }
+            else
+            {
+                gs1Window = App.Current.Services.GetRequiredService<SMS_Search.Views.Gs1.Gs1ToolkitWindow>();
+                gs1Window.DataContext = App.Current.Services.GetRequiredService<SMS_Search.ViewModels.Gs1.Gs1ToolkitViewModel>();
+                gs1Window.Show();
+            }
         }
 
         private void OnRequestOpenSettings()
