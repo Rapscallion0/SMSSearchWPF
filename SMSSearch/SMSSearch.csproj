@@ -67,7 +67,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="Build" Condition="'$(IsPublishing)' == '' AND '$(OS)' == 'Windows_NT'">
-    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -Command &quot;Start-Process powershell.exe -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', '\&quot;$(MSBuildProjectDirectory)\..\publish.ps1\&quot;', '-Configuration', '$(Configuration)', '-FromVS') -Wait&quot;" />
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -Command &quot;$p = Start-Process powershell.exe -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', '\&quot;$(MSBuildProjectDirectory)\..\publish.ps1\&quot;', '-Configuration', '$(Configuration)', '-FromVS') -PassThru; $p.WaitForExit()&quot;" />
   </Target>
 
 </Project>
