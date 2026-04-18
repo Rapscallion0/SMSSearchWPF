@@ -172,14 +172,14 @@ namespace SMS_Search
 
         public void ShowMainWindow()
         {
-            if (this.MainWindow != null && this.MainWindow.IsLoaded)
+            if (this.MainWindow is MainWindow actualMainWindow && actualMainWindow.IsLoaded)
             {
-                if (this.MainWindow.WindowState == WindowState.Minimized)
+                if (actualMainWindow.WindowState == WindowState.Minimized)
                 {
-                    this.MainWindow.WindowState = WindowState.Normal;
+                    actualMainWindow.WindowState = WindowState.Normal;
                 }
-                this.MainWindow.Activate();
-                this.MainWindow.Focus();
+                actualMainWindow.Activate();
+                actualMainWindow.Focus();
             }
             else
             {
