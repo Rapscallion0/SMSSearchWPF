@@ -64,7 +64,7 @@ namespace SMS_Search.ViewModels.Settings
                 HotkeyDisplay = HotkeyUtils.GetFriendlyString(k, m);
             }
 
-            MonitorServiceStatus();
+            MonitorListenerStatus();
         }
 
         public ObservableSetting<bool> StartWithWindows { get; }
@@ -74,13 +74,13 @@ namespace SMS_Search.ViewModels.Settings
         private string _hotkeyDisplay = "";
 
         [ObservableProperty]
-        private string _serviceStatusText = "Checking...";
+        private string _listenerStatusText = "Checking...";
 
         [ObservableProperty]
         private System.Windows.Media.Brush _statusColor = System.Windows.Media.Brushes.Gray;
 
         [ObservableProperty]
-        private System.Windows.Visibility _serviceWarningVisibility = System.Windows.Visibility.Collapsed;
+        private System.Windows.Visibility _listenerWarningVisibility = System.Windows.Visibility.Collapsed;
 
         public void Dispose()
         {
@@ -197,82 +197,88 @@ namespace SMS_Search.ViewModels.Settings
         }
 
         [RelayCommand]
-        private async Task StartService()
+        private async Task StartListenerProcess()
         {
+            if (string.IsNullOrEmpty(StoredHotkey.Value))
+            {
+                _dialogService.ShowToast("Cannot start Listener: A hotkey must be configured first.", "Configuration Error", ToastType.Error);
+                return;
+            }
+
             StatusColor = System.Windows.Media.Brushes.Yellow;
-            ServiceStatusText = "Starting...";
+            ListenerStatusText = "Starting...";
             try
             {
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
                     ((App)System.Windows.Application.Current).StartListener();
                 });
-                _logger.LogInfo("Service started manually.");
+                _logger.LogInfo("Listener started manually.");
             }
             catch (Exception ex)
             {
-                _logger.LogError("Failed to start service", ex);
+                _logger.LogError("Failed to start listener", ex);
                 StatusColor = System.Windows.Media.Brushes.Red;
             }
 
             // Wait for polling to pick it up
             await Task.Delay(1000);
-            CheckServiceStatus();
+            CheckListenerStatus();
         }
 
         [RelayCommand]
-        private void StopService()
+        private void StopListenerProcess()
         {
             StatusColor = System.Windows.Media.Brushes.Yellow;
-            ServiceStatusText = "Stopping...";
+            ListenerStatusText = "Stopping...";
             try
             {
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
                     ((App)System.Windows.Application.Current).StopListener();
                 });
-                _logger.LogInfo("Service stopped manually.");
+                _logger.LogInfo("Listener stopped manually.");
             }
             catch (Exception ex)
             {
-                _logger.LogError("Failed to stop service", ex);
+                _logger.LogError("Failed to stop listener", ex);
             }
 
-            CheckServiceStatus();
+            CheckListenerStatus();
         }
 
-        private async void MonitorServiceStatus()
+        private async void MonitorListenerStatus()
         {
             try
             {
                 while (_isMonitoring)
                 {
-                    CheckServiceStatus();
+                    CheckListenerStatus();
                     await Task.Delay(2000);
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in MonitorServiceStatus: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error in MonitorListenerStatus: {ex.Message}");
             }
         }
 
-        private void CheckServiceStatus()
+        private void CheckListenerStatus()
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 bool running = App.IsListenerRunning;
                 if (running)
                 {
-                    ServiceStatusText = "Running";
+                    ListenerStatusText = "Running";
                     StatusColor = System.Windows.Media.Brushes.Green;
-                    ServiceWarningVisibility = System.Windows.Visibility.Collapsed;
+                    ListenerWarningVisibility = System.Windows.Visibility.Collapsed;
                 }
                 else
                 {
-                    ServiceStatusText = "Stopped";
+                    ListenerStatusText = "Stopped";
                     StatusColor = System.Windows.Media.Brushes.Red;
-                    ServiceWarningVisibility = System.Windows.Visibility.Visible;
+                    ListenerWarningVisibility = System.Windows.Visibility.Visible;
                 }
             });
         }
@@ -290,7 +296,7 @@ namespace SMS_Search.ViewModels.Settings
              if ("Launcher".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Hotkey".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Startup".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
-             if ("Service".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Listener".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Global".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
 
              return false;

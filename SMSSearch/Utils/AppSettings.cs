@@ -86,6 +86,7 @@ namespace SMS_Search.Utils
             // Launcher
             public const string StartWithWindows = "START_WITH_WINDOWS";
             public const string Hotkey = "HOTKEY";
+            public const string ListenerEnabled = "LISTENER_ENABLED";
 
             // Logging
             public const string Enabled = "ENABLED";

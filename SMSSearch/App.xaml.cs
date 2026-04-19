@@ -117,6 +117,9 @@ namespace SMS_Search
             var config = Services.GetRequiredService<IConfigService>();
             var logger = Services.GetRequiredService<ILoggerService>();
 
+            config.SetValue(AppSettings.Sections.Launcher, AppSettings.Keys.ListenerEnabled, "1");
+            config.Save();
+
             string? hotkeyStr = config.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.Hotkey);
             if (!string.IsNullOrEmpty(hotkeyStr))
             {
@@ -152,6 +155,10 @@ namespace SMS_Search
         public void StopListener()
         {
             if (!IsListenerRunning) return;
+
+            var config = Services.GetRequiredService<IConfigService>();
+            config.SetValue(AppSettings.Sections.Launcher, AppSettings.Keys.ListenerEnabled, "0");
+            config.Save();
 
             var hotkeyService = Services.GetRequiredService<IHotkeyService>();
             if (hotkeyService is IDisposable disposableHotkey)
@@ -387,7 +394,10 @@ namespace SMS_Search
                 logger.LogInfo("Application starting...");
 
                 string? hotkeyStr = configService.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.Hotkey);
-                if (!string.IsNullOrEmpty(hotkeyStr))
+                string? listenerEnabledStr = configService.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.ListenerEnabled);
+                bool listenerEnabled = listenerEnabledStr == "1";
+
+                if (!string.IsNullOrEmpty(hotkeyStr) && listenerEnabled)
                 {
                     StartListener();
                 }

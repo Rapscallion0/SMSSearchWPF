@@ -16,6 +16,7 @@
 
         <GroupBox Header="Global Hotkey">
             <StackPanel Margin="5">
+                <TextBlock Text="The Listener runs in the background and waits for the configured global hotkey to quickly bring SMSSearch to the foreground." TextWrapping="Wrap" Margin="0,0,0,10" Foreground="Gray"/>
                 <ctrl:SettingControl Header="Application Hotkey" IsSaved="{Binding StoredHotkey.IsSaved}">
                     <ctrl:ClearableTextBox Text="{Binding HotkeyDisplay, Mode=OneWay}"
                                            IsReadOnly="True"
@@ -24,21 +25,21 @@
                                            ClearCommand="{Binding ClearHotkeyCommand}" />
                 </ctrl:SettingControl>
 
-                <TextBlock Text="Service Status" FontWeight="SemiBold" Margin="0,15,0,5" />
+                <TextBlock Text="Listener Status" FontWeight="SemiBold" Margin="0,15,0,5" />
                 <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="10">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <Ellipse Width="12" Height="12" Fill="{Binding StatusColor}" Margin="0,0,10,0" />
-                            <TextBlock Text="{Binding ServiceStatusText}" FontWeight="Bold" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding ListenerStatusText}" FontWeight="Bold" VerticalAlignment="Center" />
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="Start Service" Command="{Binding StartServiceCommand}" Width="100" Margin="0,0,10,0" />
-                            <Button Content="Stop Service" Command="{Binding StopServiceCommand}" Width="100" />
+                            <Button Content="Start Listener" Command="{Binding StartListenerProcessCommand}" Width="100" Margin="0,0,10,0" />
+                            <Button Content="Stop Listener" Command="{Binding StopListenerProcessCommand}" Width="100" />
                         </StackPanel>
 
-                        <TextBlock Text="Service is stopped. Hotkey will not work." Foreground="Red" Margin="0,10,0,0"
-                                   Visibility="{Binding ServiceWarningVisibility}" />
+                        <TextBlock Text="Listener is stopped. Hotkey will not work." Foreground="Red" Margin="0,10,0,0"
+                                   Visibility="{Binding ListenerWarningVisibility}" />
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -47,7 +48,7 @@
         <GroupBox Header="Startup" Margin="0,10,0,0">
             <StackPanel Margin="5">
                 <ctrl:SettingControl Header="Start with Windows" IsSaved="{Binding StartWithWindows.IsSaved}">
-                    <CheckBox IsChecked="{Binding StartWithWindows.Value}" Content="Automatically start the background service when Windows starts" />
+                    <CheckBox IsChecked="{Binding StartWithWindows.Value}" Content="Automatically start the background listener when Windows starts" />
                 </ctrl:SettingControl>
             </StackPanel>
         </GroupBox>
