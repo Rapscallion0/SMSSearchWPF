@@ -405,21 +405,27 @@ namespace SMS_Search.Data
 
              using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
              {
+                 var columnsToExport = new List<(int Index, string Header)>();
+                 for (int i = 0; i < reader.FieldCount; i++)
+                 {
+                     string colName = reader.GetName(i);
+                     if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+
+                     string header = (headerMap != null && headerMap.ContainsKey(colName)) ? headerMap[colName] : colName;
+                     columnsToExport.Add((i, header));
+                 }
+
                  using (var writer = new StreamWriter(filename))
                  {
                      if (includeHeaders)
                      {
                          bool first = true;
-                         for (int i = 0; i < reader.FieldCount; i++)
+                         foreach (var col in columnsToExport)
                          {
-                             string colName = reader.GetName(i);
-                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
-
                              if (!first) writer.Write(",");
                              first = false;
 
-                             string header = (headerMap != null && headerMap.ContainsKey(colName)) ? headerMap[colName] : colName;
-                             writer.Write("\"" + header.Replace("\"", "\"\"") + "\"");
+                             writer.Write("\"" + col.Header.Replace("\"", "\"\"") + "\"");
                          }
                          writer.WriteLine();
                      }
@@ -428,15 +434,12 @@ namespace SMS_Search.Data
                      {
                          rowCount++;
                          bool first = true;
-                         for (int i = 0; i < reader.FieldCount; i++)
+                         foreach (var col in columnsToExport)
                          {
-                             string colName = reader.GetName(i);
-                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
-
                              if (!first) writer.Write(",");
                              first = false;
 
-                             var val = reader.GetValue(i);
+                             var val = reader.GetValue(col.Index);
                              string sVal = val == DBNull.Value ? "" : val.ToString() ?? "";
                              writer.Write("\"" + sVal.Replace("\"", "\"\"") + "\"");
                          }
@@ -498,19 +501,26 @@ namespace SMS_Search.Data
 
                      writer.WritePropertyName("Rows");
                      writer.WriteStartArray();
+
+                     var columnsToExport = new List<(int Index, string Header)>();
+                     for (int i = 0; i < reader.FieldCount; i++)
+                     {
+                         string colName = reader.GetName(i);
+                         if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+
+                         string header = (headerMap != null && headerMap.ContainsKey(colName)) ? headerMap[colName] : colName;
+                         columnsToExport.Add((i, header));
+                     }
+
                      while (await reader.ReadAsync(cancellationToken))
                      {
                          rowCount++;
                          writer.WriteStartObject();
-                         for (int i = 0; i < reader.FieldCount; i++)
+                         foreach (var col in columnsToExport)
                          {
-                             string colName = reader.GetName(i);
-                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+                             var val = reader.GetValue(col.Index);
 
-                             string header = (headerMap != null && headerMap.ContainsKey(colName)) ? headerMap[colName] : colName;
-                             var val = reader.GetValue(i);
-
-                             writer.WritePropertyName(header);
+                             writer.WritePropertyName(col.Header);
 
                              if (val == DBNull.Value) writer.WriteNullValue();
                              else if (val is bool b) writer.WriteBooleanValue(b);
@@ -579,29 +589,26 @@ namespace SMS_Search.Data
                      writer.WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
                      writer.WriteLine($"<{rootElement}{rootAttr}>");
 
-                     List<string> safeColNames = new List<string>();
-                     List<string> actualColNames = new List<string>();
+                     var columnsToExport = new List<(int Index, string Tag)>();
                      for (int i = 0; i < reader.FieldCount; i++)
                      {
-                         actualColNames.Add(reader.GetName(i));
-                         safeColNames.Add(MakeValidXmlName(reader.GetName(i)));
+                         string colName = reader.GetName(i);
+                         if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+
+                         columnsToExport.Add((i, MakeValidXmlName(colName)));
                      }
 
                      while (await reader.ReadAsync(cancellationToken))
                      {
                          rowCount++;
                          writer.WriteLine("  <Row>");
-                         for (int i = 0; i < reader.FieldCount; i++)
+                         foreach (var col in columnsToExport)
                          {
-                             string colName = actualColNames[i];
-                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
-
-                             var val = reader.GetValue(i);
+                             var val = reader.GetValue(col.Index);
                              if (val != DBNull.Value)
                              {
-                                 string tag = safeColNames[i];
                                  string? s = val.ToString();
-                                 writer.WriteLine($"    <{tag}>{EscapeXml(s ?? "")}</{tag}>");
+                                 writer.WriteLine($"    <{col.Tag}>{EscapeXml(s ?? "")}</{col.Tag}>");
                              }
                          }
                          writer.WriteLine("  </Row>");
@@ -628,14 +635,16 @@ namespace SMS_Search.Data
              {
                  using (var writer = new StreamWriter(filename))
                  {
+                     List<(int Index, string Name)> columnsToExport = new List<(int Index, string Name)>();
                      if (rows.Count > 0)
                      {
-                         var row = rows[0];
-                         var props = row.GetProperties();
+                         var props = rows[0].GetProperties();
                          bool first = true;
                          for (int i = 0; i < props.Count; i++)
                          {
                              if (hiddenColumns != null && hiddenColumns.Contains(props[i].Name)) continue;
+
+                             columnsToExport.Add((i, props[i].Name));
 
                              if (!first) writer.Write(",");
                              first = false;
@@ -648,17 +657,14 @@ namespace SMS_Search.Data
                      foreach (var row in rows)
                      {
                          rowCount++;
-                         var props = row.GetProperties();
                          bool first = true;
-                         for (int i = 0; i < props.Count; i++)
+                         foreach (var col in columnsToExport)
                          {
-                             if (hiddenColumns != null && hiddenColumns.Contains(props[i].Name)) continue;
-
                              if (!first) writer.Write(",");
                              first = false;
 
-                             var val = row.GetValue(i);
-                             string sVal = val == DBNull.Value ? "" : val?.ToString() ?? "";
+                             var val = row.GetValue(col.Index);
+                             string sVal = (val == null || val == DBNull.Value) ? "" : val.ToString() ?? "";
                              writer.Write("\"" + sVal.Replace("\"", "\"\"") + "\"");
                          }
                          writer.WriteLine();
@@ -710,19 +716,27 @@ namespace SMS_Search.Data
 
                      writer.WritePropertyName("Rows");
                      writer.WriteStartArray();
+
+                     List<(int Index, string Name)> columnsToExport = new List<(int Index, string Name)>();
+                     if (rows.Count > 0)
+                     {
+                         var props = rows[0].GetProperties();
+                         for (int i = 0; i < props.Count; i++)
+                         {
+                             if (hiddenColumns != null && hiddenColumns.Contains(props[i].Name)) continue;
+                             columnsToExport.Add((i, props[i].Name));
+                         }
+                     }
+
                      foreach (var row in rows)
                      {
                          rowCount++;
                          writer.WriteStartObject();
-                         var props = row.GetProperties();
-                         for (int i = 0; i < props.Count; i++)
+                         foreach (var col in columnsToExport)
                          {
-                             string colName = props[i].Name;
-                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+                             var val = row.GetValue(col.Index);
 
-                             var val = row.GetValue(i);
-
-                             writer.WritePropertyName(colName);
+                             writer.WritePropertyName(col.Name);
 
                              if (val == null || val == DBNull.Value) writer.WriteNullValue();
                              else if (val is bool b) writer.WriteBooleanValue(b);
@@ -782,15 +796,14 @@ namespace SMS_Search.Data
                      writer.WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
                      writer.WriteLine($"<{rootElement}{rootAttr}>");
 
-                     List<string> safeColNames = new List<string>();
-                     List<string> actualColNames = new List<string>();
+                     List<(int Index, string Tag)> columnsToExport = new List<(int Index, string Tag)>();
                      if (rows.Count > 0)
                      {
                          var props = rows[0].GetProperties();
                          for (int i = 0; i < props.Count; i++)
                          {
-                             actualColNames.Add(props[i].Name);
-                             safeColNames.Add(MakeValidXmlName(props[i].Name));
+                             if (hiddenColumns != null && hiddenColumns.Contains(props[i].Name)) continue;
+                             columnsToExport.Add((i, MakeValidXmlName(props[i].Name)));
                          }
                      }
 
@@ -798,18 +811,13 @@ namespace SMS_Search.Data
                      {
                          rowCount++;
                          writer.WriteLine("  <Row>");
-                         var props = row.GetProperties();
-                         for (int i = 0; i < props.Count; i++)
+                         foreach (var col in columnsToExport)
                          {
-                             string colName = actualColNames[i];
-                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
-
-                             var val = row.GetValue(i);
+                             var val = row.GetValue(col.Index);
                              if (val != null && val != DBNull.Value)
                              {
-                                 string tag = safeColNames[i];
                                  string? s = val.ToString();
-                                 writer.WriteLine($"    <{tag}>{EscapeXml(s ?? "")}</{tag}>");
+                                 writer.WriteLine($"    <{col.Tag}>{EscapeXml(s ?? "")}</{col.Tag}>");
                              }
                          }
                          writer.WriteLine("  </Row>");
