@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
@@ -18,15 +19,20 @@ namespace SMS_Search
                 string bootLog = Path.Combine(logDir, "SMSSearch_Boot.log");
                 File.AppendAllText(bootLog, $"[{DateTime.Now}] SMS Search process starting...\n");
             }
-            catch
+            catch (Exception ex)
             {
-                 // Fallback to temp if we can't write to exe dir
-                 try
-                 {
-                     string bootLog = Path.Combine(Path.GetTempPath(), "SMSSearch_Boot.log");
-                     File.AppendAllText(bootLog, $"[{DateTime.Now}] SMS Search process starting (Temp fallback)...\n");
-                 }
-                 catch {}
+                Trace.WriteLine(ex);
+                // Fallback to temp if we can't write to exe dir
+                try
+                {
+                    string bootLog = Path.Combine(Path.GetTempPath(), "SMSSearch_Boot.log");
+                    File.AppendAllText(bootLog, $"[{DateTime.Now}] SMS Search process starting (Temp fallback)...\n");
+                }
+                catch (Exception ex2)
+                {
+                    Trace.WriteLine(ex2);
+                    // Ignore logging failures to ensure the application continues to boot.
+                }
             }
 
             // Set up a global exception handler for very early failures before Main body executes fully
@@ -67,7 +73,11 @@ namespace SMS_Search
                     return Path.GetDirectoryName(processModule.FileName) ?? AppDomain.CurrentDomain.BaseDirectory;
                 }
             }
-            catch {}
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex);
+                // Fall back to base directory if process metadata is inaccessible.
+            }
             return AppDomain.CurrentDomain.BaseDirectory;
         }
 
@@ -83,8 +93,9 @@ namespace SMS_Search
                 File.AppendAllText(logPath, errorMsg);
                 logWritten = true;
             }
-            catch
+            catch (Exception ex1)
             {
+                Trace.WriteLine(ex1);
                 // Fallback 1: LocalAppData
                 try
                 {
@@ -95,8 +106,9 @@ namespace SMS_Search
                     File.AppendAllText(logPath, errorMsg);
                     logWritten = true;
                 }
-                catch
+                catch (Exception ex2)
                 {
+                    Trace.WriteLine(ex2);
                     // Fallback 2: Temp directory if we can't write to AppData
                     try
                     {
@@ -104,9 +116,10 @@ namespace SMS_Search
                         File.AppendAllText(logPath, errorMsg);
                         logWritten = true;
                     }
-                    catch
+                    catch (Exception ex3)
                     {
-                        // If all fail, we can't log to file.
+                        Trace.WriteLine(ex3);
+                        // If all logging attempts fail, we can't log to a file.
                     }
                 }
             }
@@ -122,10 +135,10 @@ namespace SMS_Search
             {
                 MessageBox.Show(userMessage, "SMS Search - Critical Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            catch
+            catch (Exception exFinal)
             {
-                // Absolute last resort: write to console if attached (unlikely in WinExe)
-                // or just die silently if we can't show UI.
+                Trace.WriteLine(exFinal);
+                // Absolute last resort: die silently if we can't show UI.
             }
         }
     }
