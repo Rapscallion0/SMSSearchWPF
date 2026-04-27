@@ -187,10 +187,10 @@ namespace SMS_Search.Utils
 
                 string scriptContent = $@"
 $pidToWait = {pid}
-$appDir = '{appDir}'
-$zipPath = '{zipPath}'
-$exePath = '{currentExe}'
-$scriptPath = '{scriptPath}'
+$appDir = '{appDir.Replace("'", "''")}'
+$zipPath = '{zipPath.Replace("'", "''")}'
+$exePath = '{currentExe.Replace("'", "''")}'
+$scriptPath = '{scriptPath.Replace("'", "''")}'
 
 # Wait for the main app to close
 Write-Host 'Waiting for SMS Search to exit...'
