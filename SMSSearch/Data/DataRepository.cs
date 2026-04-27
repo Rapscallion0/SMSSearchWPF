@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Data;
 using System.Data.SqlClient;
 using System.Data.Common;
@@ -977,12 +978,12 @@ namespace SMS_Search.Data
                                 string processedStmt = stmt;
 
                                 // If it's an INSERT statement, process Julian dates based on column types
-                                if (processedStmt.StartsWith("INSERT INTO", StringComparison.OrdinalIgnoreCase))
+                                if (System.Text.RegularExpressions.Regex.IsMatch(processedStmt, @"^\s*INSERT\s+(?:INTO\s+)?", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                                 {
-                                    var match = System.Text.RegularExpressions.Regex.Match(processedStmt, @"INSERT\s+INTO\s+([^\s\(]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                                    var match = System.Text.RegularExpressions.Regex.Match(processedStmt, @"INSERT\s+(?:INTO\s+)?(?:\[(?<name>[^\]]+)\]|(?<name>[^\s\(\[]+))", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
                                     if (match.Success)
                                     {
-                                        string tableName = match.Groups[1].Value.Replace("[", "").Replace("]", "");
+                                        string tableName = match.Groups["name"].Value;
 
                                         if (!tableColumnDateTypesCache.TryGetValue(tableName, out List<bool>? isDateColumn))
                                         {
@@ -1016,7 +1017,7 @@ namespace SMS_Search.Data
                                             // Handle potential column mapping: INSERT INTO TABLE (col1, col2) VALUES (...)
                                             List<bool> mappedIsDateColumn = isDateColumn;
 
-                                            var colMatch = System.Text.RegularExpressions.Regex.Match(processedStmt, @"INSERT\s+INTO\s+[^\s\(]+\s*\((.*?)\)\s*VALUES", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                                            var colMatch = System.Text.RegularExpressions.Regex.Match(processedStmt, @"INSERT\s+(?:INTO\s+)?(?:\[[^\]]+\]|[^\s\(]+)\s*\((.*?)\)\s*VALUES", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
                                             if (colMatch.Success && tableColumnNamesCache.TryGetValue(tableName, out var columnNames) && columnNames.Count > 0)
                                             {
                                                 string colsStr = colMatch.Groups[1].Value;
@@ -1211,7 +1212,7 @@ namespace SMS_Search.Data
                 string processedStmt = stmt;
 
                 // If this is an INSERT statement, we need to fix empty commas in VALUES
-                if (processedStmt.StartsWith("INSERT INTO", StringComparison.OrdinalIgnoreCase))
+                if (System.Text.RegularExpressions.Regex.IsMatch(processedStmt, @"^\s*INSERT\s+(?:INTO\s+)?", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                 {
                     processedStmt = FixEmptySqlValues(processedStmt);
                     processedStmt = ProcessDateMacros(processedStmt);
@@ -1445,40 +1446,78 @@ namespace SMS_Search.Data
 
         private string FixEmptySqlValues(string statement)
         {
-            // We only want to replace empty commas outside of string literals
+            // Find the start of the VALUES clause to avoid touching table or column names
+            var valuesMatch = System.Text.RegularExpressions.Regex.Match(statement, @"\bVALUES\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (!valuesMatch.Success) return statement;
+
+            int valuesStartIdx = valuesMatch.Index;
+            var sb = new System.Text.StringBuilder(statement.Substring(0, valuesStartIdx));
+
             bool inString = false;
-            var sb = new System.Text.StringBuilder();
+            bool inBracketIdentifier = false;
+            bool inQuoteIdentifier = false;
             char prevChar = '\0';
 
-            for (int i = 0; i < statement.Length; i++)
+            for (int i = valuesStartIdx; i < statement.Length; i++)
             {
                 char c = statement[i];
 
-                if (c == '\'')
+                // Handle single-quoted strings
+                if (c == '\'' && !inBracketIdentifier && !inQuoteIdentifier)
                 {
                     inString = !inString;
                     sb.Append(c);
-                    prevChar = c;
-                    continue;
                 }
-
-                if (!inString)
+                else if (!inString)
                 {
-                    if (c == ',' && prevChar == ',')
+                    bool wasBracketOrQuote = false;
+
+                    // Handle bracketed identifiers [Col, Name]
+                    if (c == '[' && !inQuoteIdentifier)
                     {
-                        sb.Append("NULL,");
-                    }
-                    else if (c == ',' && prevChar == '(')
-                    {
-                        sb.Append("NULL,");
-                    }
-                    else if (c == ')' && prevChar == ',')
-                    {
-                        sb.Append("NULL)");
-                    }
-                    else
-                    {
+                        inBracketIdentifier = true;
+                        wasBracketOrQuote = true;
                         sb.Append(c);
+                    }
+                    else if (c == ']' && inBracketIdentifier)
+                    {
+                        inBracketIdentifier = false;
+                        wasBracketOrQuote = true;
+                        sb.Append(c);
+                    }
+                    // Handle quoted identifiers "Col, Name"
+                    else if (c == '\"' && !inBracketIdentifier)
+                    {
+                        inQuoteIdentifier = !inQuoteIdentifier;
+                        wasBracketOrQuote = true;
+                        sb.Append(c);
+                    }
+
+                    if (!wasBracketOrQuote)
+                    {
+                        if (!inBracketIdentifier && !inQuoteIdentifier)
+                        {
+                            if (c == ',' && prevChar == ',')
+                            {
+                                sb.Append("NULL,");
+                            }
+                            else if (c == ',' && prevChar == '(')
+                            {
+                                sb.Append("NULL,");
+                            }
+                            else if (c == ')' && prevChar == ',')
+                            {
+                                sb.Append("NULL)");
+                            }
+                            else
+                            {
+                                sb.Append(c);
+                            }
+                        }
+                        else
+                        {
+                            sb.Append(c);
+                        }
                     }
                 }
                 else
