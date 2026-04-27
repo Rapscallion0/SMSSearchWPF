@@ -4,6 +4,7 @@ using SMS_Search.Data;
 using SMS_Search.Services;
 using SMS_Search.Utils;
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using Microsoft.Data.SqlClient;
@@ -188,10 +189,11 @@ namespace SMS_Search.ViewModels.Settings
 
                 if (!functionValid || !totalizerValid)
                 {
-                    string errorMessage = "Invalid columns detected:\n";
-                    if (!functionValid) errorMessage += "- Function columns contain invalid fields for FCT_TAB.\n";
-                    if (!totalizerValid) errorMessage += "- Totalizer columns contain invalid fields for TLZ_TAB.\n";
-                    _dialogService.ShowError(errorMessage, "Validation Error");
+                    var sb = new StringBuilder(150);
+                    sb.Append("Invalid columns detected:\n");
+                    if (!functionValid) sb.Append("- Function columns contain invalid fields for FCT_TAB.\n");
+                    if (!totalizerValid) sb.Append("- Totalizer columns contain invalid fields for TLZ_TAB.\n");
+                    _dialogService.ShowError(sb.ToString(), "Validation Error");
                     return;
                 }
 
