@@ -515,7 +515,7 @@ namespace SMS_Search.ViewModels
 
         partial void OnTotalRecordsChanged(int value)
         {
-            IsFilterVisible = value > 0;
+            IsFilterVisible = _gridContext.UnfilteredCount > 0;
         }
 
         private int _lastFoundRowIndex = -1;
