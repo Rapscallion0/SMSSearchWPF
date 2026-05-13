@@ -308,7 +308,8 @@ namespace SMS_Search.Views
             if (DataContext is SearchViewModel vm)
             {
                 string text = TableComboBox.Text;
-                if (!vm.Tables.Contains(text))
+                bool contains = System.Linq.Enumerable.Any(vm.Tables, t => string.Equals(t, text, StringComparison.OrdinalIgnoreCase));
+                if (!contains)
                 {
                     if (vm.SelectedTable != _lastValidTable)
                     {
@@ -318,7 +319,9 @@ namespace SMS_Search.Views
                 }
                 else
                 {
-                    _lastValidTable = text;
+                    // Update to the exact case from the table list to keep it clean
+                    var exactTable = System.Linq.Enumerable.FirstOrDefault(vm.Tables, t => string.Equals(t, text, StringComparison.OrdinalIgnoreCase));
+                    _lastValidTable = exactTable ?? text;
                 }
             }
         }
