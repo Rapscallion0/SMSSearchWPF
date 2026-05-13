@@ -306,7 +306,7 @@
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsFieldCustomSql}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
+                            <Button Content="Clean SQL" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
                             <Button Tag="CustomSql" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
                                 <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
                             </Button>
