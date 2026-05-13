@@ -82,6 +82,12 @@ namespace SMS_Search.ViewModels.Settings
         [ObservableProperty]
         private System.Windows.Visibility _listenerWarningVisibility = System.Windows.Visibility.Collapsed;
 
+        [ObservableProperty]
+        private bool _canStartListener = true;
+
+        [ObservableProperty]
+        private bool _canStopListener = false;
+
         public void Dispose()
         {
             _isMonitoring = false;
@@ -207,6 +213,8 @@ namespace SMS_Search.ViewModels.Settings
 
             StatusColor = System.Windows.Media.Brushes.Yellow;
             ListenerStatusText = "Starting...";
+            CanStartListener = false;
+            CanStopListener = false;
             try
             {
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -231,6 +239,8 @@ namespace SMS_Search.ViewModels.Settings
         {
             StatusColor = System.Windows.Media.Brushes.Yellow;
             ListenerStatusText = "Stopping...";
+            CanStartListener = false;
+            CanStopListener = false;
             try
             {
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -273,12 +283,16 @@ namespace SMS_Search.ViewModels.Settings
                     ListenerStatusText = "Running";
                     StatusColor = System.Windows.Media.Brushes.Green;
                     ListenerWarningVisibility = System.Windows.Visibility.Collapsed;
+                    CanStartListener = false;
+                    CanStopListener = true;
                 }
                 else
                 {
                     ListenerStatusText = "Stopped";
                     StatusColor = System.Windows.Media.Brushes.Red;
                     ListenerWarningVisibility = System.Windows.Visibility.Visible;
+                    CanStartListener = true;
+                    CanStopListener = false;
                 }
             });
         }
