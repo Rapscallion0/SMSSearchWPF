@@ -34,8 +34,8 @@
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="Start Listener" Command="{Binding StartListenerProcessCommand}" Width="100" Margin="0,0,10,0" />
-                            <Button Content="Stop Listener" Command="{Binding StopListenerProcessCommand}" Width="100" />
+                            <Button Content="Start Listener" Command="{Binding StartListenerProcessCommand}" IsEnabled="{Binding CanStartListener}" Width="100" Margin="0,0,10,0" />
+                            <Button Content="Stop Listener" Command="{Binding StopListenerProcessCommand}" IsEnabled="{Binding CanStopListener}" Width="100" />
                         </StackPanel>
 
                         <TextBlock Text="Listener is stopped. Hotkey will not work." Foreground="Red" Margin="0,10,0,0"
