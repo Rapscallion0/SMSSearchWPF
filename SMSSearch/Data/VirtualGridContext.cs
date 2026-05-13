@@ -419,7 +419,7 @@ namespace SMS_Search.Data
                              first = false;
 
                              string header = (headerMap != null && headerMap.ContainsKey(colName)) ? headerMap[colName] : colName;
-                             writer.Write("\"" + header.Replace("\"", "\"\"") + "\"");
+                             WriteCsvCell(writer, header);
                          }
                          writer.WriteLine();
                      }
@@ -438,7 +438,7 @@ namespace SMS_Search.Data
 
                              var val = reader.GetValue(i);
                              string sVal = val == DBNull.Value ? "" : val.ToString() ?? "";
-                             writer.Write("\"" + sVal.Replace("\"", "\"\"") + "\"");
+                             WriteCsvCell(writer, sVal);
                          }
                          writer.WriteLine();
                      }
@@ -640,7 +640,7 @@ namespace SMS_Search.Data
                              if (!first) writer.Write(",");
                              first = false;
 
-                             writer.Write("\"" + props[i].Name.Replace("\"", "\"\"") + "\"");
+                             WriteCsvCell(writer, props[i].Name);
                          }
                          writer.WriteLine();
                      }
@@ -659,7 +659,7 @@ namespace SMS_Search.Data
 
                              var val = row.GetValue(i);
                              string sVal = val == DBNull.Value ? "" : val?.ToString() ?? "";
-                             writer.Write("\"" + sVal.Replace("\"", "\"\"") + "\"");
+                             WriteCsvCell(writer, sVal);
                          }
                          writer.WriteLine();
                      }
@@ -832,6 +832,28 @@ namespace SMS_Search.Data
             return value is sbyte || value is byte || value is short || value is ushort ||
                    value is int || value is uint || value is long || value is ulong ||
                    value is float || value is double || value is decimal;
+        }
+
+        private void WriteCsvCell(StreamWriter writer, string s)
+        {
+            writer.Write('"');
+            if (s.IndexOf('"') == -1)
+            {
+                writer.Write(s);
+            }
+            else
+            {
+                ReadOnlySpan<char> span = s.AsSpan();
+                int index;
+                while ((index = span.IndexOf('"')) != -1)
+                {
+                    writer.Write(span.Slice(0, index));
+                    writer.Write("\"\"");
+                    span = span.Slice(index + 1);
+                }
+                writer.Write(span);
+            }
+            writer.Write('"');
         }
 
         public async Task<List<string>> GetAllMatchesAsync(string searchText, IEnumerable<string> searchColumns, CancellationToken cancellationToken = default)
