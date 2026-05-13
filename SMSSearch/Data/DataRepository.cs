@@ -978,7 +978,7 @@ namespace SMS_Search.Data
                                 string processedStmt = stmt;
 
                                 // If it's an INSERT statement, process Julian dates based on column types
-                                if (System.Text.RegularExpressions.Regex.IsMatch(processedStmt, @"^\s*INSERT\s+(?:INTO\s+)?", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                                if (IsInsertStatement(processedStmt))
                                 {
                                     var match = System.Text.RegularExpressions.Regex.Match(processedStmt, @"INSERT\s+(?:INTO\s+)?(?:\[(?<name>[^\]]+)\]|(?<name>[^\s\(\[]+))", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
                                     if (match.Success)
@@ -1212,7 +1212,7 @@ namespace SMS_Search.Data
                 string processedStmt = stmt;
 
                 // If this is an INSERT statement, we need to fix empty commas in VALUES
-                if (System.Text.RegularExpressions.Regex.IsMatch(processedStmt, @"^\s*INSERT\s+(?:INTO\s+)?", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                if (IsInsertStatement(processedStmt))
                 {
                     processedStmt = FixEmptySqlValues(processedStmt);
                     processedStmt = ProcessDateMacros(processedStmt);
@@ -1232,80 +1232,118 @@ namespace SMS_Search.Data
 
         private string ProcessJulianDatesInInsert(string stmt, List<bool> isDateColumn)
         {
-            var match = System.Text.RegularExpressions.Regex.Match(stmt, @"\bVALUES\s*\(", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            if (!match.Success) return stmt;
-
-            int startIdx = match.Index + match.Length - 1; // Start exactly at the '('
-
             bool inString = false;
+            bool inBracketIdentifier = false;
+            bool inQuoteIdentifier = false;
+            bool inValuesClause = false;
+            bool inValuesRow = false;
 
             var currentVal = new System.Text.StringBuilder();
             int colIndex = 0;
-            var newStmt = new System.Text.StringBuilder(stmt.Substring(0, startIdx));
+            var newStmt = new System.Text.StringBuilder();
 
             string julianPattern = @"^'(\d{4})(\d{3})(?:\s+(\d{2}:\d{2}:\d{2}(?:\.\d+)?))?'$";
 
-            bool inValues = false; // true when inside a (... ) block of values
-
-            for (int i = startIdx; i < stmt.Length; i++)
+            for (int i = 0; i < stmt.Length; i++)
             {
                 char c = stmt[i];
 
-                if (c == '\'')
+                if (c == '\'' && !inBracketIdentifier && !inQuoteIdentifier)
                 {
                     inString = !inString;
-                    currentVal.Append(c);
+                    if (inValuesRow) currentVal.Append(c);
+                    else newStmt.Append(c);
                 }
                 else if (!inString)
                 {
-                    if (c == '(')
+                    bool wasBracketOrQuote = false;
+                    if (c == '[' && !inQuoteIdentifier)
                     {
-                        if (!inValues) {
-                            inValues = true;
-                            colIndex = 0;
-                            newStmt.Append(c);
-                        } else {
-                            currentVal.Append(c);
-                        }
+                        inBracketIdentifier = true;
+                        wasBracketOrQuote = true;
+                        if (inValuesRow) currentVal.Append(c);
+                        else newStmt.Append(c);
                     }
-                    else if (c == ')' && inValues)
+                    else if (c == ']' && inBracketIdentifier)
                     {
-                        inValues = false;
+                        inBracketIdentifier = false;
+                        wasBracketOrQuote = true;
+                        if (inValuesRow) currentVal.Append(c);
+                        else newStmt.Append(c);
+                    }
+                    else if (c == '\"' && !inBracketIdentifier)
+                    {
+                        inQuoteIdentifier = !inQuoteIdentifier;
+                        wasBracketOrQuote = true;
+                        if (inValuesRow) currentVal.Append(c);
+                        else newStmt.Append(c);
+                    }
 
-                        string valStr = currentVal.ToString();
-                        string trimmedValStr = valStr.Trim();
-                        if (trimmedValStr.Length > 0)
-                        {
-                            string processed = ProcessSingleJulianValue(trimmedValStr, colIndex, isDateColumn, julianPattern);
-                            newStmt.Append(processed);
-                        }
-                        newStmt.Append(c);
-                        currentVal.Clear();
-                    }
-                    else if (c == ',' && inValues)
+                    if (!wasBracketOrQuote)
                     {
-                        string valStr = currentVal.ToString();
-                        string trimmedValStr = valStr.Trim();
-                        string processed = ProcessSingleJulianValue(trimmedValStr, colIndex, isDateColumn, julianPattern);
-                        newStmt.Append(processed).Append(c);
-                        currentVal.Clear();
-                        colIndex++;
-                    }
-                    else
-                    {
-                        if (inValues)
+                        if (!inBracketIdentifier && !inQuoteIdentifier)
                         {
-                            currentVal.Append(c);
+                            // Check for VALUES keyword
+                            if (!inValuesClause && i + 5 < stmt.Length &&
+                                char.ToUpperInvariant(c) == 'V' &&
+                                char.ToUpperInvariant(stmt[i + 1]) == 'A' &&
+                                char.ToUpperInvariant(stmt[i + 2]) == 'L' &&
+                                char.ToUpperInvariant(stmt[i + 3]) == 'U' &&
+                                char.ToUpperInvariant(stmt[i + 4]) == 'E' &&
+                                char.ToUpperInvariant(stmt[i + 5]) == 'S' &&
+                                (i == 0 || !char.IsLetterOrDigit(stmt[i - 1])) &&
+                                (i + 6 == stmt.Length || !char.IsLetterOrDigit(stmt[i + 6])))
+                            {
+                                inValuesClause = true;
+                            }
+
+                            if (inValuesClause)
+                            {
+                                if (c == '(' && !inValuesRow)
+                                {
+                                    inValuesRow = true;
+                                    colIndex = 0;
+                                    newStmt.Append(c);
+                                    currentVal.Clear();
+                                }
+                                else if (c == ')' && inValuesRow)
+                                {
+                                    inValuesRow = false;
+                                    string valStr = currentVal.ToString();
+                                    string processed = ProcessSingleJulianValue(valStr.Trim(), colIndex, isDateColumn, julianPattern);
+                                    newStmt.Append(processed).Append(c);
+                                    currentVal.Clear();
+                                }
+                                else if (c == ',' && inValuesRow)
+                                {
+                                    string valStr = currentVal.ToString();
+                                    string processed = ProcessSingleJulianValue(valStr.Trim(), colIndex, isDateColumn, julianPattern);
+                                    newStmt.Append(processed).Append(c);
+                                    currentVal.Clear();
+                                    colIndex++;
+                                }
+                                else
+                                {
+                                    if (inValuesRow) currentVal.Append(c);
+                                    else newStmt.Append(c);
+                                }
+                            }
+                            else
+                            {
+                                newStmt.Append(c);
+                            }
                         }
                         else
                         {
-                            newStmt.Append(c);
+                            if (inValuesRow) currentVal.Append(c);
+                            else newStmt.Append(c);
                         }
                     }
                 }
                 else
                 {
-                    currentVal.Append(c);
+                    if (inValuesRow) currentVal.Append(c);
+                    else newStmt.Append(c);
                 }
             }
 
@@ -1446,19 +1484,14 @@ namespace SMS_Search.Data
 
         private string FixEmptySqlValues(string statement)
         {
-            // Find the start of the VALUES clause to avoid touching table or column names
-            var valuesMatch = System.Text.RegularExpressions.Regex.Match(statement, @"\bVALUES\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            if (!valuesMatch.Success) return statement;
-
-            int valuesStartIdx = valuesMatch.Index;
-            var sb = new System.Text.StringBuilder(statement.Substring(0, valuesStartIdx));
-
+            var sb = new System.Text.StringBuilder();
             bool inString = false;
             bool inBracketIdentifier = false;
             bool inQuoteIdentifier = false;
+            bool inValuesClause = false;
             char prevChar = '\0';
 
-            for (int i = valuesStartIdx; i < statement.Length; i++)
+            for (int i = 0; i < statement.Length; i++)
             {
                 char c = statement[i];
 
@@ -1497,17 +1530,38 @@ namespace SMS_Search.Data
                     {
                         if (!inBracketIdentifier && !inQuoteIdentifier)
                         {
-                            if (c == ',' && prevChar == ',')
+                            // Check for VALUES keyword (only if not already found at top level)
+                            if (!inValuesClause && i + 5 < statement.Length &&
+                                char.ToUpperInvariant(c) == 'V' &&
+                                char.ToUpperInvariant(statement[i + 1]) == 'A' &&
+                                char.ToUpperInvariant(statement[i + 2]) == 'L' &&
+                                char.ToUpperInvariant(statement[i + 3]) == 'U' &&
+                                char.ToUpperInvariant(statement[i + 4]) == 'E' &&
+                                char.ToUpperInvariant(statement[i + 5]) == 'S' &&
+                                (i == 0 || !char.IsLetterOrDigit(statement[i - 1])) &&
+                                (i + 6 == statement.Length || !char.IsLetterOrDigit(statement[i + 6])))
                             {
-                                sb.Append("NULL,");
+                                inValuesClause = true;
                             }
-                            else if (c == ',' && prevChar == '(')
+
+                            if (inValuesClause)
                             {
-                                sb.Append("NULL,");
-                            }
-                            else if (c == ')' && prevChar == ',')
-                            {
-                                sb.Append("NULL)");
+                                if (c == ',' && prevChar == ',')
+                                {
+                                    sb.Append("NULL,");
+                                }
+                                else if (c == ',' && prevChar == '(')
+                                {
+                                    sb.Append("NULL,");
+                                }
+                                else if (c == ')' && prevChar == ',')
+                                {
+                                    sb.Append("NULL)");
+                                }
+                                else
+                                {
+                                    sb.Append(c);
+                                }
                             }
                             else
                             {
@@ -1533,6 +1587,16 @@ namespace SMS_Search.Data
             }
 
             return sb.ToString();
+        }
+
+        private bool IsInsertStatement(string stmt)
+        {
+            if (string.IsNullOrWhiteSpace(stmt)) return false;
+
+            // Remove leading comments and whitespace
+            string cleaned = System.Text.RegularExpressions.Regex.Replace(stmt, @"^\s*(?:--.*?\r?\n|/\*.*?\*/\s*)*", "", System.Text.RegularExpressions.RegexOptions.Singleline).TrimStart();
+
+            return cleaned.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase);
         }
 
         public async Task<int> GetMatchRowIndexAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filterClause, string searchText, Dictionary<string, string?> columnTypes, int startRowIndex, string? sortCol, string? sortDir, bool forward, CancellationToken cancellationToken = default)
