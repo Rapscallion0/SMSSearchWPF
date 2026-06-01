@@ -38,7 +38,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsFunctionNumber}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionNumberBox" NumericOnly="True" Text="{Binding FunctionNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionNumberBox_GotFocus" Placeholder="Search...">
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionNumberBox" NumericOnly="True" Text="{Binding FunctionNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionNumberBox_GotFocus" Placeholder="Search... (* ?)">
                             <ctrl:ClearableTextBox.InputBindings>
                                 <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                             </ctrl:ClearableTextBox.InputBindings>
@@ -118,7 +118,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsTotalizerNumber}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerNumberBox" NumericOnly="True" Text="{Binding TotalizerNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerNumberBox_GotFocus" Placeholder="Search...">
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerNumberBox" NumericOnly="True" Text="{Binding TotalizerNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerNumberBox_GotFocus" Placeholder="Search... (* ?)">
                             <ctrl:ClearableTextBox.InputBindings>
                                 <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                             </ctrl:ClearableTextBox.InputBindings>
@@ -200,7 +200,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsFieldNumber}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldNumberBox" NumericOnly="True" Text="{Binding FieldNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldNumberBox_GotFocus" Placeholder="Search..." PrefixText="F">
+                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldNumberBox" NumericOnly="True" Text="{Binding FieldNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldNumberBox_GotFocus" Placeholder="Search... (* ?)" PrefixText="F">
                             <ctrl:ClearableTextBox.InputBindings>
                                 <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                             </ctrl:ClearableTextBox.InputBindings>
