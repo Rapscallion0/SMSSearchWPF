@@ -122,7 +122,7 @@ namespace SMS_Search.Views.Controls
 
         private void InputBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !System.Text.RegularExpressions.Regex.IsMatch(e.Text, "^[0-9]+$");
+            e.Handled = !System.Text.RegularExpressions.Regex.IsMatch(e.Text, "^[0-9*?]+$");
         }
 
         private void InputBox_Pasting(object sender, DataObjectPastingEventArgs e)
@@ -130,7 +130,7 @@ namespace SMS_Search.Views.Controls
             if (e.DataObject.GetDataPresent(typeof(string)))
             {
                 string text = (string)e.DataObject.GetData(typeof(string));
-                if (!System.Text.RegularExpressions.Regex.IsMatch(text, "^[0-9]+$"))
+                if (!System.Text.RegularExpressions.Regex.IsMatch(text, "^[0-9*?]+$"))
                 {
                     e.CancelCommand();
                 }
