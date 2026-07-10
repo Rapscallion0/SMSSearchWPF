@@ -29,11 +29,11 @@ namespace SMS_Search.Data
         {
             if (string.IsNullOrEmpty(user))
             {
-                return $"Integrated Security=SSPI;Persist Security Info=False;Initial Catalog={database};Data Source={server};Encrypt=False";
+                return $"Integrated Security=SSPI;Persist Security Info=False;Initial Catalog={database};Data Source={server};Encrypt=False;Pooling=False";
             }
             else
             {
-                return $"Data Source={server};Initial Catalog={database};User ID={user};Password={pass};Persist Security Info=False;Encrypt=False";
+                return $"Data Source={server};Initial Catalog={database};User ID={user};Password={pass};Persist Security Info=False;Encrypt=False;Pooling=False";
             }
         }
 
