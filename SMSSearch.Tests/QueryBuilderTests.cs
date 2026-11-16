@@ -79,6 +79,24 @@ namespace SMSSearch.Tests
 
             Assert.DoesNotContain("WHERE", result.Sql);
         }
+
+        [Fact]
+        public void Build_FieldWithoutRbFields_OmitsRbFieldsJoin()
+        {
+            var qb = new QueryBuilder("", "");
+            var criteria = new SearchCriteria
+            {
+                Mode = SearchMode.Field,
+                Type = SearchType.Number,
+                Value = "1032",
+                AnyMatch = false
+            };
+
+            var result = qb.Build(criteria, hasRbFields: false);
+
+            Assert.DoesNotContain("RB_FIELDS", result.Sql);
+            Assert.Contains("col.name = @Val", result.Sql);
+        }
     }
 }
 

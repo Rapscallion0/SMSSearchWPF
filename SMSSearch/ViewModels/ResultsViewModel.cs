@@ -354,10 +354,16 @@ namespace SMS_Search.ViewModels
 
             try
             {
-                var queryResult = _queryBuilder.Build(criteria);
-
                 var conn = _connectionSettingsService.GetConnectionSettings();
                 _gridContext.SetConnection(conn.Server, conn.Database, conn.User, conn.Password);
+
+                bool hasRbFields = true;
+                if (criteria.Mode == SearchMode.Field && criteria.Type != SearchType.CustomSql)
+                {
+                    hasRbFields = await _gridContext.TableExistsAsync("RB_FIELDS", token);
+                }
+
+                var queryResult = _queryBuilder.Build(criteria, hasRbFields);
 
                 // Load initial count and cache schema in parallel
                 var schemaTask = _gridContext.GetSchemaAsync(queryResult.Sql, queryResult.Parameters, token);

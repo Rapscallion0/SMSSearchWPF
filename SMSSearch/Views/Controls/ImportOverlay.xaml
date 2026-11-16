@@ -9,6 +9,8 @@
              d:DesignHeight="450" d:DesignWidth="800"
              Background="#D9000000"
              AllowDrop="True"
+             UseLayoutRounding="True"
+             TextOptions.TextFormattingMode="Display"
              Drop="UserControl_Drop"
              DragEnter="UserControl_DragEnter">
 
@@ -17,11 +19,15 @@
     </UserControl.Resources>
 
     <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
-        <Border Background="White" CornerRadius="8" Padding="20" MinWidth="450" MaxWidth="600"
-                BorderBrush="#CCC" BorderThickness="1">
+        <!-- Separate shadow layer so DropShadowEffect does not rasterize child text -->
+        <Border Background="White" CornerRadius="8" IsHitTestVisible="False">
             <Border.Effect>
                 <DropShadowEffect Color="Black" Opacity="0.3" BlurRadius="10" Direction="270" ShadowDepth="4"/>
             </Border.Effect>
+        </Border>
+
+        <Border Background="White" CornerRadius="8" Padding="20" MinWidth="450" MaxWidth="600"
+                BorderBrush="#CCC" BorderThickness="1">
 
             <StackPanel>
                 <TextBlock Text="Import Tables" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
@@ -42,7 +48,7 @@
                     </StackPanel>
                 </Border>
 
-                <Grid Margin="0,0,0,15">
+                <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -50,6 +56,8 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="10"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="8"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
@@ -59,20 +67,86 @@
                         <ComboBox ItemsSource="{Binding TargetDatabases}" Text="{Binding TargetDatabaseSuffix, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Width="200" Padding="2" ToolTip="Enter a suffix or select an existing one"/>
                     </StackPanel>
 
-                    <TextBlock Text="Template Database:" VerticalAlignment="Center" Grid.Row="2" Grid.Column="0" Margin="0,0,10,0"/>
-                    <ComboBox ItemsSource="{Binding Databases}" SelectedItem="{Binding TemplateDatabaseName}" IsEnabled="{Binding CanChangeTemplateDatabase}" ToolTipService.ShowOnDisabled="True" Grid.Row="2" Grid.Column="1" Padding="2">
+                    <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Center">
+                        <CheckBox Content="Use template database" IsChecked="{Binding UseTemplateDatabase}" IsEnabled="{Binding CanChangeTemplateDatabase}" VerticalAlignment="Center"/>
+                        <ToggleButton x:Name="TemplateInfoButton" Width="20" Height="20" Margin="6,0,0,0" Padding="0"
+                                      Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Cursor="Hand"
+                                      ToolTip="Click for details about Template Database">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border Background="Transparent" Padding="2">
+                                        <Control Template="{StaticResource Icon_Info}" Width="16" Height="16"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                        <Popup IsOpen="{Binding IsChecked, ElementName=TemplateInfoButton}"
+                               StaysOpen="False"
+                               PlacementTarget="{Binding ElementName=TemplateInfoButton}"
+                               Placement="Bottom"
+                               AllowsTransparency="True">
+                            <Grid Margin="6">
+                                <Border Background="White" CornerRadius="6" IsHitTestVisible="False">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="2" Opacity="0.25"/>
+                                    </Border.Effect>
+                                </Border>
+                                <Border Background="White" BorderBrush="#CCC" BorderThickness="1" CornerRadius="6" Padding="12" MaxWidth="340">
+                                    <StackPanel>
+                                        <TextBlock Text="Template Database" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,6"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#333" Margin="0,0,0,6">
+                                            <Run Text="When checked: " FontWeight="SemiBold"/>
+                                            <Run Text="Copies RB_FIELDS and RB_TABLES (for field descriptions and metadata) and uses the template database's exact column data types when creating tables."/>
+                                        </TextBlock>
+                                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#333">
+                                            <Run Text="When unchecked: " FontWeight="SemiBold"/>
+                                            <Run Text="Creates tables by inferring column names and data types directly from the .sql files (no template database required)."/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Popup>
+                    </StackPanel>
+
+                    <TextBlock Text="Template Database:" VerticalAlignment="Center" Grid.Row="4" Grid.Column="0" Margin="0,0,10,0"/>
+                    <ComboBox ItemsSource="{Binding Databases}" SelectedItem="{Binding TemplateDatabaseName}" IsEnabled="{Binding CanSelectTemplateDatabase}" ToolTipService.ShowOnDisabled="True" Grid.Row="4" Grid.Column="1" Padding="2">
                         <ComboBox.Style>
                             <Style TargetType="ComboBox">
-                                <Setter Property="ToolTip" Value="Select the database to copy the base schema from" />
+                                <Setter Property="ToolTip" Value="Select the database to copy the base schema and table structures from" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding CanChangeTemplateDatabase}" Value="False">
                                         <Setter Property="ToolTip" Value="Cannot change Template database for an existing target database" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding UseTemplateDatabase}" Value="False">
+                                        <Setter Property="ToolTip" Value="Enable 'Use template database' to select a template database" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </ComboBox.Style>
                     </ComboBox>
                 </Grid>
+
+                <Border Visibility="{Binding UseTemplateDatabase, Converter={StaticResource BoolToVis}}"
+                        Background="#FFF8E1" BorderBrush="#FFE082" BorderThickness="1" CornerRadius="4" Padding="8,6" Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal">
+                        <Control Template="{StaticResource Icon_Info}" Width="14" Height="14" Margin="0,1,6,0" VerticalAlignment="Top"/>
+                        <TextBlock Text="Recommended: Ensure the template database and imported .sql files are from the same version."
+                                   Foreground="#795548" FontSize="12" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <CheckBox Content="Confirm inferred column types before creating tables" IsChecked="{Binding ConfirmInferredTypes}" Margin="0,0,0,10">
+                    <CheckBox.Style>
+                        <Style TargetType="CheckBox">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding UseTemplateDatabase}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </CheckBox.Style>
+                </CheckBox>
 
                 <CheckBox Content="Switch to imported database after completion" IsChecked="{Binding SwitchToDatabaseAfterImport}" Margin="0,0,0,20"/>
 

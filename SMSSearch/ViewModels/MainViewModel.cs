@@ -72,7 +72,7 @@ namespace SMS_Search.ViewModels
 
             DatabasesView = CollectionViewSource.GetDefaultView(Databases);
 
-            LoadDatabasesCommand = new AsyncRelayCommand(LoadDatabasesAsync);
+            LoadDatabasesCommand = new AsyncRelayCommand(() => LoadDatabasesAsync());
             RefreshDatabasesCommand = new AsyncRelayCommand(RefreshDatabasesAsync);
 
             // Initial load of databases
@@ -182,9 +182,9 @@ namespace SMS_Search.ViewModels
             }
         }
 
-        public async Task LoadDatabasesAsync()
+        public async Task LoadDatabasesAsync(bool force = false)
         {
-            if (Databases.Count > 0) return;
+            if (!force && Databases.Count > 0) return;
             try
             {
                  var conn = _connectionSettingsService.GetConnectionSettings();

@@ -137,7 +137,7 @@ namespace SMS_Search.Services
             return ExistingTableAction.Skip;
         }
 
-        public async Task<Models.MissingColumnDialogResult> ShowMissingColumnsPromptAsync(string tableName, System.Collections.Generic.List<Models.MissingColumnInfo> missingColumns)
+        public async Task<Models.MissingColumnDialogResult> ShowMissingColumnsPromptAsync(string tableName, System.Collections.Generic.List<Models.MissingColumnInfo> missingColumns, bool isTypeConfirmation = false)
         {
             var app = System.Windows.Application.Current;
             var dispatcher = app?.Dispatcher;
@@ -145,7 +145,7 @@ namespace SMS_Search.Services
             {
                 return await dispatcher.InvokeAsync(() =>
                 {
-                    var dlg = new Views.Windows.MissingColumnsDialog(tableName, missingColumns);
+                    var dlg = new Views.Windows.MissingColumnsDialog(tableName, missingColumns, isTypeConfirmation);
                     var mainWindow = app?.MainWindow;
                     if (mainWindow != null && mainWindow.IsVisible)
                     {

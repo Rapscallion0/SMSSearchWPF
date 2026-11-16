@@ -22,6 +22,19 @@ FROM sys.columns COL
 JOIN sys.tables TAB ON COL.object_id = TAB.object_id
 LEFT JOIN RB_FIELDS RBF ON COL.name = RBF.F1453 ";
 
+        private const string FieldSelectBaseNoRbFields = @"SELECT
+    COL.name AS 'Field',
+    '' AS 'Description',
+    TAB.name AS 'Table',
+    '' AS 'Type',
+    (CASE WHEN PKEY.COLUMN_NAME IS NOT NULL THEN '1' ELSE '0' END) AS 'Key',
+    COL.max_length AS 'Size',
+    COL.scale AS 'Dec',
+    (CASE WHEN COL.is_nullable = 0 THEN 1 ELSE 0 END) AS 'Required',
+    TAB.create_date AS 'Created'
+FROM sys.columns COL
+JOIN sys.tables TAB ON COL.object_id = TAB.object_id ";
+
         private const string FieldSelectJoinPKey = @"
 LEFT OUTER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE PKEY ON
     PKEY.COLUMN_NAME = COL.name AND
@@ -38,6 +51,16 @@ GROUP BY
     COL.scale,
     COL.is_nullable,
     TAB.create_date";
+
+        private const string FieldSelectGroupByNoRbFields = @"
+GROUP BY
+    COL.name,
+    TAB.name,
+    pkey.COLUMN_NAME,
+    COL.max_length,
+    COL.scale,
+    COL.is_nullable,
+    TAB.create_date";
         private const string FieldSelectOrderBy = @" ORDER BY TRY_CAST(SUBSTRING(COL.name, 2, LEN(COL.name)) AS INT) ASC";
 
         public QueryBuilder(string fctFields, string tlzFields)
@@ -46,7 +69,7 @@ GROUP BY
             _tlzFields = string.IsNullOrEmpty(tlzFields) ? "F1034, F1039, F1128, F1129, F1179, F1253, F1710, F1131, F1048, F1709" : tlzFields;
         }
 
-        public QueryResult Build(SearchCriteria criteria)
+        public QueryResult Build(SearchCriteria criteria, bool hasRbFields = true)
         {
             var p = new DynamicParameters();
             string sql = "";
@@ -54,35 +77,47 @@ GROUP BY
 
             if (criteria.Mode == SearchMode.Field)
             {
+                string selectBase = hasRbFields ? FieldSelectBase : FieldSelectBaseNoRbFields;
+                string groupBy = hasRbFields ? FieldSelectGroupBy : FieldSelectGroupByNoRbFields;
+
                 if (criteria.Type == SearchType.Number)
                 {
+                    string rbJoinFilter = hasRbFields ? " AND RBF.F1452 = TAB.name" : "";
                     if (!string.IsNullOrWhiteSpace(value))
                     {
                         string fldNum = "F" + value.Trim();
                         HandleWildcards(ref fldNum, out string op);
 
-                        sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} WHERE col.name {op} @Val {FieldSelectGroupBy}{FieldSelectOrderBy}";
+                        sql = $"{selectBase}{rbJoinFilter} {FieldSelectJoinPKey} WHERE col.name {op} @Val {groupBy}{FieldSelectOrderBy}";
                         p.Add("Val", fldNum);
                     }
                     else
                     {
-                        sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} {FieldSelectGroupBy}{FieldSelectOrderBy}";
+                        sql = $"{selectBase}{rbJoinFilter} {FieldSelectJoinPKey} {groupBy}{FieldSelectOrderBy}";
                     }
                 }
                 else if (criteria.Type == SearchType.Description)
                 {
+                    string rbJoinFilter = hasRbFields ? " AND RBF.F1452 = TAB.name" : "";
                     if (!string.IsNullOrWhiteSpace(value))
                     {
-                        string desc = value.Trim();
-                        if (criteria.AnyMatch) desc = $"*{desc}*";
-                        HandleWildcards(ref desc, out string op);
+                        if (hasRbFields)
+                        {
+                            string desc = value.Trim();
+                            if (criteria.AnyMatch) desc = $"*{desc}*";
+                            HandleWildcards(ref desc, out string op);
 
-                        sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} WHERE RBF.F1454 {op} @Val {FieldSelectGroupBy}{FieldSelectOrderBy}";
-                        p.Add("Val", desc);
+                            sql = $"{selectBase}{rbJoinFilter} {FieldSelectJoinPKey} WHERE RBF.F1454 {op} @Val {groupBy}{FieldSelectOrderBy}";
+                            p.Add("Val", desc);
+                        }
+                        else
+                        {
+                            sql = $"{selectBase} {FieldSelectJoinPKey} WHERE 1 = 0 {groupBy}{FieldSelectOrderBy}";
+                        }
                     }
                     else
                     {
-                        sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} {FieldSelectGroupBy}{FieldSelectOrderBy}";
+                        sql = $"{selectBase}{rbJoinFilter} {FieldSelectJoinPKey} {groupBy}{FieldSelectOrderBy}";
                     }
                 }
                 else if (criteria.Type == SearchType.Table)
@@ -93,13 +128,15 @@ GROUP BY
                         {
                             string table = value.Trim();
                             HandleWildcards(ref table, out string op);
+                            string rbJoinFilter = hasRbFields ? $" AND RBF.F1452 {op} @Table" : "";
 
-                            sql = $"{FieldSelectBase} AND RBF.F1452 {op} @Table {FieldSelectJoinPKey} WHERE TAB.name {op} @Table {FieldSelectGroupBy}{FieldSelectOrderBy}";
+                            sql = $"{selectBase}{rbJoinFilter} {FieldSelectJoinPKey} WHERE TAB.name {op} @Table {groupBy}{FieldSelectOrderBy}";
                             p.Add("Table", table);
                         }
                         else
                         {
-                            sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} {FieldSelectGroupBy}{FieldSelectOrderBy}";
+                            string rbJoinFilter = hasRbFields ? " AND RBF.F1452 = TAB.name" : "";
+                            sql = $"{selectBase}{rbJoinFilter} {FieldSelectJoinPKey} {groupBy}{FieldSelectOrderBy}";
                         }
                     }
                     else

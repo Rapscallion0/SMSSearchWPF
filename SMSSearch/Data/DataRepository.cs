@@ -336,11 +336,29 @@ namespace SMS_Search.Data
             }
         }
 
+        public async Task<bool> TableExistsAsync(string server, string database, string? user, string? pass, string tableName, CancellationToken cancellationToken = default)
+        {
+            using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
+            {
+                await conn.OpenAsync(cancellationToken);
+                string sql = "SELECT COUNT(*) FROM sys.tables WHERE name = @Name";
+                var cmdDef = new CommandDefinition(sql, new { Name = tableName }, cancellationToken: cancellationToken);
+                return await conn.ExecuteScalarAsync<int>(cmdDef) > 0;
+            }
+        }
+
         public async Task<List<string>> GetColumnDescriptionsAsync(string server, string database, string? user, string? pass, IEnumerable<string> columnNames, CancellationToken cancellationToken = default)
         {
              using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
              {
                  await conn.OpenAsync(cancellationToken);
+                 var hasRbFields = await conn.ExecuteScalarAsync<int>(
+                     new CommandDefinition("SELECT CASE WHEN OBJECT_ID('dbo.RB_FIELDS', 'U') IS NOT NULL THEN 1 ELSE 0 END", cancellationToken: cancellationToken)) == 1;
+                 if (!hasRbFields)
+                 {
+                     return columnNames.Select(_ => "").ToList();
+                 }
+
                  string sql = "SELECT F1453 as Name, F1454 as Description FROM RB_FIELDS WHERE F1453 IN @Names";
                  var cmdDef = new CommandDefinition(sql, new { Names = columnNames }, cancellationToken: cancellationToken);
                  var result = await conn.QueryAsync(cmdDef);
@@ -765,13 +783,14 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task PerformImportProcessAsync(string server, string? user, string? pass, string targetDatabase, string templateDatabase, List<string> sqlFiles, Action<ViewModels.ImportProgressInfo> progressCallback, Func<string, Task<Services.ExistingTableAction>> tableExistsPromptCallback, Func<string, List<Models.MissingColumnInfo>, Task<Models.MissingColumnDialogResult>> missingColumnsPromptCallback, CancellationToken cancellationToken = default)
+        public async Task PerformImportProcessAsync(string server, string? user, string? pass, string targetDatabase, string? templateDatabase, List<string> sqlFiles, Action<ViewModels.ImportProgressInfo> progressCallback, Func<string, Task<Services.ExistingTableAction>> tableExistsPromptCallback, Func<string, List<Models.MissingColumnInfo>, bool, Task<Models.MissingColumnDialogResult>> missingColumnsPromptCallback, bool confirmInferredTypes = false, CancellationToken cancellationToken = default)
         {
             try
             {
                 // Sanitize database names to prevent SQL injection in DDL statements
                 string safeTargetDb = targetDatabase.Replace("]", "]]");
-                string safeTemplateDb = templateDatabase.Replace("]", "]]");
+                bool hasTemplateDb = !string.IsNullOrWhiteSpace(templateDatabase);
+                string? safeTemplateDb = hasTemplateDb ? templateDatabase!.Replace("]", "]]") : null;
 
                 progressCallback(new ViewModels.ImportProgressInfo { IsIndeterminate = true, Message = $"Connecting to server..." });
 
@@ -792,7 +811,7 @@ namespace SMS_Search.Data
                     }
                 }
 
-                if (!dbExists)
+                if (!dbExists && hasTemplateDb)
                 {
                     // Add extended property for OriginalTemplateDB
                     using (var connTarget = new SqlConnection(GetConnectionString(server, targetDatabase, user, pass)))
@@ -806,10 +825,11 @@ namespace SMS_Search.Data
                     }
                 }
 
-                // 2. Base tables to copy from Template DB to Target DB
-                string[] baseTables = new[] { "RB_FIELDS", "RB_TABLES" };
+                // 2. Base tables to copy from Template DB to Target DB (only when a template DB is provided)
+                string[] baseTables = hasTemplateDb ? new[] { "RB_FIELDS", "RB_TABLES" } : Array.Empty<string>();
 
                 int totalSteps = baseTables.Length + sqlFiles.Count;
+                if (totalSteps == 0) totalSteps = 1;
                 int currentStep = 0;
 
                 foreach (var table in baseTables)
@@ -875,9 +895,11 @@ namespace SMS_Search.Data
                     {
                         await targetConn.OpenAsync(cancellationToken);
 
+                        var skippedColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
                         if (!string.IsNullOrEmpty(parsed.TableName))
                         {
-                            // Copy table structure from template DB if it doesn't exist
+                            // Copy or create table structure if it doesn't exist
                             bool tableExists = await targetConn.ExecuteScalarAsync<int>(
                                 "SELECT COUNT(*) FROM sys.tables WHERE name = @name",
                                 new { name = parsed.TableName }) > 0;
@@ -924,17 +946,8 @@ namespace SMS_Search.Data
                                     // Drop the existing table
                                     await targetConn.ExecuteAsync(new CommandDefinition($"DROP TABLE [{safeTargetDb}].[dbo].[{parsed.TableName}]", cancellationToken: cancellationToken));
 
-                                    // Re-copy from template
-                                    try
-                                    {
-                                        string copyStructSql = $"SELECT * INTO [{safeTargetDb}].[dbo].[{parsed.TableName}] FROM [{safeTemplateDb}].[dbo].[{parsed.TableName}] WHERE 1=0";
-                                        await targetConn.ExecuteAsync(new CommandDefinition(copyStructSql, cancellationToken: cancellationToken));
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        _logger.LogWarning("Failed to recreate structure for {TableName}: {ErrorMessage}", parsed.TableName, ex.Message);
-                                        throw new Exception($"Could not copy the required structure for table {parsed.TableName} from template database. Ensure the table exists in {templateDatabase}.");
-                                    }
+                                    // Recreate structure
+                                    skippedColumns = await CreateTargetTableStructureAsync(targetConn, safeTargetDb, safeTemplateDb, templateDatabase, parsed, confirmInferredTypes, missingColumnsPromptCallback, cancellationToken);
                                 }
                             }
                             else
@@ -943,18 +956,20 @@ namespace SMS_Search.Data
                                 {
                                     IsIndeterminate = false,
                                     Percentage = ((double)currentStep / totalSteps) * 100,
-                                    Message = $"Copying structure for {parsed.TableName}..."
+                                    Message = hasTemplateDb
+                                        ? $"Copying structure for {parsed.TableName}..."
+                                        : $"Creating structure for {parsed.TableName}..."
                                 });
 
-                                try
+                                skippedColumns = await CreateTargetTableStructureAsync(targetConn, safeTargetDb, safeTemplateDb, templateDatabase, parsed, confirmInferredTypes, missingColumnsPromptCallback, cancellationToken);
+                            }
+
+                            if (!skipFileExecution && (hasTemplateDb || tableExists))
+                            {
+                                var mismatchSkipped = await ValidateAndResolveVersionMismatchesAsync(targetConn, parsed, missingColumnsPromptCallback, cancellationToken);
+                                foreach (var col in mismatchSkipped)
                                 {
-                                    string copyStructSql = $"SELECT * INTO [{safeTargetDb}].[dbo].[{parsed.TableName}] FROM [{safeTemplateDb}].[dbo].[{parsed.TableName}] WHERE 1=0";
-                                    await targetConn.ExecuteAsync(new CommandDefinition(copyStructSql, cancellationToken: cancellationToken));
-                                }
-                                catch (Exception ex)
-                                {
-                                    _logger.LogWarning("Failed to copy structure for {TableName}: {ErrorMessage}", parsed.TableName, ex.Message);
-                                    throw new Exception($"Could not copy the required structure for table {parsed.TableName} from template database. Ensure the table exists in {templateDatabase}.");
+                                    skippedColumns.Add(col);
                                 }
                             }
                         }
@@ -977,7 +992,9 @@ namespace SMS_Search.Data
                             {
                                 if (string.IsNullOrWhiteSpace(stmt)) continue;
 
-                                string processedStmt = stmt;
+                                string processedStmt = skippedColumns.Count > 0
+                                    ? FilterSkippedColumnsFromCreateView(stmt, skippedColumns)
+                                    : stmt;
 
                                 // If it's an INSERT statement, process Julian dates based on column types
                                 if (IsInsertStatement(processedStmt))
@@ -1096,7 +1113,7 @@ namespace SMS_Search.Data
 
                                         if (missingColsInfo.Count > 0)
                                         {
-                                            var dialogResult = await missingColumnsPromptCallback(tableName, missingColsInfo);
+                                            var dialogResult = await missingColumnsPromptCallback(tableName, missingColsInfo, false);
 
                                             if (dialogResult.Action == Models.MissingColumnAction.Cancel)
                                             {
@@ -1176,6 +1193,242 @@ namespace SMS_Search.Data
                 _logger.LogError("PerformImportProcessAsync Error", ex);
                 throw;
             }
+        }
+
+        private async Task<HashSet<string>> CreateTargetTableStructureAsync(
+            SqlConnection targetConn,
+            string safeTargetDb,
+            string? safeTemplateDb,
+            string? templateDatabase,
+            ParsedSql parsed,
+            bool confirmInferredTypes,
+            Func<string, List<Models.MissingColumnInfo>, bool, Task<Models.MissingColumnDialogResult>> missingColumnsPromptCallback,
+            CancellationToken cancellationToken)
+        {
+            var skippedColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            if (!string.IsNullOrWhiteSpace(safeTemplateDb))
+            {
+                try
+                {
+                    string copyStructSql = $"SELECT * INTO [{safeTargetDb}].[dbo].[{parsed.TableName}] FROM [{safeTemplateDb}].[dbo].[{parsed.TableName}] WHERE 1=0";
+                    await targetConn.ExecuteAsync(new CommandDefinition(copyStructSql, cancellationToken: cancellationToken));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("Failed to copy structure for {TableName}: {ErrorMessage}", parsed.TableName, ex.Message);
+                    throw new Exception($"Could not copy the required structure for table {parsed.TableName} from template database. Ensure the table exists in {templateDatabase}.");
+                }
+            }
+            else
+            {
+                var inferred = SqlImportSchemaInferrer.InferColumns(parsed.Statements);
+                List<(string Name, string SqlType)> columnsToCreate;
+
+                if (confirmInferredTypes && inferred.Count > 0)
+                {
+                    var promptCols = inferred.Select(c => new Models.MissingColumnInfo
+                    {
+                        ColumnName = c.Name,
+                        IsInSource = true,
+                        IsInTarget = false,
+                        ShouldImport = true,
+                        SuggestedDataType = c.ToSqlType()
+                    }).ToList();
+
+                    var dialogResult = await missingColumnsPromptCallback(parsed.TableName, promptCols, true);
+                    if (dialogResult.Action == Models.MissingColumnAction.Cancel)
+                    {
+                        _logger.LogWarning("User cancelled import during Confirm Column Data Types dialog for {TableName}.", parsed.TableName);
+                        throw new Exception("Import cancelled by user during column type confirmation.");
+                    }
+
+                    columnsToCreate = new List<(string Name, string SqlType)>();
+                    foreach (var col in dialogResult.Columns)
+                    {
+                        if (col.ShouldImport)
+                        {
+                            columnsToCreate.Add((col.ColumnName, col.SuggestedDataType));
+                        }
+                        else
+                        {
+                            skippedColumns.Add(col.ColumnName);
+                        }
+                    }
+                }
+                else
+                {
+                    columnsToCreate = inferred.Select(c => (c.Name, c.ToSqlType())).ToList();
+                }
+
+                try
+                {
+                    string createTableSql = SqlImportSchemaInferrer.BuildCreateTableSql(parsed.TableName, columnsToCreate);
+                    await targetConn.ExecuteAsync(new CommandDefinition(createTableSql, cancellationToken: cancellationToken));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("Failed to infer and create structure for {TableName}: {ErrorMessage}", parsed.TableName, ex.Message);
+                    throw new Exception($"Could not create structure for table {parsed.TableName} without a template database: {ex.Message}", ex);
+                }
+            }
+
+            return skippedColumns;
+        }
+
+        private async Task<HashSet<string>> ValidateAndResolveVersionMismatchesAsync(
+            SqlConnection targetConn,
+            ParsedSql parsed,
+            Func<string, List<Models.MissingColumnInfo>, bool, Task<Models.MissingColumnDialogResult>> missingColumnsPromptCallback,
+            CancellationToken cancellationToken)
+        {
+            var skippedColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var sourceColumns = SqlImportSchemaInferrer.InferColumns(parsed.Statements);
+            if (sourceColumns.Count == 0)
+            {
+                return skippedColumns;
+            }
+
+            const string colMetaSql = @"
+                SELECT
+                    c.name AS ColumnName,
+                    c.is_nullable AS IsNullable,
+                    TYPE_NAME(c.user_type_id) AS TypeName,
+                    c.max_length AS MaxLength,
+                    c.precision AS Precision,
+                    c.scale AS Scale,
+                    CASE WHEN dc.object_id IS NOT NULL THEN 1 ELSE 0 END AS HasDefault
+                FROM sys.columns c
+                LEFT JOIN sys.default_constraints dc ON c.default_object_id = dc.object_id
+                WHERE c.object_id = OBJECT_ID(@TableName)";
+
+            var targetCols = (await targetConn.QueryAsync(
+                new CommandDefinition(colMetaSql, new { TableName = $"dbo.{parsed.TableName}" }, cancellationToken: cancellationToken))).ToList();
+
+            if (targetCols.Count == 0)
+            {
+                return skippedColumns;
+            }
+
+            var targetColMap = new Dictionary<string, dynamic>(StringComparer.OrdinalIgnoreCase);
+            foreach (var tc in targetCols)
+            {
+                string colName = (string)tc.ColumnName;
+                targetColMap[colName] = tc;
+            }
+
+            var sourceColNames = new HashSet<string>(sourceColumns.Select(c => c.Name), StringComparer.OrdinalIgnoreCase);
+            var mismatches = new List<Models.MissingColumnInfo>();
+
+            foreach (var srcCol in sourceColumns)
+            {
+                if (!targetColMap.ContainsKey(srcCol.Name))
+                {
+                    mismatches.Add(new Models.MissingColumnInfo
+                    {
+                        ColumnName = srcCol.Name,
+                        IsInSource = true,
+                        IsInTarget = false,
+                        ShouldImport = true,
+                        SuggestedDataType = srcCol.ToSqlType()
+                    });
+                }
+            }
+
+            foreach (var tc in targetCols)
+            {
+                string colName = (string)tc.ColumnName;
+                if (!sourceColNames.Contains(colName))
+                {
+                    mismatches.Add(new Models.MissingColumnInfo
+                    {
+                        ColumnName = colName,
+                        IsInSource = false,
+                        IsInTarget = true,
+                        ShouldImport = false
+                    });
+                }
+            }
+
+            if (mismatches.Count == 0)
+            {
+                return skippedColumns;
+            }
+
+            var dialogResult = await missingColumnsPromptCallback(parsed.TableName, mismatches, false);
+            if (dialogResult.Action == Models.MissingColumnAction.Cancel)
+            {
+                _logger.LogWarning("User cancelled import during proactive Missing Columns dialog for {TableName}.", parsed.TableName);
+                throw new Exception("Import cancelled by user due to column mismatches.");
+            }
+
+            string safeTable = parsed.TableName.Replace("]", "]]");
+            foreach (var col in dialogResult.Columns)
+            {
+                if (col.IsInSource && !col.IsInTarget)
+                {
+                    if (col.ShouldImport)
+                    {
+                        string sqlType = string.IsNullOrWhiteSpace(col.SuggestedDataType) ? "NVARCHAR(MAX)" : col.SuggestedDataType.Trim();
+                        string safeCol = col.ColumnName.Replace("]", "]]");
+                        string addColSql = $"ALTER TABLE [dbo].[{safeTable}] ADD [{safeCol}] {sqlType} NULL";
+                        await targetConn.ExecuteAsync(new CommandDefinition(addColSql, cancellationToken: cancellationToken));
+                    }
+                    else
+                    {
+                        skippedColumns.Add(col.ColumnName);
+                    }
+                }
+                else if (!col.IsInSource && col.IsInTarget && targetColMap.TryGetValue(col.ColumnName, out var tc))
+                {
+                    bool isNullable = (bool)tc.IsNullable;
+                    int hasDefault = (int)tc.HasDefault;
+                    if (!isNullable && hasDefault == 0)
+                    {
+                        string typeDecl = FormatSqlTypeDeclaration((string)tc.TypeName, (short)tc.MaxLength, (byte)tc.Precision, (byte)tc.Scale);
+                        string safeCol = col.ColumnName.Replace("]", "]]");
+                        string alterNullSql = $"ALTER TABLE [dbo].[{safeTable}] ALTER COLUMN [{safeCol}] {typeDecl} NULL";
+                        await targetConn.ExecuteAsync(new CommandDefinition(alterNullSql, cancellationToken: cancellationToken));
+                    }
+                }
+            }
+
+            return skippedColumns;
+        }
+
+        private static string FormatSqlTypeDeclaration(string typeName, short maxLength, byte precision, byte scale)
+        {
+            string lower = typeName.ToLowerInvariant();
+            if (lower == "varchar" || lower == "char" || lower == "varbinary" || lower == "binary")
+            {
+                return maxLength == -1 ? $"{typeName}(MAX)" : $"{typeName}({maxLength})";
+            }
+            if (lower == "nvarchar" || lower == "nchar")
+            {
+                return maxLength == -1 ? $"{typeName}(MAX)" : $"{typeName}({maxLength / 2})";
+            }
+            if (lower == "decimal" || lower == "numeric")
+            {
+                return $"{typeName}({precision}, {scale})";
+            }
+            return typeName;
+        }
+
+        private static string FilterSkippedColumnsFromCreateView(string stmt, HashSet<string> skippedColumns)
+        {
+            var viewMatch = System.Text.RegularExpressions.Regex.Match(
+                stmt,
+                @"^(?<prefix>CREATE\s+VIEW\s+(?:\[?[a-zA-Z0-9_]+\]?)\s+AS\s+SELECT\s+)(?<cols>.+?)(?<suffix>\s+FROM\s+\[?[a-zA-Z0-9_]+\]?.*)$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+
+            if (!viewMatch.Success) return stmt;
+
+            var keptCols = viewMatch.Groups["cols"].Value
+                .Split(',')
+                .Select(c => c.Trim())
+                .Where(c => !skippedColumns.Contains(c.Trim('[', ']', '"', '\'')));
+
+            return $"{viewMatch.Groups["prefix"].Value}{string.Join(", ", keptCols)}{viewMatch.Groups["suffix"].Value}";
         }
 
         private class ParsedSql

@@ -23,7 +23,7 @@ namespace SMS_Search.Services
         string? PickColor(string? defaultColor = null);
         void ShowToast(string message, string title, ToastType type = ToastType.Info, string? details = null, string? filePath = null, System.Windows.Window? owner = null);
         Task<ExistingTableAction> ShowTableExistsPromptAsync(string tableName);
-        Task<SMS_Search.Models.MissingColumnDialogResult> ShowMissingColumnsPromptAsync(string tableName, System.Collections.Generic.List<SMS_Search.Models.MissingColumnInfo> missingColumns);
+        Task<SMS_Search.Models.MissingColumnDialogResult> ShowMissingColumnsPromptAsync(string tableName, System.Collections.Generic.List<SMS_Search.Models.MissingColumnInfo> missingColumns, bool isTypeConfirmation = false);
         bool? ShowColumnPicker(SMS_Search.ViewModels.Settings.ColumnPickerViewModel viewModel);
     }
 }

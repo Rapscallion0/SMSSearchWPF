@@ -59,7 +59,17 @@ namespace SMS_Search.ViewModels
         private string? _templateDatabaseName;
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanSelectTemplateDatabase))]
         private bool _canChangeTemplateDatabase;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanSelectTemplateDatabase))]
+        private bool _useTemplateDatabase;
+
+        [ObservableProperty]
+        private bool _confirmInferredTypes;
+
+        public bool CanSelectTemplateDatabase => UseTemplateDatabase && CanChangeTemplateDatabase;
 
         [ObservableProperty]
         private bool _switchToDatabaseAfterImport;
@@ -98,11 +108,12 @@ namespace SMS_Search.ViewModels
                     {
                         string actualTemplateName = Databases.First(d => d.Equals(originalTemplate, StringComparison.OrdinalIgnoreCase));
                         TemplateDatabaseName = actualTemplateName;
+                        UseTemplateDatabase = true;
                     }
                     else
                     {
                         TemplateDatabaseName = null;
-                        _dialogService.ShowError($"Database '{actualDbName}' is missing its original Template DB reference and cannot be used for further imports. Consider creating a new database or deleting it.", "Import Blocked");
+                        UseTemplateDatabase = false;
                     }
                 }
 
@@ -110,6 +121,10 @@ namespace SMS_Search.ViewModels
             }
             else
             {
+                if (!CanChangeTemplateDatabase)
+                {
+                    UseTemplateDatabase = !string.IsNullOrEmpty(TemplateDatabaseName);
+                }
                 CanChangeTemplateDatabase = true;
             }
         }
@@ -134,7 +149,7 @@ namespace SMS_Search.ViewModels
                     }
                 }
 
-                // Auto-select the currently active database as the template
+                // Auto-select the currently active database as the template, or first available
                 if (!string.IsNullOrEmpty(_mainViewModel.SelectedDatabase) && Databases.Contains(_mainViewModel.SelectedDatabase))
                 {
                     TemplateDatabaseName = _mainViewModel.SelectedDatabase;
@@ -143,6 +158,12 @@ namespace SMS_Search.ViewModels
                 {
                     TemplateDatabaseName = Databases[0];
                 }
+                else
+                {
+                    TemplateDatabaseName = null;
+                }
+
+                UseTemplateDatabase = !string.IsNullOrEmpty(TemplateDatabaseName);
 
                 await UpdateTemplateDatabaseStateAsync();
             }
@@ -213,7 +234,7 @@ namespace SMS_Search.ViewModels
 
                 TargetDatabaseSuffix = "";
                 await LoadDatabasesAsync();
-                await _mainViewModel.LoadDatabasesAsync();
+                await _mainViewModel.LoadDatabasesAsync(force: true);
             }
             catch (Exception ex)
             {
@@ -244,11 +265,13 @@ namespace SMS_Search.ViewModels
 
             string fullTargetDbName = "DBUSER_" + TargetDatabaseSuffix;
 
-            if (string.IsNullOrWhiteSpace(TemplateDatabaseName))
+            if (UseTemplateDatabase && string.IsNullOrWhiteSpace(TemplateDatabaseName))
             {
-                _dialogService.ShowMessage("Please select a template database.", "Import");
+                _dialogService.ShowMessage("Please select a template database or uncheck 'Use template database'.", "Import");
                 return;
             }
+
+            string? effectiveTemplateDb = UseTemplateDatabase ? TemplateDatabaseName : null;
 
             IsBusy = true;
             IsProgressIndeterminate = true;
@@ -258,10 +281,8 @@ namespace SMS_Search.ViewModels
             {
                 var conn = _connectionSettingsService.GetConnectionSettings();
 
-                // Call the actual logic (which we will implement next in DataRepository)
-                // For now, let's just create a shell method in DataRepository to handle this.
-                _logger.LogInfo("Starting import process for target DB: {TargetDb} from template DB: {TemplateDb}", fullTargetDbName, TemplateDatabaseName);
-                await _repository.PerformImportProcessAsync(conn.Server, conn.User, conn.Password, fullTargetDbName, TemplateDatabaseName, SelectedFiles.ToList(),
+                _logger.LogInfo("Starting import process for target DB: {TargetDb} from template DB: {TemplateDb}", fullTargetDbName, effectiveTemplateDb ?? "(None)");
+                await _repository.PerformImportProcessAsync(conn.Server, conn.User, conn.Password, fullTargetDbName, effectiveTemplateDb, SelectedFiles.ToList(),
                     progress => {
                         try
                         {
@@ -297,12 +318,12 @@ namespace SMS_Search.ViewModels
                             throw;
                         }
                     },
-                    async (tableName, missingColumns) => {
+                    async (tableName, missingColumns, isTypeConfirmation) => {
                         try
                         {
-                            _logger.LogInfo("Prompting user for missing columns on table: {TableName}. Missing count: {MissingCount}", tableName, missingColumns?.Count ?? 0);
-                            var result = await _dialogService.ShowMissingColumnsPromptAsync(tableName, missingColumns ?? new List<Models.MissingColumnInfo>());
-                            _logger.LogInfo("User completed missing columns prompt for table {TableName}. Action selected: {Action}", tableName, result.Action);
+                            _logger.LogInfo("Prompting user for columns on table: {TableName}. Count: {MissingCount}, IsTypeConfirmation: {IsTypeConfirmation}", tableName, missingColumns?.Count ?? 0, isTypeConfirmation);
+                            var result = await _dialogService.ShowMissingColumnsPromptAsync(tableName, missingColumns ?? new List<Models.MissingColumnInfo>(), isTypeConfirmation);
+                            _logger.LogInfo("User completed columns prompt for table {TableName}. Action selected: {Action}", tableName, result.Action);
                             return result;
                         }
                         catch (Exception ex)
@@ -310,7 +331,8 @@ namespace SMS_Search.ViewModels
                             _logger.LogError(ex, "Error displaying MissingColumnsPrompt for table {TableName}", tableName);
                             throw;
                         }
-                    });
+                    },
+                    confirmInferredTypes: !UseTemplateDatabase && ConfirmInferredTypes);
 
                 _logger.LogInfo("Import process completed successfully from view model perspective.");
 
@@ -320,11 +342,25 @@ namespace SMS_Search.ViewModels
                 _mainViewModel.IsImportTargetVisible = false;
 
                 // Reload main view model databases to see the new one
-                await _mainViewModel.LoadDatabasesAsync();
+                await _mainViewModel.LoadDatabasesAsync(force: true);
+
+                _mainViewModel.SearchVm.SelectedMode = SearchMode.Field;
 
                 if (SwitchToDatabaseAfterImport)
                 {
-                    _mainViewModel.SelectedDatabase = fullTargetDbName;
+                    string? matchedDb = _mainViewModel.Databases.FirstOrDefault(
+                        d => d.Equals(fullTargetDbName, StringComparison.OrdinalIgnoreCase));
+                    string targetDb = matchedDb ?? fullTargetDbName;
+                    bool alreadySelected = string.Equals(_mainViewModel.SelectedDatabase, targetDb, StringComparison.OrdinalIgnoreCase);
+
+                    _mainViewModel.SelectedDatabase = targetDb;
+
+                    if (alreadySelected && _mainViewModel.SearchVm.LoadTablesCommand != null)
+                    {
+                        _mainViewModel.SearchVm.Tables.Clear();
+                        _mainViewModel.SearchVm.SelectedTable = null;
+                        _mainViewModel.SearchVm.LoadTablesCommand.Execute(null);
+                    }
                 }
             }
             catch (Exception ex)

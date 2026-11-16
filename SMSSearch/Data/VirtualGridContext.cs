@@ -64,6 +64,16 @@ namespace SMS_Search.Data
             _pass = pass;
         }
 
+        public async Task<bool> TableExistsAsync(string tableName, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrEmpty(_server) || string.IsNullOrEmpty(_database))
+            {
+                return false;
+            }
+
+            return await _repo.TableExistsAsync(_server, _database, _user, _pass, tableName, cancellationToken);
+        }
+
         public async Task LoadAsync(string sql, object? parameters, string? initialSortColumn = null, CancellationToken cancellationToken = default)
         {
             _baseSql = sql;
