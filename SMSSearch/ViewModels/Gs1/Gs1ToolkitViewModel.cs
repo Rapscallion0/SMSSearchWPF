@@ -435,7 +435,7 @@ namespace SMS_Search.ViewModels.Gs1
         [RelayCommand]
         private void CommitRawBarcode()
         {
-            _logger.LogInfo($"Committing raw barcode. Length: {DraftRawBarcode.Length}");
+            _logger.LogInfo("Committing raw barcode. Length: {BarcodeLength}", DraftRawBarcode.Length);
             if (RawBarcode == DraftRawBarcode)
             {
                 ForceParse(DraftRawBarcode);
@@ -521,12 +521,12 @@ namespace SMS_Search.ViewModels.Gs1
 
             if (!result.IsValid)
             {
-                _logger.LogWarning($"GS1 Parsing Error: {result.ErrorMessage}");
+                _logger.LogWarning("GS1 Parsing Error: {ErrorMessage}", result.ErrorMessage);
                 _dialogService.ShowToast(result.ErrorMessage, "GS1 Parsing Error", SMS_Search.Views.ToastType.Warning);
             }
             else
             {
-                _logger.LogInfo($"Successfully parsed GS1 barcode. Detected type: {DetectedType}. Extracted {result.ParsedAis.Count} AIs.");
+                _logger.LogInfo("Successfully parsed GS1 barcode. Detected type: {DetectedType}. Extracted {AiCount} AIs.", DetectedType, result.ParsedAis.Count);
                 if (GetSetting("SAVE_HISTORY_ON_PARSE", true))
                 {
                     AddToHistory(string.Join("", result.ParsedAis.Where(a => a.Ai != "└─").Select(a => (a.Ai == "8110" || a.Ai == "8112") ? $"{a.Ai}{a.RawValue}" : $"({a.Ai}){a.RawValue}")));
@@ -729,7 +729,7 @@ namespace SMS_Search.ViewModels.Gs1
         {
             if (SelectedDefinitionToAdd != null)
             {
-                _logger.LogInfo($"Adding new AI manually: {SelectedDefinitionToAdd.Ai}");
+                _logger.LogInfo("Adding new AI manually: {AiCode}", SelectedDefinitionToAdd.Ai);
                 AddEmptyAi(SelectedDefinitionToAdd);
             }
         }

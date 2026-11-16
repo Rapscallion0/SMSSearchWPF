@@ -27,14 +27,27 @@ namespace SMS_Search.Data
 
         public string GetConnectionString(string server, string database, string? user, string? pass)
         {
+            var builder = new SqlConnectionStringBuilder
+            {
+                DataSource = server ?? "",
+                InitialCatalog = database ?? "",
+                PersistSecurityInfo = false,
+                Encrypt = false,
+                Pooling = false
+            };
+
             if (string.IsNullOrEmpty(user))
             {
-                return $"Integrated Security=SSPI;Persist Security Info=False;Initial Catalog={database};Data Source={server};Encrypt=False;Pooling=False";
+                builder.IntegratedSecurity = true;
             }
             else
             {
-                return $"Data Source={server};Initial Catalog={database};User ID={user};Password={pass};Persist Security Info=False;Encrypt=False;Pooling=False";
+                builder.IntegratedSecurity = false;
+                builder.UserID = user;
+                builder.Password = pass ?? "";
             }
+
+            return builder.ConnectionString;
         }
 
         public async Task<bool> TestConnectionAsync(string server, string database, string? user, string? pass, CancellationToken cancellationToken = default)
@@ -44,22 +57,6 @@ namespace SMS_Search.Data
                 using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
                 {
                     await conn.OpenAsync(cancellationToken);
-                    return true;
-                }
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        public bool TestConnection(string server, string database, string? user, string? pass)
-        {
-            try
-            {
-                using (var conn = new SqlConnection(GetConnectionString(server, database, user, pass)))
-                {
-                    conn.Open();
                     return true;
                 }
             }
@@ -114,14 +111,14 @@ namespace SMS_Search.Data
                     }
 
                     string paramLog = GetParamString(parameters);
-                    _logger.LogInfo($"Query Executed. SQL: {countSql} | Params: {paramLog} | Results: {count}");
+                    _logger.LogInfo("Query Executed. SQL: {Sql} | Params: {Params} | Results: {Count}", countSql, paramLog, count);
 
                     return count;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError($"GetQueryCountAsync: Error: {ex.Message}");
+                _logger.LogError(ex, "GetQueryCountAsync: Error: {ErrorMessage}", ex.Message);
                 throw;
             }
         }
@@ -221,7 +218,7 @@ namespace SMS_Search.Data
                         }
                     }
 
-                    _logger.LogDebug($"GetQuerySchemaAsync: Returned {dt.Columns.Count} columns");
+                    _logger.LogDebug("GetQuerySchemaAsync: Returned {ColumnCount} columns", dt.Columns.Count);
                     return dt;
                 }
             }
@@ -230,7 +227,7 @@ namespace SMS_Search.Data
         private void LogQuery(string method, string sql, object? parameters)
         {
             string paramLog = GetParamString(parameters);
-            _logger.LogDebug($"{method}: Executing SQL: {sql} | Params: {paramLog}");
+            _logger.LogDebug("{Method}: Executing SQL: {Sql} | Params: {Params}", method, sql, paramLog);
         }
 
         private string GetParamString(object? parameters)
@@ -745,7 +742,7 @@ namespace SMS_Search.Data
             }
             catch (Exception ex)
             {
-                _logger.LogError($"GetDatabaseTemplateAsync failed for db {database}", ex);
+                _logger.LogError(ex, "GetDatabaseTemplateAsync failed for db {Database}", database);
                 return null;
             }
         }
@@ -843,7 +840,7 @@ namespace SMS_Search.Data
                             }
                             catch (Exception ex)
                             {
-                                _logger.LogWarning($"Failed to copy base table {table}: {ex.Message}");
+                                _logger.LogWarning("Failed to copy base table {TableName}: {ErrorMessage}", table, ex.Message);
                             }
                         }
                     }
@@ -931,7 +928,7 @@ namespace SMS_Search.Data
                                     }
                                     catch (Exception ex)
                                     {
-                                        _logger.LogWarning($"Failed to recreate structure for {parsed.TableName}: {ex.Message}");
+                                        _logger.LogWarning("Failed to recreate structure for {TableName}: {ErrorMessage}", parsed.TableName, ex.Message);
                                         throw new Exception($"Could not copy the required structure for table {parsed.TableName} from template database. Ensure the table exists in {templateDatabase}.");
                                     }
                                 }
@@ -952,7 +949,7 @@ namespace SMS_Search.Data
                                 }
                                 catch (Exception ex)
                                 {
-                                    _logger.LogWarning($"Failed to copy structure for {parsed.TableName}: {ex.Message}");
+                                    _logger.LogWarning("Failed to copy structure for {TableName}: {ErrorMessage}", parsed.TableName, ex.Message);
                                     throw new Exception($"Could not copy the required structure for table {parsed.TableName} from template database. Ensure the table exists in {templateDatabase}.");
                                 }
                             }
@@ -1130,31 +1127,31 @@ namespace SMS_Search.Data
 
                                             try
                                             {
-                                                _logger.LogDebug($"Executing reconstructed CREATE VIEW statement: {reconstructedStmt}");
+                                                _logger.LogDebug("Executing reconstructed CREATE VIEW statement: {Sql}", reconstructedStmt);
                                                 await targetConn.ExecuteAsync(new CommandDefinition(reconstructedStmt, cancellationToken: cancellationToken));
                                                 _logger.LogInfo("Successfully created view after resolving missing columns.");
                                             }
                                             catch (Exception ex2)
                                             {
-                                                _logger.LogError($"Statement failed after resolving columns: {reconstructedStmt}", ex2);
+                                                _logger.LogError(ex2, "Statement failed after resolving columns: {Sql}", reconstructedStmt);
                                                 throw new Exception($"Statement failed after resolving columns: {reconstructedStmt}. Error: {ex2.Message}", ex2);
                                             }
                                         }
                                         else
                                         {
-                                            _logger.LogError($"Statement failed (could not parse missing columns): {processedStmt}", sqlEx);
+                                            _logger.LogError(sqlEx, "Statement failed (could not parse missing columns): {Sql}", processedStmt);
                                             throw new Exception($"Statement failed: {processedStmt}. Error: {sqlEx.Message}", sqlEx);
                                         }
                                     }
                                     else
                                     {
-                                        _logger.LogError($"Statement failed (regex match failed for view creation): {processedStmt}", sqlEx);
+                                        _logger.LogError(sqlEx, "Statement failed (regex match failed for view creation): {Sql}", processedStmt);
                                         throw new Exception($"Statement failed: {processedStmt}. Error: {sqlEx.Message}", sqlEx);
                                     }
                                 }
                                 catch (Exception ex)
                                 {
-                                    _logger.LogError($"Statement failed: {processedStmt}", ex);
+                                    _logger.LogError(ex, "Statement failed: {Sql}", processedStmt);
                                     throw new Exception($"Statement failed: {processedStmt}. Error: {ex.Message}", ex);
                                 }
                             }

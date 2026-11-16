@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore SMSSearch.sln
+
+      - name: Build Release
+        run: dotnet build SMSSearch.sln -c Release --no-restore -p:IsPublishing=true
+
+      - name: Run unit tests
+        run: dotnet test SMSSearch.sln -c Release --no-build --verbosity normal
+
+      - name: Publish single-file executable
+        run: >
+          dotnet publish SMSSearch/SMSSearch.csproj -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IsPublishing=true -o ./Publish
+
+      - name: Package release archive
+        shell: pwsh
+        run: |
+          if (Test-Path ./Publish/SMS_Search.zip) { Remove-Item ./Publish/SMS_Search.zip -Force }
+          Compress-Archive -Path "./Publish/SMS Search.exe" -DestinationPath "./Publish/SMS_Search.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./Publish/SMS_Search.zip
+          generate_release_notes: true
+

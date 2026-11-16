@@ -6,7 +6,8 @@ using SMS_Search.Services;
 using SMS_Search.Utils;
 using SMS_Search.Data;
 using SMS_Search.Views;
-using Microsoft.Extensions.DependencyInjection;
+using SMS_Search.ViewModels.Gs1;
+using SMS_Search.Views.Gs1;
 
 namespace SMS_Search
 {
@@ -16,13 +17,29 @@ namespace SMS_Search
         private readonly IConfigService _config;
         private readonly IStateService _state;
         private readonly SMS_Search.Services.Gs1.Gs1ClipboardWatcher _clipboardWatcher;
+        private readonly Func<UnarchiveWindow> _unarchiveWindowFactory;
+        private readonly Func<Gs1ToolkitWindow> _gs1ToolkitWindowFactory;
+        private readonly Func<Gs1ToolkitViewModel> _gs1ToolkitViewModelFactory;
+        private readonly Func<ModernSettingsWindow> _settingsWindowFactory;
+        private readonly Func<EncryptionUtilityWindow> _encryptionWindowFactory;
+        private readonly Func<EncryptionUtilityViewModel> _encryptionViewModelFactory;
         private UnarchiveWindow? _unarchiveWindow;
         private System.Windows.Threading.DispatcherTimer _typingTimer;
         private string _lastTypedText = "";
         private bool _isDeleting = false;
         private string? _lastValidDatabase;
 
-        public MainWindow(MainViewModel viewModel, IConfigService config, IStateService state, SMS_Search.Services.Gs1.Gs1ClipboardWatcher clipboardWatcher)
+        public MainWindow(
+            MainViewModel viewModel,
+            IConfigService config,
+            IStateService state,
+            SMS_Search.Services.Gs1.Gs1ClipboardWatcher clipboardWatcher,
+            Func<UnarchiveWindow> unarchiveWindowFactory,
+            Func<Gs1ToolkitWindow> gs1ToolkitWindowFactory,
+            Func<Gs1ToolkitViewModel> gs1ToolkitViewModelFactory,
+            Func<ModernSettingsWindow> settingsWindowFactory,
+            Func<EncryptionUtilityWindow> encryptionWindowFactory,
+            Func<EncryptionUtilityViewModel> encryptionViewModelFactory)
         {
             InitializeComponent();
             _typingTimer = new System.Windows.Threading.DispatcherTimer();
@@ -33,8 +50,15 @@ namespace SMS_Search
             _config = config;
             _state = state;
             _clipboardWatcher = clipboardWatcher;
+            _unarchiveWindowFactory = unarchiveWindowFactory;
+            _gs1ToolkitWindowFactory = gs1ToolkitWindowFactory;
+            _gs1ToolkitViewModelFactory = gs1ToolkitViewModelFactory;
+            _settingsWindowFactory = settingsWindowFactory;
+            _encryptionWindowFactory = encryptionWindowFactory;
+            _encryptionViewModelFactory = encryptionViewModelFactory;
             DataContext = viewModel;
             viewModel.RequestOpenSettings += OnRequestOpenSettings;
+            viewModel.RequestOpenEncryptionUtility += OnRequestOpenEncryptionUtility;
             viewModel.RequestOpenGs1Toolkit += OnRequestOpenGs1Toolkit;
             viewModel.RequestToggleUnarchiveWindow += OnRequestToggleUnarchiveWindow;
 
@@ -177,6 +201,7 @@ namespace SMS_Search
             this.Unloaded -= MainWindow_Unloaded;
 
             _viewModel.RequestOpenSettings -= OnRequestOpenSettings;
+            _viewModel.RequestOpenEncryptionUtility -= OnRequestOpenEncryptionUtility;
             _viewModel.RequestOpenGs1Toolkit -= OnRequestOpenGs1Toolkit;
             _viewModel.RequestToggleUnarchiveWindow -= OnRequestToggleUnarchiveWindow;
 
@@ -195,7 +220,7 @@ namespace SMS_Search
             {
                 if (_unarchiveWindow == null || !_unarchiveWindow.IsLoaded)
                 {
-                    _unarchiveWindow = App.Current.Services.GetRequiredService<UnarchiveWindow>();
+                    _unarchiveWindow = _unarchiveWindowFactory();
                     _unarchiveWindow.Closed += (s, e) =>
                     {
                         _viewModel.IsUnarchiveTargetVisible = false;
@@ -225,10 +250,18 @@ namespace SMS_Search
             }
             else
             {
-                gs1Window = App.Current.Services.GetRequiredService<SMS_Search.Views.Gs1.Gs1ToolkitWindow>();
-                gs1Window.DataContext = App.Current.Services.GetRequiredService<SMS_Search.ViewModels.Gs1.Gs1ToolkitViewModel>();
+                gs1Window = _gs1ToolkitWindowFactory();
+                gs1Window.DataContext = _gs1ToolkitViewModelFactory();
                 gs1Window.Show();
             }
+        }
+
+        private void OnRequestOpenEncryptionUtility()
+        {
+            var encryptWin = _encryptionWindowFactory();
+            encryptWin.DataContext = _encryptionViewModelFactory();
+            encryptWin.Owner = this;
+            encryptWin.ShowDialog();
         }
 
         private void OnRequestOpenSettings()
@@ -236,7 +269,7 @@ namespace SMS_Search
             MaskOverlay.Visibility = Visibility.Visible;
             try
             {
-                var win = App.Current.Services.GetRequiredService<ModernSettingsWindow>();
+                var win = _settingsWindowFactory();
                 win.Owner = this;
                 win.ShowDialog();
             }

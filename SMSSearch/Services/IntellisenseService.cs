@@ -155,14 +155,14 @@ namespace SMS_Search.Services
             try
             {
                 IsReady = false;
-                _logger.LogInfo($"IntellisenseService: Loading schema for {server}.{database}...");
+                _logger.LogInfo("IntellisenseService: Loading schema for {Server}.{Database}...", server, database);
                 _schemaCache = await _repository.GetDatabaseSchemaAsync(server, database, user, pass);
                 IsReady = true;
-                _logger.LogInfo($"IntellisenseService: Schema loaded successfully ({_schemaCache.Count} tables).");
+                _logger.LogInfo("IntellisenseService: Schema loaded successfully ({TableCount} tables).", _schemaCache.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"IntellisenseService: Failed to load schema for {server}.{database}. Error: {ex.Message}", ex);
+                _logger.LogError(ex, "IntellisenseService: Failed to load schema for {Server}.{Database}. Error: {ErrorMessage}", server, database, ex.Message);
                 IsReady = false;
             }
         }
@@ -336,11 +336,11 @@ namespace SMS_Search.Services
             // User requested tracking fetch times.
             if (elapsed > 50)
             {
-                _logger.LogInfo($"Intellisense fetch ({level}) took {elapsed}ms. Found {results.Count} items.");
+                _logger.LogInfo("Intellisense fetch ({Level}) took {ElapsedMs}ms. Found {ItemCount} items.", level, elapsed, results.Count);
             }
             else
             {
-                _logger.LogDebug($"Intellisense fetch ({level}) took {elapsed}ms. Found {results.Count} items.");
+                _logger.LogDebug("Intellisense fetch ({Level}) took {ElapsedMs}ms. Found {ItemCount} items.", level, elapsed, results.Count);
             }
 
             // Note: AvalonEdit filters the list based on what the user has already typed in the current word.

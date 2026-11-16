@@ -21,6 +21,7 @@ namespace SMS_Search.ViewModels
         private readonly IQueryHistoryService _historyService;
         private readonly IClipboardService _clipboardService; // Assuming we have this service or use System.Windows.Clipboard
         private readonly IIntellisenseService _intellisenseService;
+        private readonly IConnectionSettingsService _connectionSettingsService;
 
         private System.Collections.Generic.List<SqlCleaningRule> _cleanSqlRules = new();
         private System.Threading.CancellationTokenSource? _intellisenseCts;
@@ -34,7 +35,8 @@ namespace SMS_Search.ViewModels
             ILoggerService logger,
             IQueryHistoryService historyService,
             IClipboardService clipboardService,
-            IIntellisenseService intellisenseService)
+            IIntellisenseService intellisenseService,
+            IConnectionSettingsService connectionSettingsService)
         {
             _repository = repository;
             _dialogService = dialogService;
@@ -43,6 +45,7 @@ namespace SMS_Search.ViewModels
             _historyService = historyService;
             _clipboardService = clipboardService;
             _intellisenseService = intellisenseService;
+            _connectionSettingsService = connectionSettingsService;
 
             LoadTablesCommand = new AsyncRelayCommand(LoadTablesAsync);
             RefreshTablesCommand = new AsyncRelayCommand(RefreshTablesAsync);
@@ -103,24 +106,7 @@ namespace SMS_Search.ViewModels
 
         private void InitializeIntellisense()
         {
-            var server = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
-            var database = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "";
-
-            string user = "";
-            string? decryptedPass = null;
-
-            bool isWindowsAuth = true;
-            if (bool.TryParse(_configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
-            {
-                isWindowsAuth = b;
-            }
-
-            if (!isWindowsAuth)
-            {
-                user = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
-                var pass = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
-                decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
-            }
+            var conn = _connectionSettingsService.GetConnectionSettings();
 
             _intellisenseCts?.Cancel();
             _intellisenseCts?.Dispose();
@@ -132,7 +118,7 @@ namespace SMS_Search.ViewModels
                 try
                 {
                     token.ThrowIfCancellationRequested();
-                    await _intellisenseService.InitializeAsync(server, database, user, decryptedPass);
+                    await _intellisenseService.InitializeAsync(conn.Server, conn.Database, conn.User, conn.Password);
                 }
                 catch (System.OperationCanceledException)
                 {
@@ -447,7 +433,7 @@ namespace SMS_Search.ViewModels
                     var clear = new System.Windows.Controls.MenuItem { Header = "Clear History" };
                     clear.Click += (s, e) =>
                     {
-                        _logger.LogInfo($"Clearing history for key: {key}");
+                        _logger.LogInfo("Clearing history for key: {HistoryKey}", key);
                         _historyService.ClearHistory(key);
                     };
                     menu.Items.Add(clear);
@@ -474,7 +460,7 @@ namespace SMS_Search.ViewModels
 
              if (string.IsNullOrEmpty(original)) return;
 
-             _logger.LogDebug($"Cleaning SQL for mode {SelectedMode}. Length: {original.Length}");
+             _logger.LogDebug("Cleaning SQL for mode {SearchMode}. Length: {SqlLength}", SelectedMode, original.Length);
 
              string cleaned = original;
              foreach(var rule in _cleanSqlRules)
@@ -488,7 +474,7 @@ namespace SMS_Search.ViewModels
                  }
                  catch (System.Exception ex)
                  {
-                     _logger.LogError($"Error applying clean SQL rule: {rule.Pattern}", ex);
+                     _logger.LogError(ex, "Error applying clean SQL rule: {RulePattern}", rule.Pattern);
                  }
              }
 
@@ -553,7 +539,7 @@ namespace SMS_Search.ViewModels
 
         private void BuildSql(string? type)
         {
-            _logger.LogDebug($"Building SQL for type: {type ?? "null"}, Mode: {SelectedMode}");
+            _logger.LogDebug("Building SQL for type: {SearchType}, Mode: {SearchMode}", type ?? "null", SelectedMode);
 
             // Determine search criteria without changing UI state (preventing focus bounce)
             var criteria = new SearchCriteria { Mode = SelectedMode, AnyMatch = AnyMatch };
@@ -673,31 +659,15 @@ namespace SMS_Search.ViewModels
 
             try
             {
-                 var server = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
-                 var database = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "";
-                 string user = "";
-                 string? decryptedPass = null;
+                 var conn = _connectionSettingsService.GetConnectionSettings();
 
-                 bool isWindowsAuth = true;
-                 if (bool.TryParse(_configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
-                 {
-                     isWindowsAuth = b;
-                 }
-
-                 if (!isWindowsAuth)
-                 {
-                     user = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
-                     var pass = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
-                     decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
-                 }
-
-                 var tables = await _repository.GetTablesAsync(server, database, user, decryptedPass);
+                 var tables = await _repository.GetTablesAsync(conn.Server, conn.Database, conn.User, conn.Password);
                  Tables.Clear();
                  foreach(var t in tables) Tables.Add(t);
-                 _logger.LogInfo($"Loaded {Tables.Count} tables from database.");
+                 _logger.LogInfo("Loaded {TableCount} tables from database.", Tables.Count);
 
                  // Also reload schema
-                 await _intellisenseService.InitializeAsync(server, database, user, decryptedPass);
+                 await _intellisenseService.InitializeAsync(conn.Server, conn.Database, conn.User, conn.Password);
             }
             catch (System.Exception ex)
             {

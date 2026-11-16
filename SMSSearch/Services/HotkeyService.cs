@@ -43,7 +43,7 @@ namespace SMS_Search.Services
             if (RegisterHotKey(_hwnd, HOTKEY_ID, fsModifiers, (uint)vkey))
             {
                 _isRegistered = true;
-                _logger.LogInfo($"Global hotkey registered: {modifiers}+{key}");
+                _logger.LogInfo("Global hotkey registered: {Modifiers}+{Key}", modifiers, key);
             }
             else
             {

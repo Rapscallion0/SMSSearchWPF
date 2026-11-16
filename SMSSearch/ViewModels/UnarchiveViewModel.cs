@@ -68,7 +68,7 @@ namespace SMS_Search.ViewModels
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError($"Error processing directory {path}", ex);
+                        _logger.LogError(ex, "Error processing directory {DirectoryPath}", path);
                     }
                 }
                 else if (File.Exists(path))
@@ -80,7 +80,7 @@ namespace SMS_Search.ViewModels
             if (count > 0)
             {
                 // Optional: Notify user or just log
-                _logger.LogInfo($"Unarchived {count} files.");
+                _logger.LogInfo("Unarchived {FileCount} files.", count);
                 IsCompleted = true;
                 await Task.Delay(4000);
                 IsCompleted = false;
@@ -93,11 +93,11 @@ namespace SMS_Search.ViewModels
             {
                 FileAttributes attributes = File.GetAttributes(path);
                 File.SetAttributes(path, attributes & ~(FileAttributes.ReadOnly | FileAttributes.Archive));
-                _logger.LogInfo($"File unarchived: {path}");
+                _logger.LogInfo("File unarchived: {FilePath}", path);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error unarchiving file {path}", ex);
+                _logger.LogError(ex, "Error unarchiving file {FilePath}", path);
             }
         }
 

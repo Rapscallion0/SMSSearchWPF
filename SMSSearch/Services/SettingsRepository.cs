@@ -26,7 +26,7 @@ namespace SMS_Search.Services
 
             if (oldValue != value)
             {
-                _logger.LogInfo($"Config changed: Section: {section}, Key: {key}, Old Value: {oldValue ?? "null"}, New Value: {value}");
+                _logger.LogInfo("Config changed: Section: {Section}, Key: {Key}, Old Value: {OldValue}, New Value: {NewValue}", section, key, oldValue ?? "null", value);
             }
         }
 
