@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -295,6 +295,7 @@ namespace SMS_Search.Data
                 {
                     var instance = Microsoft.Data.Sql.SqlDataSourceEnumerator.Instance;
                     var table = instance.GetDataSources();
+                    cancellationToken.ThrowIfCancellationRequested();
                     foreach (System.Data.DataRow row in table.Rows)
                     {
                         string serverName = row["ServerName"]?.ToString() ?? "";

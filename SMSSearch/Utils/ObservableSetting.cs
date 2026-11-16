@@ -6,7 +6,7 @@ using SMS_Search.Services;
 
 namespace SMS_Search.Utils
 {
-    public partial class ObservableSetting<T> : ObservableObject
+    public partial class ObservableSetting<T> : ObservableObject, IDisposable
     {
         private readonly ISettingsRepository _repository;
         private readonly string _section;
@@ -42,12 +42,13 @@ namespace SMS_Search.Utils
 
         partial void OnValueChanged(T value)
         {
-            QueueSave();
+            _ = QueueSaveAsync();
         }
 
-        private async void QueueSave()
+        private async Task QueueSaveAsync()
         {
             _debounceCts?.Cancel();
+            _debounceCts?.Dispose();
             _debounceCts = new CancellationTokenSource();
             var token = _debounceCts.Token;
 
@@ -84,12 +85,18 @@ namespace SMS_Search.Utils
             {
                 // Ignored
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Handle error (logging?)
+                System.Diagnostics.Debug.WriteLine($"Error saving setting {_section}.{_key}: {ex.Message}");
                 IsSaving = false;
-                // Maybe expose IsError property?
             }
+        }
+
+        public void Dispose()
+        {
+            _debounceCts?.Cancel();
+            _debounceCts?.Dispose();
+            _debounceCts = null;
         }
     }
 }

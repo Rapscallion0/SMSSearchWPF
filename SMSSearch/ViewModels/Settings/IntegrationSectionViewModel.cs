@@ -4,6 +4,7 @@ using Microsoft.Win32;
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -19,7 +20,8 @@ namespace SMS_Search.ViewModels.Settings
         private readonly IHotkeyService _hotkeyService;
         private readonly ILoggerService _logger;
         private readonly IDialogService _dialogService;
-        private bool _isMonitoring = true;
+        private readonly CancellationTokenSource _monitorCts = new();
+        private bool _disposed;
         private Key _currentKey = Key.None;
         private ModifierKeys _currentModifiers = ModifierKeys.None;
 
@@ -64,7 +66,7 @@ namespace SMS_Search.ViewModels.Settings
                 HotkeyDisplay = HotkeyUtils.GetFriendlyString(k, m);
             }
 
-            MonitorListenerStatus();
+            _ = MonitorListenerStatusAsync(_monitorCts.Token);
         }
 
         public ObservableSetting<bool> StartWithWindows { get; }
@@ -90,7 +92,10 @@ namespace SMS_Search.ViewModels.Settings
 
         public void Dispose()
         {
-            _isMonitoring = false;
+            if (_disposed) return;
+            _disposed = true;
+            _monitorCts.Cancel();
+            _monitorCts.Dispose();
         }
 
         public void CaptureHotkey(Key key, ModifierKeys modifiers)
@@ -217,10 +222,10 @@ namespace SMS_Search.ViewModels.Settings
             CanStopListener = false;
             try
             {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                if (System.Windows.Application.Current is App app)
                 {
-                    ((App)System.Windows.Application.Current).StartListener();
-                });
+                    await app.Dispatcher.InvokeAsync(() => app.StartListener());
+                }
                 _logger.LogInfo("Listener started manually.");
             }
             catch (Exception ex)
@@ -230,12 +235,19 @@ namespace SMS_Search.ViewModels.Settings
             }
 
             // Wait for polling to pick it up
-            await Task.Delay(1000);
+            try
+            {
+                await Task.Delay(1000, _monitorCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
             CheckListenerStatus();
         }
 
         [RelayCommand]
-        private void StopListenerProcess()
+        private async Task StopListenerProcessAsync()
         {
             StatusColor = System.Windows.Media.Brushes.Yellow;
             ListenerStatusText = "Stopping...";
@@ -243,10 +255,10 @@ namespace SMS_Search.ViewModels.Settings
             CanStopListener = false;
             try
             {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                if (System.Windows.Application.Current is App app)
                 {
-                    ((App)System.Windows.Application.Current).StopListener();
-                });
+                    await app.Dispatcher.InvokeAsync(() => app.StopListener());
+                }
                 _logger.LogInfo("Listener stopped manually.");
             }
             catch (Exception ex)
@@ -257,25 +269,32 @@ namespace SMS_Search.ViewModels.Settings
             CheckListenerStatus();
         }
 
-        private async void MonitorListenerStatus()
+        private async Task MonitorListenerStatusAsync(CancellationToken cancellationToken)
         {
             try
             {
-                while (_isMonitoring)
+                while (!cancellationToken.IsCancellationRequested)
                 {
                     CheckListenerStatus();
-                    await Task.Delay(2000);
+                    await Task.Delay(2000, cancellationToken);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected on Dispose
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in MonitorListenerStatus: {ex.Message}");
+                _logger.LogError("Error in MonitorListenerStatusAsync", ex);
             }
         }
 
         private void CheckListenerStatus()
         {
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher == null) return;
+
+            void UpdateStatus()
             {
                 bool running = App.IsListenerRunning;
                 if (running)
@@ -294,7 +313,16 @@ namespace SMS_Search.ViewModels.Settings
                     CanStartListener = true;
                     CanStopListener = false;
                 }
-            });
+            }
+
+            if (dispatcher.CheckAccess())
+            {
+                UpdateStatus();
+            }
+            else
+            {
+                dispatcher.BeginInvoke((Action)UpdateStatus);
+            }
         }
 
         [DllImport("user32.dll", SetLastError = true)]

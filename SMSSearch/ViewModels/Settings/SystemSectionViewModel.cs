@@ -168,7 +168,7 @@ namespace SMS_Search.ViewModels.Settings
                     UpdateStatusMessage = $"An updated version is available!\n\nYour Version: v{version}\nAvailable Version: {info.Version}";
                     UpdateStatusColor = "Red";
 
-                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
                         var updateWindow = new SMS_Search.Views.Windows.UpdateWindow(info, _updateChecker);
                         updateWindow.Owner = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(x => x.IsActive && !(x is SMS_Search.Views.ToastWindow)) ?? System.Windows.Application.Current.MainWindow;

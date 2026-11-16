@@ -12,6 +12,7 @@ namespace SMS_Search.Views
     {
         private UnarchiveViewModel _viewModel;
         private IConfigService _config;
+        private readonly Action _requestCloseHandler;
 
         public UnarchiveWindow(UnarchiveViewModel viewModel, IConfigService config)
         {
@@ -20,8 +21,16 @@ namespace SMS_Search.Views
             _config = config;
             DataContext = viewModel;
 
-            _viewModel.RequestClose += () => Close();
+            _requestCloseHandler = () => Close();
+            _viewModel.RequestClose += _requestCloseHandler;
             _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            _viewModel.RequestClose -= _requestCloseHandler;
+            _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
         }
 
         private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

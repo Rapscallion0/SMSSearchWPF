@@ -16,7 +16,7 @@ using SMS_Search.Views;
 
 namespace SMS_Search.ViewModels.Settings
 {
-    public partial class ConnectionSectionViewModel : SettingsSectionViewModel
+    public partial class ConnectionSectionViewModel : SettingsSectionViewModel, IDisposable
     {
         private readonly ISettingsRepository _repository;
         private readonly IDataRepository _dataRepository;
@@ -148,12 +148,13 @@ namespace SMS_Search.ViewModels.Settings
 
         partial void OnPasswordChanged(string value)
         {
-            DebounceSavePassword();
+            _ = DebounceSavePasswordAsync();
         }
 
-        private async void DebounceSavePassword()
+        private async Task DebounceSavePasswordAsync()
         {
             _passwordCts?.Cancel();
+            _passwordCts?.Dispose();
             _passwordCts = new CancellationTokenSource();
             var token = _passwordCts.Token;
 
@@ -181,6 +182,22 @@ namespace SMS_Search.ViewModels.Settings
                 IsPasswordSaved = false;
             }
             catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to save SQL password", ex);
+                IsPasswordSaving = false;
+            }
+        }
+
+        public void Dispose()
+        {
+            _passwordCts?.Cancel();
+            _passwordCts?.Dispose();
+            _passwordCts = null;
+            WindowsAuth.Dispose();
+            Server.Dispose();
+            Database.Dispose();
+            User.Dispose();
         }
 
         public IAsyncRelayCommand LoadDatabasesCommand { get; }

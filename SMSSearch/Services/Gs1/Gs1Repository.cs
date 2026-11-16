@@ -15,11 +15,13 @@ namespace SMS_Search.Services.Gs1
         private const string DictionaryUrl = "https://raw.githubusercontent.com/gs1/gs1-syntax-dictionary/master/gs1-syntax-dictionary.txt";
         private const string JsonLdUrl = "https://ref.gs1.org/ai/GS1_Application_Identifiers.jsonld";
         private readonly ILoggerService _logger;
+        private readonly HttpClient _httpClient;
         private List<Gs1AiDefinition>? _cachedDefinitions;
 
-        public Gs1Repository(ILoggerService logger)
+        public Gs1Repository(ILoggerService logger, HttpClient httpClient)
         {
             _logger = logger;
+            _httpClient = httpClient;
         }
 
         private string GetCachePath()
@@ -32,16 +34,15 @@ namespace SMS_Search.Services.Gs1
         {
             try
             {
-                using var client = new HttpClient();
-                _logger.LogInfo($"Downloading GS1 syntax dictionary from {DictionaryUrl}...");
-                string content = await client.GetStringAsync(DictionaryUrl);
+                _logger.LogInfo("Downloading GS1 syntax dictionary from {DictionaryUrl}...", DictionaryUrl);
+                string content = await _httpClient.GetStringAsync(DictionaryUrl);
                 var definitions = ParseDictionaryText(content);
-                _logger.LogInfo($"Successfully parsed {definitions.Count} AI definitions from the syntax dictionary.");
+                _logger.LogInfo("Successfully parsed {DefinitionCount} AI definitions from the syntax dictionary.", definitions.Count);
 
                 try
                 {
-                    _logger.LogInfo($"Downloading GS1 JSON-LD dictionary from {JsonLdUrl}...");
-                    string jsonLdContent = await client.GetStringAsync(JsonLdUrl);
+                    _logger.LogInfo("Downloading GS1 JSON-LD dictionary from {JsonLdUrl}...", JsonLdUrl);
+                    string jsonLdContent = await _httpClient.GetStringAsync(JsonLdUrl);
                     using var document = JsonDocument.Parse(jsonLdContent);
                     if (document.RootElement.TryGetProperty("applicationIdentifiers", out var aisElement))
                     {
@@ -60,7 +61,7 @@ namespace SMS_Search.Services.Gs1
                             }
                         }
 
-                        _logger.LogInfo($"Extracted {descriptions.Count} descriptions from the JSON-LD dictionary.");
+                        _logger.LogInfo("Extracted {DescriptionCount} descriptions from the JSON-LD dictionary.", descriptions.Count);
 
                         int matchedCount = 0;
                         foreach (var def in definitions)
@@ -72,7 +73,7 @@ namespace SMS_Search.Services.Gs1
                             }
                         }
 
-                        _logger.LogInfo($"Successfully matched {matchedCount} descriptions to the parsed AI definitions.");
+                        _logger.LogInfo("Successfully matched {MatchedCount} descriptions to the parsed AI definitions.", matchedCount);
                     }
                     else
                     {
@@ -88,7 +89,7 @@ namespace SMS_Search.Services.Gs1
                 await File.WriteAllTextAsync(GetCachePath(), json);
 
                 _cachedDefinitions = definitions;
-                _logger.LogInfo($"Successfully downloaded, parsed, and cached {definitions.Count} AI definitions.");
+                _logger.LogInfo("Successfully downloaded, parsed, and cached {DefinitionCount} AI definitions.", definitions.Count);
                 return definitions;
             }
             catch (Exception ex)

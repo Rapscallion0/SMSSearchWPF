@@ -5,12 +5,14 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.Json;
+using Dapper;
 
 namespace SMS_Search.Data
 {
-    public class VirtualGridContext
+    public class VirtualGridContext : IDisposable
     {
         private readonly IDataRepository _repo;
+        private CancellationTokenSource? _queryCts;
 
         private string? _server;
         private string? _database;
@@ -23,9 +25,11 @@ namespace SMS_Search.Data
         public int TotalCount { get; private set; }
         public int UnfilteredCount { get; private set; }
         private Dictionary<int, DataRow> _cache;
+        private readonly Queue<int> _cacheKeys = new Queue<int>();
         private HashSet<int> _pagesBeingFetched;
         private Dictionary<int, TaskCompletionSource<bool>> _pageCompletionSources;
         private const int PageSize = 1000;
+        private const int MaxCacheSize = 5000;
         private int _version = 0;
 
         public string? SortColumn { get; private set; }
@@ -89,22 +93,38 @@ namespace SMS_Search.Data
             else
             {
                 var clauses = new List<string>();
-                string safeFilter = filterText.Replace("'", "''");
                 foreach (var col in columns)
                 {
+                    string safeCol = col.Replace("[", "").Replace("]", "");
                     if (_columnSqlTypes.TryGetValue(col, out string? type) && type != null && SafeStringTypes.Contains(type))
                     {
-                        clauses.Add($"[{col}] LIKE '%{safeFilter}%'");
+                        clauses.Add($"[{safeCol}] LIKE @_SmsFilterPattern");
                     }
                     else
                     {
-                        clauses.Add($"CAST([{col}] AS NVARCHAR(MAX)) LIKE '%{safeFilter}%'");
+                        clauses.Add($"CAST([{safeCol}] AS NVARCHAR(MAX)) LIKE @_SmsFilterPattern");
                     }
                 }
                 FilterText = string.Join(" OR ", clauses);
             }
 
             await ReloadAsync(cancellationToken);
+        }
+
+        private object? GetEffectiveParameters()
+        {
+            if (string.IsNullOrEmpty(FilterText) || string.IsNullOrWhiteSpace(_rawFilterText))
+            {
+                return _parameters;
+            }
+
+            var dp = new DynamicParameters();
+            if (_parameters != null)
+            {
+                dp.AddDynamicParams(_parameters);
+            }
+            dp.Add("_SmsFilterPattern", $"%{_rawFilterText}%");
+            return dp;
         }
 
         public async Task<long> GetTotalMatchCountAsync(CancellationToken cancellationToken = default)
@@ -121,7 +141,7 @@ namespace SMS_Search.Data
 
             if (_server == null || _database == null || _baseSql == null) return 0;
 
-            return await _repo.GetTotalMatchCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, _rawFilterText, colTypes, cancellationToken);
+            return await _repo.GetTotalMatchCountAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, _rawFilterText, colTypes, cancellationToken);
         }
 
         public async Task<long> CountMatchesAsync(string searchText, IEnumerable<string> columns, CancellationToken cancellationToken = default)
@@ -137,7 +157,7 @@ namespace SMS_Search.Data
 
             if (_server == null || _database == null || _baseSql == null) return 0;
 
-            return await _repo.GetTotalMatchCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, searchText, colTypes, cancellationToken);
+            return await _repo.GetTotalMatchCountAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, searchText, colTypes, cancellationToken);
         }
 
         public async Task<long> GetTotalMatchedCellsCountAsync(string searchText, IEnumerable<string> columns, CancellationToken cancellationToken = default)
@@ -153,7 +173,7 @@ namespace SMS_Search.Data
 
             if (_server == null || _database == null || _baseSql == null) return 0;
 
-            return await _repo.GetTotalMatchedCellsCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, searchText, colTypes, cancellationToken);
+            return await _repo.GetTotalMatchedCellsCountAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, searchText, colTypes, cancellationToken);
         }
 
         public async Task<long> GetPrecedingMatchedCellsCountAsync(int limitRowIndex, CancellationToken cancellationToken = default)
@@ -170,7 +190,7 @@ namespace SMS_Search.Data
 
             if (_server == null || _database == null || _baseSql == null) return 0;
 
-            return await _repo.GetPrecedingMatchedCellsCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, _rawFilterText, colTypes, limitRowIndex, SortColumn, SortDirection, cancellationToken);
+            return await _repo.GetPrecedingMatchedCellsCountAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, _rawFilterText, colTypes, limitRowIndex, SortColumn, SortDirection, cancellationToken);
         }
 
         public async Task<long> GetPrecedingMatchCountAsync(int limitRowIndex, CancellationToken cancellationToken = default)
@@ -187,7 +207,7 @@ namespace SMS_Search.Data
 
             if (_server == null || _database == null || _baseSql == null) return 0;
 
-            return await _repo.GetPrecedingMatchCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, _rawFilterText, colTypes, limitRowIndex, SortColumn, SortDirection, cancellationToken);
+            return await _repo.GetPrecedingMatchCountAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, _rawFilterText, colTypes, limitRowIndex, SortColumn, SortDirection, cancellationToken);
         }
 
         public async Task WaitForRowAsync(int rowIndex)
@@ -251,15 +271,21 @@ namespace SMS_Search.Data
             _version++;
             int currentVersion = _version;
 
+            _queryCts?.Cancel();
+            _queryCts?.Dispose();
+            _queryCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var linkedToken = _queryCts.Token;
+
             try
             {
                 _cache.Clear();
+                _cacheKeys.Clear();
                 _pagesBeingFetched.Clear();
                 _pageCompletionSources.Clear();
 
                 if (_server != null && _database != null && _baseSql != null)
                 {
-                    TotalCount = await _repo.GetQueryCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, cancellationToken);
+                    TotalCount = await _repo.GetQueryCountAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, linkedToken);
                 }
             }
             catch (OperationCanceledException) { }
@@ -267,6 +293,13 @@ namespace SMS_Search.Data
             {
                 LoadError?.Invoke(this, ex);
             }
+        }
+
+        public void Dispose()
+        {
+            _queryCts?.Cancel();
+            _queryCts?.Dispose();
+            _queryCts = null;
         }
 
         public object? GetValue(int rowIndex, int colIndex)
@@ -284,7 +317,7 @@ namespace SMS_Search.Data
                     // Check if the first row of the next page is already loaded
                     if (!_cache.ContainsKey(nextPageRowIndex))
                     {
-                        RequestPage(nextPageRowIndex);
+                        _ = RequestPageAsync(nextPageRowIndex);
                     }
                 }
             }
@@ -296,17 +329,18 @@ namespace SMS_Search.Data
                 return "";
             }
 
-            RequestPage(rowIndex);
+            _ = RequestPageAsync(rowIndex);
             return null;
         }
 
-        private async void RequestPage(int rowIndex)
+        private async Task RequestPageAsync(int rowIndex)
         {
             int pageIndex = rowIndex / PageSize;
 
             if (_pagesBeingFetched.Contains(pageIndex)) return;
 
             int currentVersion = _version;
+            var token = _queryCts?.Token ?? CancellationToken.None;
             _pagesBeingFetched.Add(pageIndex);
 
             try
@@ -319,18 +353,30 @@ namespace SMS_Search.Data
 
                 if (_server != null && _database != null && _baseSql != null)
                 {
-                    var dt = await _repo.GetQueryPageAsync(_server, _database, _user, _pass, _baseSql, _parameters, offset, PageSize, sortCol, sortDir, filter);
+                    var dt = await _repo.GetQueryPageAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), offset, PageSize, sortCol, sortDir, filter, token);
 
-                    if (_version != currentVersion) return;
+                    if (_version != currentVersion || token.IsCancellationRequested) return;
 
                     for (int i = 0; i < dt.Rows.Count; i++)
                     {
                         int absIndex = offset + i;
+                        if (!_cache.ContainsKey(absIndex))
+                        {
+                            while (_cache.Count >= MaxCacheSize && _cacheKeys.TryDequeue(out int oldestKey))
+                            {
+                                _cache.Remove(oldestKey);
+                            }
+                            _cacheKeys.Enqueue(absIndex);
+                        }
                         _cache[absIndex] = dt.Rows[i];
                     }
 
                     DataReady?.Invoke(this, EventArgs.Empty);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when query reloads or disposes
             }
             catch (Exception ex)
             {
@@ -403,7 +449,7 @@ namespace SMS_Search.Data
              if (_server == null || _database == null) return 0;
              int rowCount = 0;
 
-             using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
+             using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, GetEffectiveParameters(), cancellationToken))
              {
                  using (var writer = new StreamWriter(filename))
                  {
@@ -456,10 +502,10 @@ namespace SMS_Search.Data
              int exportRecordCount = 0;
              if (_baseSql != null)
              {
-                 exportRecordCount = await _repo.GetQueryCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, cancellationToken);
+                 exportRecordCount = await _repo.GetQueryCountAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, cancellationToken);
              }
 
-             using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
+             using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, GetEffectiveParameters(), cancellationToken))
              {
                  using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None))
                  using (var writer = new Utf8JsonWriter(fs, new JsonWriterOptions { Indented = true }))
@@ -536,7 +582,7 @@ namespace SMS_Search.Data
              int exportRecordCount = 0;
              if (_baseSql != null)
              {
-                 exportRecordCount = await _repo.GetQueryCountAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, cancellationToken);
+                 exportRecordCount = await _repo.GetQueryCountAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, cancellationToken);
              }
 
              string rootElement = "SearchResults";
@@ -572,7 +618,7 @@ namespace SMS_Search.Data
 
              rootAttr += $" RecordCount=\"{exportRecordCount}\"";
 
-             using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, _parameters, cancellationToken))
+             using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, GetEffectiveParameters(), cancellationToken))
              {
                  using (var writer = new StreamWriter(filename))
                  {
@@ -869,7 +915,7 @@ namespace SMS_Search.Data
 
             if (_server == null || _database == null || _baseSql == null) return new List<string>();
 
-            return await _repo.GetAllMatchesAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, searchText, colTypes, cancellationToken);
+            return await _repo.GetAllMatchesAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, searchText, colTypes, cancellationToken);
         }
 
         public async Task<int> FindMatchRowAsync(string searchText, IEnumerable<string> searchColumns, int startRowIndex, bool forward, CancellationToken cancellationToken = default)
@@ -885,7 +931,7 @@ namespace SMS_Search.Data
 
             if (_server == null || _database == null || _baseSql == null) return -1;
 
-            return await _repo.GetMatchRowIndexAsync(_server, _database, _user, _pass, _baseSql, _parameters, FilterText, searchText, colTypes, startRowIndex, SortColumn, SortDirection, forward, cancellationToken);
+            return await _repo.GetMatchRowIndexAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, searchText, colTypes, startRowIndex, SortColumn, SortDirection, forward, cancellationToken);
         }
 
         public async Task<List<string>> GetColumnDescriptionsAsync(IEnumerable<string> columns, CancellationToken cancellationToken = default)

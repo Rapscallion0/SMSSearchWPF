@@ -22,7 +22,7 @@ namespace SMS_Search.Services
         string? SaveFileDialog(string filter, string defaultName = "");
         string? PickColor(string? defaultColor = null);
         void ShowToast(string message, string title, ToastType type = ToastType.Info, string? details = null, string? filePath = null, System.Windows.Window? owner = null);
-        ExistingTableAction ShowTableExistsPrompt(string tableName);
-        SMS_Search.Models.MissingColumnDialogResult ShowMissingColumnsPrompt(string tableName, System.Collections.Generic.List<SMS_Search.Models.MissingColumnInfo> missingColumns);
+        Task<ExistingTableAction> ShowTableExistsPromptAsync(string tableName);
+        Task<SMS_Search.Models.MissingColumnDialogResult> ShowMissingColumnsPromptAsync(string tableName, System.Collections.Generic.List<SMS_Search.Models.MissingColumnInfo> missingColumns);
     }
 }

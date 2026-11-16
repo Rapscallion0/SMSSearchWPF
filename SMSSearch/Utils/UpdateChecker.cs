@@ -27,11 +27,13 @@ namespace SMS_Search.Utils
 
         private readonly IDialogService _dialogService;
         private readonly ILoggerService _loggerService;
+        private readonly HttpClient _httpClient;
 
-        public UpdateChecker(IDialogService dialogService, ILoggerService loggerService)
+        public UpdateChecker(IDialogService dialogService, ILoggerService loggerService, HttpClient httpClient)
         {
             _dialogService = dialogService;
             _loggerService = loggerService;
+            _httpClient = httpClient;
         }
 
         public async Task<UpdateInfo> CheckForUpdatesAsync()
@@ -39,15 +41,16 @@ namespace SMS_Search.Utils
             try
             {
                 _loggerService.LogDebug("Starting background check for updates...");
-                using (HttpClient client = new HttpClient())
+                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(10));
+                using var request = new HttpRequestMessage(HttpMethod.Get, GitHubApiUrl);
+                request.Headers.Add("User-Agent", "SMS-Search-Updater");
+
+                using var response = await _httpClient.SendAsync(request, cts.Token);
+                response.EnsureSuccessStatusCode();
+                string json = await response.Content.ReadAsStringAsync(cts.Token);
+
+                using (JsonDocument doc = JsonDocument.Parse(json))
                 {
-                    client.DefaultRequestHeaders.Add("User-Agent", "SMS-Search-Updater");
-                    client.Timeout = TimeSpan.FromSeconds(10);
-
-                    string json = await client.GetStringAsync(GitHubApiUrl);
-
-                    using (JsonDocument doc = JsonDocument.Parse(json))
-                    {
                         var root = doc.RootElement;
                         if (root.TryGetProperty("tag_name", out JsonElement tagNameElement))
                         {
@@ -96,12 +99,12 @@ namespace SMS_Search.Utils
                                 }
                                 else
                                 {
-                                    _loggerService.LogDebug($"Update check: Current version is up to date or newer. Remote: {remoteVersion}, Current: {currentVersion}");
+                                    _loggerService.LogDebug("Update check: Current version is up to date or newer. Remote: {RemoteVersion}, Current: {CurrentVersion}", remoteVersion, currentVersion);
                                 }
                             }
                             else
                             {
-                                _loggerService.LogDebug($"Update check: Could not parse remote version '{versionStr}'");
+                                _loggerService.LogDebug("Update check: Could not parse remote version '{VersionStr}'", versionStr);
                             }
                         }
                         else
@@ -110,7 +113,6 @@ namespace SMS_Search.Utils
                         }
                     }
                 }
-            }
             catch (Exception ex)
             {
                 _loggerService.LogError("Update check threw an exception.", ex);
@@ -144,13 +146,13 @@ namespace SMS_Search.Utils
 
             try
             {
-                _loggerService.LogDebug($"Downloading update from {info.DownloadUrl} to {zipPath}");
+                _loggerService.LogDebug("Downloading update from {DownloadUrl} to {ZipPath}", info.DownloadUrl, zipPath);
                 statusCallback?.Report("Downloading update...");
-                using (HttpClient client = new HttpClient())
+                using (var request = new HttpRequestMessage(HttpMethod.Get, info.DownloadUrl))
                 {
-                    client.DefaultRequestHeaders.Add("User-Agent", "SMS-Search-Updater");
+                    request.Headers.Add("User-Agent", "SMS-Search-Updater");
 
-                    using (var response = await client.GetAsync(info.DownloadUrl, HttpCompletionOption.ResponseHeadersRead))
+                    using (var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
                     {
                         response.EnsureSuccessStatusCode();
 

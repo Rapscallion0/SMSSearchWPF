@@ -1,0 +1,43 @@
+# Visual Studio & .NET build outputs
+.vs/
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Pp]ublish/
+artifacts/
+
+# User-specific & IDE state
+*.user
+*.suo
+*.rsuser
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+# Compiled binaries, symbols, and logs
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.log
+*.tmp
+*_wpftmp.csproj
+
+# Test & coverage artifacts
+[Tt]est[Rr]esult*/
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+
+# Package caches & lock fragments
+packages/
+project.lock.json
+project.fragment.lock.json
+
+# NuGet packages
+*.nupkg
+*.snupkg
+

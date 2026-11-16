@@ -38,7 +38,7 @@ namespace SMS_Search.ViewModels.Settings
         private bool _isSaved;
     }
 
-    public partial class CleanSqlSectionViewModel : SettingsSectionViewModel
+    public partial class CleanSqlSectionViewModel : SettingsSectionViewModel, IDisposable
     {
         private readonly ISettingsRepository _repository;
         private readonly ILoggerService _logger;
@@ -267,7 +267,7 @@ namespace SMS_Search.ViewModels.Settings
 
             if (rule != null)
             {
-                _logger.LogInfo($"Removing clean SQL rule: {rule.Pattern}");
+                _logger.LogInfo("Removing clean SQL rule: {Pattern}", rule.Pattern);
                 Rules.Remove(rule);
                 _modifiedRules.Remove(rule); // Ensure we don't try to access removed rule
                 await SaveRules();
@@ -316,6 +316,19 @@ namespace SMS_Search.ViewModels.Settings
              if ("Indent".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
 
              return false;
+        }
+
+        public void Dispose()
+        {
+            Rules.CollectionChanged -= OnRulesCollectionChanged;
+            foreach (var rule in Rules)
+            {
+                rule.PropertyChanged -= OnRulePropertyChanged;
+            }
+            BeautifySql?.Dispose();
+            IndentStringSpaces?.Dispose();
+            ExpandCommaLists?.Dispose();
+            ExpandBooleanExpressions?.Dispose();
         }
     }
 }

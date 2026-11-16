@@ -1,10 +1,11 @@
+using System;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace SMS_Search.ViewModels.Settings
 {
-    public partial class ModernSettingsViewModel : ObservableObject
+    public partial class ModernSettingsViewModel : ObservableObject, IDisposable
     {
         private readonly ObservableCollection<SettingsSectionViewModel> _allSections;
 
@@ -72,6 +73,17 @@ namespace SMS_Search.ViewModels.Settings
             if (Sections.Count > 0 && (SelectedSection == null || !Sections.Contains(SelectedSection)))
             {
                 SelectedSection = Sections[0];
+            }
+        }
+
+        public void Dispose()
+        {
+            foreach (var section in _allSections)
+            {
+                if (section is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
             }
         }
     }

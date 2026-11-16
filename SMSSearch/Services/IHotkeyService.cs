@@ -3,7 +3,7 @@ using System.Windows.Input;
 
 namespace SMS_Search.Services
 {
-    public interface IHotkeyService
+    public interface IHotkeyService : IDisposable
     {
         void Register(IntPtr hwnd, Key key, ModifierKeys modifiers, Action action);
         void Unregister();

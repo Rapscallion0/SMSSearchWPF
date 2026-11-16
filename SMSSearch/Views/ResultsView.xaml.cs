@@ -55,6 +55,7 @@ namespace SMS_Search.Views
         private const int WM_MOUSEHWHEEL = 0x020E;
         private HwndSource? _hwndSource;
         private ScrollViewer? _cachedScrollViewer;
+        private bool _isTimerHooked;
 
         public ResultsView()
         {
@@ -63,6 +64,7 @@ namespace SMS_Search.Views
             _debounceTimer = new DispatcherTimer();
             _debounceTimer.Interval = TimeSpan.FromMilliseconds(500);
             _debounceTimer.Tick += DebounceTimer_Tick;
+            _isTimerHooked = true;
 
             CopyColumnNameCommand = new RelayCommand<DataGridColumn>(CopyColumnName);
             HideColumnCommand = new RelayCommand<DataGridColumn>(HideColumn);
@@ -83,8 +85,16 @@ namespace SMS_Search.Views
 
         private void ResultsView_Loaded(object sender, RoutedEventArgs e)
         {
-            _hwndSource = PresentationSource.FromVisual(this) as HwndSource;
-            _hwndSource?.AddHook(WndProc);
+            if (_hwndSource == null)
+            {
+                _hwndSource = PresentationSource.FromVisual(this) as HwndSource;
+                _hwndSource?.AddHook(WndProc);
+            }
+            if (!_isTimerHooked)
+            {
+                _debounceTimer.Tick += DebounceTimer_Tick;
+                _isTimerHooked = true;
+            }
         }
 
         private void ResultsView_Unloaded(object sender, RoutedEventArgs e)
@@ -95,7 +105,11 @@ namespace SMS_Search.Views
             if (_debounceTimer != null)
             {
                 _debounceTimer.Stop();
-                _debounceTimer.Tick -= DebounceTimer_Tick;
+                if (_isTimerHooked)
+                {
+                    _debounceTimer.Tick -= DebounceTimer_Tick;
+                    _isTimerHooked = false;
+                }
             }
         }
 

@@ -10,6 +10,8 @@ using SMS_Search.ViewModels.Gs1;
 using SMS_Search.Views.Gs1;
 using System;
 using System.IO;
+using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Linq;
@@ -25,6 +27,8 @@ namespace SMS_Search
 
         private static System.Threading.Mutex? _mutex = null;
         private static System.Threading.EventWaitHandle? _showEvent = null;
+        private CancellationTokenSource? _shutdownCts = null;
+        private HwndSource? _listenerHwndSource = null;
         public static bool IsListenerRunning { get; private set; } = false;
         private Window? _hiddenWindow = null;
 
@@ -57,6 +61,10 @@ namespace SMS_Search
             services.AddSingleton<IClipboardService, ClipboardService>();
             services.AddSingleton<IHotkeyService, HotkeyService>();
 
+            services.AddSingleton<HttpClient>(_ => new HttpClient(new SocketsHttpHandler
+            {
+                PooledConnectionLifetime = TimeSpan.FromMinutes(10)
+            }));
             services.AddSingleton<UpdateChecker>();
 
             // GS1 Toolkit Services
@@ -129,7 +137,8 @@ namespace SMS_Search
                     if (key != Key.None)
                     {
                         var helper = new WindowInteropHelper(_hiddenWindow);
-                        HwndSource.FromHwnd(helper.Handle).AddHook(hotkeyService.ProcessMessage);
+                        _listenerHwndSource = HwndSource.FromHwnd(helper.Handle);
+                        _listenerHwndSource?.AddHook(hotkeyService.ProcessMessage);
                         hotkeyService.Register(helper.Handle, key, modifiers, () =>
                         {
                             try
@@ -161,6 +170,11 @@ namespace SMS_Search
             config.Save();
 
             var hotkeyService = Services.GetRequiredService<IHotkeyService>();
+            if (_listenerHwndSource != null)
+            {
+                _listenerHwndSource.RemoveHook(hotkeyService.ProcessMessage);
+                _listenerHwndSource = null;
+            }
             if (hotkeyService is IDisposable disposableHotkey)
             {
                 disposableHotkey.Dispose();
@@ -235,6 +249,16 @@ namespace SMS_Search
         {
             try
             {
+                _shutdownCts?.Cancel();
+                _shutdownCts?.Dispose();
+                _shutdownCts = null;
+
+                _showEvent?.Dispose();
+                _showEvent = null;
+
+                _mutex?.Dispose();
+                _mutex = null;
+
                 var logger = Services.GetService<ILoggerService>();
                 logger?.Dispose();
 
@@ -242,6 +266,11 @@ namespace SMS_Search
                 if (hotkeyService is IDisposable disposableHotkey)
                 {
                     disposableHotkey.Dispose();
+                }
+
+                if (Services is IDisposable disposableServices)
+                {
+                    disposableServices.Dispose();
                 }
             }
             catch { }
@@ -274,17 +303,21 @@ namespace SMS_Search
 
             // We are the first instance. Create the event listener for future instances.
             _showEvent = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.AutoReset, eventName);
+            _shutdownCts = new CancellationTokenSource();
+            var shutdownToken = _shutdownCts.Token;
             _ = Task.Run(() =>
             {
-                while (true)
+                var handles = new WaitHandle[] { _showEvent, shutdownToken.WaitHandle };
+                while (!shutdownToken.IsCancellationRequested)
                 {
-                    _showEvent.WaitOne();
-                    Dispatcher.Invoke(() =>
+                    int index = WaitHandle.WaitAny(handles);
+                    if (index == 1 || shutdownToken.IsCancellationRequested) break;
+                    _ = Dispatcher.InvokeAsync(() =>
                     {
                         ShowMainWindow();
                     });
                 }
-            });
+            }, shutdownToken);
 
             try
             {

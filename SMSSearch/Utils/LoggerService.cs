@@ -12,9 +12,13 @@ namespace SMS_Search.Utils
         void LogStartupInfo();
         void Log(LogLevel level, string message);
         void LogError(string message, Exception? ex = null);
+        void LogError(Exception ex, string messageTemplate, params object?[] args);
         void LogWarning(string message);
+        void LogWarning(string messageTemplate, params object?[] args);
         void LogInfo(string message);
+        void LogInfo(string messageTemplate, params object?[] args);
         void LogDebug(string message);
+        void LogDebug(string messageTemplate, params object?[] args);
         void LogCritical(string message);
         void ApplyConfig();
         string GetCurrentLogPath();
@@ -176,17 +180,35 @@ namespace SMS_Search.Utils
             catch { /* Ignore logging failures */ }
         }
 
+        public void LogError(Exception ex, string messageTemplate, params object?[] args)
+        {
+            if (_logger == null) return;
+            try { _logger.Error(ex, messageTemplate, args); } catch { }
+        }
+
         public void LogWarning(string message)
         {
             try { _logger?.Warning(message); } catch {}
+        }
+        public void LogWarning(string messageTemplate, params object?[] args)
+        {
+            try { _logger?.Warning(messageTemplate, args); } catch {}
         }
         public void LogInfo(string message)
         {
             try { _logger?.Information(message); } catch {}
         }
+        public void LogInfo(string messageTemplate, params object?[] args)
+        {
+            try { _logger?.Information(messageTemplate, args); } catch {}
+        }
         public void LogDebug(string message)
         {
             try { _logger?.Debug(message); } catch {}
+        }
+        public void LogDebug(string messageTemplate, params object?[] args)
+        {
+            try { _logger?.Debug(messageTemplate, args); } catch {}
         }
         public void LogCritical(string message)
         {

@@ -23,6 +23,7 @@ namespace SMS_Search.ViewModels
         private readonly IIntellisenseService _intellisenseService;
 
         private System.Collections.Generic.List<SqlCleaningRule> _cleanSqlRules = new();
+        private System.Threading.CancellationTokenSource? _intellisenseCts;
 
         private bool _isInitializing = true;
 
@@ -94,6 +95,9 @@ namespace SMS_Search.ViewModels
 
         public void Dispose()
         {
+            _intellisenseCts?.Cancel();
+            _intellisenseCts?.Dispose();
+            _intellisenseCts = null;
             WeakReferenceMessenger.Default.UnregisterAll(this);
         }
 
@@ -118,8 +122,27 @@ namespace SMS_Search.ViewModels
                 decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
             }
 
-            // Fire and forget
-            Task.Run(() => _intellisenseService.InitializeAsync(server, database, user, decryptedPass));
+            _intellisenseCts?.Cancel();
+            _intellisenseCts?.Dispose();
+            _intellisenseCts = new System.Threading.CancellationTokenSource();
+            var token = _intellisenseCts.Token;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    token.ThrowIfCancellationRequested();
+                    await _intellisenseService.InitializeAsync(server, database, user, decryptedPass);
+                }
+                catch (System.OperationCanceledException)
+                {
+                    // Expected on dispose
+                }
+                catch (System.Exception ex)
+                {
+                    _logger.LogError("Failed to initialize Intellisense", ex);
+                }
+            }, token);
         }
 
         private void LoadFontSettings()

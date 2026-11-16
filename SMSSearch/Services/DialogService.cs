@@ -79,39 +79,50 @@ namespace SMS_Search.Services
         public void ShowToast(string message, string title, ToastType type = ToastType.Info, string? details = null, string? filePath = null, System.Windows.Window? owner = null)
         {
             // Ensure UI thread access for creating window
-            if (System.Windows.Application.Current != null && System.Windows.Application.Current.Dispatcher != null)
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher == null) return;
+
+            void Show()
             {
-                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                 {
-                     // Get Timeout
-                     int timeout = 5;
-                     string? val = _settingsRepository.GetValue(AppSettings.Sections.General, AppSettings.Keys.ToastTimeout);
-                     if (!string.IsNullOrEmpty(val) && int.TryParse(val, out int t))
-                     {
-                         timeout = t;
-                     }
+                // Get Timeout
+                int timeout = 5;
+                string? val = _settingsRepository.GetValue(AppSettings.Sections.General, AppSettings.Keys.ToastTimeout);
+                if (!string.IsNullOrEmpty(val) && int.TryParse(val, out int t))
+                {
+                    timeout = t;
+                }
 
-                     var toast = new ToastWindow(message, title, type, timeout, details, filePath);
+                var toast = new ToastWindow(message, title, type, timeout, details, filePath);
 
-                     var targetWindow = owner ?? System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(x => x.IsActive) ?? System.Windows.Application.Current.MainWindow;
-                     if (targetWindow != null && targetWindow.IsVisible)
-                     {
-                         toast.Owner = targetWindow;
-                     }
+                var targetWindow = owner ?? System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(x => x.IsActive) ?? System.Windows.Application.Current.MainWindow;
+                if (targetWindow != null && targetWindow.IsVisible)
+                {
+                    toast.Owner = targetWindow;
+                }
 
-                     toast.Show();
-                 });
+                toast.Show();
+            }
+
+            if (dispatcher.CheckAccess())
+            {
+                Show();
+            }
+            else
+            {
+                dispatcher.BeginInvoke((Action)Show);
             }
         }
 
-        public ExistingTableAction ShowTableExistsPrompt(string tableName)
+        public async Task<ExistingTableAction> ShowTableExistsPromptAsync(string tableName)
         {
-            if (System.Windows.Application.Current != null && System.Windows.Application.Current.Dispatcher != null)
+            var app = System.Windows.Application.Current;
+            var dispatcher = app?.Dispatcher;
+            if (dispatcher != null)
             {
-                return System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                return await dispatcher.InvokeAsync(() =>
                 {
                     var dlg = new SMS_Search.Views.Windows.ImportTableExistsDialog(tableName);
-                    var mainWindow = System.Windows.Application.Current.MainWindow;
+                    var mainWindow = app?.MainWindow;
                     if (mainWindow != null && mainWindow.IsVisible)
                     {
                         dlg.Owner = mainWindow;
@@ -126,14 +137,16 @@ namespace SMS_Search.Services
             return ExistingTableAction.Skip;
         }
 
-        public Models.MissingColumnDialogResult ShowMissingColumnsPrompt(string tableName, System.Collections.Generic.List<Models.MissingColumnInfo> missingColumns)
+        public async Task<Models.MissingColumnDialogResult> ShowMissingColumnsPromptAsync(string tableName, System.Collections.Generic.List<Models.MissingColumnInfo> missingColumns)
         {
-            if (System.Windows.Application.Current != null && System.Windows.Application.Current.Dispatcher != null)
+            var app = System.Windows.Application.Current;
+            var dispatcher = app?.Dispatcher;
+            if (dispatcher != null)
             {
-                return System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                return await dispatcher.InvokeAsync(() =>
                 {
                     var dlg = new Views.Windows.MissingColumnsDialog(tableName, missingColumns);
-                    var mainWindow = System.Windows.Application.Current.MainWindow;
+                    var mainWindow = app?.MainWindow;
                     if (mainWindow != null && mainWindow.IsVisible)
                     {
                         dlg.Owner = mainWindow;

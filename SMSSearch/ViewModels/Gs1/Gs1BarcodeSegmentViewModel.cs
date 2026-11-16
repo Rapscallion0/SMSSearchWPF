@@ -55,11 +55,22 @@ namespace SMS_Search.ViewModels.Gs1
             HoverEnded?.Invoke();
         }
 
-        public async void PulseAnimation()
+        public void PulseAnimation()
         {
-            IsAnimatingUpdate = true;
-            await System.Threading.Tasks.Task.Delay(1100);
-            IsAnimatingUpdate = false;
+            _ = PulseAnimationAsync();
+        }
+
+        public async System.Threading.Tasks.Task PulseAnimationAsync()
+        {
+            try
+            {
+                IsAnimatingUpdate = true;
+                await System.Threading.Tasks.Task.Delay(1100);
+            }
+            finally
+            {
+                IsAnimatingUpdate = false;
+            }
         }
     }
 }
