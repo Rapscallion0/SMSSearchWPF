@@ -160,5 +160,17 @@ namespace SMS_Search.Services
             // Fallback if no UI thread context exists
             return new Models.MissingColumnDialogResult { Action = Models.MissingColumnAction.Cancel, Columns = missingColumns };
         }
+
+        public bool? ShowColumnPicker(SMS_Search.ViewModels.Settings.ColumnPickerViewModel viewModel)
+        {
+            var dlg = new Views.Windows.ColumnPickerWindow(viewModel);
+            var activeWindow = System.Windows.Application.Current?.Windows.OfType<System.Windows.Window>().FirstOrDefault(x => x.IsActive && !(x is ToastWindow))
+                ?? System.Windows.Application.Current?.MainWindow;
+            if (activeWindow != null && activeWindow.IsVisible)
+            {
+                dlg.Owner = activeWindow;
+            }
+            return dlg.ShowDialog();
+        }
     }
 }

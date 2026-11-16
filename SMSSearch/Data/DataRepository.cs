@@ -348,7 +348,11 @@ namespace SMS_Search.Data
                  var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                  foreach(var r in result)
                  {
-                     dict[r.Name.ToString()] = r.Description.ToString();
+                     string? name = r.Name?.ToString()?.Trim();
+                     if (!string.IsNullOrEmpty(name))
+                     {
+                         dict[name] = r.Description?.ToString()?.Trim() ?? "";
+                     }
                  }
 
                  var list = new List<string>();

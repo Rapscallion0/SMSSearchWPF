@@ -24,5 +24,6 @@ namespace SMS_Search.Services
         void ShowToast(string message, string title, ToastType type = ToastType.Info, string? details = null, string? filePath = null, System.Windows.Window? owner = null);
         Task<ExistingTableAction> ShowTableExistsPromptAsync(string tableName);
         Task<SMS_Search.Models.MissingColumnDialogResult> ShowMissingColumnsPromptAsync(string tableName, System.Collections.Generic.List<SMS_Search.Models.MissingColumnInfo> missingColumns);
+        bool? ShowColumnPicker(SMS_Search.ViewModels.Settings.ColumnPickerViewModel viewModel);
     }
 }
