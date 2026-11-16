@@ -13,8 +13,16 @@ namespace SMS_Search.ViewModels.Settings
 {
     public partial class SearchSectionViewModel : SettingsSectionViewModel
     {
+        private const string DefaultFunctionColumns = "F1063, F1064, F1051, F1050, F1081";
+        private const string DefaultTotalizerColumns = "F1034, F1039, F1128, F1129, F1179, F1253, F1710, F1131, F1048, F1709";
+        private const string RequiredFunctionColumn = "F1063";
+        private const string RequiredTotalizerColumn = "F1034";
+        private static readonly System.Text.RegularExpressions.Regex IdentifierRegex =
+            new(@"^\[?[A-Za-z_][A-Za-z0-9_]*\]?$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
         private readonly ISettingsRepository _repository;
         private readonly IDataRepository _dataRepository;
+        private readonly IConnectionSettingsService _connectionSettingsService;
         private readonly ILoggerService _logger;
         private readonly IDialogService _dialogService;
 
@@ -32,6 +40,12 @@ namespace SMS_Search.ViewModels.Settings
 
         [ObservableProperty]
         private bool _hasTotalizerError;
+
+        [ObservableProperty]
+        private System.Collections.Generic.IReadOnlySet<string> _invalidFunctionColumns = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        [ObservableProperty]
+        private System.Collections.Generic.IReadOnlySet<string> _invalidTotalizerColumns = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         [ObservableProperty]
         private bool _isSaved;
@@ -57,16 +71,18 @@ namespace SMS_Search.ViewModels.Settings
         public SearchSectionViewModel(
             ISettingsRepository repository,
             IDataRepository dataRepository,
+            IConnectionSettingsService connectionSettingsService,
             ILoggerService logger,
             IDialogService dialogService)
         {
             _repository = repository;
             _dataRepository = dataRepository;
+            _connectionSettingsService = connectionSettingsService;
             _logger = logger;
             _dialogService = dialogService;
 
-            FunctionColumns = _repository.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Function) ?? "F1063, F1064, F1051, F1050, F1081";
-            TotalizerColumns = _repository.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Totalizer) ?? "F1034, F1039, F1128, F1129, F1179, F1253, F1710, F1131, F1048, F1709";
+            FunctionColumns = _repository.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Function) ?? DefaultFunctionColumns;
+            TotalizerColumns = _repository.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Totalizer) ?? DefaultTotalizerColumns;
 
             var selectCustomSqlStr = repository.GetValue(AppSettings.Sections.Search, AppSettings.Keys.SelectCustomSqlOnBuild);
             SelectCustomSqlOnBuild = new ObservableSetting<bool>(
@@ -102,14 +118,87 @@ namespace SMS_Search.ViewModels.Settings
 
         partial void OnFunctionColumnsChanged(string value)
         {
-            HasFunctionError = false;
+            HasFunctionError = !ValidateColumnList(value, RequiredFunctionColumn, out _);
+            InvalidFunctionColumns = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
             IsSaved = false;
         }
 
         partial void OnTotalizerColumnsChanged(string value)
         {
-            HasTotalizerError = false;
+            HasTotalizerError = !ValidateColumnList(value, RequiredTotalizerColumn, out _);
+            InvalidTotalizerColumns = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
             IsSaved = false;
+        }
+
+        public static bool ValidateColumnList(string? columns, string requiredColumn, out string? errorMessage)
+        {
+            if (string.IsNullOrWhiteSpace(columns))
+            {
+                errorMessage = $"Column list cannot be empty and must include required column {requiredColumn}.";
+                return false;
+            }
+
+            var parts = columns.Split(',');
+            var seen = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var raw in parts)
+            {
+                string trimmed = raw.Trim();
+                if (string.IsNullOrEmpty(trimmed) || !IdentifierRegex.IsMatch(trimmed))
+                {
+                    errorMessage = $"Invalid column name '{trimmed}'. Use comma-separated column identifiers (e.g. {requiredColumn}, F1064).";
+                    return false;
+                }
+
+                seen.Add(trimmed.Trim('[', ']'));
+            }
+
+            if (!seen.Contains(requiredColumn))
+            {
+                errorMessage = $"Required column {requiredColumn} must be included.";
+                return false;
+            }
+
+            errorMessage = null;
+            return true;
+        }
+
+        [RelayCommand]
+        private void PickFunctionColumns()
+        {
+            using var vm = new ColumnPickerViewModel(
+                _dataRepository,
+                _connectionSettingsService,
+                _logger,
+                "Select Function Columns (FCT_TAB)",
+                "FCT_TAB",
+                FunctionColumns,
+                DefaultFunctionColumns,
+                new[] { RequiredFunctionColumn });
+
+            if (_dialogService.ShowColumnPicker(vm) == true)
+            {
+                FunctionColumns = vm.GetSelectedColumnsString();
+            }
+        }
+
+        [RelayCommand]
+        private void PickTotalizerColumns()
+        {
+            using var vm = new ColumnPickerViewModel(
+                _dataRepository,
+                _connectionSettingsService,
+                _logger,
+                "Select Totalizer Columns (TLZ_TAB)",
+                "TLZ_TAB",
+                TotalizerColumns,
+                DefaultTotalizerColumns,
+                new[] { RequiredTotalizerColumn });
+
+            if (_dialogService.ShowColumnPicker(vm) == true)
+            {
+                TotalizerColumns = vm.GetSelectedColumnsString();
+            }
         }
 
         [RelayCommand]
@@ -123,8 +212,23 @@ namespace SMS_Search.ViewModels.Settings
 
             try
             {
-                var server = _repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
-                var database = _repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "";
+                bool fnSyntaxOk = ValidateColumnList(FunctionColumns, RequiredFunctionColumn, out string? fnError);
+                bool tlzSyntaxOk = ValidateColumnList(TotalizerColumns, RequiredTotalizerColumn, out string? tlzError);
+
+                if (!fnSyntaxOk || !tlzSyntaxOk)
+                {
+                    HasFunctionError = !fnSyntaxOk;
+                    HasTotalizerError = !tlzSyntaxOk;
+
+                    var errSb = new StringBuilder();
+                    if (!fnSyntaxOk) errSb.AppendLine($"- Function: {fnError}");
+                    if (!tlzSyntaxOk) errSb.AppendLine($"- Totalizer: {tlzError}");
+                    _dialogService.ShowError(errSb.ToString().TrimEnd(), "Validation Error");
+                    return;
+                }
+                var conn = _connectionSettingsService.GetConnectionSettings();
+                var server = conn.Server;
+                var database = conn.Database;
 
                 if (string.IsNullOrEmpty(server) || string.IsNullOrEmpty(database))
                 {
@@ -132,68 +236,66 @@ namespace SMS_Search.ViewModels.Settings
                     return;
                 }
 
-                string? user = null;
-                string? pass = null;
+                string? user = conn.IsWindowsAuth ? null : conn.User;
+                string? pass = conn.Password;
 
-                if (bool.TryParse(_repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool windowsAuth) && !windowsAuth)
+                var invalidFnCols = new System.Collections.Generic.List<string>();
+                var invalidTlzCols = new System.Collections.Generic.List<string>();
+
+                // Validate Function columns against FCT_TAB schema
+                try
                 {
-                    user = _repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
-                    var encryptedPass = _repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
-                    pass = !string.IsNullOrEmpty(encryptedPass) ? GeneralUtils.Decrypt(encryptedPass) : null;
-                }
+                    var fnSchema = await _dataRepository.GetQuerySchemaAsync(server, database, user, pass, "SELECT TOP 0 * FROM [FCT_TAB]", null);
+                    var validFnSet = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (System.Data.DataColumn col in fnSchema.Columns) validFnSet.Add(col.ColumnName);
 
-                bool functionValid = true;
-                bool totalizerValid = true;
-
-                // Validate Function columns
-                if (!string.IsNullOrWhiteSpace(FunctionColumns))
-                {
-                    try
+                    foreach (var raw in FunctionColumns.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                     {
-                        var sql = $"SELECT TOP 0 {FunctionColumns} FROM FCT_TAB";
-                        await _dataRepository.GetQuerySchemaAsync(server, database, user, pass, sql, null);
-                    }
-                    catch (SqlException)
-                    {
-                        functionValid = false;
-                        HasFunctionError = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError("Error validating function columns", ex);
-                        _dialogService.ShowError($"Error validating function columns: {ex.Message}", "Validation Error");
-                        return; // Unknown error, abort save
+                        string colName = raw.Trim('[', ']');
+                        if (!validFnSet.Contains(colName)) invalidFnCols.Add(colName);
                     }
                 }
-
-                // Validate Totalizer columns
-                if (!string.IsNullOrWhiteSpace(TotalizerColumns))
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        var sql = $"SELECT TOP 0 {TotalizerColumns} FROM TLZ_TAB";
-                        await _dataRepository.GetQuerySchemaAsync(server, database, user, pass, sql, null);
-                    }
-                    catch (SqlException)
-                    {
-                        totalizerValid = false;
-                        HasTotalizerError = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError("Error validating totalizer columns", ex);
-                        _dialogService.ShowError($"Error validating totalizer columns: {ex.Message}", "Validation Error");
-                        return; // Unknown error, abort save
-                    }
+                    _logger.LogError("Error validating function columns", ex);
+                    _dialogService.ShowError($"Error validating function columns: {ex.Message}", "Validation Error");
+                    return;
                 }
 
-                if (!functionValid || !totalizerValid)
+                // Validate Totalizer columns against TLZ_TAB schema
+                try
+                {
+                    var tlzSchema = await _dataRepository.GetQuerySchemaAsync(server, database, user, pass, "SELECT TOP 0 * FROM [TLZ_TAB]", null);
+                    var validTlzSet = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (System.Data.DataColumn col in tlzSchema.Columns) validTlzSet.Add(col.ColumnName);
+
+                    foreach (var raw in TotalizerColumns.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    {
+                        string colName = raw.Trim('[', ']');
+                        if (!validTlzSet.Contains(colName)) invalidTlzCols.Add(colName);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Error validating totalizer columns", ex);
+                    _dialogService.ShowError($"Error validating totalizer columns: {ex.Message}", "Validation Error");
+                    return;
+                }
+
+                InvalidFunctionColumns = new System.Collections.Generic.HashSet<string>(invalidFnCols, StringComparer.OrdinalIgnoreCase);
+                InvalidTotalizerColumns = new System.Collections.Generic.HashSet<string>(invalidTlzCols, StringComparer.OrdinalIgnoreCase);
+                HasFunctionError = invalidFnCols.Count > 0;
+                HasTotalizerError = invalidTlzCols.Count > 0;
+
+                if (invalidFnCols.Count > 0 || invalidTlzCols.Count > 0)
                 {
                     var sb = new StringBuilder(150);
-                    sb.Append("Invalid columns detected:\n");
-                    if (!functionValid) sb.Append("- Function columns contain invalid fields for FCT_TAB.\n");
-                    if (!totalizerValid) sb.Append("- Totalizer columns contain invalid fields for TLZ_TAB.\n");
-                    _dialogService.ShowError(sb.ToString(), "Validation Error");
+                    sb.AppendLine("Invalid columns detected:");
+                    if (invalidFnCols.Count > 0)
+                        sb.AppendLine($"- Function (FCT_TAB): {string.Join(", ", invalidFnCols)}");
+                    if (invalidTlzCols.Count > 0)
+                        sb.AppendLine($"- Totalizer (TLZ_TAB): {string.Join(", ", invalidTlzCols)}");
+                    _dialogService.ShowError(sb.ToString().TrimEnd(), "Validation Error");
                     return;
                 }
 

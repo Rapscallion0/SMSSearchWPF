@@ -18,33 +18,31 @@
         <GroupBox Header="Default columns" Margin="0,0,0,10">
             <StackPanel Margin="5">
                 <ctrl:SettingControl Header="Function:" IsSaved="{Binding IsFunctionSaved}">
-                    <TextBox Text="{Binding FunctionColumns, UpdateSourceTrigger=PropertyChanged}">
-                        <TextBox.Style>
-                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasFunctionError}" Value="True">
-                                        <Setter Property="BorderBrush" Value="Red"/>
-                                        <Setter Property="BorderThickness" Value="1"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBox.Style>
-                    </TextBox>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ctrl:ColumnListEditor Grid.Column="0"
+                                               Text="{Binding FunctionColumns}"
+                                               InvalidColumns="{Binding InvalidFunctionColumns}"
+                                               HasError="{Binding HasFunctionError}" />
+                        <Button Grid.Column="1" Command="{Binding PickFunctionColumnsCommand}" Content="Pick..." Margin="6,0,0,0" Padding="10,2" />
+                    </Grid>
                 </ctrl:SettingControl>
 
                 <ctrl:SettingControl Header="Totalizer:" IsSaved="{Binding IsTotalizerSaved}">
-                    <TextBox Text="{Binding TotalizerColumns, UpdateSourceTrigger=PropertyChanged}">
-                        <TextBox.Style>
-                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasTotalizerError}" Value="True">
-                                        <Setter Property="BorderBrush" Value="Red"/>
-                                        <Setter Property="BorderThickness" Value="1"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBox.Style>
-                    </TextBox>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ctrl:ColumnListEditor Grid.Column="0"
+                                               Text="{Binding TotalizerColumns}"
+                                               InvalidColumns="{Binding InvalidTotalizerColumns}"
+                                               HasError="{Binding HasTotalizerError}" />
+                        <Button Grid.Column="1" Command="{Binding PickTotalizerColumnsCommand}" Content="Pick..." Margin="6,0,0,0" Padding="10,2" />
+                    </Grid>
                 </ctrl:SettingControl>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">

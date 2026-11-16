@@ -1,0 +1,32 @@
+<UserControl x:Class="SMS_Search.Views.Controls.ColumnListEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:avalon="http://icsharpcode.net/sharpdevelop/avalonedit"
+             Height="26">
+    <Border x:Name="OuterBorder"
+            Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+            BorderThickness="1"
+            CornerRadius="2">
+        <Border.Style>
+            <Style TargetType="Border">
+                <Setter Property="BorderBrush" Value="#ABADB3" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding HasError, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                        <Setter Property="BorderBrush" Value="#D32F2F" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+        <avalon:TextEditor x:Name="Editor"
+                           ShowLineNumbers="False"
+                           WordWrap="False"
+                           HorizontalScrollBarVisibility="Hidden"
+                           VerticalScrollBarVisibility="Hidden"
+                           FontFamily="Segoe UI"
+                           FontSize="12"
+                           Padding="4,3,4,2"
+                           Background="Transparent"
+                           PreviewKeyDown="Editor_PreviewKeyDown" />
+    </Border>
+</UserControl>
+
