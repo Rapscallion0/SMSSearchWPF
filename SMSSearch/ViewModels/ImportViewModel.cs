@@ -315,7 +315,7 @@ namespace SMS_Search.ViewModels
                     progress => {
                         try
                         {
-                            App.Current.Dispatcher.Invoke(() => {
+                            App.Current.Dispatcher.BeginInvoke((Action)(() => {
                                 if (progress.IsIndeterminate)
                                 {
                                     IsProgressIndeterminate = true;
@@ -326,20 +326,20 @@ namespace SMS_Search.ViewModels
                                     ProgressValue = progress.Percentage;
                                 }
                                 ProgressStatusText = progress.Message;
-                            });
+                            }));
                         }
                         catch (Exception ex)
                         {
                             _logger.LogError("Error updating UI progress during import", ex);
                         }
                     },
-                    tableName => {
+                    async tableName => {
                         try
                         {
                             _logger.LogInfo($"Prompting user for existing table action: {tableName}");
-                            var result = _dialogService.ShowTableExistsPrompt(tableName);
+                            var result = await _dialogService.ShowTableExistsPromptAsync(tableName);
                             _logger.LogInfo($"User selected action for existing table {tableName}: {result}");
-                            return Task.FromResult(result);
+                            return result;
                         }
                         catch (Exception ex)
                         {
@@ -347,13 +347,13 @@ namespace SMS_Search.ViewModels
                             throw;
                         }
                     },
-                    (tableName, missingColumns) => {
+                    async (tableName, missingColumns) => {
                         try
                         {
                             _logger.LogInfo($"Prompting user for missing columns on table: {tableName}. Missing count: {missingColumns?.Count ?? 0}");
-                            var result = _dialogService.ShowMissingColumnsPrompt(tableName, missingColumns ?? new List<Models.MissingColumnInfo>());
+                            var result = await _dialogService.ShowMissingColumnsPromptAsync(tableName, missingColumns ?? new List<Models.MissingColumnInfo>());
                             _logger.LogInfo($"User completed missing columns prompt for table {tableName}. Action selected: {result.Action}");
-                            return Task.FromResult(result);
+                            return result;
                         }
                         catch (Exception ex)
                         {

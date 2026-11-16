@@ -9,12 +9,19 @@ namespace SMS_Search.Views
     public partial class SearchView : System.Windows.Controls.UserControl
     {
         private System.Windows.Threading.DispatcherTimer _typingTimer;
+        private bool _isHooked;
 
         public SearchView()
         {
             InitializeComponent();
             _typingTimer = new System.Windows.Threading.DispatcherTimer();
             _typingTimer.Interval = TimeSpan.FromMilliseconds(100);
+            HookEvents();
+        }
+
+        private void HookEvents()
+        {
+            if (_isHooked) return;
             _typingTimer.Tick += TypingTimer_Tick;
 
             CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.Register<SMS_Search.Utils.SearchExecutedMessage>(this, (r, m) =>
@@ -29,6 +36,7 @@ namespace SMS_Search.Views
                     Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(FocusTableCombo));
                 }
             });
+            _isHooked = true;
         }
 
         private void UserControl_Unloaded(object sender, System.Windows.RoutedEventArgs e)
@@ -36,13 +44,18 @@ namespace SMS_Search.Views
             if (_typingTimer != null)
             {
                 _typingTimer.Stop();
-                _typingTimer.Tick -= TypingTimer_Tick;
+                if (_isHooked) _typingTimer.Tick -= TypingTimer_Tick;
             }
-            CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.UnregisterAll(this);
+            if (_isHooked)
+            {
+                CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.UnregisterAll(this);
+                _isHooked = false;
+            }
         }
 
         private void UserControl_Loaded(object sender, System.Windows.RoutedEventArgs e)
         {
+            HookEvents();
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(FocusActiveSearchInput));
         }
 

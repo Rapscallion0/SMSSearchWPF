@@ -15,13 +15,14 @@ namespace SMS_Search
         private readonly MainViewModel _viewModel;
         private readonly IConfigService _config;
         private readonly IStateService _state;
+        private readonly SMS_Search.Services.Gs1.Gs1ClipboardWatcher _clipboardWatcher;
         private UnarchiveWindow? _unarchiveWindow;
         private System.Windows.Threading.DispatcherTimer _typingTimer;
         private string _lastTypedText = "";
         private bool _isDeleting = false;
         private string? _lastValidDatabase;
 
-        public MainWindow(MainViewModel viewModel, IConfigService config, IStateService state)
+        public MainWindow(MainViewModel viewModel, IConfigService config, IStateService state, SMS_Search.Services.Gs1.Gs1ClipboardWatcher clipboardWatcher)
         {
             InitializeComponent();
             _typingTimer = new System.Windows.Threading.DispatcherTimer();
@@ -31,6 +32,7 @@ namespace SMS_Search
             _viewModel = viewModel;
             _config = config;
             _state = state;
+            _clipboardWatcher = clipboardWatcher;
             DataContext = viewModel;
             viewModel.RequestOpenSettings += OnRequestOpenSettings;
             viewModel.RequestOpenGs1Toolkit += OnRequestOpenGs1Toolkit;
@@ -44,14 +46,12 @@ namespace SMS_Search
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            var watcher = App.Current.Services.GetService<SMS_Search.Services.Gs1.Gs1ClipboardWatcher>();
-            watcher?.Start(this);
+            _clipboardWatcher.Start(this);
         }
 
         private void MainWindow_Unloaded(object sender, RoutedEventArgs e)
         {
-            var watcher = App.Current.Services.GetService<SMS_Search.Services.Gs1.Gs1ClipboardWatcher>();
-            watcher?.Stop();
+            _clipboardWatcher.Stop();
         }
 
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -171,11 +171,22 @@ namespace SMS_Search
             base.OnClosed(e);
             _unarchiveWindow?.Close();
 
+            this.SizeChanged -= MainWindow_SizeChanged;
+            this.LocationChanged -= MainWindow_LocationChanged;
+            this.Loaded -= MainWindow_Loaded;
+            this.Unloaded -= MainWindow_Unloaded;
+
+            _viewModel.RequestOpenSettings -= OnRequestOpenSettings;
+            _viewModel.RequestOpenGs1Toolkit -= OnRequestOpenGs1Toolkit;
+            _viewModel.RequestToggleUnarchiveWindow -= OnRequestToggleUnarchiveWindow;
+
             if (_typingTimer != null)
             {
                 _typingTimer.Stop();
                 _typingTimer.Tick -= TypingTimer_Tick;
             }
+
+            (_viewModel as IDisposable)?.Dispose();
         }
 
         private void OnRequestToggleUnarchiveWindow(bool isVisible)

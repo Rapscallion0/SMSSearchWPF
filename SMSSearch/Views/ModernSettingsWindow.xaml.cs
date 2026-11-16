@@ -16,6 +16,12 @@ namespace SMS_Search.Views
             DataContext = viewModel;
         }
 
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            (DataContext as IDisposable)?.Dispose();
+        }
+
         private void Window_LocationChanged(object? sender, System.EventArgs e)
         {
             ToastWindow.UpdateAllToastPositions(false, this);

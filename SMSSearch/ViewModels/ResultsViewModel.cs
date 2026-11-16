@@ -112,7 +112,10 @@ namespace SMS_Search.ViewModels
             _gridContext.LoadError -= OnLoadError;
             WeakReferenceMessenger.Default.UnregisterAll(this);
             _cts?.Dispose();
+            _cts = null;
             _refreshCts?.Dispose();
+            _refreshCts = null;
+            (_gridContext as IDisposable)?.Dispose();
         }
 
         public int HorizontalScrollSpeed => _horizontalScrollSpeed;
@@ -223,10 +226,10 @@ namespace SMS_Search.ViewModels
         partial void OnShowDescriptionHeadersChanged(bool value)
         {
              HeaderToggleText = value ? "Show Field #" : "Show Description";
-             UpdateHeadersAsync();
+             _ = UpdateHeadersAsync();
         }
 
-        private async void UpdateHeadersAsync()
+        private async Task UpdateHeadersAsync()
         {
             if (_lastSchema == null) return;
 
@@ -265,9 +268,10 @@ namespace SMS_Search.ViewModels
 
         private void OnDataReady(object? sender, EventArgs e)
         {
-            System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            System.Windows.Application.Current?.Dispatcher.InvokeAsync(async () =>
             {
                 _refreshCts?.Cancel();
+                _refreshCts?.Dispose();
                 _refreshCts = new CancellationTokenSource();
                 var token = _refreshCts.Token;
 
@@ -304,12 +308,12 @@ namespace SMS_Search.ViewModels
 
         private void OnLoadError(object? sender, Exception ex)
         {
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
             {
                 _logger.LogError("Data Load Error", ex);
                 _dialogService.ShowError(ex.Message, "Data Load Error");
                 StatusText = "Error loading data";
-            });
+            }));
         }
 
         public async Task ExecuteSearchAsync(SearchCriteria criteria)
@@ -317,6 +321,7 @@ namespace SMS_Search.ViewModels
             CurrentSearchCriteria = criteria;
 
             _cts?.Cancel();
+            _cts?.Dispose();
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
 
@@ -326,7 +331,7 @@ namespace SMS_Search.ViewModels
             MatchStatusText = string.Empty;
             _lastFoundRowIndex = -1;
 
-            _logger.LogDebug($"ExecuteSearchAsync started. Criteria: {criteria.Value}");
+            _logger.LogDebug("ExecuteSearchAsync started. Criteria: {CriteriaValue}", criteria.Value);
 
             // Determine if Header Toggle should be enabled
             if (criteria.Mode == SearchMode.Field &&
@@ -376,14 +381,14 @@ namespace SMS_Search.ViewModels
                 await Task.WhenAll(schemaTask, loadTask);
 
                 _lastSchema = await schemaTask;
-                UpdateHeadersAsync(); // This runs async but doesn't block UI much
+                _ = UpdateHeadersAsync(); // This runs async but doesn't block UI much
 
                 // Create new collection
                 SearchResults = new VirtualizingCollection(_gridContext, _lastSchema);
 
                 TotalRecords = _gridContext.TotalCount;
                 StatusText = $"Found {TotalRecords} records";
-                _logger.LogInfo($"Search completed successfully. Found {TotalRecords} records.");
+                _logger.LogInfo("Search completed successfully. Found {RecordCount} records.", TotalRecords);
             }
             catch (OperationCanceledException)
             {
@@ -408,6 +413,7 @@ namespace SMS_Search.ViewModels
             if (string.IsNullOrEmpty(columnName)) return;
 
             _cts?.Cancel();
+            _cts?.Dispose();
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
 
@@ -428,8 +434,7 @@ namespace SMS_Search.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError("Failed to apply sort", ex);
-                var dialogService = (System.Windows.Application.Current as App)?.Services.GetService(typeof(IDialogService)) as IDialogService;
-                dialogService?.ShowError($"Failed to sort: {ex.Message}", "Error");
+                _dialogService.ShowError($"Failed to sort: {ex.Message}", "Error");
             }
             finally
             {

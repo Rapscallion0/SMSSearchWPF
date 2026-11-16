@@ -10,6 +10,7 @@ namespace SMS_Search.Views.Settings
         private System.Windows.Threading.DispatcherTimer _typingTimer;
         private string _lastTypedText = "";
         private bool _isDeleting = false;
+        private bool _isTimerHooked;
 
         public ConnectionSectionView()
         {
@@ -17,6 +18,17 @@ namespace SMS_Search.Views.Settings
             _typingTimer = new System.Windows.Threading.DispatcherTimer();
             _typingTimer.Interval = TimeSpan.FromMilliseconds(300);
             _typingTimer.Tick += TypingTimer_Tick;
+            _isTimerHooked = true;
+            Loaded += ConnectionSectionView_Loaded;
+        }
+
+        private void ConnectionSectionView_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (!_isTimerHooked)
+            {
+                _typingTimer.Tick += TypingTimer_Tick;
+                _isTimerHooked = true;
+            }
         }
 
         private void UserControl_Unloaded(object sender, System.Windows.RoutedEventArgs e)
@@ -24,7 +36,11 @@ namespace SMS_Search.Views.Settings
             if (_typingTimer != null)
             {
                 _typingTimer.Stop();
-                _typingTimer.Tick -= TypingTimer_Tick;
+                if (_isTimerHooked)
+                {
+                    _typingTimer.Tick -= TypingTimer_Tick;
+                    _isTimerHooked = false;
+                }
             }
         }
 

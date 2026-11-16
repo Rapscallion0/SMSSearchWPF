@@ -615,7 +615,7 @@ namespace SMS_Search.ViewModels.Gs1
                     {
                         vliVm.RawValue = newValStr;
                         vliVm.DraftValue = newValStr;
-                        PulseAnimation(vliVm);
+                        _ = PulseAnimationAsync(vliVm);
                     }
                 }
             }
@@ -677,12 +677,18 @@ namespace SMS_Search.ViewModels.Gs1
             }
         }
 
-        private async void PulseAnimation(Gs1ParsedAiViewModel vm)
+        private async Task PulseAnimationAsync(Gs1ParsedAiViewModel vm)
         {
-            vm.IsAnimatingUpdate = true;
-            // 250ms * 2 (forward + backward) * 2 repeats = 1000ms. Add a small buffer.
-            await Task.Delay(1100);
-            vm.IsAnimatingUpdate = false;
+            try
+            {
+                vm.IsAnimatingUpdate = true;
+                // 250ms * 2 (forward + backward) * 2 repeats = 1000ms. Add a small buffer.
+                await Task.Delay(1100);
+            }
+            finally
+            {
+                vm.IsAnimatingUpdate = false;
+            }
         }
 
         private void AddEmptyAi(Gs1AiDefinition definition, bool isRequired = false)

@@ -24,6 +24,7 @@ namespace SMS_Search.Views.Controls
 
         private IntellisenseLevel _currentLevel = IntellisenseLevel.Schema;
         private bool _isCycling = false;
+        private bool _isTextAreaHooked = false;
 
         public SqlEditor()
         {
@@ -46,10 +47,41 @@ namespace SMS_Search.Views.Controls
 
             LoadHighlighting();
 
+            Loaded += SqlEditor_Loaded;
+            Unloaded += SqlEditor_Unloaded;
+            HookTextAreaEvents();
+        }
+
+        private void SqlEditor_Loaded(object sender, RoutedEventArgs e)
+        {
+            HookTextAreaEvents();
+        }
+
+        private void SqlEditor_Unloaded(object sender, RoutedEventArgs e)
+        {
+            UnhookTextAreaEvents();
+            _completionWindow?.Close();
+            _completionWindow = null;
+        }
+
+        private void HookTextAreaEvents()
+        {
+            if (_isTextAreaHooked) return;
             Editor.TextArea.TextEntered += TextArea_TextEntered;
             Editor.TextArea.TextEntering += TextArea_TextEntering;
             Editor.TextArea.KeyDown += TextArea_KeyDown;
             Editor.TextArea.SelectionChanged += TextArea_SelectionChanged;
+            _isTextAreaHooked = true;
+        }
+
+        private void UnhookTextAreaEvents()
+        {
+            if (!_isTextAreaHooked) return;
+            Editor.TextArea.TextEntered -= TextArea_TextEntered;
+            Editor.TextArea.TextEntering -= TextArea_TextEntering;
+            Editor.TextArea.KeyDown -= TextArea_KeyDown;
+            Editor.TextArea.SelectionChanged -= TextArea_SelectionChanged;
+            _isTextAreaHooked = false;
         }
 
         private void TextArea_SelectionChanged(object? sender, EventArgs e)

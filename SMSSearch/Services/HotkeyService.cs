@@ -89,5 +89,12 @@ namespace SMS_Search.Services
             }
             return false;
         }
+
+        public void Dispose()
+        {
+            Unregister();
+            _action = null;
+            _hwnd = IntPtr.Zero;
+        }
     }
 }
