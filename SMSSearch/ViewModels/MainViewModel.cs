@@ -41,6 +41,7 @@ namespace SMS_Search.ViewModels
             IDataRepository repository,
             SearchViewModel searchViewModel,
             ResultsViewModel resultsViewModel,
+            ImportViewModel importViewModel,
             IConnectionSettingsService connectionSettingsService)
         {
             _repository = repository;
@@ -51,11 +52,11 @@ namespace SMS_Search.ViewModels
             _connectionSettingsService = connectionSettingsService;
             SearchVm = searchViewModel;
             ResultsVm = resultsViewModel;
+            ImportVm = importViewModel;
 
-            // ImportVm gets initialized separately since it needs MainViewModel
-            // To break circular dependency, we inject it or create it.
-            // Actually let's just create it.
-            ImportVm = new ImportViewModel(repository, logger, dialogService, config, connectionSettingsService, this);
+            ImportVm.RequestClose += OnImportRequestClose;
+            ImportVm.ImportCompleted += OnImportCompletedAsync;
+            ImportVm.DatabasesChanged += OnImportDatabasesChangedAsync;
 
             var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version;
             Title = $"SMS Search - v{version}";
@@ -108,6 +109,9 @@ namespace SMS_Search.ViewModels
                 _dateRolloverTimer = null;
             }
 
+            ImportVm.RequestClose -= OnImportRequestClose;
+            ImportVm.ImportCompleted -= OnImportCompletedAsync;
+            ImportVm.DatabasesChanged -= OnImportDatabasesChangedAsync;
             WeakReferenceMessenger.Default.UnregisterAll(this);
             if (SearchVm is IDisposable searchDisposable) searchDisposable.Dispose();
             if (ResultsVm is IDisposable resultsDisposable) resultsDisposable.Dispose();
@@ -155,6 +159,8 @@ namespace SMS_Search.ViewModels
                 {
                     SearchVm.LoadTablesCommand.Execute(null);
                 }
+
+                SearchVm.RefreshIntellisense();
             }
         }
 
@@ -253,6 +259,44 @@ namespace SMS_Search.ViewModels
         partial void OnIsImportTargetVisibleChanged(bool value)
         {
             RequestToggleImportTarget?.Invoke(value);
+            if (value)
+            {
+                _ = ImportVm.LoadDatabasesAsync(SelectedDatabase);
+            }
+        }
+
+        private Task OnImportDatabasesChangedAsync()
+        {
+            return LoadDatabasesAsync(force: true);
+        }
+
+        private void OnImportRequestClose()
+        {
+            IsImportTargetVisible = false;
+        }
+
+        private async Task OnImportCompletedAsync(string fullTargetDbName, bool switchToDatabase)
+        {
+            await LoadDatabasesAsync(force: true);
+
+            SearchVm.SelectedMode = SearchMode.Field;
+
+            if (switchToDatabase)
+            {
+                string? matchedDb = Databases.FirstOrDefault(
+                    d => d.Equals(fullTargetDbName, StringComparison.OrdinalIgnoreCase));
+                string targetDb = matchedDb ?? fullTargetDbName;
+                bool alreadySelected = string.Equals(SelectedDatabase, targetDb, StringComparison.OrdinalIgnoreCase);
+
+                SelectedDatabase = targetDb;
+
+                if (alreadySelected && SearchVm.LoadTablesCommand != null)
+                {
+                    SearchVm.Tables.Clear();
+                    SearchVm.SelectedTable = null;
+                    SearchVm.LoadTablesCommand.Execute(null);
+                }
+            }
         }
 
         private bool _isUpdatingDate;

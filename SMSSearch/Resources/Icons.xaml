@@ -89,9 +89,9 @@
     <ControlTemplate x:Key="Icon_Settings" TargetType="Control">
         <Viewbox>
             <Grid>
-                <Path Fill="#FF1B2B3A" Data="{StaticResource Geometry_Settings_Outer}" />
-                <Path Fill="#FFE0E0E0" Data="{StaticResource Geometry_Settings_Inner}" />
-                <Path Fill="#FF1B2B3A">
+                <Path Fill="{DynamicResource IconGearOuterBrush}" Data="{StaticResource Geometry_Settings_Outer}" />
+                <Path Fill="{DynamicResource IconGearInnerBrush}" Data="{StaticResource Geometry_Settings_Inner}" />
+                <Path Fill="{DynamicResource IconGearOuterBrush}">
                     <Path.Data>
                         <EllipseGeometry Center="12,12" RadiusX="1.5" RadiusY="1.5"/>
                     </Path.Data>

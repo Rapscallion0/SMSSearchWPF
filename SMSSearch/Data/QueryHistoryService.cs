@@ -16,12 +16,14 @@ namespace SMS_Search.Data
     public class QueryHistoryService : IQueryHistoryService
     {
         private readonly IStateService _state;
+        private readonly ILoggerService _logger;
         private const int MaxHistory = 20;
         private const string SectionName = "QUERY_HISTORY";
 
-        public QueryHistoryService(IStateService state)
+        public QueryHistoryService(IStateService state, ILoggerService logger)
         {
             _state = state;
+            _logger = logger;
         }
 
         public void AddQuery(string type, string sql)
@@ -50,8 +52,9 @@ namespace SMS_Search.Data
             {
                 return JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogWarning("Failed to deserialize query history for {HistoryType}: {ErrorMessage}", type, ex.Message);
                 return new List<string>();
             }
         }
@@ -69,7 +72,10 @@ namespace SMS_Search.Data
                 _state.SetValue(SectionName, type, json);
                 _state.Save();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save query history for {HistoryType}", type);
+            }
         }
     }
 }

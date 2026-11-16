@@ -18,16 +18,18 @@ namespace SMS_Search.ViewModels
         private readonly IDialogService _dialogService;
         private readonly IConfigService _config;
         private readonly IConnectionSettingsService _connectionSettingsService;
-        private readonly MainViewModel _mainViewModel;
 
-        public ImportViewModel(IDataRepository repository, ILoggerService logger, IDialogService dialogService, IConfigService config, IConnectionSettingsService connectionSettingsService, MainViewModel mainViewModel)
+        public event Action? RequestClose;
+        public event Func<string, bool, Task>? ImportCompleted;
+        public event Func<Task>? DatabasesChanged;
+
+        public ImportViewModel(IDataRepository repository, ILoggerService logger, IDialogService dialogService, IConfigService config, IConnectionSettingsService connectionSettingsService)
         {
             _repository = repository;
             _logger = logger;
             _dialogService = dialogService;
             _config = config;
             _connectionSettingsService = connectionSettingsService;
-            _mainViewModel = mainViewModel;
 
             SelectedFiles = new ObservableCollection<string>();
             Databases = new ObservableCollection<string>();
@@ -36,15 +38,6 @@ namespace SMS_Search.ViewModels
             TargetDatabaseSuffix = "";
             SwitchToDatabaseAfterImport = true;
             CanChangeTemplateDatabase = true;
-
-            // When the import overlay is shown, load databases
-            _mainViewModel.PropertyChanged += async (s, e) =>
-            {
-                if (e.PropertyName == nameof(_mainViewModel.IsImportTargetVisible) && _mainViewModel.IsImportTargetVisible)
-                {
-                    await LoadDatabasesAsync();
-                }
-            };
         }
 
         [ObservableProperty]
@@ -129,7 +122,7 @@ namespace SMS_Search.ViewModels
             }
         }
 
-        private async Task LoadDatabasesAsync()
+        public async Task LoadDatabasesAsync(string? activeDatabase = null)
         {
             try
             {
@@ -150,9 +143,9 @@ namespace SMS_Search.ViewModels
                 }
 
                 // Auto-select the currently active database as the template, or first available
-                if (!string.IsNullOrEmpty(_mainViewModel.SelectedDatabase) && Databases.Contains(_mainViewModel.SelectedDatabase))
+                if (!string.IsNullOrEmpty(activeDatabase) && Databases.Contains(activeDatabase))
                 {
-                    TemplateDatabaseName = _mainViewModel.SelectedDatabase;
+                    TemplateDatabaseName = activeDatabase;
                 }
                 else if (Databases.Count > 0)
                 {
@@ -200,7 +193,7 @@ namespace SMS_Search.ViewModels
         private void Cancel()
         {
             SelectedFiles.Clear();
-            _mainViewModel.IsImportTargetVisible = false;
+            RequestClose?.Invoke();
         }
 
         [RelayCommand]
@@ -234,7 +227,10 @@ namespace SMS_Search.ViewModels
 
                 TargetDatabaseSuffix = "";
                 await LoadDatabasesAsync();
-                await _mainViewModel.LoadDatabasesAsync(force: true);
+                if (DatabasesChanged != null)
+                {
+                    await DatabasesChanged.Invoke();
+                }
             }
             catch (Exception ex)
             {
@@ -339,28 +335,11 @@ namespace SMS_Search.ViewModels
                 _dialogService.ShowToast("Import completed successfully.", "Import", Views.ToastType.Success);
 
                 SelectedFiles.Clear();
-                _mainViewModel.IsImportTargetVisible = false;
+                RequestClose?.Invoke();
 
-                // Reload main view model databases to see the new one
-                await _mainViewModel.LoadDatabasesAsync(force: true);
-
-                _mainViewModel.SearchVm.SelectedMode = SearchMode.Field;
-
-                if (SwitchToDatabaseAfterImport)
+                if (ImportCompleted != null)
                 {
-                    string? matchedDb = _mainViewModel.Databases.FirstOrDefault(
-                        d => d.Equals(fullTargetDbName, StringComparison.OrdinalIgnoreCase));
-                    string targetDb = matchedDb ?? fullTargetDbName;
-                    bool alreadySelected = string.Equals(_mainViewModel.SelectedDatabase, targetDb, StringComparison.OrdinalIgnoreCase);
-
-                    _mainViewModel.SelectedDatabase = targetDb;
-
-                    if (alreadySelected && _mainViewModel.SearchVm.LoadTablesCommand != null)
-                    {
-                        _mainViewModel.SearchVm.Tables.Clear();
-                        _mainViewModel.SearchVm.SelectedTable = null;
-                        _mainViewModel.SearchVm.LoadTablesCommand.Execute(null);
-                    }
+                    await ImportCompleted.Invoke(fullTargetDbName, SwitchToDatabaseAfterImport);
                 }
             }
             catch (Exception ex)

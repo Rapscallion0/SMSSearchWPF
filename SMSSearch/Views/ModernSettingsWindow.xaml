@@ -8,6 +8,8 @@
         xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
         mc:Ignorable="d"
         Title="Settings" Height="600" Width="900"
+        Background="{DynamicResource AppBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Loaded="Window_Loaded"
@@ -55,13 +57,17 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="true">
-                                <Setter Property="Background" TargetName="Bd" Value="#E0E0E0"/>
-                                <Setter Property="Foreground" Value="Black"/>
+                                <Setter Property="Background" TargetName="Bd" Value="{DynamicResource GridSelectionBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource GridSelectionTextBrush}"/>
                                 <Setter Property="FontWeight" Value="SemiBold"/>
                             </Trigger>
-                            <Trigger Property="IsMouseOver" Value="true">
-                                <Setter Property="Background" TargetName="Bd" Value="#F0F0F0"/>
-                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="true"/>
+                                    <Condition Property="IsSelected" Value="false"/>
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Background" TargetName="Bd" Value="{DynamicResource ControlHoverBrush}"/>
+                            </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -76,7 +82,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- Sidebar -->
-        <Border BorderBrush="#DDDDDD" BorderThickness="0,0,1,0" Background="#F9F9F9">
+        <Border BorderBrush="{DynamicResource BorderBrushKey}" BorderThickness="0,0,1,0" Background="{DynamicResource SurfaceAltBrush}">
              <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>

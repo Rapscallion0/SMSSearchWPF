@@ -89,6 +89,11 @@ namespace SMS_Search.ViewModels
                 SqlFontSize = m.Value.Size;
             });
 
+            WeakReferenceMessenger.Default.Register<ConnectionSettingsChangedMessage>(this, (r, m) =>
+            {
+                InitializeIntellisense();
+            });
+
             InitializeIntellisense();
 
             TablesView = CollectionViewSource.GetDefaultView(Tables);
@@ -102,6 +107,11 @@ namespace SMS_Search.ViewModels
             _intellisenseCts?.Dispose();
             _intellisenseCts = null;
             WeakReferenceMessenger.Default.UnregisterAll(this);
+        }
+
+        public void RefreshIntellisense()
+        {
+            InitializeIntellisense();
         }
 
         private void InitializeIntellisense()

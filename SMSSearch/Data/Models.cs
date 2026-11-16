@@ -31,6 +31,16 @@ namespace SMS_Search.Data
         Cursor
     }
 
+    public enum AppThemeMode
+    {
+        [System.ComponentModel.Description("Follow System")]
+        System,
+        [System.ComponentModel.Description("Light")]
+        Light,
+        [System.ComponentModel.Description("Dark")]
+        Dark
+    }
+
     public class SearchCriteria
     {
         public SearchMode Mode { get; set; }

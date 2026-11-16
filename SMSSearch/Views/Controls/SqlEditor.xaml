@@ -10,6 +10,8 @@
         <Border BorderBrush="Gray" BorderThickness="1">
             <avalon:TextEditor x:Name="Editor"
                                ShowLineNumbers="True"
+                               Background="{DynamicResource EditorBackgroundBrush}"
+                               Foreground="{DynamicResource EditorForegroundBrush}"
                                FontFamily="{Binding EditorFontFamily, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                FontSize="{Binding EditorFontSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                WordWrap="True"

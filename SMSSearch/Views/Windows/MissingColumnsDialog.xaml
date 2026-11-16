@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Missing Columns Warning" Height="450" Width="600"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
-        Background="#F5F5F5"
+        Background="{DynamicResource AppBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}"
         ShowInTaskbar="False">
     <Grid Margin="20">
         <Grid.RowDefinitions>

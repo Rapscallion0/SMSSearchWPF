@@ -61,6 +61,7 @@ namespace SMS_Search
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<IClipboardService, ClipboardService>();
             services.AddSingleton<IHotkeyService, HotkeyService>();
+            services.AddSingleton<IThemeService, ThemeService>();
 
             services.AddSingleton<HttpClient>(_ => new HttpClient(new SocketsHttpHandler
             {
@@ -77,6 +78,7 @@ namespace SMS_Search
             services.AddTransient<MainViewModel>();
             services.AddTransient<SearchViewModel>();
             services.AddTransient<ResultsViewModel>();
+            services.AddTransient<ImportViewModel>();
             services.AddTransient<EulaViewModel>();
             services.AddTransient<UnarchiveViewModel>();
             services.AddTransient<EncryptionUtilityViewModel>();
@@ -344,6 +346,7 @@ namespace SMS_Search
                 // Service resolution might fail (e.g. LoggerService constructor)
                 var logger = Services.GetRequiredService<ILoggerService>();
                 var configService = Services.GetRequiredService<IConfigService>();
+                Services.GetRequiredService<IThemeService>().Initialize();
 
                 // Global Exception Handling
                 this.DispatcherUnhandledException += (s, args) =>

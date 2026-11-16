@@ -9,7 +9,7 @@
             CornerRadius="2">
         <Border.Style>
             <Style TargetType="Border">
-                <Setter Property="BorderBrush" Value="#ABADB3" />
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding HasError, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
                         <Setter Property="BorderBrush" Value="#D32F2F" />
@@ -26,7 +26,9 @@
                            FontSize="12"
                            Padding="4,3,4,2"
                            Background="Transparent"
-                           PreviewKeyDown="Editor_PreviewKeyDown" />
+                           Foreground="{DynamicResource PrimaryTextBrush}"
+                           PreviewKeyDown="Editor_PreviewKeyDown"
+                           PreviewMouseWheel="Editor_PreviewMouseWheel" />
     </Border>
 </UserControl>
 

@@ -17,19 +17,16 @@ namespace SMS_Search.ViewModels.Settings
     {
         private readonly ISettingsRepository _repository;
         private readonly IDialogService _dialogService;
-
-
-
-
-
+        private readonly IThemeService _themeService;
 
         public override string Title => "General";
         public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_General");
 
-        public GeneralSectionViewModel(ISettingsRepository repository, IDialogService dialogService)
+        public GeneralSectionViewModel(ISettingsRepository repository, IDialogService dialogService, IThemeService themeService)
         {
             _repository = repository;
             _dialogService = dialogService;
+            _themeService = themeService;
 
 
             // Always On Top
@@ -100,6 +97,21 @@ namespace SMS_Search.ViewModels.Settings
                 toastTimeout,
                 v => v.ToString());
 
+            // Theme Mode
+            var themeModeStr = repository.GetValue(AppSettings.Sections.General, AppSettings.Keys.ThemeMode);
+            if (!Enum.TryParse(themeModeStr, out AppThemeMode themeMode)) themeMode = AppThemeMode.System;
+            ThemeMode = new ObservableSetting<AppThemeMode>(
+                repository, AppSettings.Sections.General, AppSettings.Keys.ThemeMode,
+                themeMode,
+                v => v.ToString());
+            ThemeMode.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ObservableSetting<AppThemeMode>.Value))
+                {
+                    _themeService.ApplyTheme(ThemeMode.Value);
+                }
+            };
+
             UpdateVisibility();
 
             string? exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
@@ -122,8 +134,10 @@ namespace SMS_Search.ViewModels.Settings
         public ObservableSetting<string> CopyDelimiter { get; }
         public ObservableSetting<string> CustomDelimiter { get; }
         public ObservableSetting<int> ToastTimeout { get; }
+        public ObservableSetting<AppThemeMode> ThemeMode { get; }
 
         public IEnumerable<StartupLocationMode> StartupLocationModes => Enum.GetValues<StartupLocationMode>();
+        public IEnumerable<AppThemeMode> ThemeModes => Enum.GetValues<AppThemeMode>();
         [ObservableProperty]
         private bool _isCustomDelimiterVisible;
 
@@ -156,6 +170,10 @@ namespace SMS_Search.ViewModels.Settings
              if ("Query".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Fields".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Records".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Theme".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Dark".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Light".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
+             if ("Appearance".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
 
              return false;
         }
