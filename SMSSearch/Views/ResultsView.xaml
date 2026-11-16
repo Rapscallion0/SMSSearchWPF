@@ -112,7 +112,7 @@
                   CanUserResizeRows="False"
                   HeadersVisibility="{Binding HeadersVisibility}"
                   GridLinesVisibility="All"
-                  AlternatingRowBackground="#F8F8F8"
+                  AlternatingRowBackground="{DynamicResource GridAltRowBackgroundBrush}"
                   FrozenColumnCount="0"
                   EnableRowVirtualization="True"
                   EnableColumnVirtualization="True"
@@ -127,14 +127,14 @@
                   PreviewMouseWheel="resultsGrid_PreviewMouseWheel">
 
             <DataGrid.ColumnHeaderStyle>
-                <Style TargetType="DataGridColumnHeader">
+                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
                     <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource AncestorType=local:ResultsView}}"/>
                     <Setter Property="ContextMenu" Value="{StaticResource HeaderContextMenu}"/>
                 </Style>
             </DataGrid.ColumnHeaderStyle>
 
             <DataGrid.RowStyle>
-                <Style TargetType="DataGridRow">
+                <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                     <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                     <Setter Property="ContextMenu" Value="{StaticResource RowContextMenu}"/>
                 </Style>
@@ -158,9 +158,9 @@
                     </Setter>
                     <Style.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                             <Setter Property="Foreground" Value="Black" />
-                             <Setter Property="Background" Value="#CCE8FF" />
-                             <Setter Property="BorderBrush" Value="#99D1FF" />
+                             <Setter Property="Foreground" Value="{DynamicResource GridSelectionTextBrush}" />
+                             <Setter Property="Background" Value="{DynamicResource GridSelectionBrush}" />
+                             <Setter Property="BorderBrush" Value="{DynamicResource GridSelectionBorderBrush}" />
                         </Trigger>
                     </Style.Triggers>
                 </Style>

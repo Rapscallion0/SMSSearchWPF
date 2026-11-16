@@ -55,7 +55,9 @@
   <ItemGroup>
     <Resource Include="Resources\**" />
     <Resource Remove="Resources\SQL.xshd" />
+    <Resource Remove="Resources\SQL-Dark.xshd" />
     <EmbeddedResource Include="Resources\SQL.xshd" />
+    <EmbeddedResource Include="Resources\SQL-Dark.xshd" />
   </ItemGroup>
 
   <ItemGroup>

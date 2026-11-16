@@ -7,6 +7,8 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:EncryptionUtilityViewModel}"
         Title="Encryption Utility" Height="250" Width="400"
+        Background="{DynamicResource AppBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
     <Grid Margin="10">
         <Grid.RowDefinitions>

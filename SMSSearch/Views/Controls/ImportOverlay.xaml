@@ -20,28 +20,28 @@
 
     <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
         <!-- Separate shadow layer so DropShadowEffect does not rasterize child text -->
-        <Border Background="White" CornerRadius="8" IsHitTestVisible="False">
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="8" IsHitTestVisible="False">
             <Border.Effect>
                 <DropShadowEffect Color="Black" Opacity="0.3" BlurRadius="10" Direction="270" ShadowDepth="4"/>
             </Border.Effect>
         </Border>
 
-        <Border Background="White" CornerRadius="8" Padding="20" MinWidth="450" MaxWidth="600"
-                BorderBrush="#CCC" BorderThickness="1">
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="8" Padding="20" MinWidth="450" MaxWidth="600"
+                BorderBrush="{DynamicResource BorderBrushKey}" BorderThickness="1">
 
             <StackPanel>
                 <TextBlock Text="Import Tables" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
 
-                <Border x:Name="DropZone" BorderBrush="#2196F3" BorderThickness="2" CornerRadius="5" Background="#F0F8FF" Padding="20" Margin="0,0,0,20">
+                <Border x:Name="DropZone" BorderBrush="#2196F3" BorderThickness="2" CornerRadius="5" Background="{DynamicResource SurfaceAltBrush}" Padding="20" Margin="0,0,0,20">
                     <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="Drag and Drop .sql files here" FontSize="16" Foreground="#555" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                        <TextBlock Text="or" HorizontalAlignment="Center" Foreground="#888" Margin="0,0,0,10"/>
+                        <TextBlock Text="Drag and Drop .sql files here" FontSize="16" Foreground="{DynamicResource SecondaryTextBrush}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="or" HorizontalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,10"/>
                         <Button Content="Browse for Files" Command="{Binding BrowseFilesCommand}" Padding="15,5" HorizontalAlignment="Center"/>
 
                         <ItemsControl ItemsSource="{Binding SelectedFiles}" Margin="0,15,0,0">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding}" Foreground="#333" FontSize="12" Margin="0,2"/>
+                                    <TextBlock Text="{Binding}" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="12" Margin="0,2"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -63,7 +63,7 @@
 
                     <TextBlock Text="Target Database:" VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Margin="0,0,10,0"/>
                     <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
-                        <TextBlock Text="DBUSER_" VerticalAlignment="Center" Foreground="#555" Margin="0,0,2,0"/>
+                        <TextBlock Text="DBUSER_" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,2,0"/>
                         <ComboBox ItemsSource="{Binding TargetDatabases}" Text="{Binding TargetDatabaseSuffix, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Width="200" Padding="2" ToolTip="Enter a suffix or select an existing one"/>
                     </StackPanel>
 
@@ -86,19 +86,19 @@
                                Placement="Bottom"
                                AllowsTransparency="True">
                             <Grid Margin="6">
-                                <Border Background="White" CornerRadius="6" IsHitTestVisible="False">
+                                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="6" IsHitTestVisible="False">
                                     <Border.Effect>
                                         <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="2" Opacity="0.25"/>
                                     </Border.Effect>
                                 </Border>
-                                <Border Background="White" BorderBrush="#CCC" BorderThickness="1" CornerRadius="6" Padding="12" MaxWidth="340">
+                                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrushKey}" BorderThickness="1" CornerRadius="6" Padding="12" MaxWidth="340">
                                     <StackPanel>
                                         <TextBlock Text="Template Database" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,6"/>
-                                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#333" Margin="0,0,0,6">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,6">
                                             <Run Text="When checked: " FontWeight="SemiBold"/>
                                             <Run Text="Copies RB_FIELDS and RB_TABLES (for field descriptions and metadata) and uses the template database's exact column data types when creating tables."/>
                                         </TextBlock>
-                                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#333">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource PrimaryTextBrush}">
                                             <Run Text="When unchecked: " FontWeight="SemiBold"/>
                                             <Run Text="Creates tables by inferring column names and data types directly from the .sql files (no template database required)."/>
                                         </TextBlock>
@@ -111,7 +111,7 @@
                     <TextBlock Text="Template Database:" VerticalAlignment="Center" Grid.Row="4" Grid.Column="0" Margin="0,0,10,0"/>
                     <ComboBox ItemsSource="{Binding Databases}" SelectedItem="{Binding TemplateDatabaseName}" IsEnabled="{Binding CanSelectTemplateDatabase}" ToolTipService.ShowOnDisabled="True" Grid.Row="4" Grid.Column="1" Padding="2">
                         <ComboBox.Style>
-                            <Style TargetType="ComboBox">
+                            <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
                                 <Setter Property="ToolTip" Value="Select the database to copy the base schema and table structures from" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding CanChangeTemplateDatabase}" Value="False">
@@ -137,7 +137,7 @@
 
                 <CheckBox Content="Confirm inferred column types before creating tables" IsChecked="{Binding ConfirmInferredTypes}" Margin="0,0,0,10">
                     <CheckBox.Style>
-                        <Style TargetType="CheckBox">
+                        <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
                             <Setter Property="Visibility" Value="Collapsed"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding UseTemplateDatabase}" Value="False">
@@ -153,7 +153,7 @@
                 <!-- Progress Section -->
                 <StackPanel Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" Margin="0,0,0,15">
                     <ProgressBar IsIndeterminate="{Binding IsProgressIndeterminate}" Value="{Binding ProgressValue}" Minimum="0" Maximum="100" Height="10" Margin="0,0,0,5"/>
-                    <TextBlock Text="{Binding ProgressStatusText}" Foreground="#555" FontSize="12" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding ProgressStatusText}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" HorizontalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- Action Buttons -->
@@ -199,20 +199,23 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="1">
                         <Button Content="Cancel" Command="{Binding CancelCommand}" Padding="15,5" Margin="0,0,10,0">
                             <Button.Style>
-                                <Style TargetType="Button">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
-                                        <Setter Property="IsEnabled" Value="False"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                    <Button Content="Import" Command="{Binding ImportCommand}" Padding="15,5" Background="#2196F3" Foreground="White" BorderThickness="0">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Content="Import" Command="{Binding ImportCommand}" Padding="15,5" Background="#2196F3" Foreground="White" BorderThickness="0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#1976D2"/>
+                                        </Trigger>
+                                        <DataTrigger Binding="{Binding IsBusy}" Value="True">
                                         <Setter Property="IsEnabled" Value="False"/>
                                     </DataTrigger>
                                 </Style.Triggers>

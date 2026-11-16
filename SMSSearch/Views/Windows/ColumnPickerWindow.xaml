@@ -11,7 +11,8 @@
         MinHeight="400" MinWidth="600"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        Background="#F5F5F5">
+        Background="{DynamicResource AppBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </Window.Resources>
@@ -28,7 +29,7 @@
         <StackPanel Grid.Row="0" Margin="0,0,0,10">
             <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" />
             <TextBlock Text="Double-click items to add/remove, or drag and drop in Selected Columns to reorder."
-                       FontSize="12" Foreground="#555555" Margin="0,2,0,0" />
+                       FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,2,0,0" />
         </StackPanel>
 
         <Border Grid.Row="1" Background="#FDECEA" BorderBrush="#D32F2F" BorderThickness="1" CornerRadius="3"

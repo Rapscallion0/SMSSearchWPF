@@ -5,11 +5,14 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Resources/Themes/LightTheme.xaml"/>
+                <ResourceDictionary Source="/Resources/Themes/ThemeStyles.xaml"/>
                 <ResourceDictionary Source="/Resources/Icons.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <Style x:Key="TransparentIconButtonStyle" TargetType="Button">
                 <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Padding" Value="5"/>
                 <Setter Property="Template">
@@ -37,6 +40,7 @@
 
             <Style x:Key="TransparentIconToggleButtonStyle" TargetType="ToggleButton">
                 <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Padding" Value="5"/>
                 <Setter Property="Template">

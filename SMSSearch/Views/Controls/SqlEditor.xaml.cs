@@ -1,5 +1,6 @@
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Highlighting.Xshd;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using SMS_Search.Services;
 using SMS_Search.Utils;
@@ -21,6 +22,7 @@ namespace SMS_Search.Views.Controls
         private IIntellisenseService? _intellisenseService;
         private ILoggerService? _logger;
         private IDialogService? _dialogService;
+        private IThemeService? _themeService;
 
         private IntellisenseLevel _currentLevel = IntellisenseLevel.Schema;
         private bool _isCycling = false;
@@ -34,13 +36,14 @@ namespace SMS_Search.Views.Controls
 
             if (System.Windows.Application.Current is App app && app.Services != null)
             {
+                _themeService = app.Services.GetService<IThemeService>();
                 ConfigureServices(
                     app.Services.GetService<ILoggerService>(),
                     app.Services.GetService<IIntellisenseService>(),
                     app.Services.GetService<IDialogService>());
             }
 
-            LoadHighlighting();
+            LoadHighlighting(_themeService?.IsDarkTheme ?? false);
 
             Loaded += SqlEditor_Loaded;
             Unloaded += SqlEditor_Unloaded;
@@ -62,10 +65,17 @@ namespace SMS_Search.Views.Controls
         private void SqlEditor_Loaded(object sender, RoutedEventArgs e)
         {
             HookTextAreaEvents();
+            WeakReferenceMessenger.Default.Unregister<ThemeChangedMessage>(this);
+            WeakReferenceMessenger.Default.Register<ThemeChangedMessage>(this, (r, m) =>
+            {
+                LoadHighlighting(m.Value);
+            });
+            LoadHighlighting(_themeService?.IsDarkTheme ?? false);
         }
 
         private void SqlEditor_Unloaded(object sender, RoutedEventArgs e)
         {
+            WeakReferenceMessenger.Default.Unregister<ThemeChangedMessage>(this);
             UnhookTextAreaEvents();
             _completionWindow?.Close();
             _completionWindow = null;
@@ -313,13 +323,15 @@ namespace SMS_Search.Views.Controls
             Editor.Clear();
         }
 
-        private void LoadHighlighting()
+        private void LoadHighlighting(bool isDark = false)
         {
             try
             {
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
                 var resourceNames = assembly.GetManifestResourceNames();
-                var resourceName = resourceNames.FirstOrDefault(s => s.EndsWith("SQL.xshd", StringComparison.OrdinalIgnoreCase));
+                var targetFile = isDark ? "SQL-Dark.xshd" : "SQL.xshd";
+                var resourceName = resourceNames.FirstOrDefault(s => s.EndsWith(targetFile, StringComparison.OrdinalIgnoreCase))
+                    ?? resourceNames.FirstOrDefault(s => s.EndsWith("SQL.xshd", StringComparison.OrdinalIgnoreCase));
 
                 if (resourceName != null)
                 {

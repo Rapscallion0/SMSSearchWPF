@@ -31,6 +31,7 @@ namespace SMS_Search.Utils
             public const string ToastTimeout = "TOAST_TIMEOUT";
             public const string Eula = "EULA";
             public const string CopyCleanSql = "COPYCLEANSQL";
+            public const string ThemeMode = "THEME_MODE";
 
             // System
             public const string CheckUpdate = "CHECKUPDATE";

@@ -6,6 +6,8 @@
         xmlns:vm="clr-namespace:SMS_Search.ViewModels"
         mc:Ignorable="d"
         Title="SMS Search - End User License Agreement" Height="300" Width="450"
+        Background="{DynamicResource AppBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize" WindowStyle="SingleBorderWindow">
     <Grid Margin="10">
         <Grid.RowDefinitions>

@@ -21,7 +21,6 @@ namespace SMS_Search.ViewModels
         private readonly VirtualGridContext _gridContext;
         private readonly ILoggerService _logger;
         private readonly IDialogService _dialogService;
-        private readonly QueryBuilder _queryBuilder;
         private readonly IConfigService _configService;
         private readonly IClipboardService _clipboardService;
         private readonly IConnectionSettingsService _connectionSettingsService;
@@ -54,10 +53,6 @@ namespace SMS_Search.ViewModels
             {
                 _horizontalScrollSpeed = speed;
             }
-
-            string fctFields = _configService.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Function) ?? "";
-            string tlzFields = _configService.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Totalizer) ?? "";
-            _queryBuilder = new QueryBuilder(fctFields, tlzFields);
 
             _gridContext.DataReady += OnDataReady;
             _gridContext.LoadError += OnLoadError;
@@ -363,7 +358,10 @@ namespace SMS_Search.ViewModels
                     hasRbFields = await _gridContext.TableExistsAsync("RB_FIELDS", token);
                 }
 
-                var queryResult = _queryBuilder.Build(criteria, hasRbFields);
+                string fctFields = _configService.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Function) ?? "";
+                string tlzFields = _configService.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Totalizer) ?? "";
+                var queryBuilder = new QueryBuilder(fctFields, tlzFields);
+                var queryResult = queryBuilder.Build(criteria, hasRbFields);
 
                 // Load initial count and cache schema in parallel
                 var schemaTask = _gridContext.GetSchemaAsync(queryResult.Sql, queryResult.Parameters, token);

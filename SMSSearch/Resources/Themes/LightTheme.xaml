@@ -1,0 +1,58 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Window & Surfaces -->
+    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#FFF5F5F5"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="SurfaceAltBrush" Color="#FFF0F0F0"/>
+    <SolidColorBrush x:Key="BorderBrushKey" Color="#FFD0D0D0"/>
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FF1E1E1E"/>
+    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#FF666666"/>
+
+    <!-- Accent -->
+    <SolidColorBrush x:Key="AccentBrush" Color="#FF0078D4"/>
+    <SolidColorBrush x:Key="AccentForegroundBrush" Color="#FFFFFFFF"/>
+
+    <!-- Controls -->
+    <SolidColorBrush x:Key="ControlBackgroundBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="ControlHoverBrush" Color="#FFE5F1FB"/>
+    <SolidColorBrush x:Key="ControlPressedBrush" Color="#FFCCE4F7"/>
+    <SolidColorBrush x:Key="ControlBorderBrush" Color="#FFABADB3"/>
+
+    <!-- DataGrid -->
+    <SolidColorBrush x:Key="GridBackgroundBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="GridRowBackgroundBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="GridAltRowBackgroundBrush" Color="#FFF8F8F8"/>
+    <SolidColorBrush x:Key="GridHeaderBackgroundBrush" Color="#FFF0F0F0"/>
+    <SolidColorBrush x:Key="GridSelectionBrush" Color="#FFCCE8FF"/>
+    <SolidColorBrush x:Key="GridSelectionBorderBrush" Color="#FF99D1FF"/>
+    <SolidColorBrush x:Key="GridSelectionTextBrush" Color="#FF000000"/>
+    <SolidColorBrush x:Key="GridLineBrush" Color="#FFE0E0E0"/>
+
+    <!-- StatusBar & Editor -->
+    <SolidColorBrush x:Key="StatusBarBackgroundBrush" Color="#FFF0F0F0"/>
+    <SolidColorBrush x:Key="EditorBackgroundBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="EditorForegroundBrush" Color="#FF1E1E1E"/>
+
+    <!-- Icons -->
+    <SolidColorBrush x:Key="IconGearOuterBrush" Color="#FF1B2B3A"/>
+    <SolidColorBrush x:Key="IconGearInnerBrush" Color="#FFE0E0E0"/>
+
+    <!-- SystemColors overrides for native WPF / AvalonEdit popups & controls -->
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey}" Color="#FF1E1E1E"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#FFF0F0F0"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="#FF1E1E1E"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlLightBrushKey}" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlDarkBrushKey}" Color="#FFABADB3"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#FF0078D4"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#FFE0E0E0"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#FF1E1E1E"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.GrayTextBrushKey}" Color="#FF777777"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.MenuBrushKey}" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.MenuTextBrushKey}" Color="#FF1E1E1E"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.InfoBrushKey}" Color="#FFFFFFE1"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.InfoTextBrushKey}" Color="#FF1E1E1E"/>
+</ResourceDictionary>

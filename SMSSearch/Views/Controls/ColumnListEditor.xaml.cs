@@ -116,6 +116,25 @@ namespace SMS_Search.Views.Controls
             }
         }
 
+        private void Editor_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            if (e.Handled) return;
+            e.Handled = true;
+            var eventArg = new System.Windows.Input.MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+            {
+                RoutedEvent = UIElement.MouseWheelEvent,
+                Source = sender
+            };
+            if (Parent is UIElement parent)
+            {
+                parent.RaiseEvent(eventArg);
+            }
+            else
+            {
+                RaiseEvent(eventArg);
+            }
+        }
+
         private sealed class InvalidColumnColorizer : DocumentColorizingTransformer
         {
             private static readonly System.Windows.Media.Brush ErrorBrush;
