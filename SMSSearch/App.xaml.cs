@@ -49,6 +49,7 @@ namespace SMS_Search
                 new StateManager(PathHelper.GetStatePath()));
 
             services.AddSingleton<ISettingsRepository, SettingsRepository>();
+            services.AddSingleton<IConnectionSettingsService, ConnectionSettingsService>();
 
             services.AddSingleton<ILoggerService, LoggerService>();
 
@@ -78,6 +79,7 @@ namespace SMS_Search
             services.AddTransient<ResultsViewModel>();
             services.AddTransient<EulaViewModel>();
             services.AddTransient<UnarchiveViewModel>();
+            services.AddTransient<EncryptionUtilityViewModel>();
             services.AddSingleton<Gs1ToolkitViewModel>();
 
             // New Settings ViewModels
@@ -97,6 +99,14 @@ namespace SMS_Search
             services.AddTransient<EulaWindow>();
             services.AddTransient<UnarchiveWindow>();
             services.AddTransient<Gs1ToolkitWindow>();
+            services.AddTransient<EncryptionUtilityWindow>();
+
+            services.AddSingleton<Func<UnarchiveWindow>>(sp => () => sp.GetRequiredService<UnarchiveWindow>());
+            services.AddSingleton<Func<Gs1ToolkitWindow>>(sp => () => sp.GetRequiredService<Gs1ToolkitWindow>());
+            services.AddSingleton<Func<Gs1ToolkitViewModel>>(sp => () => sp.GetRequiredService<Gs1ToolkitViewModel>());
+            services.AddSingleton<Func<ModernSettingsWindow>>(sp => () => sp.GetRequiredService<ModernSettingsWindow>());
+            services.AddSingleton<Func<EncryptionUtilityWindow>>(sp => () => sp.GetRequiredService<EncryptionUtilityWindow>());
+            services.AddSingleton<Func<EncryptionUtilityViewModel>>(sp => () => sp.GetRequiredService<EncryptionUtilityViewModel>());
 
             return services.BuildServiceProvider();
         }

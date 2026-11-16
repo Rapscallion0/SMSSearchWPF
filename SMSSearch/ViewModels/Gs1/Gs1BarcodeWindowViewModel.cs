@@ -71,7 +71,7 @@ namespace SMS_Search.ViewModels.Gs1
             try
             {
                 BarcodeImage = _barcodeService.GenerateBitmapSource(_barcodeData, SelectedSymbology);
-                _logger.LogInfo($"Barcode image generated successfully. Data length: {_barcodeData.Length}, Symbology: {SelectedSymbology}");
+                _logger.LogInfo("Barcode image generated successfully. Data length: {DataLength}, Symbology: {Symbology}", _barcodeData.Length, SelectedSymbology);
             }
             catch (System.Exception ex)
             {
@@ -87,7 +87,7 @@ namespace SMS_Search.ViewModels.Gs1
             {
                 string svg = _barcodeService.GenerateSvg(_barcodeData, SelectedSymbology);
                 _clipboard.SetText(svg);
-                _logger.LogInfo($"Barcode SVG copied to clipboard. Symbology: {SelectedSymbology}");
+                _logger.LogInfo("Barcode SVG copied to clipboard. Symbology: {Symbology}", SelectedSymbology);
                 _dialogService.ShowToast("Barcode SVG copied to clipboard.", "Copy SVG", SMS_Search.Views.ToastType.Success);
             }
             catch (System.Exception ex)
@@ -106,12 +106,12 @@ namespace SMS_Search.ViewModels.Gs1
                 try
                 {
                     _barcodeService.SaveAsPdf(_barcodeData, SelectedSymbology, path, IncludeDetails, _parsedAis, BarcodeName, BarcodeDescription);
-                    _logger.LogInfo($"Barcode PDF saved successfully to {path}. Symbology: {SelectedSymbology}, IncludeDetails: {IncludeDetails}");
+                    _logger.LogInfo("Barcode PDF saved successfully to {Path}. Symbology: {Symbology}, IncludeDetails: {IncludeDetails}", path, SelectedSymbology, IncludeDetails);
                     _dialogService.ShowToast($"Barcode PDF saved.", "Save PDF", SMS_Search.Views.ToastType.Success);
                 }
                 catch (System.Exception ex)
                 {
-                    _logger.LogError($"Failed to save barcode PDF to {path}.", ex);
+                    _logger.LogError(ex, "Failed to save barcode PDF to {Path}.", path);
                     _dialogService.ShowToast("Failed to save barcode PDF.", "Error", SMS_Search.Views.ToastType.Error);
                 }
             }
@@ -259,7 +259,7 @@ namespace SMS_Search.ViewModels.Gs1
                     printElement.Arrange(new System.Windows.Rect(0, 0, printDialog.PrintableAreaWidth, printDialog.PrintableAreaHeight));
 
                     printDialog.PrintVisual(printElement, "GS1 Barcode");
-                    _logger.LogInfo($"Barcode printed successfully. Symbology: {SelectedSymbology}, IncludeDetails: {IncludeDetails}");
+                    _logger.LogInfo("Barcode printed successfully. Symbology: {Symbology}, IncludeDetails: {IncludeDetails}", SelectedSymbology, IncludeDetails);
                 }
                 catch (System.Exception ex)
                 {

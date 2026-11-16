@@ -39,6 +39,46 @@ namespace SMSSearch.Tests
 
             Assert.Contains("RBF.F1454 LIKE @Val", result.Sql);
         }
+
+        [Theory]
+        [InlineData(SearchMode.Function, SearchType.Number)]
+        [InlineData(SearchMode.Function, SearchType.Description)]
+        [InlineData(SearchMode.Totalizer, SearchType.Number)]
+        [InlineData(SearchMode.Totalizer, SearchType.Description)]
+        [InlineData(SearchMode.Field, SearchType.Number)]
+        [InlineData(SearchMode.Field, SearchType.Description)]
+        public void Build_EmptyValue_OmitsWhereClauseToReturnFullResultSet(SearchMode mode, SearchType type)
+        {
+            var qb = new QueryBuilder("", "");
+            var criteria = new SearchCriteria
+            {
+                Mode = mode,
+                Type = type,
+                Value = "   ",
+                AnyMatch = true
+            };
+
+            var result = qb.Build(criteria);
+
+            Assert.DoesNotContain("WHERE", result.Sql);
+        }
+
+        [Fact]
+        public void Build_FieldTableShowFieldsEmptyValue_OmitsWhereClause()
+        {
+            var qb = new QueryBuilder("", "");
+            var criteria = new SearchCriteria
+            {
+                Mode = SearchMode.Field,
+                Type = SearchType.Table,
+                Value = "",
+                ShowFields = true
+            };
+
+            var result = qb.Build(criteria);
+
+            Assert.DoesNotContain("WHERE", result.Sql);
+        }
     }
 }
 

@@ -10,7 +10,6 @@ namespace SMS_Search.Data
     {
         string GetConnectionString(string server, string database, string? user, string? pass);
         Task<bool> TestConnectionAsync(string server, string database, string? user, string? pass, CancellationToken cancellationToken = default);
-        bool TestConnection(string server, string database, string? user, string? pass);
         Task<DataTable> ExecuteQueryAsync(string server, string database, string? user, string? pass, string sql, object? parameters = null, CancellationToken cancellationToken = default);
         Task<int> GetQueryCountAsync(string server, string database, string? user, string? pass, string sql, object? parameters, string? filter = null, CancellationToken cancellationToken = default);
         Task<DataTable> GetQueryPageAsync(string server, string database, string? user, string? pass, string sql, object? parameters, int offset, int limit, string? sortCol, string? sortDir, string? filter = null, CancellationToken cancellationToken = default);

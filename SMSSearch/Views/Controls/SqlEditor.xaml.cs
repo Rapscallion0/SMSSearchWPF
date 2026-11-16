@@ -34,15 +34,10 @@ namespace SMS_Search.Views.Controls
 
             if (System.Windows.Application.Current is App app && app.Services != null)
             {
-                _logger = app.Services.GetService<ILoggerService>();
-                _intellisenseService = app.Services.GetService<IIntellisenseService>();
-                _dialogService = app.Services.GetService<IDialogService>();
-
-                // Initialize current level from service default
-                if (_intellisenseService != null)
-                {
-                    _currentLevel = _intellisenseService.GetInitialLevel();
-                }
+                ConfigureServices(
+                    app.Services.GetService<ILoggerService>(),
+                    app.Services.GetService<IIntellisenseService>(),
+                    app.Services.GetService<IDialogService>());
             }
 
             LoadHighlighting();
@@ -50,6 +45,18 @@ namespace SMS_Search.Views.Controls
             Loaded += SqlEditor_Loaded;
             Unloaded += SqlEditor_Unloaded;
             HookTextAreaEvents();
+        }
+
+        public void ConfigureServices(ILoggerService? logger, IIntellisenseService? intellisenseService, IDialogService? dialogService)
+        {
+            _logger = logger;
+            _intellisenseService = intellisenseService;
+            _dialogService = dialogService;
+
+            if (_intellisenseService != null)
+            {
+                _currentLevel = _intellisenseService.GetInitialLevel();
+            }
         }
 
         private void SqlEditor_Loaded(object sender, RoutedEventArgs e)

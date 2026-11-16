@@ -17,14 +17,16 @@ namespace SMS_Search.ViewModels
         private readonly ILoggerService _logger;
         private readonly IDialogService _dialogService;
         private readonly IConfigService _config;
+        private readonly IConnectionSettingsService _connectionSettingsService;
         private readonly MainViewModel _mainViewModel;
 
-        public ImportViewModel(IDataRepository repository, ILoggerService logger, IDialogService dialogService, IConfigService config, MainViewModel mainViewModel)
+        public ImportViewModel(IDataRepository repository, ILoggerService logger, IDialogService dialogService, IConfigService config, IConnectionSettingsService connectionSettingsService, MainViewModel mainViewModel)
         {
             _repository = repository;
             _logger = logger;
             _dialogService = dialogService;
             _config = config;
+            _connectionSettingsService = connectionSettingsService;
             _mainViewModel = mainViewModel;
 
             SelectedFiles = new ObservableCollection<string>();
@@ -87,24 +89,11 @@ namespace SMS_Search.ViewModels
             {
                 string actualDbName = Databases.First(d => d.Equals(fullTargetDbName, StringComparison.OrdinalIgnoreCase));
 
-                var server = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
-                string user = "";
-                string? decryptedPass = null;
+                var conn = _connectionSettingsService.GetConnectionSettings();
 
-                bool isWindowsAuth = true;
-                if (bool.TryParse(_config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
-                    isWindowsAuth = b;
-
-                if (!isWindowsAuth)
+                if (!string.IsNullOrEmpty(conn.Server))
                 {
-                    user = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
-                    var pass = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
-                    decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
-                }
-
-                if (!string.IsNullOrEmpty(server))
-                {
-                    string? originalTemplate = await _repository.GetDatabaseTemplateAsync(server, actualDbName, user, decryptedPass);
+                    string? originalTemplate = await _repository.GetDatabaseTemplateAsync(conn.Server, actualDbName, conn.User, conn.Password);
                     if (!string.IsNullOrEmpty(originalTemplate) && Databases.Contains(originalTemplate, StringComparer.OrdinalIgnoreCase))
                     {
                         string actualTemplateName = Databases.First(d => d.Equals(originalTemplate, StringComparison.OrdinalIgnoreCase));
@@ -129,24 +118,11 @@ namespace SMS_Search.ViewModels
         {
             try
             {
-                var server = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
-                string user = "";
-                string? decryptedPass = null;
+                var conn = _connectionSettingsService.GetConnectionSettings();
 
-                bool isWindowsAuth = true;
-                if (bool.TryParse(_config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
-                    isWindowsAuth = b;
+                if (string.IsNullOrEmpty(conn.Server)) return;
 
-                if (!isWindowsAuth)
-                {
-                    user = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
-                    var pass = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
-                    decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
-                }
-
-                if (string.IsNullOrEmpty(server)) return;
-
-                var dbs = await _repository.GetDatabasesAsync(server, user, decryptedPass);
+                var dbs = await _repository.GetDatabasesAsync(conn.Server, conn.User, conn.Password);
                 Databases.Clear();
                 TargetDatabases.Clear();
                 foreach (var db in dbs)
@@ -229,22 +205,9 @@ namespace SMS_Search.ViewModels
 
             try
             {
-                var server = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
-                string user = "";
-                string? decryptedPass = null;
+                var conn = _connectionSettingsService.GetConnectionSettings();
 
-                bool isWindowsAuth = true;
-                if (bool.TryParse(_config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
-                    isWindowsAuth = b;
-
-                if (!isWindowsAuth)
-                {
-                    user = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
-                    var pass = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
-                    decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
-                }
-
-                await _repository.DropDatabaseAsync(server, fullTargetDbName, user, decryptedPass);
+                await _repository.DropDatabaseAsync(conn.Server, fullTargetDbName, conn.User, conn.Password);
 
                 _dialogService.ShowToast($"Database '{fullTargetDbName}' deleted.", "Delete Success", Views.ToastType.Success);
 
@@ -293,25 +256,12 @@ namespace SMS_Search.ViewModels
 
             try
             {
-                var server = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
-                string user = "";
-                string? decryptedPass = null;
-
-                bool isWindowsAuth = true;
-                if (bool.TryParse(_config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
-                    isWindowsAuth = b;
-
-                if (!isWindowsAuth)
-                {
-                    user = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
-                    var pass = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
-                    decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
-                }
+                var conn = _connectionSettingsService.GetConnectionSettings();
 
                 // Call the actual logic (which we will implement next in DataRepository)
                 // For now, let's just create a shell method in DataRepository to handle this.
-                _logger.LogInfo($"Starting import process for target DB: {fullTargetDbName} from template DB: {TemplateDatabaseName}");
-                await _repository.PerformImportProcessAsync(server, user, decryptedPass, fullTargetDbName, TemplateDatabaseName, SelectedFiles.ToList(),
+                _logger.LogInfo("Starting import process for target DB: {TargetDb} from template DB: {TemplateDb}", fullTargetDbName, TemplateDatabaseName);
+                await _repository.PerformImportProcessAsync(conn.Server, conn.User, conn.Password, fullTargetDbName, TemplateDatabaseName, SelectedFiles.ToList(),
                     progress => {
                         try
                         {
@@ -336,28 +286,28 @@ namespace SMS_Search.ViewModels
                     async tableName => {
                         try
                         {
-                            _logger.LogInfo($"Prompting user for existing table action: {tableName}");
+                            _logger.LogInfo("Prompting user for existing table action: {TableName}", tableName);
                             var result = await _dialogService.ShowTableExistsPromptAsync(tableName);
-                            _logger.LogInfo($"User selected action for existing table {tableName}: {result}");
+                            _logger.LogInfo("User selected action for existing table {TableName}: {Action}", tableName, result);
                             return result;
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError($"Error displaying TableExistsPrompt for table {tableName}", ex);
+                            _logger.LogError(ex, "Error displaying TableExistsPrompt for table {TableName}", tableName);
                             throw;
                         }
                     },
                     async (tableName, missingColumns) => {
                         try
                         {
-                            _logger.LogInfo($"Prompting user for missing columns on table: {tableName}. Missing count: {missingColumns?.Count ?? 0}");
+                            _logger.LogInfo("Prompting user for missing columns on table: {TableName}. Missing count: {MissingCount}", tableName, missingColumns?.Count ?? 0);
                             var result = await _dialogService.ShowMissingColumnsPromptAsync(tableName, missingColumns ?? new List<Models.MissingColumnInfo>());
-                            _logger.LogInfo($"User completed missing columns prompt for table {tableName}. Action selected: {result.Action}");
+                            _logger.LogInfo("User completed missing columns prompt for table {TableName}. Action selected: {Action}", tableName, result.Action);
                             return result;
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError($"Error displaying MissingColumnsPrompt for table {tableName}", ex);
+                            _logger.LogError(ex, "Error displaying MissingColumnsPrompt for table {TableName}", tableName);
                             throw;
                         }
                     });

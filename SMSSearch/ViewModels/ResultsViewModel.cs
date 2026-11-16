@@ -24,6 +24,7 @@ namespace SMS_Search.ViewModels
         private readonly QueryBuilder _queryBuilder;
         private readonly IConfigService _configService;
         private readonly IClipboardService _clipboardService;
+        private readonly IConnectionSettingsService _connectionSettingsService;
         private CancellationTokenSource? _cts;
 
         public ResultsViewModel(
@@ -31,13 +32,15 @@ namespace SMS_Search.ViewModels
             ILoggerService logger,
             IDialogService dialogService,
             IConfigService configService,
-            IClipboardService clipboardService)
+            IClipboardService clipboardService,
+            IConnectionSettingsService connectionSettingsService)
         {
             _gridContext = gridContext;
             _logger = logger;
             _dialogService = dialogService;
             _configService = configService;
             _clipboardService = clipboardService;
+            _connectionSettingsService = connectionSettingsService;
 
             // Initialize HeadersVisibility based on config
             bool showRowNumbers = _configService.GetValue(AppSettings.Sections.Results, AppSettings.Keys.ShowRowNumbers) == "1";
@@ -353,26 +356,8 @@ namespace SMS_Search.ViewModels
             {
                 var queryResult = _queryBuilder.Build(criteria);
 
-                var server = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
-                var database = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "";
-
-                string user = "";
-                string? decryptedPass = null;
-
-                bool isWindowsAuth = true;
-                if (bool.TryParse(_configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
-                {
-                    isWindowsAuth = b;
-                }
-
-                if (!isWindowsAuth)
-                {
-                    user = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
-                    var pass = _configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
-                    decryptedPass = !string.IsNullOrEmpty(pass) ? SMS_Search.Utils.GeneralUtils.Decrypt(pass) : null;
-                }
-
-                _gridContext.SetConnection(server, database, user, decryptedPass);
+                var conn = _connectionSettingsService.GetConnectionSettings();
+                _gridContext.SetConnection(conn.Server, conn.Database, conn.User, conn.Password);
 
                 // Load initial count and cache schema in parallel
                 var schemaTask = _gridContext.GetSchemaAsync(queryResult.Sql, queryResult.Parameters, token);
@@ -452,7 +437,7 @@ namespace SMS_Search.ViewModels
 
              FilterText = filterText ?? "";
 
-             _logger.LogDebug($"Applying filter: '{filterText}'");
+             _logger.LogDebug("Applying filter: '{FilterText}'", filterText);
              var columns = new List<string>();
              if (SearchResults is VirtualizingCollection vc)
              {
@@ -479,7 +464,7 @@ namespace SMS_Search.ViewModels
                  {
                      long matchedCells = await _gridContext.GetTotalMatchedCellsCountAsync(filterText, columns, token);
                      MatchStatusText = $"Found: {TotalRecords} rows ({matchedCells} matches)";
-                     _logger.LogDebug($"Filter applied. Rows: {TotalRecords}, Matches: {matchedCells}");
+                     _logger.LogDebug("Filter applied. Rows: {RowCount}, Matches: {MatchCount}", TotalRecords, matchedCells);
                  }
                  else
                  {
@@ -673,7 +658,7 @@ namespace SMS_Search.ViewModels
             string? filename = _dialogService.SaveFileDialog("CSV files (*.csv)|*.csv", $"SMS_Search_Export_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
             if (string.IsNullOrEmpty(filename)) return;
             var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportToCsvAsync(filename, null, true, hidden), filename, "CSV");
+            await PerformExportAsync(token => _gridContext.ExportToCsvAsync(filename, null, true, hidden, token), filename, "CSV");
         }
 
         private async Task ExportJsonAsync()
@@ -682,7 +667,7 @@ namespace SMS_Search.ViewModels
             if (string.IsNullOrEmpty(filename)) return;
             if (CurrentSearchCriteria == null) return;
             var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportToJsonAsync(filename, CurrentSearchCriteria, null, hidden), filename, "JSON");
+            await PerformExportAsync(token => _gridContext.ExportToJsonAsync(filename, CurrentSearchCriteria, null, hidden, token), filename, "JSON");
         }
 
         private async Task ExportXmlAsync()
@@ -691,7 +676,7 @@ namespace SMS_Search.ViewModels
             if (string.IsNullOrEmpty(filename)) return;
             if (CurrentSearchCriteria == null) return;
             var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportToXmlAsync(filename, CurrentSearchCriteria, hidden), filename, "XML");
+            await PerformExportAsync(token => _gridContext.ExportToXmlAsync(filename, CurrentSearchCriteria, hidden, token), filename, "XML");
         }
 
         private HashSet<string>? CheckHiddenColumns()
@@ -707,26 +692,41 @@ namespace SMS_Search.ViewModels
             return null;
         }
 
-        private async Task PerformExportAsync(Func<Task<int>> exportAction, string exportedFilePath, string format)
+        private async Task PerformExportAsync(Func<CancellationToken, Task<int>> exportAction, string exportedFilePath, string format)
         {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+            var token = _cts.Token;
+
             IsBusy = true;
             StatusText = "Exporting...";
-            _logger.LogInfo($"Starting {format} export to {exportedFilePath}...");
+            _logger.LogInfo("Starting {ExportFormat} export to {FilePath}...", format, exportedFilePath);
             try
             {
-                int rowCount = await exportAction();
+                int rowCount = await exportAction(token);
                 _dialogService.ShowToast($"Successfully exported {rowCount} records to {format}", "Export", SMS_Search.Views.ToastType.Success, null, exportedFilePath);
-                _logger.LogInfo($"{format} export successful. {rowCount} rows exported.");
+                _logger.LogInfo("{ExportFormat} export successful. {RowCount} rows exported.", format, rowCount);
+            }
+            catch (OperationCanceledException)
+            {
+                StatusText = "Export cancelled";
+                _logger.LogInfo("{ExportFormat} export cancelled.", format);
             }
             catch (Exception ex)
             {
                 _dialogService.ShowError(ex.Message, "Export Error");
-                _logger.LogError($"{format} export failed", ex);
+                _logger.LogError(ex, "{ExportFormat} export failed", format);
             }
             finally
             {
                 IsBusy = false;
-                StatusText = $"Found {TotalRecords} records";
+                if (StatusText == "Exporting...")
+                {
+                    StatusText = $"Found {TotalRecords} records";
+                }
+                _cts?.Dispose();
+                _cts = null;
             }
         }
 
@@ -745,7 +745,7 @@ namespace SMS_Search.ViewModels
 
             var rows = selectedItems.Cast<VirtualRow>().ToList();
             var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportRowsToCsvAsync(filename, rows, hidden), filename, "CSV");
+            await PerformExportAsync(token => _gridContext.ExportRowsToCsvAsync(filename, rows, hidden, token), filename, "CSV");
         }
 
         private async Task ExportSelectedJsonAsync(System.Collections.IList? selectedItems)
@@ -756,7 +756,7 @@ namespace SMS_Search.ViewModels
 
             var rows = selectedItems.Cast<VirtualRow>().ToList();
             var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportRowsToJsonAsync(filename, rows, CurrentSearchCriteria, hidden), filename, "JSON");
+            await PerformExportAsync(token => _gridContext.ExportRowsToJsonAsync(filename, rows, CurrentSearchCriteria, hidden, token), filename, "JSON");
         }
 
         private async Task ExportSelectedXmlAsync(System.Collections.IList? selectedItems)
@@ -767,7 +767,7 @@ namespace SMS_Search.ViewModels
 
             var rows = selectedItems.Cast<VirtualRow>().ToList();
             var hidden = CheckHiddenColumns();
-            await PerformExportAsync(() => _gridContext.ExportRowsToXmlAsync(filename, rows, CurrentSearchCriteria, hidden), filename, "XML");
+            await PerformExportAsync(token => _gridContext.ExportRowsToXmlAsync(filename, rows, CurrentSearchCriteria, hidden, token), filename, "XML");
         }
 
         private void CopyRow(IList? selectedItems)
@@ -791,7 +791,7 @@ namespace SMS_Search.ViewModels
             try
             {
                 _clipboardService.SetText(sb.ToString());
-                _logger.LogInfo($"Copied {selectedItems.Count} rows to clipboard.");
+                _logger.LogInfo("Copied {RowCount} rows to clipboard.", selectedItems.Count);
             }
             catch (Exception ex)
             {
@@ -838,7 +838,7 @@ namespace SMS_Search.ViewModels
 
             _clipboardService.SetText(sb.ToString());
             _dialogService.ShowMessage("INSERT statements copied to clipboard", "Copy");
-            _logger.LogInfo($"Copied SQL INSERT statements for {selectedItems.Count} rows.");
+            _logger.LogInfo("Copied SQL INSERT statements for {RowCount} rows.", selectedItems.Count);
         }
 
         private string FormatSqlValue(object? value)
@@ -885,7 +885,7 @@ namespace SMS_Search.ViewModels
                 {
                     _clipboardService.SetText(string.Join(Environment.NewLine, matches));
                     _dialogService.ShowToast($"Successfully copied {matches.Count} matches to clipboard", "Copy Matches", SMS_Search.Views.ToastType.Success);
-                    _logger.LogInfo($"Copied {matches.Count} matches to clipboard.");
+                    _logger.LogInfo("Copied {MatchCount} matches to clipboard.", matches.Count);
                 }
                 else
                 {

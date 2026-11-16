@@ -19,15 +19,16 @@ namespace SMS_Search.ViewModels
     {
         private readonly IConfigService _config;
         private readonly IDialogService _dialogService;
-        private readonly IServiceProvider _serviceProvider;
         private readonly ILoggerService _logger;
         private readonly IQueryHistoryService _historyService; // Restore history service dependency
         private readonly IDataRepository _repository;
+        private readonly IConnectionSettingsService _connectionSettingsService;
 
         private System.Windows.Threading.DispatcherTimer? _dateRolloverTimer;
         private DateTime _lastKnownDate;
 
         public event Action? RequestOpenSettings;
+        public event Action? RequestOpenEncryptionUtility;
         public event Action? RequestOpenGs1Toolkit;
         public event Action<bool>? RequestToggleUnarchiveWindow;
         public event Action<bool>? RequestToggleImportTarget;
@@ -35,26 +36,26 @@ namespace SMS_Search.ViewModels
         public MainViewModel(
             IConfigService config,
             IDialogService dialogService,
-            IServiceProvider serviceProvider,
             ILoggerService logger,
             IQueryHistoryService historyService, // Inject it
             IDataRepository repository,
             SearchViewModel searchViewModel,
-            ResultsViewModel resultsViewModel)
+            ResultsViewModel resultsViewModel,
+            IConnectionSettingsService connectionSettingsService)
         {
             _repository = repository;
             _config = config;
             _dialogService = dialogService;
-            _serviceProvider = serviceProvider;
             _logger = logger;
             _historyService = historyService;
+            _connectionSettingsService = connectionSettingsService;
             SearchVm = searchViewModel;
             ResultsVm = resultsViewModel;
 
             // ImportVm gets initialized separately since it needs MainViewModel
             // To break circular dependency, we inject it or create it.
             // Actually let's just create it.
-            ImportVm = new ImportViewModel(repository, logger, dialogService, config, this);
+            ImportVm = new ImportViewModel(repository, logger, dialogService, config, connectionSettingsService, this);
 
             var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version;
             Title = $"SMS Search - v{version}";
@@ -91,7 +92,7 @@ namespace SMS_Search.ViewModels
             {
                 if (GregorianDate.HasValue && GregorianDate.Value.Date == _lastKnownDate.Date)
                 {
-                    _logger.LogInfo($"Midnight rollover detected. Updating GregorianDate from {_lastKnownDate:yyyy-MM-dd} to {today:yyyy-MM-dd}.");
+                    _logger.LogInfo("Midnight rollover detected. Updating GregorianDate from {OldDate:yyyy-MM-dd} to {NewDate:yyyy-MM-dd}.", _lastKnownDate, today);
                     GregorianDate = today;
                 }
                 _lastKnownDate = today;
@@ -186,29 +187,14 @@ namespace SMS_Search.ViewModels
             if (Databases.Count > 0) return;
             try
             {
-                 var server = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
-                 string user = "";
-                 string? decryptedPass = null;
+                 var conn = _connectionSettingsService.GetConnectionSettings();
 
-                 bool isWindowsAuth = true;
-                 if (bool.TryParse(_config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b))
-                 {
-                     isWindowsAuth = b;
-                 }
+                 if (string.IsNullOrEmpty(conn.Server)) return;
 
-                 if (!isWindowsAuth)
-                 {
-                     user = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlUser) ?? "";
-                     var pass = _config.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.SqlPassword);
-                     decryptedPass = !string.IsNullOrEmpty(pass) ? GeneralUtils.Decrypt(pass) : null;
-                 }
-
-                 if (string.IsNullOrEmpty(server)) return;
-
-                 var databases = await _repository.GetDatabasesAsync(server, user, decryptedPass);
+                 var databases = await _repository.GetDatabasesAsync(conn.Server, conn.User, conn.Password);
                  Databases.Clear();
                  foreach(var db in databases) Databases.Add(db);
-                 _logger.LogInfo($"Loaded {Databases.Count} databases from server.");
+                 _logger.LogInfo("Loaded {DatabaseCount} databases from server.", Databases.Count);
 
                  // If SelectedDatabase isn't in the list, set it to the first one or null
                  if (!string.IsNullOrEmpty(SelectedDatabase) && !Databases.Contains(SelectedDatabase))
@@ -278,14 +264,14 @@ namespace SMS_Search.ViewModels
             var dt = DateUtils.FromJulian(value);
             if (dt != null)
             {
-                _logger.LogDebug($"Converted Julian date '{value}' to Gregorian '{dt}'.");
+                _logger.LogDebug("Converted Julian date '{JulianValue}' to Gregorian '{GregorianDate}'.", value, dt);
                 _isUpdatingDate = true;
                 GregorianDate = dt;
                 _isUpdatingDate = false;
             }
             else
             {
-                _logger.LogDebug($"Failed to convert Julian date '{value}'.");
+                _logger.LogDebug("Failed to convert Julian date '{JulianValue}'.", value);
             }
         }
 
@@ -295,7 +281,7 @@ namespace SMS_Search.ViewModels
 
             _isUpdatingDate = true;
             JulianDateText = DateUtils.ToJulian(value);
-            _logger.LogDebug($"Converted Gregorian date '{value}' to Julian '{JulianDateText}'.");
+            _logger.LogDebug("Converted Gregorian date '{GregorianDate}' to Julian '{JulianDate}'.", value, JulianDateText);
             _isUpdatingDate = false;
         }
 
@@ -307,13 +293,15 @@ namespace SMS_Search.ViewModels
         private async Task Search()
         {
              var criteria = SearchVm.GetSearchCriteria();
-             _logger.LogInfo($"Search initiated. Type: {criteria.Type}, Mode: {criteria.Mode}, Value: {criteria.Value}, AnyMatch: {criteria.AnyMatch}");
+             _logger.LogInfo("Search initiated. Type: {SearchType}, Mode: {SearchMode}, Value: {SearchValue}, AnyMatch: {AnyMatch}", criteria.Type, criteria.Mode, criteria.Value, criteria.AnyMatch);
 
-             // Basic validation
-             if (criteria.Type != SearchType.Table && string.IsNullOrWhiteSpace(criteria.Value))
+             // Basic validation: require input only for Custom SQL and Table record queries
+             bool requiresValue = criteria.Type == SearchType.CustomSql || (criteria.Type == SearchType.Table && !criteria.ShowFields);
+             if (requiresValue && string.IsNullOrWhiteSpace(criteria.Value))
              {
-                 _logger.LogWarning("Search validation failed: Empty search term.");
-                 _dialogService.ShowToast("Please enter a search term.", "Search", ToastType.Warning);
+                 _logger.LogWarning("Search validation failed: Empty search term for {SearchType}.", criteria.Type);
+                 string msg = criteria.Type == SearchType.Table ? "Please select a table." : "Please enter a SQL query.";
+                 _dialogService.ShowToast(msg, "Search", ToastType.Warning);
                  return;
              }
 
@@ -331,14 +319,14 @@ namespace SMS_Search.ViewModels
         private void OpenUnarchive()
         {
             IsUnarchiveTargetVisible = !IsUnarchiveTargetVisible;
-            _logger.LogInfo($"Unarchive window visibility toggled. New State: {IsUnarchiveTargetVisible}");
+            _logger.LogInfo("Unarchive window visibility toggled. New State: {IsVisible}", IsUnarchiveTargetVisible);
         }
 
         [RelayCommand]
         private void OpenImport()
         {
             IsImportTargetVisible = !IsImportTargetVisible;
-            _logger.LogInfo($"Import overlay visibility toggled. New State: {IsImportTargetVisible}");
+            _logger.LogInfo("Import overlay visibility toggled. New State: {IsVisible}", IsImportTargetVisible);
         }
 
         [RelayCommand]
@@ -355,13 +343,7 @@ namespace SMS_Search.ViewModels
                 (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
             {
                 _logger.LogInfo("Opening Encryption Utility (Hidden Feature).");
-                var encryptWin = new EncryptionUtilityWindow();
-                encryptWin.DataContext = _serviceProvider.GetRequiredService<EncryptionUtilityViewModel>();
-                if (System.Windows.Application.Current.MainWindow != null)
-                {
-                    encryptWin.Owner = System.Windows.Application.Current.MainWindow;
-                }
-                encryptWin.ShowDialog();
+                RequestOpenEncryptionUtility?.Invoke();
             }
             else
             {

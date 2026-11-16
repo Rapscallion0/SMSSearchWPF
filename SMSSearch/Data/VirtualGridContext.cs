@@ -461,13 +461,13 @@ namespace SMS_Search.Data
                              string colName = reader.GetName(i);
                              if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
 
-                             if (!first) writer.Write(",");
+                             if (!first) await writer.WriteAsync(",");
                              first = false;
 
                              string header = (headerMap != null && headerMap.ContainsKey(colName)) ? headerMap[colName] : colName;
                              WriteCsvCell(writer, header);
                          }
-                         writer.WriteLine();
+                         await writer.WriteLineAsync();
                      }
 
                      while (await reader.ReadAsync(cancellationToken))
@@ -479,14 +479,14 @@ namespace SMS_Search.Data
                              string colName = reader.GetName(i);
                              if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
 
-                             if (!first) writer.Write(",");
+                             if (!first) await writer.WriteAsync(",");
                              first = false;
 
                              var val = reader.GetValue(i);
                              string sVal = val == DBNull.Value ? "" : val.ToString() ?? "";
                              WriteCsvCell(writer, sVal);
                          }
-                         writer.WriteLine();
+                         await writer.WriteLineAsync();
                      }
                  }
              }
@@ -636,7 +636,7 @@ namespace SMS_Search.Data
                      while (await reader.ReadAsync(cancellationToken))
                      {
                          rowCount++;
-                         writer.WriteLine("  <Row>");
+                         await writer.WriteLineAsync("  <Row>");
                          for (int i = 0; i < reader.FieldCount; i++)
                          {
                              string colName = actualColNames[i];
@@ -647,13 +647,13 @@ namespace SMS_Search.Data
                              {
                                  string tag = safeColNames[i];
                                  string? s = val.ToString();
-                                 writer.WriteLine($"    <{tag}>{EscapeXml(s ?? "")}</{tag}>");
+                                 await writer.WriteLineAsync($"    <{tag}>{EscapeXml(s ?? "")}</{tag}>");
                              }
                          }
-                         writer.WriteLine("  </Row>");
+                         await writer.WriteLineAsync("  </Row>");
                      }
 
-                     writer.WriteLine($"</{rootElement}>");
+                     await writer.WriteLineAsync($"</{rootElement}>");
                  }
              }
              return rowCount;
@@ -667,7 +667,7 @@ namespace SMS_Search.Data
             return safeName;
         }
 
-        public async Task<int> ExportRowsToCsvAsync(string filename, List<VirtualRow> rows, HashSet<string>? hiddenColumns = null)
+        public async Task<int> ExportRowsToCsvAsync(string filename, List<VirtualRow> rows, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
         {
              int rowCount = 0;
              await Task.Run(() =>
@@ -693,6 +693,7 @@ namespace SMS_Search.Data
 
                      foreach (var row in rows)
                      {
+                         cancellationToken.ThrowIfCancellationRequested();
                          rowCount++;
                          var props = row.GetProperties();
                          bool first = true;
@@ -710,11 +711,11 @@ namespace SMS_Search.Data
                          writer.WriteLine();
                      }
                  }
-             });
+             }, cancellationToken);
              return rowCount;
         }
 
-        public async Task<int> ExportRowsToJsonAsync(string filename, List<VirtualRow> rows, SearchCriteria criteria, HashSet<string>? hiddenColumns = null)
+        public async Task<int> ExportRowsToJsonAsync(string filename, List<VirtualRow> rows, SearchCriteria criteria, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
         {
              int rowCount = 0;
              await Task.Run(() =>
@@ -758,6 +759,7 @@ namespace SMS_Search.Data
                      writer.WriteStartArray();
                      foreach (var row in rows)
                      {
+                         cancellationToken.ThrowIfCancellationRequested();
                          rowCount++;
                          writer.WriteStartObject();
                          var props = row.GetProperties();
@@ -781,11 +783,11 @@ namespace SMS_Search.Data
 
                      writer.WriteEndObject();
                  }
-             });
+             }, cancellationToken);
              return rowCount;
         }
 
-        public async Task<int> ExportRowsToXmlAsync(string filename, List<VirtualRow> rows, SearchCriteria criteria, HashSet<string>? hiddenColumns = null)
+        public async Task<int> ExportRowsToXmlAsync(string filename, List<VirtualRow> rows, SearchCriteria criteria, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
         {
              int rowCount = 0;
              await Task.Run(() =>
@@ -842,6 +844,7 @@ namespace SMS_Search.Data
 
                      foreach (var row in rows)
                      {
+                         cancellationToken.ThrowIfCancellationRequested();
                          rowCount++;
                          writer.WriteLine("  <Row>");
                          var props = row.GetProperties();
@@ -863,7 +866,7 @@ namespace SMS_Search.Data
 
                      writer.WriteLine($"</{rootElement}>");
                  }
-             });
+             }, cancellationToken);
              return rowCount;
         }
 

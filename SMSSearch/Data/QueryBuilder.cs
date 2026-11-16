@@ -56,30 +56,51 @@ GROUP BY
             {
                 if (criteria.Type == SearchType.Number)
                 {
-                    string fldNum = "F" + value;
-                    HandleWildcards(ref fldNum, out string op);
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        string fldNum = "F" + value.Trim();
+                        HandleWildcards(ref fldNum, out string op);
 
-                    sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} WHERE col.name {op} @Val {FieldSelectGroupBy}{FieldSelectOrderBy}";
-                    p.Add("Val", fldNum);
+                        sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} WHERE col.name {op} @Val {FieldSelectGroupBy}{FieldSelectOrderBy}";
+                        p.Add("Val", fldNum);
+                    }
+                    else
+                    {
+                        sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} {FieldSelectGroupBy}{FieldSelectOrderBy}";
+                    }
                 }
                 else if (criteria.Type == SearchType.Description)
                 {
-                    string desc = value;
-                    if (criteria.AnyMatch) desc = $"*{desc}*";
-                    HandleWildcards(ref desc, out string op);
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        string desc = value.Trim();
+                        if (criteria.AnyMatch) desc = $"*{desc}*";
+                        HandleWildcards(ref desc, out string op);
 
-                    sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} WHERE RBF.F1454 {op} @Val {FieldSelectGroupBy}{FieldSelectOrderBy}";
-                    p.Add("Val", desc);
+                        sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} WHERE RBF.F1454 {op} @Val {FieldSelectGroupBy}{FieldSelectOrderBy}";
+                        p.Add("Val", desc);
+                    }
+                    else
+                    {
+                        sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} {FieldSelectGroupBy}{FieldSelectOrderBy}";
+                    }
                 }
                 else if (criteria.Type == SearchType.Table)
                 {
                     if (criteria.ShowFields)
                     {
-                        string table = value;
-                        HandleWildcards(ref table, out string op);
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            string table = value.Trim();
+                            HandleWildcards(ref table, out string op);
 
-                        sql = $"{FieldSelectBase} AND RBF.F1452 {op} @Table {FieldSelectJoinPKey} WHERE TAB.name {op} @Table {FieldSelectGroupBy}{FieldSelectOrderBy}";
-                        p.Add("Table", table);
+                            sql = $"{FieldSelectBase} AND RBF.F1452 {op} @Table {FieldSelectJoinPKey} WHERE TAB.name {op} @Table {FieldSelectGroupBy}{FieldSelectOrderBy}";
+                            p.Add("Table", table);
+                        }
+                        else
+                        {
+                            sql = $"{FieldSelectBase} AND RBF.F1452 = TAB.name {FieldSelectJoinPKey} {FieldSelectGroupBy}{FieldSelectOrderBy}";
+                        }
                     }
                     else
                     {
@@ -102,9 +123,9 @@ GROUP BY
                 sql = $"SELECT {_tlzFields} FROM TLZ_TAB";
                 if (criteria.Type == SearchType.Number)
                 {
-                    if (!string.IsNullOrEmpty(value))
+                    if (!string.IsNullOrWhiteSpace(value))
                     {
-                        string val = value;
+                        string val = value.Trim();
                         HandleWildcards(ref val, out string op);
                         sql += $" WHERE F1034 {op} @Val";
                         p.Add("Val", val);
@@ -112,9 +133,9 @@ GROUP BY
                 }
                 else if (criteria.Type == SearchType.Description)
                 {
-                    if (!string.IsNullOrEmpty(value))
+                    if (!string.IsNullOrWhiteSpace(value))
                     {
-                        string val = value;
+                        string val = value.Trim();
                         if (criteria.AnyMatch) val = $"*{val}*";
                         HandleWildcards(ref val, out string op);
                         sql += $" WHERE F1039 {op} @Val";
@@ -131,9 +152,9 @@ GROUP BY
                 sql = $"SELECT {_fctFields} FROM FCT_TAB";
                 if (criteria.Type == SearchType.Number)
                 {
-                    if (!string.IsNullOrEmpty(value))
+                    if (!string.IsNullOrWhiteSpace(value))
                     {
-                        string val = value;
+                        string val = value.Trim();
                         HandleWildcards(ref val, out string op);
                         sql += $" WHERE F1063 {op} @Val";
                         p.Add("Val", val);
@@ -141,9 +162,9 @@ GROUP BY
                 }
                 else if (criteria.Type == SearchType.Description)
                 {
-                    if (!string.IsNullOrEmpty(value))
+                    if (!string.IsNullOrWhiteSpace(value))
                     {
-                        string val = value;
+                        string val = value.Trim();
                         if (criteria.AnyMatch) val = $"*{val}*";
                         HandleWildcards(ref val, out string op);
                         sql += $" WHERE F1064 {op} @Val";
