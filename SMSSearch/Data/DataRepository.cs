@@ -283,11 +283,23 @@ namespace SMS_Search.Data
             return $"SELECT * FROM ({innerSql}) AS _FilterQ WHERE {filter}";
         }
 
+        public IEnumerable<string> GetLocalServers()
+        {
+            var servers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            AddLocalRegistryInstances(servers);
+            return servers.OrderBy(s => s, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
         public async Task<IEnumerable<string>> GetServersAsync(CancellationToken cancellationToken = default)
         {
             return await Task.Run(() =>
             {
-                var servers = new List<string>();
+                var servers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                // 1. Instant local SQL Server instances from Windows Registry
+                AddLocalRegistryInstances(servers);
+
+                // 2. Network/Browser SQL Server discovery
                 try
                 {
                     var instance = Microsoft.Data.Sql.SqlDataSourceEnumerator.Instance;
@@ -295,25 +307,58 @@ namespace SMS_Search.Data
                     cancellationToken.ThrowIfCancellationRequested();
                     foreach (System.Data.DataRow row in table.Rows)
                     {
-                        string serverName = row["ServerName"]?.ToString() ?? "";
-                        string instanceName = row["InstanceName"]?.ToString() ?? "";
+                        string serverName = row["ServerName"]?.ToString()?.Trim() ?? "";
+                        string instanceName = row["InstanceName"]?.ToString()?.Trim() ?? "";
+                        if (string.IsNullOrEmpty(serverName)) continue;
 
-                        if (string.IsNullOrEmpty(instanceName))
-                        {
-                            servers.Add(serverName);
-                        }
-                        else
-                        {
-                            servers.Add($"{serverName}\\{instanceName}");
-                        }
+                        servers.Add(string.IsNullOrEmpty(instanceName)
+                            ? serverName
+                            : $"{serverName}\\{instanceName}");
                     }
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError("Error discovering SQL Servers", ex);
                 }
-                return servers.OrderBy(s => s).Distinct();
+
+                return servers.OrderBy(s => s, StringComparer.OrdinalIgnoreCase).ToList();
             }, cancellationToken);
+        }
+
+        private static void AddLocalRegistryInstances(HashSet<string> servers)
+        {
+            const string regPath = @"SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL";
+            string machine = Environment.MachineName;
+
+            foreach (var view in new[] { Microsoft.Win32.RegistryView.Registry64, Microsoft.Win32.RegistryView.Registry32 })
+            {
+                try
+                {
+                    using var baseKey = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, view);
+                    using var instanceKey = baseKey.OpenSubKey(regPath);
+                    if (instanceKey == null) continue;
+
+                    foreach (string name in instanceKey.GetValueNames())
+                    {
+                        if (string.Equals(name, "MSSQLSERVER", StringComparison.OrdinalIgnoreCase))
+                        {
+                            servers.Add(machine);
+                        }
+                        else if (!string.IsNullOrWhiteSpace(name))
+                        {
+                            servers.Add($"{machine}\\{name}");
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore registry access issues
+                }
+            }
         }
 
         public async Task<IEnumerable<string>> GetDatabasesAsync(string server, string? user, string? pass, CancellationToken cancellationToken = default)

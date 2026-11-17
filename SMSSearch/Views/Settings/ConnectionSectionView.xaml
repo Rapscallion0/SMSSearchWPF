@@ -6,12 +6,14 @@
              xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
              xmlns:vm="clr-namespace:SMS_Search.ViewModels.Settings"
              xmlns:conv="clr-namespace:SMS_Search.Converters"
+             xmlns:utils="clr-namespace:SMS_Search.Utils"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:ConnectionSectionViewModel}"
              d:DesignHeight="450" d:DesignWidth="800" Unloaded="UserControl_Unloaded">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <conv:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+        <conv:EnumDescriptionConverter x:Key="EnumDescriptionConverter" />
 
         <Style x:Key="InvalidBorderStyle" TargetType="Border">
             <Setter Property="BorderBrush" Value="Red" />
@@ -75,6 +77,37 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="InvalidDictionaryPathBorderStyle" TargetType="Border">
+            <Setter Property="BorderBrush" Value="Red" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="5" Color="Red" ShadowDepth="0" Opacity="0.5"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDictionaryPathInvalid}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:1" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
     </UserControl.Resources>
 
     <StackPanel Margin="0,0,0,20">
@@ -82,10 +115,31 @@
         <GroupBox Header="Database Connection">
             <StackPanel Margin="5">
                 <ctrl:SettingControl Header="Server" IsSaved="{Binding Server.IsSaved}">
-                    <Grid>
-                        <ctrl:ClearableTextBox Text="{Binding Server.Value, UpdateSourceTrigger=LostFocus}" />
-                        <Border Style="{StaticResource InvalidBorderStyle}" />
-                    </Grid>
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid Grid.Column="0">
+                                <ComboBox Height="25" VerticalAlignment="Center"
+                                          ItemsSource="{Binding Servers}"
+                                          Text="{Binding Server.Value, UpdateSourceTrigger=LostFocus}"
+                                          IsEditable="True" IsTextSearchEnabled="False" />
+                                <Border Style="{StaticResource InvalidBorderStyle}" />
+                            </Grid>
+                            <Button Grid.Column="1" Content="↻" Command="{Binding LoadServersCommand}"
+                                    IsEnabled="{Binding IsLoadingServers, Converter={StaticResource InverseBooleanConverter}}"
+                                    Margin="6,0,0,0" Padding="8,0" Height="25"
+                                    ToolTip="{Binding ServerRefreshTooltip}" />
+                        </Grid>
+                        <CheckBox IsChecked="{Binding SearchNetworkServers.Value}" Content="Search for network servers" Margin="0,4,0,0" />
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
+                                    Visibility="{Binding IsLoadingServers, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <ProgressBar Width="90" Height="6" IsIndeterminate="True" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="Searching for network servers..." FontSize="11" Opacity="0.75" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
                 </ctrl:SettingControl>
 
                 <ctrl:SettingControl Header="Database" IsSaved="{Binding Database.IsSaved}">
@@ -118,6 +172,103 @@
 
                 <TextBlock Text="Saving Password..." Foreground="Blue" Margin="0,5,0,0"
                            Visibility="{Binding IsPasswordSaving, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Database Dictionary (Fields.csv)" Margin="0,10,0,0">
+            <StackPanel Margin="5">
+                <ctrl:SettingControl Header="Dictionary Source" IsSaved="{Binding DictionarySourceMode.IsSaved}">
+                    <ComboBox ItemsSource="{Binding DictionarySourceModes}" SelectedItem="{Binding DictionarySourceMode.Value}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </ctrl:SettingControl>
+
+                <ctrl:SettingControl Header="Fields.csv Path" IsSaved="{Binding DictionaryPath.IsSaved}">
+                    <Grid utils:FileDropBehavior.EnableCsvDrop="True"
+                          utils:FileDropBehavior.FileDroppedCommand="{Binding DropDictionaryFileCommand}">
+                        <Rectangle StrokeDashArray="4 2" StrokeThickness="1.2" RadiusX="4" RadiusY="4" IsHitTestVisible="False">
+                            <Rectangle.Style>
+                                <Style TargetType="Rectangle">
+                                    <Setter Property="Stroke" Value="#66888888" />
+                                    <Setter Property="Fill" Value="Transparent" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Path=(utils:FileDropBehavior.IsDragOver), RelativeSource={RelativeSource AncestorType=Grid}}" Value="True">
+                                            <Setter Property="Stroke" Value="#0078D7" />
+                                            <Setter Property="StrokeThickness" Value="2" />
+                                            <Setter Property="Fill" Value="#180078D7" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Rectangle.Style>
+                        </Rectangle>
+                        <StackPanel Margin="6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0">
+                                    <ctrl:ClearableTextBox Text="{Binding DictionaryPath.Value, UpdateSourceTrigger=LostFocus}"
+                                                           Placeholder="Drop Fields.csv here or Browse..."
+                                                           ToolTip="Drop Fields.csv here, browse, or leave blank to auto-detect beside the executable" />
+                                    <Border Style="{StaticResource InvalidDictionaryPathBorderStyle}" />
+                                </Grid>
+                                <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseDictionaryCommand}" Margin="6,0,0,0" Padding="10,2" />
+                                <Button Grid.Column="2" Content="Copy to App" Command="{Binding CopyDictionaryToAppFolderCommand}"
+                                        Visibility="{Binding CanCopyDictionaryToAppFolder, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Margin="4,0,0,0" Padding="8,2"
+                                        ToolTip="Copy Fields.csv (and companion files) into the application folder" />
+                                <Button Grid.Column="3" Content="Auto" Command="{Binding ClearDictionaryPathCommand}" Margin="4,0,0,0" Padding="8,2"
+                                        ToolTip="Revert to auto-detecting Fields.csv beside the executable" />
+                            </Grid>
+                            <TextBlock Text="Drag &amp; drop a Fields.csv file or folder here"
+                                       FontSize="10.5" Opacity="0.65" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </ctrl:SettingControl>
+
+                <TextBlock Text="Tip: Placing Fields.csv (and optional Fields2.csv / Fields.es) in the same folder as the executable will detect and use it automatically."
+                           TextWrapping="Wrap" Opacity="0.75" FontSize="11" Margin="0,0,0,4" />
+
+                <TextBlock Text="{Binding DictionaryStatusText}" TextWrapping="Wrap" Margin="0,2,0,8" FontSize="11.5">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="Gray" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasDictionaryError}" Value="True">
+                                    <Setter Property="Foreground" Value="Red" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <ctrl:SettingControl Header="Primary Language" IsSaved="{Binding DictionaryLanguage.IsSaved}">
+                    <ComboBox ItemsSource="{Binding DictionaryLanguages}" SelectedItem="{Binding DictionaryLanguage.Value}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </ctrl:SettingControl>
+
+                <ctrl:SettingControl Header="Extra Columns">
+                    <StackPanel>
+                        <CheckBox IsChecked="{Binding DictionaryShowDct.Value}" Content="Show Dictionary Name (DCT) column in field search results" Margin="0,2,0,4" />
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox IsChecked="{Binding EffectiveShowEn}" IsEnabled="{Binding IsEnglishExtraEnabled}" Content="{Binding EnglishExtraLabel}" Margin="0,0,15,0" />
+                            <CheckBox IsChecked="{Binding EffectiveShowFr}" IsEnabled="{Binding IsFrenchExtraEnabled}" Content="{Binding FrenchExtraLabel}" Margin="0,0,15,0" />
+                            <CheckBox IsChecked="{Binding EffectiveShowEs}" IsEnabled="{Binding IsSpanishExtraEnabled}" Content="{Binding SpanishExtraLabel}" />
+                        </StackPanel>
+                    </StackPanel>
+                </ctrl:SettingControl>
             </StackPanel>
         </GroupBox>
 

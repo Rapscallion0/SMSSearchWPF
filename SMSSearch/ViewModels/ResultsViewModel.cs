@@ -24,6 +24,9 @@ namespace SMS_Search.ViewModels
         private readonly IConfigService _configService;
         private readonly IClipboardService _clipboardService;
         private readonly IConnectionSettingsService _connectionSettingsService;
+        private readonly IDataRepository _dataRepository;
+        private readonly IFieldDictionaryService _fieldDictionaryService;
+        private bool _isSyncingDictionaryMode;
         private CancellationTokenSource? _cts;
 
         public ResultsViewModel(
@@ -32,7 +35,9 @@ namespace SMS_Search.ViewModels
             IDialogService dialogService,
             IConfigService configService,
             IClipboardService clipboardService,
-            IConnectionSettingsService connectionSettingsService)
+            IConnectionSettingsService connectionSettingsService,
+            IDataRepository dataRepository,
+            IFieldDictionaryService fieldDictionaryService)
         {
             _gridContext = gridContext;
             _logger = logger;
@@ -40,6 +45,8 @@ namespace SMS_Search.ViewModels
             _configService = configService;
             _clipboardService = clipboardService;
             _connectionSettingsService = connectionSettingsService;
+            _dataRepository = dataRepository;
+            _fieldDictionaryService = fieldDictionaryService;
 
             // Initialize HeadersVisibility based on config
             bool showRowNumbers = _configService.GetValue(AppSettings.Sections.Results, AppSettings.Keys.ShowRowNumbers) == "1";
@@ -56,6 +63,8 @@ namespace SMS_Search.ViewModels
 
             _gridContext.DataReady += OnDataReady;
             _gridContext.LoadError += OnLoadError;
+            _fieldDictionaryService.DictionaryChanged += OnDictionaryChanged;
+            SyncDictionaryState();
 
             ExportCsvCommand = new AsyncRelayCommand(ExportCsvAsync);
             ExportJsonCommand = new AsyncRelayCommand(ExportJsonAsync);
@@ -108,12 +117,73 @@ namespace SMS_Search.ViewModels
             Cancel();
             _gridContext.DataReady -= OnDataReady;
             _gridContext.LoadError -= OnLoadError;
+            _fieldDictionaryService.DictionaryChanged -= OnDictionaryChanged;
             WeakReferenceMessenger.Default.UnregisterAll(this);
             _cts?.Dispose();
             _cts = null;
             _refreshCts?.Dispose();
             _refreshCts = null;
             (_gridContext as IDisposable)?.Dispose();
+        }
+
+        public IEnumerable<DictionarySourceMode> DictionarySourceModes => Enum.GetValues<DictionarySourceMode>();
+
+        [ObservableProperty]
+        private DictionarySourceMode _selectedDictionarySource;
+
+        [ObservableProperty]
+        private string _dictionaryStatusTooltip = string.Empty;
+
+        partial void OnSelectedDictionarySourceChanged(DictionarySourceMode value)
+        {
+            if (_isSyncingDictionaryMode) return;
+            _fieldDictionaryService.SetSourceMode(value);
+            SyncDictionaryState();
+            if (_lastSchema != null)
+            {
+                _ = UpdateHeadersAsync();
+            }
+        }
+
+        private void OnDictionaryChanged(object? sender, EventArgs e)
+        {
+            SyncDictionaryState();
+            if (_lastSchema != null)
+            {
+                _ = UpdateHeadersAsync();
+            }
+        }
+
+        private void SyncDictionaryState()
+        {
+            _isSyncingDictionaryMode = true;
+            try
+            {
+                SelectedDictionarySource = _fieldDictionaryService.GetSourceMode();
+                var status = _fieldDictionaryService.GetStatus();
+                if (status.IsCsvActive)
+                {
+                    if (!string.IsNullOrEmpty(status.ErrorMessage))
+                    {
+                        DictionaryStatusTooltip = status.ErrorMessage;
+                    }
+                    else
+                    {
+                        string pathInfo = status.IsAutoDetected
+                            ? $"Auto-detected: {status.ResolvedFieldsCsvPath}"
+                            : $"Path: {status.ResolvedFieldsCsvPath}";
+                        DictionaryStatusTooltip = $"{pathInfo} ({status.FieldCount} fields, Fields2: {(status.HasFields2Csv ? "Yes" : "No")}, Fields.es: {(status.HasFieldsEs ? "Yes" : "No")})";
+                    }
+                }
+                else
+                {
+                    DictionaryStatusTooltip = "Using database RB_FIELDS / RB_TABLES";
+                }
+            }
+            finally
+            {
+                _isSyncingDictionaryMode = false;
+            }
         }
 
         public int HorizontalScrollSpeed => _horizontalScrollSpeed;
@@ -242,8 +312,8 @@ namespace SMS_Search.ViewModels
                      var descriptions = await _gridContext.GetColumnDescriptionsAsync(colNames);
                      for (int i = 0; i < colNames.Count; i++)
                      {
-                         string desc = (i < descriptions.Count) ? descriptions[i] : "";
-                         ColumnHeaders[colNames[i]] = !string.IsNullOrEmpty(desc) ? desc : colNames[i];
+                         string desc = (i < descriptions.Count) ? descriptions[i].Trim() : "";
+                         ColumnHeaders[colNames[i]] = !string.IsNullOrWhiteSpace(desc) ? desc : colNames[i];
                      }
                  }
                  catch (Exception ex)
@@ -352,15 +422,34 @@ namespace SMS_Search.ViewModels
                 var conn = _connectionSettingsService.GetConnectionSettings();
                 _gridContext.SetConnection(conn.Server, conn.Database, conn.User, conn.Password);
 
+                string fctFields = _configService.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Function) ?? "";
+                string tlzFields = _configService.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Totalizer) ?? "";
+                var queryBuilder = new QueryBuilder(fctFields, tlzFields);
+
+                if (criteria.Mode == SearchMode.Field &&
+                    criteria.Type != SearchType.CustomSql &&
+                    !(criteria.Type == SearchType.Table && !criteria.ShowFields) &&
+                    _fieldDictionaryService.IsCsvActive())
+                {
+                    await PerformCsvFieldSearchAsync(criteria, conn, queryBuilder, token);
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(conn.Server) || string.IsNullOrWhiteSpace(conn.Database))
+                {
+                    StatusText = "Connection required";
+                    _dialogService.ShowWarning(
+                        "A SQL Server connection is required for this search mode. Please configure Server and Database in Connection settings.",
+                        "Connection Required");
+                    return;
+                }
+
                 bool hasRbFields = true;
                 if (criteria.Mode == SearchMode.Field && criteria.Type != SearchType.CustomSql)
                 {
                     hasRbFields = await _gridContext.TableExistsAsync("RB_FIELDS", token);
                 }
 
-                string fctFields = _configService.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Function) ?? "";
-                string tlzFields = _configService.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Totalizer) ?? "";
-                var queryBuilder = new QueryBuilder(fctFields, tlzFields);
                 var queryResult = queryBuilder.Build(criteria, hasRbFields);
 
                 // Load initial count and cache schema in parallel
@@ -397,6 +486,72 @@ namespace SMS_Search.ViewModels
                 _cts = null;
             }
         }
+        private async Task PerformCsvFieldSearchAsync(
+            SearchCriteria criteria,
+            ConnectionSettingsInfo conn,
+            QueryBuilder queryBuilder,
+            CancellationToken token)
+        {
+            var status = _fieldDictionaryService.GetStatus();
+            if (!status.IsCsvAvailable && !string.IsNullOrEmpty(status.ErrorMessage))
+            {
+                _dialogService.ShowWarning(status.ErrorMessage, "Database Dictionary");
+            }
+
+            DataTable resultTable;
+            bool isOffline = false;
+
+            if (!string.IsNullOrWhiteSpace(conn.Server) && !string.IsNullOrWhiteSpace(conn.Database))
+            {
+                try
+                {
+                    var sqlCriteria = criteria.Type == SearchType.Description
+                        ? new SearchCriteria
+                        {
+                            Mode = SearchMode.Field,
+                            Type = SearchType.Number,
+                            Value = string.Empty,
+                            ShowFields = criteria.ShowFields,
+                            AnyMatch = criteria.AnyMatch
+                        }
+                        : criteria;
+
+                    var queryResult = queryBuilder.Build(sqlCriteria, hasRbFields: false);
+                    var sqlDt = await _dataRepository.ExecuteQueryAsync(
+                        conn.Server, conn.Database, conn.User, conn.Password,
+                        queryResult.Sql, queryResult.Parameters, token);
+
+                    resultTable = _fieldDictionaryService.EnrichSqlMetadata(sqlDt, criteria);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("SQL metadata query failed ({Message}); falling back to offline Fields.csv search.", ex.Message);
+                    resultTable = _fieldDictionaryService.SearchOffline(criteria);
+                    isOffline = true;
+                }
+            }
+            else
+            {
+                resultTable = _fieldDictionaryService.SearchOffline(criteria);
+                isOffline = true;
+            }
+
+            _gridContext.LoadLocalTable(resultTable);
+            _lastSchema = resultTable;
+            _ = UpdateHeadersAsync();
+
+            SearchResults = new VirtualizingCollection(_gridContext, _lastSchema);
+            TotalRecords = _gridContext.TotalCount;
+            StatusText = isOffline
+                ? $"Found {TotalRecords} records (offline dictionary)"
+                : $"Found {TotalRecords} records";
+            _logger.LogInfo("CSV dictionary field search completed. Found {RecordCount} records (Offline={IsOffline}).", TotalRecords, isOffline);
+        }
+
         public async Task SortAsync(string? columnName)
         {
             if (string.IsNullOrEmpty(columnName)) return;

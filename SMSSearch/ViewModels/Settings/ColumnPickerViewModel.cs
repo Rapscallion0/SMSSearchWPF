@@ -19,6 +19,7 @@ namespace SMS_Search.ViewModels.Settings
         private readonly IDataRepository _dataRepository;
         private readonly IConnectionSettingsService _connectionSettingsService;
         private readonly ILoggerService _logger;
+        private readonly IFieldDictionaryService? _fieldDictionaryService;
         private readonly string _tableName;
         private readonly List<string> _defaultColumns;
         private readonly HashSet<string> _requiredColumns;
@@ -57,11 +58,13 @@ namespace SMS_Search.ViewModels.Settings
             string tableName,
             string currentColumns,
             string defaultColumns,
-            IEnumerable<string>? requiredColumns = null)
+            IEnumerable<string>? requiredColumns = null,
+            IFieldDictionaryService? fieldDictionaryService = null)
         {
             _dataRepository = dataRepository;
             _connectionSettingsService = connectionSettingsService;
             _logger = logger;
+            _fieldDictionaryService = fieldDictionaryService;
             Title = title;
             _tableName = tableName;
             _defaultColumns = ParseColumns(defaultColumns);
@@ -110,9 +113,11 @@ namespace SMS_Search.ViewModels.Settings
                     colNames.Add(col.ColumnName);
                 }
 
-                var descriptions = await _dataRepository.GetColumnDescriptionsAsync(
-                    conn.Server, conn.Database, conn.User, conn.Password,
-                    colNames, token);
+                var descriptions = (_fieldDictionaryService != null && _fieldDictionaryService.IsCsvActive())
+                    ? _fieldDictionaryService.GetColumnDescriptions(colNames)
+                    : await _dataRepository.GetColumnDescriptionsAsync(
+                        conn.Server, conn.Database, conn.User, conn.Password,
+                        colNames, token);
 
                 _allColumns.Clear();
                 for (int i = 0; i < colNames.Count; i++)

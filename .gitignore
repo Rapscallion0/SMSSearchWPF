@@ -365,3 +365,6 @@ FodyWeavers.xsd
 
 # Scratch patch files
 *.patch
+
+# Local sample dictionary files and documentation
+Fields/

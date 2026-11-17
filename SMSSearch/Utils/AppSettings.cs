@@ -69,6 +69,14 @@ namespace SMS_Search.Utils
             public const string WindowsAuth = "WINDOWSAUTH";
             public const string SqlUser = "SQLUSER";
             public const string SqlPassword = "SQLPASSWORD";
+            public const string SearchNetworkServers = "SEARCH_NETWORK_SERVERS";
+            public const string DictionarySourceMode = "DICTIONARY_SOURCE_MODE";
+            public const string DictionaryPath = "DICTIONARY_PATH";
+            public const string DictionaryLanguage = "DICTIONARY_LANGUAGE";
+            public const string DictionaryShowEn = "DICTIONARY_SHOW_EN";
+            public const string DictionaryShowFr = "DICTIONARY_SHOW_FR";
+            public const string DictionaryShowEs = "DICTIONARY_SHOW_ES";
+            public const string DictionaryShowDct = "DICTIONARY_SHOW_DCT";
 
             // Clean SQL
             public const string BeautifySql = "BEAUTIFY_SQL";
