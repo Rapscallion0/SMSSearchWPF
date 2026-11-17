@@ -22,6 +22,8 @@
     <Window.InputBindings>
         <KeyBinding Key="F5" Command="{Binding SearchCommand}" />
         <KeyBinding Key="Return" Modifiers="Control" Command="{Binding SearchCommand}" />
+        <KeyBinding Key="T" Modifiers="Control" Command="{Binding NewTabCommand}" />
+        <KeyBinding Key="W" Modifiers="Control" Command="{Binding CloseActiveTabCommand}" />
     </Window.InputBindings>
     <Grid>
         <Grid.RowDefinitions>
@@ -37,7 +39,49 @@
 
         <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" ResizeBehavior="PreviousAndNext"/>
 
-        <views:ResultsView Grid.Row="2" DataContext="{Binding ResultsVm}" Margin="10,0,10,10"/>
+        <Grid Grid.Row="2" Margin="10,0,10,10">
+            <TabControl ItemsSource="{Binding ResultTabs}" SelectedItem="{Binding SelectedResultTab, Mode=TwoWay}">
+                <TabControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ToggleButton IsChecked="{Binding IsPinned, Mode=TwoWay}"
+                                          Style="{StaticResource TransparentIconToggleButtonStyle}"
+                                          Width="18" Height="18" Margin="0,0,4,0"
+                                          ToolTip="Pin tab (new searches will open in a new tab)">
+                                <Control Width="12" Height="12">
+                                    <Control.Style>
+                                        <Style TargetType="Control">
+                                            <Setter Property="Template" Value="{StaticResource Icon_Pin_Unpinned}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsPinned}" Value="True">
+                                                    <Setter Property="Template" Value="{StaticResource Icon_Pin_Pinned}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Control.Style>
+                                </Control>
+                            </ToggleButton>
+                            <TextBlock Text="{Binding Title}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <Button Content="&#x00D7;"
+                                    Command="{Binding CloseCommand}"
+                                    Visibility="{Binding CanClose, Converter={StaticResource BoolToVis}}"
+                                    Background="Transparent" BorderThickness="0" Padding="3,0" FontWeight="Bold"
+                                    ToolTip="Close tab (Ctrl+W)"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </TabControl.ItemTemplate>
+                <TabControl.ContentTemplate>
+                    <DataTemplate>
+                        <views:ResultsView DataContext="{Binding ResultsVm}"/>
+                    </DataTemplate>
+                </TabControl.ContentTemplate>
+            </TabControl>
+
+            <Button Content="+" Command="{Binding NewTabCommand}"
+                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                    Width="22" Height="22" Margin="0,2,2,0" Padding="0"
+                    ToolTip="New Results Tab (Ctrl+T)"/>
+        </Grid>
 
         <StatusBar Grid.Row="3" x:Name="MainStatusBar" SizeChanged="MainStatusBar_SizeChanged">
             <StatusBarItem>
@@ -48,6 +92,36 @@
                     <DatePicker SelectedDate="{Binding GregorianDate}" Width="100"/>
 
                     <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="10,0,10,0"/>
+
+                    <ComboBox ItemsSource="{Binding Profiles}"
+                              SelectedItem="{Binding ActiveProfile, Mode=TwoWay}"
+                              DisplayMemberPath="Name"
+                              Visibility="{Binding HasMultipleProfiles, Converter={StaticResource BoolToVis}}"
+                              MinWidth="110" Height="22" Margin="0,0,6,0" FontSize="11"
+                              VerticalAlignment="Center" VerticalContentAlignment="Center"
+                              ToolTip="Switch Connection Profile"/>
+
+                    <Border Visibility="{Binding HasEnvironmentBadge, Converter={StaticResource BoolToVis}}"
+                            CornerRadius="3" Padding="6,1" Margin="0,0,8,0" VerticalAlignment="Center"
+                            ToolTip="Active Connection Environment">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="#FF555555"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ActiveEnvironmentTag}" Value="Dev">
+                                        <Setter Property="Background" Value="#FF2E7D32"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding ActiveEnvironmentTag}" Value="Qa">
+                                        <Setter Property="Background" Value="#FFEF6C00"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding ActiveEnvironmentTag}" Value="Prod">
+                                        <Setter Property="Background" Value="#FFC62828"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="{Binding ActiveEnvironmentBadgeText}" Foreground="White" FontWeight="Bold" FontSize="10"/>
+                    </Border>
 
                     <TextBlock x:Name="DatabaseLabel" Text="Database:" Margin="0,0,5,0" VerticalAlignment="Center"/>
                     <ComboBox x:Name="DatabaseComboBox" MinWidth="150" Height="22" VerticalAlignment="Center"

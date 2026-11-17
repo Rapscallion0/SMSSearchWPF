@@ -1,0 +1,126 @@
+<Window x:Class="SMS_Search.Views.Windows.SavedQueriesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:SMS_Search.Views.Controls"
+        Title="Saved Queries &amp; Snippets"
+        Height="540" Width="780"
+        MinHeight="400" MinWidth="580"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource AppBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Save Current Query Bar -->
+        <GroupBox Grid.Row="0" Header="Save Current Editor Query" Margin="0,0,0,10" Padding="8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Name:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <TextBox Grid.Column="1" x:Name="SaveNameBox" Height="25" VerticalContentAlignment="Center" Margin="0,0,4,0"
+                         ToolTip="Suggested automatically from the active SQL editor"/>
+                <Button Grid.Column="2" x:Name="SuggestNameButton" Content="Suggest" Height="25" Padding="8,0" Margin="0,0,10,0"
+                        Click="SuggestNameButton_Click" ToolTip="Re-suggest name from current SQL editor"/>
+                <TextBlock Grid.Column="3" Text="Category:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <ComboBox Grid.Column="4" x:Name="SaveCategoryCombo" IsEditable="True" Height="25" VerticalContentAlignment="Center" Margin="0,0,10,0"
+                          ToolTip="Select an existing category or type a new one"/>
+                <Button Grid.Column="5" x:Name="GrabEditorButton" Content="Grab" Height="25" Padding="8,0" Margin="0,0,6,0"
+                        Click="GrabEditorButton_Click" ToolTip="Grab latest SQL from active editor, suggest name, and check for duplicates"/>
+                <Button Grid.Column="6" x:Name="SaveCurrentButton" Content="Save Current SQL" Height="25" Padding="10,0" Click="SaveCurrentButton_Click"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Live Duplicate Indicator Banner -->
+        <Border Grid.Row="1" x:Name="DuplicateBanner"
+                Visibility="Collapsed"
+                Background="{DynamicResource SurfaceAltBrush}"
+                BorderBrush="{DynamicResource AccentBrush}"
+                BorderThickness="1"
+                CornerRadius="3"
+                Padding="8,5"
+                Margin="0,0,0,8">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" x:Name="SelectDuplicateButton" Content="Select" Padding="10,2"
+                        Click="SelectDuplicateButton_Click" ToolTip="Highlight this saved query in the list"/>
+                <TextBlock x:Name="DuplicateBannerText" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+            </DockPanel>
+        </Border>
+
+        <!-- Filter Bar -->
+        <Grid Grid.Row="2" Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="180"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Filter:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <controls:ClearableTextBox Grid.Column="1" x:Name="FilterBox" Placeholder="Search by name, category, or SQL..."
+                                       TextChanged="FilterBox_TextChanged" Margin="0,0,10,0"/>
+            <TextBlock Grid.Column="2" Text="Category:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <ComboBox Grid.Column="3" x:Name="FilterCategoryCombo" Height="25" VerticalContentAlignment="Center"
+                      SelectionChanged="FilterCategoryCombo_SelectionChanged"/>
+        </Grid>
+
+        <!-- List + SQL Preview -->
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.2*"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="1.5*"/>
+            </Grid.ColumnDefinitions>
+
+            <ListBox Grid.Column="0" x:Name="QueriesListBox"
+                     SelectionChanged="QueriesListBox_SelectionChanged"
+                     MouseDoubleClick="QueriesListBox_MouseDoubleClick"
+                     HorizontalContentAlignment="Stretch">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel Margin="2,4">
+                            <Border DockPanel.Dock="Right" Padding="6,1" CornerRadius="3"
+                                    BorderBrush="{DynamicResource BorderBrushKey}" BorderThickness="1"
+                                    VerticalAlignment="Center" Margin="6,0,0,0">
+                                <TextBlock Text="{Binding Category}" FontSize="11" Opacity="0.8"/>
+                            </Border>
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                        </DockPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" ResizeBehavior="PreviousAndNext"/>
+
+            <TextBox Grid.Column="2" x:Name="PreviewTextBox"
+                     IsReadOnly="True"
+                     AcceptsReturn="True"
+                     TextWrapping="NoWrap"
+                     HorizontalScrollBarVisibility="Auto"
+                     VerticalScrollBarVisibility="Auto"
+                     FontFamily="Consolas"
+                     FontSize="12"
+                     Padding="6"/>
+        </Grid>
+
+        <!-- Actions -->
+        <DockPanel Grid.Row="4" Margin="0,10,0,0">
+            <Button DockPanel.Dock="Left" x:Name="DeleteButton" Content="Delete" Padding="12,5" Click="DeleteButton_Click" IsEnabled="False"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="LoadButton" Content="Load into Editor" Padding="14,5" Margin="0,0,8,0" Click="LoadButton_Click" IsEnabled="False" IsDefault="True"/>
+                <Button Content="Close" Padding="14,5" Click="CloseButton_Click"/>
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>

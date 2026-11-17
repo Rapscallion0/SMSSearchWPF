@@ -2,16 +2,21 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using SMS_Search.Data;
+using SMS_Search.Models;
 using SMS_Search.Services;
 using SMS_Search.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 
 namespace SMS_Search.ViewModels
@@ -85,7 +90,16 @@ namespace SMS_Search.ViewModels
 
             FilterBySelectionCommand = new RelayCommand<string>(FilterBySelection);
             CopyRowCommand = new RelayCommand<IList>(CopyRow);
+            CopyAsMarkdownCommand = new RelayCommand<IList>(CopyAsMarkdown);
             CopyAllMatchesCommand = new AsyncRelayCommand(CopyAllMatchesAsync, CanCopyAllMatches);
+            ToggleInspectorCommand = new RelayCommand(() => IsInspectorOpen = !IsInspectorOpen);
+            CopyInspectorValueCommand = new RelayCommand<RowInspectorField>(CopyInspectorValue);
+            FindFieldUsageCommand = new RelayCommand<string>(FindFieldUsage);
+            CopySelectionStatsCommand = new RelayCommand(CopySelectionStats);
+
+            InspectorFieldsView = CollectionViewSource.GetDefaultView(InspectorFields);
+            InspectorFieldsView.Filter = FilterInspectorField;
+            BindingOperations.EnableCollectionSynchronization(InspectorFields, _inspectorFieldsLock);
 
             // Register for message
             WeakReferenceMessenger.Default.Register<RowNumberVisibilityChangedMessage>(this, (r, m) =>
@@ -261,10 +275,30 @@ namespace SMS_Search.ViewModels
 
         public IRelayCommand<string> FilterBySelectionCommand { get; }
         public IRelayCommand<IList> CopyRowCommand { get; }
+        public IRelayCommand<IList> CopyAsMarkdownCommand { get; }
         public IAsyncRelayCommand CopyAllMatchesCommand { get; }
+        public IRelayCommand ToggleInspectorCommand { get; }
+        public IRelayCommand<RowInspectorField> CopyInspectorValueCommand { get; }
+        public IRelayCommand<string> FindFieldUsageCommand { get; }
+        public IRelayCommand CopySelectionStatsCommand { get; }
+
+        [ObservableProperty]
+        private bool _isInspectorOpen;
+
+        [ObservableProperty]
+        private string _inspectorFilterText = string.Empty;
+
+        [ObservableProperty]
+        private string _selectionStatsText = string.Empty;
+
+        public ObservableCollection<RowInspectorField> InspectorFields { get; } = new();
+        public ICollectionView InspectorFieldsView { get; }
+        private readonly object _inspectorFieldsLock = new();
 
         // Dictionary mapping Column Name -> Header Text (Description or Name)
         public Dictionary<string, string> ColumnHeaders { get; private set; } = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> _columnDescriptions = new(StringComparer.OrdinalIgnoreCase);
+        private string _lastElapsedText = string.Empty;
 
         public HashSet<string> HiddenColumns { get; set; } = new HashSet<string>();
 
@@ -310,9 +344,11 @@ namespace SMS_Search.ViewModels
                  try
                  {
                      var descriptions = await _gridContext.GetColumnDescriptionsAsync(colNames);
+                     _columnDescriptions.Clear();
                      for (int i = 0; i < colNames.Count; i++)
                      {
                          string desc = (i < descriptions.Count) ? descriptions[i].Trim() : "";
+                         _columnDescriptions[colNames[i]] = desc;
                          ColumnHeaders[colNames[i]] = !string.IsNullOrWhiteSpace(desc) ? desc : colNames[i];
                      }
                  }
@@ -326,6 +362,12 @@ namespace SMS_Search.ViewModels
             else
             {
                  foreach(var name in colNames) ColumnHeaders[name] = name;
+            }
+
+            if (IsInspectorOpen)
+            {
+                await EnsureColumnDescriptionsLoadedAsync();
+                UpdateInspectorFields(SelectedRow as VirtualRow);
             }
 
             HeadersUpdated?.Invoke(this, _toggledColumnName);
@@ -352,14 +394,7 @@ namespace SMS_Search.ViewModels
                     {
                         vc.Refresh();
                         TotalRecords = _gridContext.TotalCount;
-                        if (!string.IsNullOrEmpty(_gridContext.FilterText))
-                        {
-                            StatusText = $"Found {TotalRecords} records (Filtered from {_gridContext.UnfilteredCount})";
-                        }
-                        else
-                        {
-                            StatusText = $"Found {TotalRecords} records";
-                        }
+                        StatusText = BuildFoundStatusText(TotalRecords, _gridContext.FilterText, _gridContext.UnfilteredCount, _lastElapsedText);
                     }
                 }
                 catch (OperationCanceledException)
@@ -397,7 +432,13 @@ namespace SMS_Search.ViewModels
             StatusText = "Searching...";
             FilterText = string.Empty;
             MatchStatusText = string.Empty;
+            SelectionStatsText = string.Empty;
+            _lastElapsedText = string.Empty;
+            _columnDescriptions.Clear();
+            _inspectedRow = null;
+            InspectorFields.Clear();
             _lastFoundRowIndex = -1;
+            var sw = Stopwatch.StartNew();
 
             _logger.LogDebug("ExecuteSearchAsync started. Criteria: {CriteriaValue}", criteria.Value);
 
@@ -431,7 +472,7 @@ namespace SMS_Search.ViewModels
                     !(criteria.Type == SearchType.Table && !criteria.ShowFields) &&
                     _fieldDictionaryService.IsCsvActive())
                 {
-                    await PerformCsvFieldSearchAsync(criteria, conn, queryBuilder, token);
+                    await PerformCsvFieldSearchAsync(criteria, conn, queryBuilder, sw, token);
                     return;
                 }
 
@@ -464,9 +505,11 @@ namespace SMS_Search.ViewModels
                 // Create new collection
                 SearchResults = new VirtualizingCollection(_gridContext, _lastSchema);
 
+                sw.Stop();
+                _lastElapsedText = FormatElapsed(sw.Elapsed);
                 TotalRecords = _gridContext.TotalCount;
-                StatusText = $"Found {TotalRecords} records";
-                _logger.LogInfo("Search completed successfully. Found {RecordCount} records.", TotalRecords);
+                StatusText = BuildFoundStatusText(TotalRecords, null, 0, _lastElapsedText);
+                _logger.LogInfo("Search completed successfully. Found {RecordCount} records in {Elapsed}.", TotalRecords, _lastElapsedText);
             }
             catch (OperationCanceledException)
             {
@@ -490,6 +533,7 @@ namespace SMS_Search.ViewModels
             SearchCriteria criteria,
             ConnectionSettingsInfo conn,
             QueryBuilder queryBuilder,
+            Stopwatch sw,
             CancellationToken token)
         {
             var status = _fieldDictionaryService.GetStatus();
@@ -544,12 +588,14 @@ namespace SMS_Search.ViewModels
             _lastSchema = resultTable;
             _ = UpdateHeadersAsync();
 
+            sw.Stop();
+            _lastElapsedText = FormatElapsed(sw.Elapsed);
             SearchResults = new VirtualizingCollection(_gridContext, _lastSchema);
             TotalRecords = _gridContext.TotalCount;
             StatusText = isOffline
-                ? $"Found {TotalRecords} records (offline dictionary)"
-                : $"Found {TotalRecords} records";
-            _logger.LogInfo("CSV dictionary field search completed. Found {RecordCount} records (Offline={IsOffline}).", TotalRecords, isOffline);
+                ? $"Found {TotalRecords} records (offline dictionary • {_lastElapsedText})"
+                : BuildFoundStatusText(TotalRecords, null, 0, _lastElapsedText);
+            _logger.LogInfo("CSV dictionary field search completed. Found {RecordCount} records (Offline={IsOffline}) in {Elapsed}.", TotalRecords, isOffline, _lastElapsedText);
         }
 
         public async Task SortAsync(string? columnName)
@@ -654,12 +700,172 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         private object? _selectedRow;
 
+        private VirtualRow? _inspectedRow;
+
+        public void SetInspectedRow(VirtualRow? row)
+        {
+            _inspectedRow = row;
+            if (IsInspectorOpen)
+            {
+                UpdateInspectorFields(row);
+                if (_columnDescriptions.Count == 0)
+                {
+                    _ = RefreshInspectorAsync();
+                }
+            }
+        }
+
         partial void OnSelectedRowChanged(object? value)
         {
             if (value is VirtualRow vRow)
             {
                 SetCurrentRowIndex(vRow.RowIndex);
+                _inspectedRow = vRow;
             }
+
+            if (IsInspectorOpen)
+            {
+                _ = RefreshInspectorAsync();
+            }
+        }
+
+        partial void OnIsInspectorOpenChanged(bool value)
+        {
+            if (value)
+            {
+                _ = RefreshInspectorAsync();
+            }
+        }
+
+        partial void OnInspectorFilterTextChanged(string value)
+        {
+            InspectorFieldsView.Refresh();
+        }
+
+        private async Task RefreshInspectorAsync()
+        {
+            await EnsureColumnDescriptionsLoadedAsync();
+            var row = _inspectedRow ?? SelectedRow as VirtualRow;
+            if (row == null && _lastFoundRowIndex >= 0 && SearchResults != null && _lastFoundRowIndex < SearchResults.Count)
+            {
+                row = SearchResults[_lastFoundRowIndex] as VirtualRow;
+            }
+            UpdateInspectorFields(row);
+        }
+
+        private async Task EnsureColumnDescriptionsLoadedAsync()
+        {
+            if (_lastSchema == null || _columnDescriptions.Count > 0) return;
+
+            var colNames = new List<string>();
+            foreach (DataColumn c in _lastSchema.Columns)
+            {
+                colNames.Add(c.ColumnName);
+            }
+
+            if (colNames.Count == 0) return;
+
+            try
+            {
+                var descriptions = await _gridContext.GetColumnDescriptionsAsync(colNames);
+                for (int i = 0; i < colNames.Count; i++)
+                {
+                    string desc = (i < descriptions.Count) ? descriptions[i].Trim() : string.Empty;
+                    _columnDescriptions[colNames[i]] = desc;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Failed to load column descriptions for inspector: {Message}", ex.Message);
+            }
+        }
+
+        private void UpdateInspectorFields(VirtualRow? row)
+        {
+            InspectorFields.Clear();
+            if (row == null || _lastSchema == null) return;
+
+            for (int i = 0; i < _lastSchema.Columns.Count; i++)
+            {
+                string colName = _lastSchema.Columns[i].ColumnName;
+                string fieldNumber = colName.StartsWith("F", StringComparison.OrdinalIgnoreCase) && colName.Length > 1 && int.TryParse(colName.Substring(1), out _)
+                    ? colName
+                    : string.Empty;
+
+                _columnDescriptions.TryGetValue(colName, out string? desc);
+                if (string.IsNullOrWhiteSpace(desc) && ColumnHeaders.TryGetValue(colName, out string? header) && !string.Equals(header, colName, StringComparison.OrdinalIgnoreCase))
+                {
+                    desc = header;
+                }
+
+                var rawVal = row.GetValue(i);
+                string valStr = (rawVal == null || rawVal == DBNull.Value) ? string.Empty : rawVal.ToString() ?? string.Empty;
+
+                InspectorFields.Add(new RowInspectorField(fieldNumber, colName, desc ?? string.Empty, valStr));
+            }
+        }
+
+        private bool FilterInspectorField(object obj)
+        {
+            if (string.IsNullOrWhiteSpace(InspectorFilterText)) return true;
+            if (obj is not RowInspectorField field) return false;
+
+            return field.ColumnName.Contains(InspectorFilterText, StringComparison.OrdinalIgnoreCase)
+                || field.Description.Contains(InspectorFilterText, StringComparison.OrdinalIgnoreCase)
+                || field.Value.Contains(InspectorFilterText, StringComparison.OrdinalIgnoreCase)
+                || field.FieldNumber.Contains(InspectorFilterText, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void CopyInspectorValue(RowInspectorField? field)
+        {
+            if (field == null) return;
+            try
+            {
+                _clipboardService.SetText(field.Value);
+                _dialogService.ShowToast($"Copied {field.ColumnName}", "Inspector", SMS_Search.Views.ToastType.Success);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to copy inspector value", ex);
+            }
+        }
+
+        private void FindFieldUsage(string? columnName)
+        {
+            if (string.IsNullOrWhiteSpace(columnName)) return;
+            WeakReferenceMessenger.Default.Send(new FindFieldUsageMessage(columnName.Trim()));
+        }
+
+        private void CopySelectionStats()
+        {
+            if (string.IsNullOrEmpty(SelectionStatsText)) return;
+            try
+            {
+                _clipboardService.SetText(SelectionStatsText);
+                _dialogService.ShowToast("Selection stats copied", "Copy", SMS_Search.Views.ToastType.Success);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to copy selection stats", ex);
+            }
+        }
+
+        private static string FormatElapsed(TimeSpan elapsed)
+        {
+            return elapsed.TotalMilliseconds < 1000
+                ? $"{Math.Max(1, (int)Math.Round(elapsed.TotalMilliseconds))} ms"
+                : $"{elapsed.TotalSeconds:0.00} s";
+        }
+
+        private static string BuildFoundStatusText(int totalRecords, string? filterText, int unfilteredCount, string elapsedText)
+        {
+            string baseText = !string.IsNullOrEmpty(filterText)
+                ? $"Found {totalRecords} records (Filtered from {unfilteredCount})"
+                : $"Found {totalRecords} records";
+
+            return string.IsNullOrEmpty(elapsedText)
+                ? baseText
+                : $"{baseText} ({elapsedText})";
         }
 
         partial void OnTotalRecordsChanged(int value)
@@ -955,6 +1161,57 @@ namespace SMS_Search.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError("Copy Row failed", ex);
+                _dialogService.ShowError("Failed to copy: " + ex.Message, "Copy Error");
+            }
+        }
+
+        private void CopyAsMarkdown(IList? selectedItems)
+        {
+            if (selectedItems == null || selectedItems.Count == 0 || _lastSchema == null) return;
+
+            var visibleCols = new List<(int Index, string Header)>();
+            for (int i = 0; i < _lastSchema.Columns.Count; i++)
+            {
+                string colName = _lastSchema.Columns[i].ColumnName;
+                if (HiddenColumns.Contains(colName)) continue;
+
+                string header = ColumnHeaders.TryGetValue(colName, out string? h) && !string.IsNullOrWhiteSpace(h)
+                    ? h
+                    : colName;
+                visibleCols.Add((i, header));
+            }
+
+            if (visibleCols.Count == 0) return;
+
+            var headers = visibleCols.Select(c => c.Header).ToList();
+            var rows = new List<IReadOnlyList<string?>>();
+
+            foreach (var item in selectedItems)
+            {
+                if (item is VirtualRow vRow)
+                {
+                    var rowValues = new List<string?>(visibleCols.Count);
+                    foreach (var col in visibleCols)
+                    {
+                        var val = vRow.GetValue(col.Index);
+                        rowValues.Add((val == null || val == DBNull.Value) ? string.Empty : val.ToString());
+                    }
+                    rows.Add(rowValues);
+                }
+            }
+
+            if (rows.Count == 0) return;
+
+            string markdown = MarkdownTableFormatter.Format(headers, rows);
+            try
+            {
+                _clipboardService.SetText(markdown);
+                _dialogService.ShowToast($"Copied {rows.Count} row(s) as Markdown", "Copy", SMS_Search.Views.ToastType.Success);
+                _logger.LogInfo("Copied {RowCount} rows as Markdown table.", rows.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Copy as Markdown failed", ex);
                 _dialogService.ShowError("Failed to copy: " + ex.Message, "Copy Error");
             }
         }

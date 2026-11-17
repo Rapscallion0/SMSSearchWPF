@@ -112,6 +112,46 @@
 
     <StackPanel Margin="0,0,0,20">
 
+        <GroupBox Header="Connection Profiles" Margin="0,0,0,10">
+            <StackPanel Margin="5">
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Active Profile:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}"
+                              DisplayMemberPath="Name" Height="25" VerticalContentAlignment="Center" Margin="0,0,8,0"/>
+                    <Button Grid.Column="2" Content="New" Command="{Binding NewProfileCommand}" Padding="10,3" Margin="0,0,6,0"/>
+                    <Button Grid.Column="3" Content="Save Profile" Command="{Binding SaveProfileCommand}" Padding="10,3" Margin="0,0,6,0"/>
+                    <Button Grid.Column="4" Content="Delete" Command="{Binding DeleteProfileCommand}" Padding="10,3"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="120"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Profile Name:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBox Grid.Column="1" Text="{Binding ProfileName, UpdateSourceTrigger=PropertyChanged}"
+                             Height="25" VerticalContentAlignment="Center" Margin="0,0,12,0"/>
+                    <TextBlock Grid.Column="2" Text="Environment:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox Grid.Column="3" ItemsSource="{Binding EnvironmentTags}" SelectedItem="{Binding SelectedEnvironment}"
+                              Height="25" VerticalContentAlignment="Center">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+
         <GroupBox Header="Database Connection">
             <StackPanel Margin="5">
                 <ctrl:SettingControl Header="Server" IsSaved="{Binding Server.IsSaved}">

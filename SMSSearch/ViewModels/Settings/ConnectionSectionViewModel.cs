@@ -29,19 +29,23 @@ namespace SMS_Search.ViewModels.Settings
 
         private readonly IDialogService _dialogService;
         private readonly IFieldDictionaryService? _fieldDictionaryService;
+        private readonly IConnectionSettingsService? _connectionSettingsService;
+        private bool _isSyncingProfile;
 
         public ConnectionSectionViewModel(
             ISettingsRepository repository,
             IDataRepository dataRepository,
             ILoggerService logger,
             IDialogService dialogService,
-            IFieldDictionaryService? fieldDictionaryService = null)
+            IFieldDictionaryService? fieldDictionaryService = null,
+            IConnectionSettingsService? connectionSettingsService = null)
         {
             _repository = repository;
             _dataRepository = dataRepository;
             _logger = logger;
             _dialogService = dialogService;
             _fieldDictionaryService = fieldDictionaryService;
+            _connectionSettingsService = connectionSettingsService;
 
             WindowsAuth = new ObservableSetting<bool>(repository, AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth,
                 bool.TryParse(repository.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth), out bool b) ? b : true);
@@ -201,6 +205,146 @@ namespace SMS_Search.ViewModels.Settings
                 _fieldDictionaryService.DictionaryChanged += OnExternalDictionaryChanged;
             }
             RefreshDictionaryStatus();
+
+            SaveProfileCommand = new RelayCommand(SaveProfile);
+            NewProfileCommand = new RelayCommand(NewProfile);
+            DeleteProfileCommand = new RelayCommand(DeleteProfile, () => CanDeleteProfile);
+            LoadProfiles();
+        }
+
+        public Array EnvironmentTags => Enum.GetValues(typeof(EnvironmentTag));
+        public ObservableCollection<ConnectionProfile> Profiles { get; } = new();
+
+        [ObservableProperty]
+        private ConnectionProfile? _selectedProfile;
+
+        [ObservableProperty]
+        private string _profileName = "Default";
+
+        [ObservableProperty]
+        private EnvironmentTag _selectedEnvironment = EnvironmentTag.None;
+
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(DeleteProfileCommand))]
+        private bool _canDeleteProfile;
+
+        public IRelayCommand SaveProfileCommand { get; }
+        public IRelayCommand NewProfileCommand { get; }
+        public IRelayCommand DeleteProfileCommand { get; }
+
+        partial void OnSelectedProfileChanged(ConnectionProfile? value)
+        {
+            if (_isSyncingProfile || value == null || _connectionSettingsService == null) return;
+
+            _isSyncingProfile = true;
+            try
+            {
+                _connectionSettingsService.ActivateProfile(value.Id);
+                ProfileName = value.Name;
+                SelectedEnvironment = value.Environment;
+                Server.Value = value.Server;
+                WindowsAuth.Value = value.IsWindowsAuth;
+                User.Value = value.User;
+                Database.Value = value.Database;
+            }
+            finally
+            {
+                _isSyncingProfile = false;
+            }
+        }
+
+        private void LoadProfiles()
+        {
+            if (_connectionSettingsService == null) return;
+
+            _isSyncingProfile = true;
+            try
+            {
+                Profiles.Clear();
+                foreach (var p in _connectionSettingsService.GetProfiles())
+                {
+                    Profiles.Add(p);
+                }
+
+                var active = _connectionSettingsService.GetActiveProfile();
+                SelectedProfile = active != null
+                    ? Profiles.FirstOrDefault(p => p.Id == active.Id) ?? Profiles.FirstOrDefault()
+                    : Profiles.FirstOrDefault();
+
+                if (SelectedProfile != null)
+                {
+                    ProfileName = SelectedProfile.Name;
+                    SelectedEnvironment = SelectedProfile.Environment;
+                }
+
+                CanDeleteProfile = Profiles.Count > 1;
+            }
+            finally
+            {
+                _isSyncingProfile = false;
+            }
+        }
+
+        private void SaveProfile()
+        {
+            if (_connectionSettingsService == null) return;
+            string name = string.IsNullOrWhiteSpace(ProfileName) ? "Default" : ProfileName.Trim();
+
+            var profile = new ConnectionProfile
+            {
+                Id = SelectedProfile?.Id ?? Guid.NewGuid().ToString("N"),
+                Name = name,
+                Server = Server.Value ?? string.Empty,
+                Database = Database.Value ?? string.Empty,
+                IsWindowsAuth = WindowsAuth.Value,
+                User = User.Value ?? string.Empty,
+                EncryptedPassword = SelectedProfile?.EncryptedPassword,
+                Environment = SelectedEnvironment
+            };
+
+            string? plainPass = !string.IsNullOrEmpty(Password) ? Password : null;
+            var saved = _connectionSettingsService.SaveProfile(profile, plainPass, preserveExistingPasswordIfNull: true);
+            _connectionSettingsService.ActivateProfile(saved.Id);
+            LoadProfiles();
+            _dialogService.ShowToast($"Saved profile '{saved.Name}'", "Connection Profiles", ToastType.Success);
+        }
+
+        private void NewProfile()
+        {
+            if (_connectionSettingsService == null) return;
+            int idx = Profiles.Count + 1;
+            string name = $"Profile {idx}";
+            while (Profiles.Any(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            {
+                idx++;
+                name = $"Profile {idx}";
+            }
+
+            var profile = new ConnectionProfile
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                Name = name,
+                Server = Server.Value ?? string.Empty,
+                Database = Database.Value ?? string.Empty,
+                IsWindowsAuth = WindowsAuth.Value,
+                User = User.Value ?? string.Empty,
+                EncryptedPassword = SelectedProfile?.EncryptedPassword,
+                Environment = EnvironmentTag.None
+            };
+
+            var saved = _connectionSettingsService.SaveProfile(profile);
+            _connectionSettingsService.ActivateProfile(saved.Id);
+            LoadProfiles();
+        }
+
+        private void DeleteProfile()
+        {
+            if (_connectionSettingsService == null || SelectedProfile == null || Profiles.Count <= 1) return;
+            if (_dialogService.ShowConfirmation($"Delete connection profile '{SelectedProfile.Name}'?", "Delete Profile"))
+            {
+                _connectionSettingsService.DeleteProfile(SelectedProfile.Id);
+                LoadProfiles();
+            }
         }
 
         [ObservableProperty]

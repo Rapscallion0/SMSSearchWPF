@@ -58,6 +58,7 @@ namespace SMS_Search
             services.AddSingleton<IIntellisenseService, IntellisenseService>();
             services.AddTransient<VirtualGridContext>();
             services.AddSingleton<IQueryHistoryService, QueryHistoryService>();
+            services.AddSingleton<ISavedQueriesService, SavedQueriesService>();
 
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<IClipboardService, ClipboardService>();
@@ -111,6 +112,7 @@ namespace SMS_Search
             services.AddSingleton<Func<ModernSettingsWindow>>(sp => () => sp.GetRequiredService<ModernSettingsWindow>());
             services.AddSingleton<Func<EncryptionUtilityWindow>>(sp => () => sp.GetRequiredService<EncryptionUtilityWindow>());
             services.AddSingleton<Func<EncryptionUtilityViewModel>>(sp => () => sp.GetRequiredService<EncryptionUtilityViewModel>());
+            services.AddSingleton<Func<ResultsViewModel>>(sp => () => sp.GetRequiredService<ResultsViewModel>());
 
             return services.BuildServiceProvider();
         }

@@ -22,9 +22,11 @@ namespace SMS_Search.ViewModels
         private readonly IClipboardService _clipboardService; // Assuming we have this service or use System.Windows.Clipboard
         private readonly IIntellisenseService _intellisenseService;
         private readonly IConnectionSettingsService _connectionSettingsService;
+        private readonly ISavedQueriesService? _savedQueriesService;
 
         private System.Collections.Generic.List<SqlCleaningRule> _cleanSqlRules = new();
         private System.Threading.CancellationTokenSource? _intellisenseCts;
+        private SMS_Search.Views.Windows.SavedQueriesWindow? _savedQueriesWindow;
 
         private bool _isInitializing = true;
 
@@ -36,7 +38,8 @@ namespace SMS_Search.ViewModels
             IQueryHistoryService historyService,
             IClipboardService clipboardService,
             IIntellisenseService intellisenseService,
-            IConnectionSettingsService connectionSettingsService)
+            IConnectionSettingsService connectionSettingsService,
+            ISavedQueriesService? savedQueriesService = null)
         {
             _repository = repository;
             _dialogService = dialogService;
@@ -46,12 +49,14 @@ namespace SMS_Search.ViewModels
             _clipboardService = clipboardService;
             _intellisenseService = intellisenseService;
             _connectionSettingsService = connectionSettingsService;
+            _savedQueriesService = savedQueriesService;
 
             LoadTablesCommand = new AsyncRelayCommand(LoadTablesAsync);
             RefreshTablesCommand = new AsyncRelayCommand(RefreshTablesAsync);
             CleanSqlCommand = new RelayCommand(CleanSql);
             BuildSqlCommand = new RelayCommand<string>(BuildSql);
             ShowHistoryCommand = new RelayCommand<System.Windows.Controls.Button>(ShowHistory);
+            ShowSavedQueriesCommand = new RelayCommand(ShowSavedQueries);
             LoadCleanSqlRules();
             LoadFontSettings();
             LoadAnyMatchConfig();
@@ -365,6 +370,7 @@ namespace SMS_Search.ViewModels
         public IRelayCommand CleanSqlCommand { get; }
         public IRelayCommand<string> BuildSqlCommand { get; }
         public IRelayCommand<System.Windows.Controls.Button> ShowHistoryCommand { get; }
+        public IRelayCommand ShowSavedQueriesCommand { get; }
 
         public bool IsCustomSqlMode => (SelectedMode == SearchMode.Function && IsFunctionCustomSql) ||
                                        (SelectedMode == SearchMode.Totalizer && IsTotalizerCustomSql) ||
@@ -390,6 +396,57 @@ namespace SMS_Search.ViewModels
              {
                  _cleanSqlRules.AddRange(SqlCleaner.DefaultRules);
              }
+        }
+
+        private void ShowSavedQueries()
+        {
+            if (_savedQueriesService == null) return;
+
+            if (_savedQueriesWindow != null)
+            {
+                if (_savedQueriesWindow.WindowState == System.Windows.WindowState.Minimized)
+                {
+                    _savedQueriesWindow.WindowState = System.Windows.WindowState.Normal;
+                }
+                _savedQueriesWindow.RefreshSuggestedNameIfEmpty();
+                _savedQueriesWindow.Activate();
+                return;
+            }
+
+            _savedQueriesWindow = new SMS_Search.Views.Windows.SavedQueriesWindow(
+                _savedQueriesService,
+                _dialogService,
+                () => SelectedMode switch
+                {
+                    SearchMode.Function => FunctionSqlText,
+                    SearchMode.Totalizer => TotalizerSqlText,
+                    SearchMode.Field => FieldSqlText,
+                    _ => string.Empty
+                },
+                sql =>
+                {
+                    if (SelectedMode == SearchMode.Function)
+                    {
+                        FunctionSqlText = sql;
+                        IsFunctionCustomSql = true;
+                    }
+                    else if (SelectedMode == SearchMode.Totalizer)
+                    {
+                        TotalizerSqlText = sql;
+                        IsTotalizerCustomSql = true;
+                    }
+                    else if (SelectedMode == SearchMode.Field)
+                    {
+                        FieldSqlText = sql;
+                        IsFieldCustomSql = true;
+                    }
+                })
+            {
+                Owner = System.Windows.Application.Current?.MainWindow
+            };
+
+            _savedQueriesWindow.Closed += (_, _) => _savedQueriesWindow = null;
+            _savedQueriesWindow.Show();
         }
 
         private void ShowHistory(System.Windows.Controls.Button? btn)

@@ -47,7 +47,8 @@ namespace SMSSearch.Tests
             });
 
             Assert.Equal(42, vm.TotalRecords);
-            Assert.Equal("Found 42 records", vm.StatusText);
+            Assert.StartsWith("Found 42 records (", vm.StatusText);
+            Assert.True(vm.StatusText.EndsWith("ms)") || vm.StatusText.EndsWith("s)"));
         }
 
         [Fact]

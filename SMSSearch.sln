@@ -7,6 +7,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SMSSearch", "SMSSearch\SMSS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SMSSearch.Tests", "SMSSearch.Tests\SMSSearch.Tests.csproj", "{BF7703F8-3413-4A25-8227-4E658513C970}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A1B2C3D4-E5F6-4789-ABCD-0123456789EF}"
+	ProjectSection(SolutionItems) = preProject
+		FUTURE_FEATURES.md = FUTURE_FEATURES.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

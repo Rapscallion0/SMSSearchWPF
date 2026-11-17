@@ -13,6 +13,7 @@
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
         <conv:BoolToHiddenConverter x:Key="BoolToHidden"/>
+        <conv:StringToVisibilityConverter x:Key="StringToVis"/>
         <conv:HighlightConverter x:Key="HighlightConverter"/>
         <conv:EnumDescriptionConverter x:Key="EnumDescriptionConverter"/>
 
@@ -47,6 +48,17 @@
             <MenuItem Header="Best Fit"
                       Command="{Binding PlacementTarget.Tag.BestFitCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                       CommandParameter="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <Separator/>
+            <MenuItem Header="Freeze Up To Here"
+                      Command="{Binding PlacementTarget.Tag.FreezeUpToColumnCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      CommandParameter="{Binding PlacementTarget.Column, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <MenuItem Header="Unfreeze Columns"
+                      Command="{Binding PlacementTarget.Tag.UnfreezeColumnsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      Visibility="{Binding PlacementTarget.Tag.HasFrozenColumns, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}"/>
+            <Separator/>
+            <MenuItem Header="Find Tables Using Field"
+                      Command="{Binding PlacementTarget.Tag.DataContext.FindFieldUsageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      CommandParameter="{Binding PlacementTarget.Column.SortMemberPath, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
         </ContextMenu>
 
         <ContextMenu x:Key="RowContextMenu">
@@ -55,6 +67,9 @@
                       CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             <MenuItem Header="Copy as SQL INSERT"
                       Command="{Binding PlacementTarget.Tag.DataContext.CopyInsertCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <MenuItem Header="Copy as Markdown Table"
+                      Command="{Binding PlacementTarget.Tag.DataContext.CopyAsMarkdownCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                       CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             <Separator/>
             <MenuItem Header="Export Selected Rows">
@@ -71,9 +86,13 @@
                       Command="{Binding PlacementTarget.Tag.CopyWithHeadersCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             <MenuItem Header="Advanced Copy"
                       Command="{Binding PlacementTarget.Tag.AdvancedCopyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <MenuItem Header="Copy as Markdown Table"
+                      Command="{Binding PlacementTarget.Tag.CopySelectedAsMarkdownCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             <MenuItem Header="Copy all matches"
                       Command="{Binding PlacementTarget.Tag.DataContext.CopyAllMatchesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                       Visibility="{Binding PlacementTarget.Tag.DataContext.CopyAllMatchesCommand.CanExecute, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}"/>
+            <MenuItem Header="Find Tables Using Field"
+                      Command="{Binding PlacementTarget.Tag.FindFieldUsageFromCellCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
             <Separator/>
             <MenuItem Header="Export Results (All)">
                 <MenuItem Header="CSV" Command="{Binding PlacementTarget.Tag.DataContext.ExportCsvCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
@@ -93,7 +112,8 @@
         <DockPanel Grid.Row="0" Margin="5">
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="10,0">
                 <Button Content="Previous" Command="{Binding FindPreviousCommand}" Margin="0,0,5,0" Padding="5,2" Visibility="{Binding IsFilterNavigationVisible, Converter={StaticResource BoolToVis}}"/>
-                <Button Content="Next" Command="{Binding FindNextCommand}" Padding="5,2" Visibility="{Binding IsFilterNavigationVisible, Converter={StaticResource BoolToVis}}"/>
+                <Button Content="Next" Command="{Binding FindNextCommand}" Margin="0,0,8,0" Padding="5,2" Visibility="{Binding IsFilterNavigationVisible, Converter={StaticResource BoolToVis}}"/>
+                <ToggleButton Content="Inspector" IsChecked="{Binding IsInspectorOpen, Mode=TwoWay}" Padding="8,2" ToolTip="Toggle Vertical Row Inspector (Ctrl+I)"/>
             </StackPanel>
 
             <TextBlock Text="Filter:" VerticalAlignment="Center" Margin="0,0,5,0" Visibility="{Binding IsFilterVisible, Converter={StaticResource BoolToHidden}}"/>
@@ -101,31 +121,39 @@
             <TextBlock Text="{Binding MatchStatusText}" VerticalAlignment="Center" Margin="10,0,0,0" FontStyle="Italic" Foreground="Gray" Visibility="{Binding IsFilterVisible, Converter={StaticResource BoolToHidden}}"/>
         </DockPanel>
 
-        <DataGrid x:Name="resultsGrid" Grid.Row="1" 
-                  ItemsSource="{Binding SearchResults}"
-                  SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
-                  AutoGenerateColumns="True"
-                  IsReadOnly="True"
-                  SelectionMode="Extended"
-                  SelectionUnit="CellOrRowHeader"
-                  CanUserAddRows="False"
-                  CanUserDeleteRows="False"
-                  CanUserResizeRows="False"
-                  HeadersVisibility="{Binding HeadersVisibility}"
-                  GridLinesVisibility="All"
-                  AlternatingRowBackground="{DynamicResource GridAltRowBackgroundBrush}"
-                  FrozenColumnCount="0"
-                  EnableRowVirtualization="True"
-                  EnableColumnVirtualization="True"
-                  VirtualizingStackPanel.IsVirtualizing="True"
-                  VirtualizingStackPanel.VirtualizationMode="Recycling"
-                  VirtualizingStackPanel.ScrollUnit="Pixel"
-                  VirtualizingStackPanel.CacheLength="10,10"
-                  VirtualizingStackPanel.CacheLengthUnit="Item"
-                  SelectionChanged="resultsGrid_SelectionChanged"
-                  CurrentCellChanged="resultsGrid_CurrentCellChanged" Sorting="resultsGrid_Sorting"
-                  LoadingRow="resultsGrid_LoadingRow"
-                  PreviewMouseWheel="resultsGrid_PreviewMouseWheel">
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <DataGrid x:Name="resultsGrid" Grid.Column="0"
+                      ItemsSource="{Binding SearchResults}"
+                      SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                      AutoGenerateColumns="True"
+                      IsReadOnly="True"
+                      SelectionMode="Extended"
+                      SelectionUnit="CellOrRowHeader"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      CanUserResizeRows="False"
+                      HeadersVisibility="{Binding HeadersVisibility}"
+                      GridLinesVisibility="All"
+                      AlternatingRowBackground="{DynamicResource GridAltRowBackgroundBrush}"
+                      FrozenColumnCount="0"
+                      EnableRowVirtualization="True"
+                      EnableColumnVirtualization="True"
+                      VirtualizingStackPanel.IsVirtualizing="True"
+                      VirtualizingStackPanel.VirtualizationMode="Recycling"
+                      VirtualizingStackPanel.ScrollUnit="Pixel"
+                      VirtualizingStackPanel.CacheLength="10,10"
+                      VirtualizingStackPanel.CacheLengthUnit="Item"
+                      SelectionChanged="resultsGrid_SelectionChanged"
+                      SelectedCellsChanged="resultsGrid_SelectedCellsChanged"
+                      CurrentCellChanged="resultsGrid_CurrentCellChanged" Sorting="resultsGrid_Sorting"
+                      LoadingRow="resultsGrid_LoadingRow"
+                      PreviewMouseWheel="resultsGrid_PreviewMouseWheel">
 
             <DataGrid.ColumnHeaderStyle>
                 <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
@@ -167,7 +195,53 @@
                 </Style>
             </DataGrid.CellStyle>
 
-        </DataGrid>
+            </DataGrid>
+
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                          Visibility="{Binding IsInspectorOpen, Converter={StaticResource BoolToVis}}"
+                          ResizeBehavior="PreviousAndNext"/>
+
+            <Border Grid.Column="2" Width="340" MinWidth="220" MaxWidth="600"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"
+                    Background="{DynamicResource AppBackgroundBrush}"
+                    Visibility="{Binding IsInspectorOpen, Converter={StaticResource BoolToVis}}">
+                <Grid Margin="6">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,6">
+                        <Button DockPanel.Dock="Right" Content="&#x00D7;" Width="22" Height="22" Padding="0"
+                                Command="{Binding ToggleInspectorCommand}" ToolTip="Close Inspector (Ctrl+I)"/>
+                        <TextBlock Text="Row Inspector" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </DockPanel>
+
+                    <controls:ClearableTextBox Grid.Row="1" Margin="0,0,0,6"
+                                               Text="{Binding InspectorFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                               Placeholder="Filter fields or values..."/>
+
+                    <DataGrid Grid.Row="2"
+                              ItemsSource="{Binding InspectorFieldsView}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              AlternatingRowBackground="{DynamicResource GridAltRowBackgroundBrush}"
+                              MouseDoubleClick="InspectorGrid_MouseDoubleClick"
+                              ToolTip="Double-click a row to copy its value">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Column" Binding="{Binding ColumnName}" Width="85"/>
+                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="115"/>
+                            <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
 
         <StatusBar Grid.Row="2">
              <StatusBarItem DockPanel.Dock="Right" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
@@ -175,6 +249,14 @@
              </StatusBarItem>
              <StatusBarItem DockPanel.Dock="Right" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
                 <ProgressBar Width="120" Height="12" IsIndeterminate="True" Margin="5,0"/>
+            </StatusBarItem>
+            <StatusBarItem DockPanel.Dock="Right"
+                           Visibility="{Binding SelectionStatsText, Converter={StaticResource StringToVis}}">
+                <Button Command="{Binding OpenDetailedStatsCommand, RelativeSource={RelativeSource AncestorType=local:ResultsView}}"
+                        Background="Transparent" BorderThickness="0" Padding="4,0" Cursor="Hand"
+                        ToolTip="Click to open live Detailed Selection Statistics">
+                    <TextBlock Text="{Binding SelectionStatsText}" FontSize="11"/>
+                </Button>
             </StatusBarItem>
             <StatusBarItem>
                 <TextBlock Text="{Binding StatusText}"/>

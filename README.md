@@ -61,3 +61,4 @@ dotnet test SMSSearch.sln -c Release --no-build
 ## Disclaimer
 
 SMS Search is provided free of charge for personal or commercial use **"AS IS"** without warranty of any kind. It is an independent utility and is **not** affiliated with, endorsed by, sponsored by, or supported by **LOC Software** or **LOC SMS**. Always verify Custom SQL queries and maintain database backups before making changes.
+
