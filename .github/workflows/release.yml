@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
@@ -41,9 +43,46 @@ jobs:
           if (Test-Path ./Publish/SMS_Search.zip) { Remove-Item ./Publish/SMS_Search.zip -Force }
           Compress-Archive -Path "./Publish/SMS Search.exe" -DestinationPath "./Publish/SMS_Search.zip"
 
+      - name: Generate release notes
+        shell: pwsh
+        run: |
+          $currentTag = "${{ github.ref_name }}"
+          $tags = git tag --sort=-creatordate | Where-Object { $_ -ne $currentTag }
+          $prevTag = $tags | Select-Object -First 1
+
+          $range = if ($prevTag) { "$prevTag..$currentTag" } else { $currentTag }
+          $commits = git log $range --no-merges --pretty=format:"%s" | Where-Object {
+            $_ -and $_ -notmatch '^(chore:\s*bump version|Merge )'
+          }
+
+          $features = @()
+          $fixes = @()
+          $improvements = @()
+          $other = @()
+
+          foreach ($c in $commits) {
+            if ($c -match '^feat(\([^)]+\))?:\s*(.+)$') { $features += "- $($Matches[2])" }
+            elseif ($c -match '^fix(\([^)]+\))?:\s*(.+)$') { $fixes += "- $($Matches[2])" }
+            elseif ($c -match '^(perf|refactor|ui|style)(\([^)]+\))?:\s*(.+)$') { $improvements += "- $($Matches[3])" }
+            else { $other += "- $c" }
+          }
+
+          $lines = @("## What's Changed", "")
+          if ($features.Count -gt 0) { $lines += "### Features"; $lines += $features; $lines += "" }
+          if ($fixes.Count -gt 0) { $lines += "### Bug Fixes"; $lines += $fixes; $lines += "" }
+          if ($improvements.Count -gt 0) { $lines += "### Improvements"; $lines += $improvements; $lines += "" }
+          if ($other.Count -gt 0) { $lines += "### Other Changes"; $lines += $other; $lines += "" }
+          if ($lines.Count -le 2) { $lines += "- Maintenance and stability updates."; $lines += "" }
+
+          if ($prevTag) {
+            $lines += "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$prevTag...$currentTag"
+          }
+
+          $lines -join "`n" | Set-Content -Path "./RELEASE_NOTES.md" -Encoding UTF8
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: ./Publish/SMS_Search.zip
-          generate_release_notes: true
+          body_path: ./RELEASE_NOTES.md
 
