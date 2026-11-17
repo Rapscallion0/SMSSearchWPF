@@ -1,3 +1,4 @@
+
 using System.Windows.Media;
 using System;
 using System.Collections.Generic;
@@ -28,6 +29,22 @@ namespace SMS_Search.Views
         public IRelayCommand<HiddenColumnItem> ShowColumnCommand { get; }
         public IRelayCommand ShowAllColumnsCommand { get; }
         public IRelayCommand<DataGridColumn> BestFitCommand { get; }
+        public IRelayCommand<DataGridColumn> FreezeUpToColumnCommand { get; }
+        public IRelayCommand UnfreezeColumnsCommand { get; }
+        public IRelayCommand CopySelectedAsMarkdownCommand { get; }
+        public IRelayCommand FindFieldUsageFromCellCommand { get; }
+        public IRelayCommand OpenDetailedStatsCommand { get; }
+
+        private SMS_Search.Views.Windows.SelectionStatsWindow? _selectionStatsWindow;
+
+        public static readonly DependencyProperty HasFrozenColumnsProperty = DependencyProperty.Register(
+            "HasFrozenColumns", typeof(bool), typeof(ResultsView), new PropertyMetadata(false));
+
+        public bool HasFrozenColumns
+        {
+            get { return (bool)GetValue(HasFrozenColumnsProperty); }
+            set { SetValue(HasFrozenColumnsProperty, value); }
+        }
 
         public static readonly DependencyProperty HasHiddenColumnsProperty = DependencyProperty.Register(
             "HasHiddenColumns", typeof(bool), typeof(ResultsView), new PropertyMetadata(false));
@@ -71,6 +88,11 @@ namespace SMS_Search.Views
             ShowColumnCommand = new RelayCommand<HiddenColumnItem>(ShowColumn);
             ShowAllColumnsCommand = new RelayCommand(ShowAllColumns);
             BestFitCommand = new RelayCommand<DataGridColumn>(BestFit);
+            FreezeUpToColumnCommand = new RelayCommand<DataGridColumn>(FreezeUpToColumn);
+            UnfreezeColumnsCommand = new RelayCommand(UnfreezeColumns);
+            CopySelectedAsMarkdownCommand = new RelayCommand(CopySelectedAsMarkdown);
+            FindFieldUsageFromCellCommand = new RelayCommand(FindFieldUsageFromCell);
+            OpenDetailedStatsCommand = new RelayCommand(OpenDetailedStats);
             FilterBySelectionCommand = new RelayCommand(FilterBySelection);
             CopyWithHeadersCommand = new RelayCommand(CopyWithHeaders);
             AdvancedCopyCommand = new RelayCommand(AdvancedCopy);
@@ -111,6 +133,9 @@ namespace SMS_Search.Views
                     _isTimerHooked = false;
                 }
             }
+
+            _selectionStatsWindow?.Close();
+            _selectionStatsWindow = null;
         }
 
         private ScrollViewer? GetCachedScrollViewer()
@@ -158,11 +183,22 @@ namespace SMS_Search.Views
             {
                 newVm.ScrollToCellRequested += Vm_ScrollToCellRequested;
                 newVm.HeadersUpdated += Vm_HeadersUpdated;
+                newVm.PropertyChanged += Vm_PropertyChanged;
             }
             if (e.OldValue is ResultsViewModel oldVm)
             {
                 oldVm.ScrollToCellRequested -= Vm_ScrollToCellRequested;
                 oldVm.HeadersUpdated -= Vm_HeadersUpdated;
+                oldVm.PropertyChanged -= Vm_PropertyChanged;
+            }
+        }
+
+        private void Vm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ResultsViewModel.SearchResults))
+            {
+                resultsGrid.FrozenColumnCount = 0;
+                HasFrozenColumns = false;
             }
         }
 
@@ -239,6 +275,7 @@ namespace SMS_Search.Views
                 {
                     string? colName = cellInfo.Column?.SortMemberPath;
                     vm.SetCurrentCell(vRow.RowIndex, colName);
+                    vm.SetInspectedRow(vRow);
                 }
             }
         }
@@ -327,6 +364,78 @@ namespace SMS_Search.Views
                     vm.SetCurrentRowIndex(vRow.RowIndex);
                 }
             }
+        }
+
+        private List<object?> GetSelectedCellValuesForStats(out bool truncated)
+        {
+            const int maxCellsForStats = 5000;
+            var cells = resultsGrid.SelectedCells;
+            truncated = cells.Count > maxCellsForStats;
+            var values = new List<object?>(Math.Min(cells.Count, maxCellsForStats));
+            int count = 0;
+            foreach (var cell in cells)
+            {
+                if (count >= maxCellsForStats) break;
+                values.Add(GetCellValue(cell.Item, cell.Column));
+                count++;
+            }
+            return values;
+        }
+
+        private void resultsGrid_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
+        {
+            if (DataContext is not ResultsViewModel vm) return;
+
+            var cells = resultsGrid.SelectedCells;
+            if (cells.Count < 2)
+            {
+                vm.SelectionStatsText = string.Empty;
+                if (_selectionStatsWindow != null)
+                {
+                    var singleValues = GetSelectedCellValuesForStats(out _);
+                    _selectionStatsWindow.UpdateStats(SelectionStatsCalculator.CalculateDetailed(singleValues));
+                }
+                return;
+            }
+
+            var values = GetSelectedCellValuesForStats(out bool truncated);
+            var stats = SelectionStatsCalculator.Calculate(values);
+            vm.SelectionStatsText = truncated && !string.IsNullOrEmpty(stats.SummaryText)
+                ? $"{stats.SummaryText} (first 5,000 cells)"
+                : stats.SummaryText;
+
+            if (_selectionStatsWindow != null)
+            {
+                _selectionStatsWindow.UpdateStats(SelectionStatsCalculator.CalculateDetailed(values));
+            }
+        }
+
+        private void OpenDetailedStats()
+        {
+            if (_selectionStatsWindow != null)
+            {
+                if (_selectionStatsWindow.WindowState == WindowState.Minimized)
+                {
+                    _selectionStatsWindow.WindowState = WindowState.Normal;
+                }
+                _selectionStatsWindow.Activate();
+                return;
+            }
+
+            var services = (System.Windows.Application.Current as App)?.Services;
+            var clipboardService = services?.GetService<IClipboardService>() ?? new ClipboardService();
+            var dialogService = services?.GetService<IDialogService>();
+            if (dialogService == null) return;
+
+            _selectionStatsWindow = new SMS_Search.Views.Windows.SelectionStatsWindow(clipboardService, dialogService)
+            {
+                Owner = Window.GetWindow(this)
+            };
+            _selectionStatsWindow.Closed += (_, _) => _selectionStatsWindow = null;
+
+            var values = GetSelectedCellValuesForStats(out _);
+            _selectionStatsWindow.UpdateStats(SelectionStatsCalculator.CalculateDetailed(values));
+            _selectionStatsWindow.Show();
         }
 
         private void resultsGrid_Sorting(object sender, DataGridSortingEventArgs e)
@@ -501,6 +610,14 @@ namespace SMS_Search.Views
                 txtFilter.Focus();
                 e.Handled = true;
             }
+            else if (e.Key == Key.I && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            {
+                if (DataContext is ResultsViewModel vm)
+                {
+                    vm.ToggleInspectorCommand.Execute(null);
+                    e.Handled = true;
+                }
+            }
         }
 
         // Command Implementations
@@ -584,6 +701,95 @@ namespace SMS_Search.Views
             if (col != null)
             {
                 col.Width = new DataGridLength(1, DataGridLengthUnitType.Auto);
+            }
+        }
+
+        private void FreezeUpToColumn(DataGridColumn? col)
+        {
+            if (col == null) return;
+            int visibleBeforeOrAt = resultsGrid.Columns
+                .Where(c => c.Visibility == Visibility.Visible && c.DisplayIndex <= col.DisplayIndex)
+                .Count();
+            resultsGrid.FrozenColumnCount = Math.Max(0, visibleBeforeOrAt);
+            HasFrozenColumns = resultsGrid.FrozenColumnCount > 0;
+        }
+
+        private void UnfreezeColumns()
+        {
+            resultsGrid.FrozenColumnCount = 0;
+            HasFrozenColumns = false;
+        }
+
+        private void CopySelectedAsMarkdown()
+        {
+            if (resultsGrid.SelectedCells.Count == 0) return;
+
+            var cells = resultsGrid.SelectedCells;
+            var rows = cells.Select(c => c.Item).Distinct()
+                .OrderBy(r => (r as VirtualRow)?.RowIndex ?? 0)
+                .ToList();
+            var cols = cells.Select(c => c.Column).Distinct()
+                .OrderBy(c => c.DisplayIndex)
+                .ToList();
+
+            var headers = cols.Select(c => c.Header?.ToString() ?? string.Empty).ToList();
+            var tableRows = new List<IReadOnlyList<string?>>(rows.Count);
+
+            foreach (var row in rows)
+            {
+                var rowVals = new List<string?>(cols.Count);
+                foreach (var col in cols)
+                {
+                    bool isSelected = cells.Any(c => c.Item == row && c.Column == col);
+                    if (isSelected)
+                    {
+                        var val = GetCellValue(row, col);
+                        rowVals.Add(val?.ToString() ?? string.Empty);
+                    }
+                    else
+                    {
+                        rowVals.Add(string.Empty);
+                    }
+                }
+                tableRows.Add(rowVals);
+            }
+
+            string markdown = MarkdownTableFormatter.Format(headers, tableRows);
+            try
+            {
+                System.Windows.Clipboard.SetText(markdown);
+                if (DataContext is ResultsViewModel)
+                {
+                    var services = (System.Windows.Application.Current as App)?.Services;
+                    services?.GetService<IDialogService>()?.ShowToast($"Copied {tableRows.Count} row(s) as Markdown", "Copy", ToastType.Success);
+                }
+            }
+            catch (Exception ex)
+            {
+                var services = (System.Windows.Application.Current as App)?.Services;
+                services?.GetService<ILoggerService>()?.LogError("Failed to copy Markdown table to clipboard", ex);
+                services?.GetService<IDialogService>()?.ShowError("Failed to copy: " + ex.Message, "Error");
+            }
+        }
+
+        private void FindFieldUsageFromCell()
+        {
+            if (DataContext is not ResultsViewModel vm) return;
+            string? colName = resultsGrid.CurrentCell.IsValid
+                ? resultsGrid.CurrentCell.Column?.SortMemberPath
+                : resultsGrid.SelectedCells.FirstOrDefault().Column?.SortMemberPath;
+
+            if (!string.IsNullOrWhiteSpace(colName))
+            {
+                vm.FindFieldUsageCommand.Execute(colName);
+            }
+        }
+
+        private void InspectorGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is System.Windows.Controls.DataGrid grid && grid.SelectedItem is SMS_Search.Models.RowInspectorField field && DataContext is ResultsViewModel vm)
+            {
+                vm.CopyInspectorValueCommand.Execute(field);
             }
         }
 

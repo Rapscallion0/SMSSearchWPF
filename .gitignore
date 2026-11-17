@@ -368,3 +368,6 @@ FodyWeavers.xsd
 
 # Local sample dictionary files and documentation
 Fields/
+
+# Local future features tracker
+FUTURE_FEATURES.md

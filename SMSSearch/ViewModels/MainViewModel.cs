@@ -23,6 +23,8 @@ namespace SMS_Search.ViewModels
         private readonly IQueryHistoryService _historyService; // Restore history service dependency
         private readonly IDataRepository _repository;
         private readonly IConnectionSettingsService _connectionSettingsService;
+        private readonly Func<ResultsViewModel> _resultsVmFactory;
+        private bool _isSyncingProfiles;
 
         private System.Windows.Threading.DispatcherTimer? _dateRolloverTimer;
         private DateTime _lastKnownDate;
@@ -42,7 +44,8 @@ namespace SMS_Search.ViewModels
             SearchViewModel searchViewModel,
             ResultsViewModel resultsViewModel,
             ImportViewModel importViewModel,
-            IConnectionSettingsService connectionSettingsService)
+            IConnectionSettingsService connectionSettingsService,
+            Func<ResultsViewModel>? resultsVmFactory = null)
         {
             _repository = repository;
             _config = config;
@@ -50,9 +53,14 @@ namespace SMS_Search.ViewModels
             _logger = logger;
             _historyService = historyService;
             _connectionSettingsService = connectionSettingsService;
+            _resultsVmFactory = resultsVmFactory ?? (() => resultsViewModel);
             SearchVm = searchViewModel;
-            ResultsVm = resultsViewModel;
             ImportVm = importViewModel;
+
+            var initialTab = new ResultTabViewModel(resultsViewModel, CloseTab, "Results");
+            ResultTabs.Add(initialTab);
+            SelectedResultTab = initialTab;
+            UpdateTabClosableState();
 
             ImportVm.RequestClose += OnImportRequestClose;
             ImportVm.ImportCompleted += OnImportCompletedAsync;
@@ -84,6 +92,38 @@ namespace SMS_Search.ViewModels
             {
                 _ = LoadDatabasesCommand.ExecuteAsync(null);
             });
+
+            WeakReferenceMessenger.Default.Register<FindFieldUsageMessage>(this, (r, m) =>
+            {
+                HandleFindFieldUsage(m.Value);
+            });
+
+            _connectionSettingsService.ProfilesChanged += OnProfilesChanged;
+            RefreshProfiles();
+        }
+
+        private void HandleFindFieldUsage(string? fieldIdentifier)
+        {
+            if (string.IsNullOrWhiteSpace(fieldIdentifier)) return;
+
+            string raw = fieldIdentifier.Trim();
+            string numericCandidate = raw.StartsWith("F", StringComparison.OrdinalIgnoreCase) && raw.Length > 1
+                ? raw.Substring(1)
+                : raw;
+
+            SearchVm.SelectedMode = SearchMode.Field;
+            if (int.TryParse(numericCandidate, out _))
+            {
+                SearchVm.IsFieldNumber = true;
+                SearchVm.FieldNumberText = numericCandidate;
+            }
+            else
+            {
+                SearchVm.IsFieldDescription = true;
+                SearchVm.FieldDescriptionText = raw;
+            }
+
+            _ = SearchCommand.ExecuteAsync(null);
         }
 
         private void DateRolloverTimer_Tick(object? sender, EventArgs e)
@@ -112,9 +152,14 @@ namespace SMS_Search.ViewModels
             ImportVm.RequestClose -= OnImportRequestClose;
             ImportVm.ImportCompleted -= OnImportCompletedAsync;
             ImportVm.DatabasesChanged -= OnImportDatabasesChangedAsync;
+            _connectionSettingsService.ProfilesChanged -= OnProfilesChanged;
             WeakReferenceMessenger.Default.UnregisterAll(this);
             if (SearchVm is IDisposable searchDisposable) searchDisposable.Dispose();
-            if (ResultsVm is IDisposable resultsDisposable) resultsDisposable.Dispose();
+            foreach (var tab in ResultTabs)
+            {
+                tab.Dispose();
+            }
+            ResultTabs.Clear();
         }
 
         public string Title { get; }
@@ -330,8 +375,138 @@ namespace SMS_Search.ViewModels
         }
 
         public SearchViewModel SearchVm { get; }
-        public ResultsViewModel ResultsVm { get; }
+        public ResultsViewModel ResultsVm => SelectedResultTab?.ResultsVm ?? ResultTabs[0].ResultsVm;
         public ImportViewModel ImportVm { get; }
+
+        public ObservableCollection<ResultTabViewModel> ResultTabs { get; } = new();
+
+        [ObservableProperty]
+        private ResultTabViewModel? _selectedResultTab;
+
+        partial void OnSelectedResultTabChanged(ResultTabViewModel? value)
+        {
+            OnPropertyChanged(nameof(ResultsVm));
+        }
+
+        public ObservableCollection<ConnectionProfile> Profiles { get; } = new();
+
+        [ObservableProperty]
+        private ConnectionProfile? _activeProfile;
+
+        [ObservableProperty]
+        private bool _hasMultipleProfiles;
+
+        [ObservableProperty]
+        private EnvironmentTag _activeEnvironmentTag = EnvironmentTag.None;
+
+        [ObservableProperty]
+        private bool _hasEnvironmentBadge;
+
+        [ObservableProperty]
+        private string _activeEnvironmentBadgeText = string.Empty;
+
+        partial void OnActiveProfileChanged(ConnectionProfile? value)
+        {
+            if (_isSyncingProfiles || value == null) return;
+            _connectionSettingsService.ActivateProfile(value.Id);
+        }
+
+        private void OnProfilesChanged(object? sender, EventArgs e)
+        {
+            RefreshProfiles();
+        }
+
+        private void RefreshProfiles()
+        {
+            _isSyncingProfiles = true;
+            try
+            {
+                Profiles.Clear();
+                foreach (var p in _connectionSettingsService.GetProfiles())
+                {
+                    Profiles.Add(p);
+                }
+
+                HasMultipleProfiles = Profiles.Count > 1;
+                var active = _connectionSettingsService.GetActiveProfile();
+                ActiveProfile = active != null
+                    ? Profiles.FirstOrDefault(p => p.Id == active.Id) ?? Profiles.FirstOrDefault()
+                    : Profiles.FirstOrDefault();
+
+                ActiveEnvironmentTag = ActiveProfile?.Environment ?? EnvironmentTag.None;
+                HasEnvironmentBadge = ActiveEnvironmentTag != EnvironmentTag.None;
+                ActiveEnvironmentBadgeText = ActiveEnvironmentTag switch
+                {
+                    EnvironmentTag.Dev => "DEV",
+                    EnvironmentTag.Qa => "QA",
+                    EnvironmentTag.Prod => "PROD",
+                    _ => string.Empty
+                };
+            }
+            finally
+            {
+                _isSyncingProfiles = false;
+            }
+        }
+
+        [RelayCommand]
+        private void NewTab()
+        {
+            var tab = new ResultTabViewModel(_resultsVmFactory(), CloseTab, $"Results {ResultTabs.Count + 1}");
+            ResultTabs.Add(tab);
+            SelectedResultTab = tab;
+            UpdateTabClosableState();
+        }
+
+        [RelayCommand]
+        private void CloseActiveTab()
+        {
+            if (SelectedResultTab != null)
+            {
+                CloseTab(SelectedResultTab);
+            }
+        }
+
+        private void CloseTab(ResultTabViewModel tab)
+        {
+            if (ResultTabs.Count <= 1) return;
+
+            int idx = ResultTabs.IndexOf(tab);
+            if (idx < 0) return;
+
+            ResultTabs.RemoveAt(idx);
+            if (SelectedResultTab == tab)
+            {
+                SelectedResultTab = ResultTabs[Math.Max(0, idx - 1)];
+            }
+            tab.Dispose();
+            UpdateTabClosableState();
+        }
+
+        private void UpdateTabClosableState()
+        {
+            bool canClose = ResultTabs.Count > 1;
+            foreach (var tab in ResultTabs)
+            {
+                tab.CanClose = canClose;
+            }
+        }
+
+        private static string BuildTabTitle(SearchCriteria criteria)
+        {
+            if (criteria.Type == SearchType.CustomSql) return "Custom SQL";
+            if (criteria.Type == SearchType.Table && !string.IsNullOrWhiteSpace(criteria.Value))
+            {
+                return criteria.ShowFields ? $"{criteria.Value} (Fields)" : criteria.Value;
+            }
+            if (!string.IsNullOrWhiteSpace(criteria.Value))
+            {
+                string prefix = criteria.Type == SearchType.Number ? "F" : "";
+                string raw = $"{prefix}{criteria.Value.Trim()}";
+                return raw.Length > 20 ? raw.Substring(0, 17) + "..." : raw;
+            }
+            return criteria.Mode.ToString();
+        }
 
         [RelayCommand]
         private async Task Search()
@@ -355,7 +530,21 @@ namespace SMS_Search.ViewModels
                  _historyService.AddQuery($"{criteria.Mode}_{criteria.Type}", criteria.Value);
              }
 
-             await ResultsVm.ExecuteSearchAsync(criteria);
+             ResultTabViewModel targetTab;
+             if (SelectedResultTab != null && !SelectedResultTab.IsPinned)
+             {
+                 targetTab = SelectedResultTab;
+             }
+             else
+             {
+                 targetTab = new ResultTabViewModel(_resultsVmFactory(), CloseTab, BuildTabTitle(criteria));
+                 ResultTabs.Add(targetTab);
+                 SelectedResultTab = targetTab;
+                 UpdateTabClosableState();
+             }
+
+             targetTab.Title = BuildTabTitle(criteria);
+             await targetTab.ResultsVm.ExecuteSearchAsync(criteria);
              WeakReferenceMessenger.Default.Send(new SearchExecutedMessage(true));
         }
 
