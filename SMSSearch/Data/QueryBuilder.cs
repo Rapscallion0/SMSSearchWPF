@@ -26,7 +26,7 @@ LEFT JOIN RB_FIELDS RBF ON COL.name = RBF.F1453 ";
     COL.name AS 'Field',
     '' AS 'Description',
     TAB.name AS 'Table',
-    '' AS 'Type',
+    TYPE_NAME(COL.user_type_id) AS 'Type',
     (CASE WHEN PKEY.COLUMN_NAME IS NOT NULL THEN '1' ELSE '0' END) AS 'Key',
     COL.max_length AS 'Size',
     COL.scale AS 'Dec',
@@ -56,6 +56,7 @@ GROUP BY
 GROUP BY
     COL.name,
     TAB.name,
+    COL.user_type_id,
     pkey.COLUMN_NAME,
     COL.max_length,
     COL.scale,

@@ -154,6 +154,14 @@ namespace SMS_Search.Utils
 
             // Connection
             SetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth, "True");
+            SetValue(AppSettings.Sections.Connection, AppSettings.Keys.SearchNetworkServers, "0");
+            SetValue(AppSettings.Sections.Connection, AppSettings.Keys.DictionarySourceMode, "Auto");
+            SetValue(AppSettings.Sections.Connection, AppSettings.Keys.DictionaryPath, "");
+            SetValue(AppSettings.Sections.Connection, AppSettings.Keys.DictionaryLanguage, "English");
+            SetValue(AppSettings.Sections.Connection, AppSettings.Keys.DictionaryShowEn, "0");
+            SetValue(AppSettings.Sections.Connection, AppSettings.Keys.DictionaryShowFr, "0");
+            SetValue(AppSettings.Sections.Connection, AppSettings.Keys.DictionaryShowEs, "0");
+            SetValue(AppSettings.Sections.Connection, AppSettings.Keys.DictionaryShowDct, "1");
 
             // Clean SQL
             SetValue(AppSettings.Sections.CleanSql, AppSettings.Keys.BeautifySql, "1");

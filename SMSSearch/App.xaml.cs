@@ -54,6 +54,7 @@ namespace SMS_Search
             services.AddSingleton<ILoggerService, LoggerService>();
 
             services.AddSingleton<IDataRepository, DataRepository>();
+            services.AddSingleton<IFieldDictionaryService, FieldDictionaryService>();
             services.AddSingleton<IIntellisenseService, IntellisenseService>();
             services.AddTransient<VirtualGridContext>();
             services.AddSingleton<IQueryHistoryService, QueryHistoryService>();
@@ -98,6 +99,7 @@ namespace SMS_Search
 
             services.AddTransient<MainWindow>();
             services.AddTransient<ModernSettingsWindow>();
+            services.AddTransient<SMS_Search.Views.Windows.StartupSetupWindow>();
             services.AddTransient<EulaWindow>();
             services.AddTransient<UnarchiveWindow>();
             services.AddTransient<Gs1ToolkitWindow>();
@@ -384,56 +386,16 @@ namespace SMS_Search
                     }
                 }
 
-                // Connection Check
-                while (true)
+                // Connection / Dictionary Check
+                var fieldDictionaryService = Services.GetRequiredService<IFieldDictionaryService>();
+                while (!StartupConditionEvaluator.CanStart(configService, fieldDictionaryService))
                 {
-                    string server = configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
-                    string database = configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "";
-
-                    if (string.IsNullOrWhiteSpace(server) || string.IsNullOrWhiteSpace(database))
+                    var setupWindow = Services.GetRequiredService<SMS_Search.Views.Windows.StartupSetupWindow>();
+                    bool? setupResult = setupWindow.ShowDialog();
+                    if (setupResult != true)
                     {
-                        var dialogService = Services.GetRequiredService<IDialogService>();
-                        System.Windows.MessageBox.Show("Required connection settings (Server, Database) are missing or invalid. Please provide them to continue.", "Connection Required", MessageBoxButton.OK, MessageBoxImage.Warning);
-
-                        var settingsWindow = Services.GetRequiredService<ModernSettingsWindow>();
-                        var settingsVm = settingsWindow.DataContext as ModernSettingsViewModel;
-
-                        // Force navigate to connection section
-                        if (settingsVm != null)
-                        {
-                            var connSection = System.Linq.Enumerable.FirstOrDefault(settingsVm.Sections, s => s is ConnectionSectionViewModel);
-                            if (connSection != null)
-                            {
-                                settingsVm.SelectedSection = connSection;
-                            }
-                        }
-
-                        settingsWindow.ShowDialog();
-
-                        // Re-check after window closes
-                        string newServer = configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Server) ?? "";
-                        string newDatabase = configService.GetValue(AppSettings.Sections.Connection, AppSettings.Keys.Database) ?? "";
-
-                        if (string.IsNullOrWhiteSpace(newServer) || string.IsNullOrWhiteSpace(newDatabase))
-                        {
-                            var result = System.Windows.MessageBox.Show("Settings are still invalid. The application will close. Do you want to go back and fix them?", "Invalid Settings", MessageBoxButton.YesNo, MessageBoxImage.Error);
-                            if (result == MessageBoxResult.No)
-                            {
-                                Shutdown();
-                                return;
-                            }
-                            // Loop continues and opens settings again
-                        }
-                        else
-                        {
-                            // Valid settings provided
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        // Settings exist and are valid
-                        break;
+                        Shutdown();
+                        return;
                     }
                 }
 

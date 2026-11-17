@@ -5,10 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:SMS_Search.ViewModels"
         mc:Ignorable="d"
-        Title="SMS Search - End User License Agreement" Height="300" Width="450"
+        Title="SMS Search - End User License Agreement" Height="420" Width="560" MinHeight="320" MinWidth="460"
         Background="{DynamicResource AppBackgroundBrush}"
         Foreground="{DynamicResource PrimaryTextBrush}"
-        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" WindowStyle="SingleBorderWindow">
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResizeWithGrip" WindowStyle="SingleBorderWindow">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -22,8 +22,8 @@
         <TextBlock Grid.Row="1" Text="Please read the following license agreement carefully" Margin="10,0,0,10"/>
 
         <Border Grid.Row="2" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,10">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <TextBlock Text="{Binding EulaText}" TextWrapping="Wrap" Margin="5"/>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="10">
+                <TextBlock Text="{Binding EulaText}" TextWrapping="Wrap" LineHeight="19" />
             </ScrollViewer>
         </Border>
 

@@ -7,6 +7,7 @@
         xmlns:views="clr-namespace:SMS_Search.Views"
         xmlns:controls="clr-namespace:SMS_Search.Views.Controls"
         xmlns:vm="clr-namespace:SMS_Search.ViewModels"
+        xmlns:conv="clr-namespace:SMS_Search.Converters"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
         Title="{Binding Title}" Height="800" Width="800"
@@ -15,6 +16,8 @@
         Icon="pack://application:,,,/Resources/SMS Search.ico" MinWidth="675" MinHeight="600">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <conv:EnumDescriptionConverter x:Key="EnumDescriptionConverter"/>
+        <conv:DictionarySourceShortConverter x:Key="DictionarySourceShortConverter"/>
     </Window.Resources>
     <Window.InputBindings>
         <KeyBinding Key="F5" Command="{Binding SearchCommand}" />
@@ -84,7 +87,22 @@
                         </Control>
                     </Button>
 
-                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="10,0,0,0"/>
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="10,0,8,0"/>
+
+                    <ComboBox ItemsSource="{Binding ResultsVm.DictionarySourceModes}"
+                              SelectedItem="{Binding ResultsVm.SelectedDictionarySource}"
+                              ToolTip="{Binding ResultsVm.DictionaryStatusTooltip}"
+                              Height="22" MinWidth="58" Padding="6,0" FontSize="11"
+                              VerticalAlignment="Center" VerticalContentAlignment="Center">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource DictionarySourceShortConverter}}"
+                                           ToolTip="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="8,0,0,0"/>
                 </StackPanel>
             </StatusBarItem>
             <StatusBarItem HorizontalAlignment="Right" x:Name="RightStatusItem">

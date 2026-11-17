@@ -2,17 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.Json;
 using Dapper;
+using SMS_Search.Services;
 
 namespace SMS_Search.Data
 {
     public class VirtualGridContext : IDisposable
     {
         private readonly IDataRepository _repo;
+        private readonly IFieldDictionaryService? _fieldDictionaryService;
         private CancellationTokenSource? _queryCts;
+
+        private DataTable? _localTable;
+        private List<DataRow>? _localView;
 
         private string? _server;
         private string? _database;
@@ -48,9 +54,10 @@ namespace SMS_Search.Data
         public event EventHandler? DataReady;
         public event EventHandler<Exception>? LoadError;
 
-        public VirtualGridContext(IDataRepository repo)
+        public VirtualGridContext(IDataRepository repo, IFieldDictionaryService? fieldDictionaryService = null)
         {
             _repo = repo;
+            _fieldDictionaryService = fieldDictionaryService;
             _cache = new Dictionary<int, DataRow>();
             _pagesBeingFetched = new HashSet<int>();
             _pageCompletionSources = new Dictionary<int, TaskCompletionSource<bool>>();
@@ -74,8 +81,77 @@ namespace SMS_Search.Data
             return await _repo.TableExistsAsync(_server, _database, _user, _pass, tableName, cancellationToken);
         }
 
+        public void LoadLocalTable(DataTable table)
+        {
+            _queryCts?.Cancel();
+            _baseSql = null;
+            _parameters = null;
+            _localTable = table;
+            SortColumn = null;
+            SortDirection = "ASC";
+            FilterText = null;
+            _rawFilterText = null;
+            _filterColumns = null;
+            _cache.Clear();
+            _cacheKeys.Clear();
+            _pagesBeingFetched.Clear();
+            _pageCompletionSources.Clear();
+            _columnSqlTypes.Clear();
+
+            RebuildLocalView();
+            UnfilteredCount = TotalCount;
+            DataReady?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void RebuildLocalView()
+        {
+            if (_localTable == null)
+            {
+                _localView = null;
+                TotalCount = 0;
+                return;
+            }
+
+            IEnumerable<DataRow> query = _localTable.Rows.Cast<DataRow>();
+
+            if (!string.IsNullOrWhiteSpace(_rawFilterText) && _filterColumns != null && _filterColumns.Count > 0)
+            {
+                string term = _rawFilterText.Trim();
+                query = query.Where(row => _filterColumns.Any(col =>
+                    _localTable.Columns.Contains(col) &&
+                    (row[col]?.ToString() ?? "").Contains(term, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            if (!string.IsNullOrEmpty(SortColumn) && _localTable.Columns.Contains(SortColumn))
+            {
+                string col = SortColumn;
+                query = SortDirection == "DESC"
+                    ? query.OrderByDescending(r => r[col] == DBNull.Value ? null : r[col], LocalValueComparer.Instance)
+                    : query.OrderBy(r => r[col] == DBNull.Value ? null : r[col], LocalValueComparer.Instance);
+            }
+
+            _localView = query.ToList();
+            TotalCount = _localView.Count;
+        }
+
+        private sealed class LocalValueComparer : IComparer<object?>
+        {
+            public static readonly LocalValueComparer Instance = new();
+            public int Compare(object? x, object? y)
+            {
+                if (x == null && y == null) return 0;
+                if (x == null) return -1;
+                if (y == null) return 1;
+                if (x is IComparable cx && x.GetType() == y.GetType())
+                    return cx.CompareTo(y);
+                return StringComparer.OrdinalIgnoreCase.Compare(x.ToString(), y.ToString());
+            }
+        }
+
         public async Task LoadAsync(string sql, object? parameters, string? initialSortColumn = null, CancellationToken cancellationToken = default)
         {
+            _localTable = null;
+            _localView = null;
             _baseSql = sql;
             _parameters = parameters;
             SortColumn = initialSortColumn;
@@ -137,10 +213,37 @@ namespace SMS_Search.Data
             return dp;
         }
 
+        private long CountLocalMatches(string searchText, IEnumerable<string> columns, bool countCells, int? limitRowIndex = null)
+        {
+            if (_localView == null || _localTable == null || string.IsNullOrWhiteSpace(searchText)) return 0;
+            string term = searchText.Trim();
+            var cols = columns.Where(c => _localTable.Columns.Contains(c)).ToList();
+            int limit = limitRowIndex.HasValue ? Math.Min(limitRowIndex.Value, _localView.Count) : _localView.Count;
+            long count = 0;
+
+            for (int i = 0; i < limit; i++)
+            {
+                var row = _localView[i];
+                int rowMatches = 0;
+                foreach (var col in cols)
+                {
+                    if ((row[col]?.ToString() ?? "").Contains(term, StringComparison.OrdinalIgnoreCase))
+                    {
+                        rowMatches++;
+                        if (!countCells) break;
+                    }
+                }
+                count += countCells ? rowMatches : (rowMatches > 0 ? 1 : 0);
+            }
+            return count;
+        }
+
         public async Task<long> GetTotalMatchCountAsync(CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(_rawFilterText) || _filterColumns == null || _filterColumns.Count == 0)
                 return 0;
+
+            if (_localTable != null) return CountLocalMatches(_rawFilterText, _filterColumns, countCells: false);
 
             var colTypes = new Dictionary<string, string?>();
             foreach(var col in _filterColumns)
@@ -157,6 +260,7 @@ namespace SMS_Search.Data
         public async Task<long> CountMatchesAsync(string searchText, IEnumerable<string> columns, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(searchText) || columns == null) return 0;
+            if (_localTable != null) return CountLocalMatches(searchText, columns, countCells: false);
 
             var colTypes = new Dictionary<string, string?>();
             foreach (var col in columns)
@@ -173,6 +277,7 @@ namespace SMS_Search.Data
         public async Task<long> GetTotalMatchedCellsCountAsync(string searchText, IEnumerable<string> columns, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(searchText) || columns == null) return 0;
+            if (_localTable != null) return CountLocalMatches(searchText, columns, countCells: true);
 
             var colTypes = new Dictionary<string, string?>();
             foreach (var col in columns)
@@ -190,6 +295,7 @@ namespace SMS_Search.Data
         {
             if (string.IsNullOrWhiteSpace(_rawFilterText) || _filterColumns == null || _filterColumns.Count == 0 || limitRowIndex <= 0)
                 return 0;
+            if (_localTable != null) return CountLocalMatches(_rawFilterText, _filterColumns, countCells: true, limitRowIndex);
 
             var colTypes = new Dictionary<string, string?>();
             foreach (var col in _filterColumns)
@@ -207,6 +313,7 @@ namespace SMS_Search.Data
         {
             if (string.IsNullOrWhiteSpace(_rawFilterText) || _filterColumns == null || _filterColumns.Count == 0 || limitRowIndex <= 0)
                 return 0;
+            if (_localTable != null) return CountLocalMatches(_rawFilterText, _filterColumns, countCells: false, limitRowIndex);
 
             var colTypes = new Dictionary<string, string?>();
             foreach (var col in _filterColumns)
@@ -222,6 +329,7 @@ namespace SMS_Search.Data
 
         public async Task WaitForRowAsync(int rowIndex)
         {
+            if (_localTable != null) return;
             if (_cache.ContainsKey(rowIndex)) return;
             GetValue(rowIndex, 0); // Trigger fetch
             if (_cache.ContainsKey(rowIndex)) return;
@@ -293,7 +401,12 @@ namespace SMS_Search.Data
                 _pagesBeingFetched.Clear();
                 _pageCompletionSources.Clear();
 
-                if (_server != null && _database != null && _baseSql != null)
+                if (_localTable != null)
+                {
+                    RebuildLocalView();
+                    DataReady?.Invoke(this, EventArgs.Empty);
+                }
+                else if (_server != null && _database != null && _baseSql != null)
                 {
                     TotalCount = await _repo.GetQueryCountAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, linkedToken);
                 }
@@ -314,6 +427,17 @@ namespace SMS_Search.Data
 
         public object? GetValue(int rowIndex, int colIndex)
         {
+            if (_localView != null)
+            {
+                if (rowIndex >= 0 && rowIndex < _localView.Count)
+                {
+                    var localRow = _localView[rowIndex];
+                    if (colIndex >= 0 && colIndex < localRow.Table.Columns.Count)
+                        return localRow[colIndex];
+                }
+                return "";
+            }
+
             // Prefetch next page logic
             int pageIndex = rowIndex / PageSize;
             int offsetInPage = rowIndex % PageSize;
@@ -455,6 +579,11 @@ namespace SMS_Search.Data
 
         public async Task<int> ExportToCsvAsync(string filename, Dictionary<string, string>? headerMap = null, bool includeHeaders = true, HashSet<string>? hiddenColumns = null, CancellationToken cancellationToken = default)
         {
+             if (_localTable != null && _localView != null)
+             {
+                 return await ExportLocalTableToCsvAsync(filename, headerMap, includeHeaders, hiddenColumns);
+             }
+
              string finalSql = BuildExportSql();
              if (_server == null || _database == null) return 0;
              int rowCount = 0;
@@ -915,9 +1044,65 @@ namespace SMS_Search.Data
             writer.Write('"');
         }
 
+        private async Task<int> ExportLocalTableToCsvAsync(string filename, Dictionary<string, string>? headerMap, bool includeHeaders, HashSet<string>? hiddenColumns)
+        {
+            if (_localTable == null || _localView == null) return 0;
+            int rowCount = 0;
+
+            using var writer = new StreamWriter(filename);
+            if (includeHeaders)
+            {
+                bool first = true;
+                for (int i = 0; i < _localTable.Columns.Count; i++)
+                {
+                    string colName = _localTable.Columns[i].ColumnName;
+                    if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+                    if (!first) await writer.WriteAsync(",");
+                    first = false;
+                    string header = (headerMap != null && headerMap.ContainsKey(colName)) ? headerMap[colName] : colName;
+                    WriteCsvCell(writer, header);
+                }
+                await writer.WriteLineAsync();
+            }
+
+            foreach (var row in _localView)
+            {
+                rowCount++;
+                bool first = true;
+                for (int i = 0; i < _localTable.Columns.Count; i++)
+                {
+                    string colName = _localTable.Columns[i].ColumnName;
+                    if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+                    if (!first) await writer.WriteAsync(",");
+                    first = false;
+                    var val = row[i];
+                    string sVal = val == DBNull.Value ? "" : val.ToString() ?? "";
+                    WriteCsvCell(writer, sVal);
+                }
+                await writer.WriteLineAsync();
+            }
+            return rowCount;
+        }
+
         public async Task<List<string>> GetAllMatchesAsync(string searchText, IEnumerable<string> searchColumns, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(searchText) || searchColumns == null) return new List<string>();
+            if (_localTable != null && _localView != null)
+            {
+                string term = searchText.Trim();
+                var cols = searchColumns.Where(c => _localTable.Columns.Contains(c)).ToList();
+                var matches = new List<string>();
+                foreach (var row in _localView)
+                {
+                    foreach (var col in cols)
+                    {
+                        string val = row[col]?.ToString() ?? "";
+                        if (val.Contains(term, StringComparison.OrdinalIgnoreCase))
+                            matches.Add(val);
+                    }
+                }
+                return matches;
+            }
 
             var colTypes = new Dictionary<string, string?>();
             foreach (var col in searchColumns)
@@ -934,6 +1119,22 @@ namespace SMS_Search.Data
         public async Task<int> FindMatchRowAsync(string searchText, IEnumerable<string> searchColumns, int startRowIndex, bool forward, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(searchText) || searchColumns == null) return -1;
+            if (_localTable != null && _localView != null)
+            {
+                string term = searchText.Trim();
+                var cols = searchColumns.Where(c => _localTable.Columns.Contains(c)).ToList();
+                if (_localView.Count == 0 || cols.Count == 0) return -1;
+
+                int step = forward ? 1 : -1;
+                for (int offset = 0; offset < _localView.Count; offset++)
+                {
+                    int idx = ((startRowIndex + offset * step) % _localView.Count + _localView.Count) % _localView.Count;
+                    var row = _localView[idx];
+                    if (cols.Any(c => (row[c]?.ToString() ?? "").Contains(term, StringComparison.OrdinalIgnoreCase)))
+                        return idx;
+                }
+                return -1;
+            }
 
             var colTypes = new Dictionary<string, string?>();
             foreach (var col in searchColumns)
@@ -949,6 +1150,11 @@ namespace SMS_Search.Data
 
         public async Task<List<string>> GetColumnDescriptionsAsync(IEnumerable<string> columns, CancellationToken cancellationToken = default)
         {
+            if (_fieldDictionaryService != null && _fieldDictionaryService.IsCsvActive())
+            {
+                return _fieldDictionaryService.GetColumnDescriptions(columns);
+            }
+
             if (_server == null || _database == null) return new List<string>();
             return await _repo.GetColumnDescriptionsAsync(_server, _database, _user, _pass, columns, cancellationToken);
         }

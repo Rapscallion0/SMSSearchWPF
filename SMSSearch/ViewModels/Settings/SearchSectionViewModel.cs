@@ -25,6 +25,7 @@ namespace SMS_Search.ViewModels.Settings
         private readonly IConnectionSettingsService _connectionSettingsService;
         private readonly ILoggerService _logger;
         private readonly IDialogService _dialogService;
+        private readonly IFieldDictionaryService? _fieldDictionaryService;
 
         public override string Title => "Search";
         public override ControlTemplate Icon => (ControlTemplate)System.Windows.Application.Current.FindResource("Icon_Nav_Search");
@@ -73,13 +74,15 @@ namespace SMS_Search.ViewModels.Settings
             IDataRepository dataRepository,
             IConnectionSettingsService connectionSettingsService,
             ILoggerService logger,
-            IDialogService dialogService)
+            IDialogService dialogService,
+            IFieldDictionaryService? fieldDictionaryService = null)
         {
             _repository = repository;
             _dataRepository = dataRepository;
             _connectionSettingsService = connectionSettingsService;
             _logger = logger;
             _dialogService = dialogService;
+            _fieldDictionaryService = fieldDictionaryService;
 
             FunctionColumns = _repository.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Function) ?? DefaultFunctionColumns;
             TotalizerColumns = _repository.GetValue(AppSettings.Sections.Query, AppSettings.Keys.Totalizer) ?? DefaultTotalizerColumns;
@@ -174,7 +177,8 @@ namespace SMS_Search.ViewModels.Settings
                 "FCT_TAB",
                 FunctionColumns,
                 DefaultFunctionColumns,
-                new[] { RequiredFunctionColumn });
+                new[] { RequiredFunctionColumn },
+                _fieldDictionaryService);
 
             if (_dialogService.ShowColumnPicker(vm) == true)
             {
@@ -193,7 +197,8 @@ namespace SMS_Search.ViewModels.Settings
                 "TLZ_TAB",
                 TotalizerColumns,
                 DefaultTotalizerColumns,
-                new[] { RequiredTotalizerColumn });
+                new[] { RequiredTotalizerColumn },
+                _fieldDictionaryService);
 
             if (_dialogService.ShowColumnPicker(vm) == true)
             {
