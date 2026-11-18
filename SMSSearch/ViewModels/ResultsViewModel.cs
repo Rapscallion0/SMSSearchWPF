@@ -92,8 +92,12 @@ namespace SMS_Search.ViewModels
             CopyRowCommand = new RelayCommand<IList>(CopyRow);
             CopyAsMarkdownCommand = new RelayCommand<IList>(CopyAsMarkdown);
             CopyAllMatchesCommand = new AsyncRelayCommand(CopyAllMatchesAsync, CanCopyAllMatches);
-            ToggleInspectorCommand = new RelayCommand(() => IsInspectorOpen = !IsInspectorOpen);
+            ToggleInspectorCommand = new RelayCommand(() => WeakReferenceMessenger.Default.Send(new ShowPanelMessage("RowInspector")));
             CopyInspectorValueCommand = new RelayCommand<RowInspectorField>(CopyInspectorValue);
+            CopyInspectorValuesCommand = new RelayCommand<IList>(CopyInspectorValues);
+            CopyInspectorColumnsCommand = new RelayCommand<IList>(CopyInspectorColumns);
+            CopyInspectorDescriptionsCommand = new RelayCommand<IList>(CopyInspectorDescriptions);
+            CopyInspectorRowsCommand = new RelayCommand<IList>(CopyInspectorRows);
             FindFieldUsageCommand = new RelayCommand<string>(FindFieldUsage);
             CopySelectionStatsCommand = new RelayCommand(CopySelectionStats);
 
@@ -249,9 +253,16 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         private string _headerToggleText = "Show Description";
 
+        [ObservableProperty]
+        private string? _sortColumn;
+
+        [ObservableProperty]
+        private ListSortDirection? _sortDirection;
+
         private string? _toggledColumnName;
 
         public SearchCriteria? CurrentSearchCriteria { get; private set; }
+        public List<string> ColumnOrder { get; } = new();
 
         public event EventHandler<(int RowIndex, string ColumnName)>? ScrollToCellRequested;
         public event EventHandler<string?>? HeadersUpdated;
@@ -279,6 +290,10 @@ namespace SMS_Search.ViewModels
         public IAsyncRelayCommand CopyAllMatchesCommand { get; }
         public IRelayCommand ToggleInspectorCommand { get; }
         public IRelayCommand<RowInspectorField> CopyInspectorValueCommand { get; }
+        public IRelayCommand<IList> CopyInspectorValuesCommand { get; }
+        public IRelayCommand<IList> CopyInspectorColumnsCommand { get; }
+        public IRelayCommand<IList> CopyInspectorDescriptionsCommand { get; }
+        public IRelayCommand<IList> CopyInspectorRowsCommand { get; }
         public IRelayCommand<string> FindFieldUsageCommand { get; }
         public IRelayCommand CopySelectionStatsCommand { get; }
 
@@ -422,6 +437,7 @@ namespace SMS_Search.ViewModels
         public async Task ExecuteSearchAsync(SearchCriteria criteria)
         {
             CurrentSearchCriteria = criteria;
+            ColumnOrder.Clear();
 
             _cts?.Cancel();
             _cts?.Dispose();
@@ -502,6 +518,8 @@ namespace SMS_Search.ViewModels
                 _lastSchema = await schemaTask;
                 _ = UpdateHeadersAsync(); // This runs async but doesn't block UI much
 
+                SyncSortStateFromContext();
+
                 // Create new collection
                 SearchResults = new VirtualizingCollection(_gridContext, _lastSchema);
 
@@ -549,7 +567,8 @@ namespace SMS_Search.ViewModels
             {
                 try
                 {
-                    var sqlCriteria = criteria.Type == SearchType.Description
+                    bool hasCompound = criteria.RootGroup != null && criteria.RootGroup.Children.Count > 0;
+                    var sqlCriteria = (criteria.Type == SearchType.Description || hasCompound)
                         ? new SearchCriteria
                         {
                             Mode = SearchMode.Field,
@@ -590,6 +609,7 @@ namespace SMS_Search.ViewModels
 
             sw.Stop();
             _lastElapsedText = FormatElapsed(sw.Elapsed);
+            SyncSortStateFromContext();
             SearchResults = new VirtualizingCollection(_gridContext, _lastSchema);
             TotalRecords = _gridContext.TotalCount;
             StatusText = isOffline
@@ -611,6 +631,7 @@ namespace SMS_Search.ViewModels
             {
                 IsBusy = true;
                 await _gridContext.ApplySortAsync(columnName, token);
+                SyncSortStateFromContext();
 
                 if (_lastSchema != null)
                 {
@@ -628,7 +649,24 @@ namespace SMS_Search.ViewModels
             }
             finally
             {
+                SyncSortStateFromContext();
                 IsBusy = false;
+            }
+        }
+
+        private void SyncSortStateFromContext()
+        {
+            if (string.IsNullOrEmpty(_gridContext.SortColumn))
+            {
+                SortColumn = null;
+                SortDirection = null;
+            }
+            else
+            {
+                SortColumn = _gridContext.SortColumn;
+                SortDirection = string.Equals(_gridContext.SortDirection, "DESC", StringComparison.OrdinalIgnoreCase)
+                    ? ListSortDirection.Descending
+                    : ListSortDirection.Ascending;
             }
         }
 
@@ -660,6 +698,7 @@ namespace SMS_Search.ViewModels
 
                  // Explicitly update collection to ensure DataGrid resets correctly
                  // This avoids "index -1" errors when count changes significantly
+                 SyncSortStateFromContext();
                  if (_lastSchema != null)
                  {
                      SearchResults = new VirtualizingCollection(_gridContext, _lastSchema);
@@ -705,13 +744,10 @@ namespace SMS_Search.ViewModels
         public void SetInspectedRow(VirtualRow? row)
         {
             _inspectedRow = row;
-            if (IsInspectorOpen)
+            UpdateInspectorFields(row);
+            if (_columnDescriptions.Count == 0 && row != null)
             {
-                UpdateInspectorFields(row);
-                if (_columnDescriptions.Count == 0)
-                {
-                    _ = RefreshInspectorAsync();
-                }
+                _ = RefreshInspectorAsync();
             }
         }
 
@@ -720,12 +756,7 @@ namespace SMS_Search.ViewModels
             if (value is VirtualRow vRow)
             {
                 SetCurrentRowIndex(vRow.RowIndex);
-                _inspectedRow = vRow;
-            }
-
-            if (IsInspectorOpen)
-            {
-                _ = RefreshInspectorAsync();
+                SetInspectedRow(vRow);
             }
         }
 
@@ -819,6 +850,12 @@ namespace SMS_Search.ViewModels
         private void CopyInspectorValue(RowInspectorField? field)
         {
             if (field == null) return;
+            if (string.IsNullOrEmpty(field.Value))
+            {
+                _dialogService.ShowToast($"No value to copy for {field.ColumnName}", "Inspector", SMS_Search.Views.ToastType.Info);
+                return;
+            }
+
             try
             {
                 _clipboardService.SetText(field.Value);
@@ -828,6 +865,86 @@ namespace SMS_Search.ViewModels
             {
                 _logger.LogError("Failed to copy inspector value", ex);
             }
+        }
+
+        private void CopyInspectorValues(IList? selectedItems) =>
+            CopyInspectorItems(selectedItems, f => f.Value, "No values to copy", "value", "values");
+
+        private void CopyInspectorColumns(IList? selectedItems) =>
+            CopyInspectorItems(selectedItems, f => f.ColumnName, "No column names to copy", "column name", "column names");
+
+        private void CopyInspectorDescriptions(IList? selectedItems) =>
+            CopyInspectorItems(selectedItems, f => f.Description, "No descriptions to copy", "description", "descriptions");
+
+        private void CopyInspectorRows(IList? selectedItems) =>
+            CopyInspectorItems(selectedItems, f => $"{f.ColumnName}\t{f.Description}\t{f.Value}", "No rows to copy", "row", "rows");
+
+        private void CopyInspectorItems(
+            IList? selectedItems,
+            Func<RowInspectorField, string?> selector,
+            string emptyToastMessage,
+            string singleLabel,
+            string pluralLabel)
+        {
+            var fields = GetOrderedInspectorFields(selectedItems);
+            if (fields.Count == 0) return;
+
+            var values = fields
+                .Select(selector)
+                .Where(v => !string.IsNullOrEmpty(v))
+                .ToList();
+
+            if (values.Count == 0)
+            {
+                _dialogService.ShowToast(emptyToastMessage, "Inspector", SMS_Search.Views.ToastType.Info);
+                return;
+            }
+
+            try
+            {
+                _clipboardService.SetText(string.Join(Environment.NewLine, values));
+                string message = values.Count == 1
+                    ? $"Copied {singleLabel}"
+                    : $"Copied {values.Count} {pluralLabel}";
+                _dialogService.ShowToast(message, "Inspector", SMS_Search.Views.ToastType.Success);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to copy inspector selection", ex);
+            }
+        }
+
+        private List<RowInspectorField> GetOrderedInspectorFields(IList? selectedItems)
+        {
+            if (selectedItems == null || selectedItems.Count == 0)
+            {
+                return new List<RowInspectorField>();
+            }
+
+            var selectedSet = new HashSet<RowInspectorField>();
+            foreach (var item in selectedItems)
+            {
+                if (item is RowInspectorField field)
+                {
+                    selectedSet.Add(field);
+                }
+            }
+
+            if (selectedSet.Count == 0)
+            {
+                return new List<RowInspectorField>();
+            }
+
+            var ordered = new List<RowInspectorField>(selectedSet.Count);
+            foreach (var field in InspectorFields)
+            {
+                if (selectedSet.Contains(field))
+                {
+                    ordered.Add(field);
+                }
+            }
+
+            return ordered;
         }
 
         private void FindFieldUsage(string? columnName)

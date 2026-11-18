@@ -9,319 +9,657 @@
              xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SearchViewModel}"
-             d:DesignHeight="400" d:DesignWidth="569.031"
+             d:DesignHeight="220" d:DesignWidth="665"
+             Background="{DynamicResource AppBackgroundBrush}"
+             Foreground="{DynamicResource PrimaryTextBrush}"
              Loaded="UserControl_Loaded" Unloaded="UserControl_Unloaded">
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
         <conv:BoolToVisibilityConverter x:Key="BoolToCollapsed" Invert="True"/>
-        <conv:EnumToIntConverter x:Key="EnumToIntConverter"/>
+        <conv:BoolToHiddenConverter x:Key="BoolToHidden" Invert="True"/>
+        <conv:EnumDescriptionConverter x:Key="EnumDescriptionConverter"/>
+
+        <!-- Segmented Mode Pill Style -->
+        <Style x:Key="SegmentedRadioStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="12,4"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBackgroundBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SubtleActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushKey}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,3"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBackgroundBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
-    <Grid>
-        <TabControl SelectedIndex="{Binding SelectedMode, Mode=TwoWay, Converter={StaticResource EnumToIntConverter}}" SelectionChanged="TabControl_SelectionChanged">
-            <TabItem Header="Function">
-                <Grid Margin="10">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+        <Grid Margin="10,8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-                    <!-- Number -->
-                    <Grid Grid.Row="0" Margin="0,0,0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsFunctionNumber}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionNumberBox" NumericOnly="True" Text="{Binding FunctionNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionNumberBox_GotFocus" Placeholder="Search... (* ?)">
-                            <ctrl:ClearableTextBox.InputBindings>
-                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                            </ctrl:ClearableTextBox.InputBindings>
-                        </ctrl:ClearableTextBox>
-                        <Button Grid.Column="2" Tag="Number" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
-                        </Button>
-                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Number" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
-                        </Button>
-                    </Grid>
+            <!-- Top Mode & Builder Bar -->
+            <Grid Grid.Row="0" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                    <!-- Description -->
-                    <Grid Grid.Row="1" Margin="0,0,0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsFunctionDescription}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FunctionDescriptionBox" Text="{Binding FunctionDescriptionText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FunctionDescriptionBox_GotFocus" Placeholder="Search... (* ?)">
-                            <ctrl:ClearableTextBox.InputBindings>
-                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                            </ctrl:ClearableTextBox.InputBindings>
-                        </ctrl:ClearableTextBox>
-                        <ToggleButton Grid.Column="2" IsChecked="{Binding IsFunctionAnyMatch}" Margin="5,0,0,0" ToolTip="Any Match (*)" Background="Transparent" BorderThickness="0" Cursor="Hand" Width="16" Height="16">
-                            <TextBlock Text="*" FontWeight="Bold" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                        </ToggleButton>
-                        <Button Grid.Column="3" Tag="Description" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
-                        </Button>
-                        <Button Grid.Column="4" Command="{Binding BuildSqlCommand}" CommandParameter="Description" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
-                        </Button>
-                    </Grid>
+                <!-- Segmented Mode Selector -->
+                <Border Grid.Column="0"
+                        Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrushKey}"
+                        BorderThickness="1"
+                        CornerRadius="5"
+                        Padding="2">
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton Content="Function"
+                                     Style="{StaticResource SegmentedRadioStyle}"
+                                     IsChecked="{Binding IsFunctionMode}"
+                                     GroupName="SearchModeGroup"
+                                     Checked="ModeRadio_Checked"/>
+                        <RadioButton Content="Totalizer"
+                                     Style="{StaticResource SegmentedRadioStyle}"
+                                     IsChecked="{Binding IsTotalizerMode}"
+                                     GroupName="SearchModeGroup"
+                                     Checked="ModeRadio_Checked"/>
+                        <RadioButton Content="Fields"
+                                     Style="{StaticResource SegmentedRadioStyle}"
+                                     IsChecked="{Binding IsFieldsTabActive}"
+                                     GroupName="SearchModeGroup"
+                                     Checked="ModeRadio_Checked"/>
+                        <RadioButton Content="Records"
+                                     Style="{StaticResource SegmentedRadioStyle}"
+                                     IsChecked="{Binding IsRecordsTabActive}"
+                                     GroupName="SearchModeGroup"
+                                     Checked="ModeRadio_Checked"/>
+                    </StackPanel>
+                </Border>
 
-                    <!-- Custom SQL Radio -->
-                    <Grid Grid.Row="2" Margin="0,0,0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsFunctionCustomSql}" GroupName="FctType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="Saved" Command="{Binding ShowSavedQueriesCommand}" Height="25" ToolTip="Saved Queries &amp; Snippets" Margin="0,0,5,0" Padding="8,0"/>
-                            <Button Content="Clean SQL" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
-                            <Button Tag="CustomSql" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
+                <!-- Right Controls: Advanced Mode Toggle + Search -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding ToggleMultiClauseCommand}"
+                            Style="{StaticResource SubtleActionButtonStyle}"
+                            ToolTip="Switch between Simple Mode and Advanced Multi-Clause AND/OR Search">
+                        <TextBlock>
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="Advanced Mode"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsMultiClauseMode}" Value="True">
+                                            <Setter Property="Text" Value="Simple Mode"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Button>
 
-                    <!-- SQL Editor -->
-                    <ctrl:SqlEditor Grid.Row="3" x:Name="FunctionSqlEditor" Text="{Binding FunctionSqlText, UpdateSourceTrigger=PropertyChanged}" SelectedText="{Binding FunctionSqlSelectedText, Mode=OneWayToSource}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="FunctionSqlEditor_GotFocus"/>
+                    <Button Content="Search"
+                            Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            Margin="8,0,0,0"
+                            Padding="12,3"
+                            FontSize="11.5"
+                            FontWeight="SemiBold"
+                            Foreground="White"
+                            Cursor="Hand"
+                            ToolTip="Execute Search (F5 / Enter)">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bd"
+                                                    Background="{TemplateBinding Background}"
+                                                    CornerRadius="4"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="Bd" Property="Opacity" Value="0.75"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </Grid>
 
-                    <!-- Any Match removed -->
+            <!-- Simple Unified Criteria Panel -->
+            <StackPanel Grid.Row="1" Visibility="{Binding IsSimpleCriteriaVisible, Converter={StaticResource BoolToVis}}">
+                <!-- Number Row (hidden in Query Records mode) -->
+                <Grid Margin="0,0,0,5" Visibility="{Binding IsQueryRecordsActive, Converter={StaticResource BoolToCollapsed}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="95"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <RadioButton Content="Number"
+                                 Tag="Number"
+                                 IsChecked="{Binding IsActiveNumber}"
+                                 GroupName="SimpleSearchType"
+                                 Checked="SearchType_Checked"
+                                 VerticalAlignment="Center"/>
+                    <ctrl:ClearableTextBox Grid.Column="1"
+                                           x:Name="SimpleNumberBox"
+                                           NumericOnly="True"
+                                           PrefixText="{Binding NumberPrefixText}"
+                                           Text="{Binding ActiveNumberText, UpdateSourceTrigger=PropertyChanged}"
+                                           Height="25"
+                                           GotFocus="SimpleNumberBox_GotFocus"
+                                           Placeholder="Search... (* ?)">
+                        <ctrl:ClearableTextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                        </ctrl:ClearableTextBox.InputBindings>
+                    </ctrl:ClearableTextBox>
+                    <Button Grid.Column="2"
+                            Tag="Number"
+                            Command="{Binding ShowHistoryCommand}"
+                            CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                            Margin="5,0,0,0"
+                            ToolTip="History"
+                            Style="{StaticResource TransparentIconButtonStyle}">
+                        <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                    </Button>
+                    <Button Grid.Column="3"
+                            Command="{Binding BuildSqlCommand}"
+                            CommandParameter="Number"
+                            Margin="5,0,0,0"
+                            ToolTip="Build SQL"
+                            Style="{StaticResource TransparentIconButtonStyle}">
+                        <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
+                    </Button>
                 </Grid>
-            </TabItem>
 
-            <TabItem Header="Totalizer">
-                <Grid Margin="10">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Number -->
-                    <Grid Grid.Row="0" Margin="0,0,0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsTotalizerNumber}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerNumberBox" NumericOnly="True" Text="{Binding TotalizerNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerNumberBox_GotFocus" Placeholder="Search... (* ?)">
-                            <ctrl:ClearableTextBox.InputBindings>
-                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                            </ctrl:ClearableTextBox.InputBindings>
-                        </ctrl:ClearableTextBox>
-                        <Button Grid.Column="2" Tag="Number" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
-                        </Button>
-                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Number" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
-                        </Button>
-                    </Grid>
-
-                    <!-- Description -->
-                    <Grid Grid.Row="1" Margin="0,0,0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsTotalizerDescription}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="TotalizerDescriptionBox" Text="{Binding TotalizerDescriptionText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="TotalizerDescriptionBox_GotFocus" Placeholder="Search... (* ?)">
-                            <ctrl:ClearableTextBox.InputBindings>
-                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                            </ctrl:ClearableTextBox.InputBindings>
-                        </ctrl:ClearableTextBox>
-                        <ToggleButton Grid.Column="2" IsChecked="{Binding IsTotalizerAnyMatch}" Margin="5,0,0,0" ToolTip="Any Match (*)" Background="Transparent" BorderThickness="0" Cursor="Hand" Width="16" Height="16">
-                            <TextBlock Text="*" FontWeight="Bold" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                        </ToggleButton>
-                        <Button Grid.Column="3" Tag="Description" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
-                        </Button>
-                        <Button Grid.Column="4" Command="{Binding BuildSqlCommand}" CommandParameter="Description" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
-                        </Button>
-                    </Grid>
-
-                    <!-- Custom SQL -->
-                    <Grid Grid.Row="2" Margin="0,0,0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsTotalizerCustomSql}" GroupName="TlzType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="Saved" Command="{Binding ShowSavedQueriesCommand}" Height="25" ToolTip="Saved Queries &amp; Snippets" Margin="0,0,5,0" Padding="8,0"/>
-                            <Button Content="Clean" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
-                            <Button Tag="CustomSql" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- SQL Editor -->
-                    <ctrl:SqlEditor Grid.Row="3" x:Name="TotalizerSqlEditor" Text="{Binding TotalizerSqlText, UpdateSourceTrigger=PropertyChanged}" SelectedText="{Binding TotalizerSqlSelectedText, Mode=OneWayToSource}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="TotalizerSqlEditor_GotFocus"/>
-
-                    <!-- Any Match removed -->
+                <!-- Description Row (hidden in Query Records mode) -->
+                <Grid Margin="0,0,0,5" Visibility="{Binding IsQueryRecordsActive, Converter={StaticResource BoolToCollapsed}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="95"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <RadioButton Content="Description"
+                                 Tag="Description"
+                                 IsChecked="{Binding IsActiveDescription}"
+                                 GroupName="SimpleSearchType"
+                                 Checked="SearchType_Checked"
+                                 VerticalAlignment="Center"/>
+                    <ctrl:ClearableTextBox Grid.Column="1"
+                                           x:Name="SimpleDescriptionBox"
+                                           Text="{Binding ActiveDescriptionText, UpdateSourceTrigger=PropertyChanged}"
+                                           Height="25"
+                                           GotFocus="SimpleDescriptionBox_GotFocus"
+                                           Placeholder="Search... (* ?)">
+                        <ctrl:ClearableTextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                        </ctrl:ClearableTextBox.InputBindings>
+                    </ctrl:ClearableTextBox>
+                    <ToggleButton Grid.Column="2"
+                                  IsChecked="{Binding ActiveAnyMatch}"
+                                  Margin="5,0,0,0"
+                                  ToolTip="Any Match (*)"
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  Cursor="Hand"
+                                  Width="16"
+                                  Height="16">
+                        <TextBlock Text="*" FontWeight="Bold" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    </ToggleButton>
+                    <Button Grid.Column="3"
+                            Tag="Description"
+                            Command="{Binding ShowHistoryCommand}"
+                            CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                            Margin="5,0,0,0"
+                            ToolTip="History"
+                            Style="{StaticResource TransparentIconButtonStyle}">
+                        <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
+                    </Button>
+                    <Button Grid.Column="4"
+                            Command="{Binding BuildSqlCommand}"
+                            CommandParameter="Description"
+                            Margin="5,0,0,0"
+                            ToolTip="Build SQL"
+                            Style="{StaticResource TransparentIconButtonStyle}">
+                        <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
+                    </Button>
                 </Grid>
-            </TabItem>
 
-            <TabItem Header="Fields">
-                <Grid Margin="10">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                <!-- Table Row (visible in Fields mode) -->
+                <Grid Margin="0,0,0,5" Visibility="{Binding IsFieldMode, Converter={StaticResource BoolToVis}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="95"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <RadioButton Content="Table"
+                                 Tag="Table"
+                                 IsChecked="{Binding IsActiveFieldTable}"
+                                 GroupName="SimpleSearchType"
+                                 Checked="SearchType_Checked"
+                                 VerticalAlignment="Center"/>
+                    <ComboBox Grid.Column="1"
+                              x:Name="TableComboBox"
+                              MinWidth="100"
+                              ItemsSource="{Binding Tables}"
+                              SelectedItem="{Binding SelectedTable}"
+                              Height="25"
+                              GotFocus="ComboBox_GotFocus"
+                              Margin="0,0,5,0"
+                              IsEditable="True"
+                              IsTextSearchEnabled="False"
+                              StaysOpenOnEdit="True"
+                              KeyUp="TableComboBox_KeyUp"
+                              PreviewKeyDown="TableComboBox_PreviewKeyDown"
+                              VirtualizingStackPanel.IsVirtualizing="True"
+                              VirtualizingStackPanel.VirtualizationMode="Recycling"
+                              PreviewMouseDoubleClick="TableComboBox_PreviewMouseDoubleClick"
+                              LostFocus="TableComboBox_LostFocus">
+                        <ComboBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                        </ComboBox.InputBindings>
+                    </ComboBox>
 
-                    <!-- Number -->
-                    <Grid Grid.Row="0" Margin="0,0,0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <RadioButton Content="Number" Tag="Number" IsChecked="{Binding IsFieldNumber}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldNumberBox" NumericOnly="True" Text="{Binding FieldNumberText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldNumberBox_GotFocus" Placeholder="Search... (* ?)" PrefixText="F">
-                            <ctrl:ClearableTextBox.InputBindings>
-                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                            </ctrl:ClearableTextBox.InputBindings>
-                        </ctrl:ClearableTextBox>
-                        <Button Grid.Column="2" Tag="Number" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
-                        </Button>
-                        <Button Grid.Column="3" Command="{Binding BuildSqlCommand}" CommandParameter="Number" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
-                        </Button>
-                    </Grid>
+                    <Button Grid.Column="2"
+                            Command="{Binding RefreshTablesCommand}"
+                            Style="{StaticResource TransparentIconButtonStyle}"
+                            ToolTip="Refresh Tables"
+                            Margin="0,0,5,0"
+                            Width="25"
+                            Height="25">
+                        <Control Template="{StaticResource Icon_Refresh}" Width="16" Height="16" RenderTransformOrigin="0.5,0.5">
+                            <Control.Style>
+                                <Style TargetType="Control">
+                                    <Setter Property="RenderTransform">
+                                        <Setter.Value>
+                                            <RotateTransform Angle="0"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsRefreshingTables}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard x:Name="SpinStoryboard">
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                         From="0" To="360" Duration="0:0:1" RepeatBehavior="Forever"/>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <StopStoryboard BeginStoryboardName="SpinStoryboard"/>
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Control.Style>
+                        </Control>
+                    </Button>
 
-                    <!-- Description -->
-                    <Grid Grid.Row="1" Margin="0,0,0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <RadioButton Content="Description" Tag="Description" IsChecked="{Binding IsFieldDescription}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ctrl:ClearableTextBox Grid.Column="1" x:Name="FieldDescriptionBox" Text="{Binding FieldDescriptionText, UpdateSourceTrigger=PropertyChanged}" Height="25" GotFocus="FieldDescriptionBox_GotFocus" Placeholder="Search... (* ?)">
-                            <ctrl:ClearableTextBox.InputBindings>
-                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                            </ctrl:ClearableTextBox.InputBindings>
-                        </ctrl:ClearableTextBox>
-                        <ToggleButton Grid.Column="2" IsChecked="{Binding IsFieldAnyMatch}" Margin="5,0,0,0" ToolTip="Any Match (*)" Background="Transparent" BorderThickness="0" Cursor="Hand" Width="16" Height="16">
-                            <TextBlock Text="*" FontWeight="Bold" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                        </ToggleButton>
-                        <Button Grid.Column="3" Tag="Description" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Margin="5,0,0,0" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
-                        </Button>
-                        <Button Grid.Column="4" Command="{Binding BuildSqlCommand}" CommandParameter="Description" Margin="5,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}">
-                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
-                        </Button>
-                    </Grid>
+                    <Button Grid.Column="3"
+                            Command="{Binding BuildSqlCommand}"
+                            CommandParameter="Table"
+                            Margin="2,0,0,0"
+                            ToolTip="Build SQL"
+                            Style="{StaticResource TransparentIconButtonStyle}"
+                            VerticalAlignment="Center">
+                        <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
+                    </Button>
 
-                    <!-- Table -->
-                    <Grid Grid.Row="2" Margin="0,0,0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <RadioButton Content="Table" Tag="Table" IsChecked="{Binding IsFieldTable}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="1" x:Name="TableComboBox" ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" Height="25" GotFocus="ComboBox_GotFocus" Margin="0,0,5,0"
-                                  IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True" KeyUp="TableComboBox_KeyUp" PreviewKeyDown="TableComboBox_PreviewKeyDown"
-                                  VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling" PreviewMouseDoubleClick="TableComboBox_PreviewMouseDoubleClick" LostFocus="TableComboBox_LostFocus">
-                            <ComboBox.InputBindings>
-                                <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                            </ComboBox.InputBindings>
-                        </ComboBox>
-
-                        <Button Grid.Column="2" Command="{Binding RefreshTablesCommand}" Style="{StaticResource TransparentIconButtonStyle}" ToolTip="Refresh Tables" Margin="0,0,5,0" Width="25" Height="25">
-                            <Control Template="{StaticResource Icon_Refresh}" Width="16" Height="16" RenderTransformOrigin="0.5,0.5">
-                                <Control.Style>
-                                    <Style TargetType="Control">
-                                        <Setter Property="RenderTransform">
-                                            <Setter.Value>
-                                                <RotateTransform Angle="0"/>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsRefreshingTables}" Value="True">
-                                                <DataTrigger.EnterActions>
-                                                    <BeginStoryboard x:Name="SpinStoryboard">
-                                                        <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
-                                                                             From="0" To="360" Duration="0:0:1" RepeatBehavior="Forever"/>
-                                                        </Storyboard>
-                                                    </BeginStoryboard>
-                                                </DataTrigger.EnterActions>
-                                                <DataTrigger.ExitActions>
-                                                    <StopStoryboard BeginStoryboardName="SpinStoryboard"/>
-                                                </DataTrigger.ExitActions>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Control.Style>
-                            </Control>
-                        </Button>
-
-                        <RadioButton Grid.Column="3" Content="Query Fields" IsChecked="{Binding ShowFields}" GroupName="FldAction" VerticalAlignment="Center" Margin="5,0,0,0"/>
-                        <RadioButton Grid.Column="4" Content="Query Records" IsChecked="{Binding ShowRecords}" GroupName="FldAction" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                        <Button Grid.Column="5" Command="{Binding BuildSqlCommand}" CommandParameter="Table" Margin="10,0,0,0" ToolTip="Build SQL" Style="{StaticResource TransparentIconButtonStyle}" VerticalAlignment="Center">
-                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
-                        </Button>
-                        <CheckBox Grid.Column="6" Content="Last Transaction" IsChecked="{Binding LastTransaction}" Margin="10,0,0,0" Visibility="{Binding IsLastTransactionVisible, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center"/>
-
-                    </Grid>
-
-                    <!-- Custom SQL -->
-                    <Grid Grid.Row="4" Margin="0,0,0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <RadioButton Content="Custom SQL" Tag="CustomSql" IsChecked="{Binding IsFieldCustomSql}" GroupName="FldType" Checked="SearchType_Checked" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="Saved" Command="{Binding ShowSavedQueriesCommand}" Height="25" ToolTip="Saved Queries &amp; Snippets" Margin="0,0,5,0" Padding="8,0"/>
-                            <Button Content="Clean SQL" Command="{Binding CleanSqlCommand}" Height="25" ToolTip="Clean SQL" Margin="0,0,5,0"/>
-                            <Button Tag="CustomSql" Command="{Binding ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" ToolTip="History" Style="{StaticResource TransparentIconButtonStyle}">
-                                <Control Template="{StaticResource Icon_History}" Width="16" Height="16"/>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- SQL Editor -->
-                    <ctrl:SqlEditor Grid.Row="5" x:Name="FieldSqlEditor" Text="{Binding FieldSqlText, UpdateSourceTrigger=PropertyChanged}" SelectedText="{Binding FieldSqlSelectedText, Mode=OneWayToSource}" EditorFontFamily="{Binding SqlFontFamily}" EditorFontSize="{Binding SqlFontSize}" Margin="0,0,0,5" GotFocus="FieldSqlEditor_GotFocus"/>
-
-                    <!-- Any Match removed -->
+                    <CheckBox Grid.Column="4"
+                              Content="Last Transaction"
+                              IsChecked="{Binding LastTransaction}"
+                              Margin="10,0,0,0"
+                              Visibility="{Binding IsLastTransactionVisible, Converter={StaticResource BoolToVis}}"
+                              VerticalAlignment="Center"/>
                 </Grid>
-            </TabItem>
-        </TabControl>
-    </Grid>
+            </StackPanel>
+
+            <!-- Multi-Clause AND/OR Builder Panel -->
+            <Grid Grid.Row="2" Visibility="{Binding IsMultiClauseVisible, Converter={StaticResource BoolToVis}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Target Table Header (Query Records in Advanced Mode) -->
+                <Grid Grid.Row="0" Margin="0,0,0,8" Visibility="{Binding IsRecordMultiClauseMode, Converter={StaticResource BoolToVis}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="46"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Table" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    <ComboBox Grid.Column="1"
+                              ItemsSource="{Binding Tables}"
+                              SelectedItem="{Binding SelectedTable}"
+                              Height="25"
+                              IsEditable="True"
+                              Margin="0,0,5,0"
+                              VirtualizingStackPanel.IsVirtualizing="True"
+                              VirtualizingStackPanel.VirtualizationMode="Recycling">
+                        <ComboBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                        </ComboBox.InputBindings>
+                    </ComboBox>
+                    <Button Grid.Column="2"
+                            Command="{Binding RefreshTablesCommand}"
+                            Style="{StaticResource TransparentIconButtonStyle}"
+                            ToolTip="Refresh Tables"
+                            Width="25"
+                            Height="25">
+                        <Control Template="{StaticResource Icon_Refresh}" Width="16" Height="16"/>
+                    </Button>
+                    <CheckBox Grid.Column="3"
+                              Content="Last Transaction"
+                              IsChecked="{Binding LastTransaction}"
+                              Margin="10,0,0,0"
+                              Visibility="{Binding IsLastTransactionVisible, Converter={StaticResource BoolToVis}}"
+                              VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- Column Headers -->
+                <Grid Grid.Row="1" Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="64"/>
+                        <ColumnDefinition Width="22"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="62"/>
+                        <ColumnDefinition Width="102"/>
+                        <ColumnDefinition Width="112"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="28"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="3" Text="And/Or" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="2,0"/>
+                    <TextBlock Grid.Column="4" Text="Field" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="2,0"/>
+                    <TextBlock Grid.Column="5" Text="Operator" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="2,0"/>
+                    <TextBlock Grid.Column="6" Text="Value" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="2,0"/>
+                </Grid>
+
+                <!-- Clause Rows -->
+                <ItemsControl Grid.Row="2" x:Name="ClausesItemsControl" ItemsSource="{Binding Clauses}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:SearchClauseRowViewModel}">
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="64"/>
+                                    <ColumnDefinition Width="22"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="62"/>
+                                    <ColumnDefinition Width="102"/>
+                                    <ColumnDefinition Width="112"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="28"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Insert / Remove / Move Buttons -->
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Content="+"
+                                            FontWeight="Bold"
+                                            FontSize="13"
+                                            Width="15"
+                                            Height="22"
+                                            Padding="0"
+                                            ToolTip="Insert clause below"
+                                            Style="{StaticResource TransparentIconButtonStyle}"
+                                            Command="{Binding DataContext.InsertClauseAfterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                    <Button Content="×"
+                                            FontWeight="Bold"
+                                            FontSize="13"
+                                            Width="15"
+                                            Height="22"
+                                            Padding="0"
+                                            ToolTip="Remove clause"
+                                            Style="{StaticResource TransparentIconButtonStyle}"
+                                            Command="{Binding DataContext.RemoveClauseCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                    <Button Content="↑"
+                                            FontWeight="Bold"
+                                            FontSize="11"
+                                            Width="15"
+                                            Height="22"
+                                            Padding="0"
+                                            ToolTip="Move clause up"
+                                            Visibility="{Binding IsFirstRow, Converter={StaticResource BoolToHidden}}"
+                                            Style="{StaticResource TransparentIconButtonStyle}"
+                                            Command="{Binding DataContext.MoveClauseUpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                    <Button Content="↓"
+                                            FontWeight="Bold"
+                                            FontSize="11"
+                                            Width="15"
+                                            Height="22"
+                                            Padding="0"
+                                            ToolTip="Move clause down"
+                                            Visibility="{Binding IsLastRow, Converter={StaticResource BoolToHidden}}"
+                                            Style="{StaticResource TransparentIconButtonStyle}"
+                                            Command="{Binding DataContext.MoveClauseDownCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </StackPanel>
+
+                                <!-- Group Selection Checkbox -->
+                                <CheckBox Grid.Column="1"
+                                          IsChecked="{Binding IsSelectedForGroup, Mode=TwoWay}"
+                                          VerticalAlignment="Center"
+                                          HorizontalAlignment="Center"
+                                          ToolTip="Select contiguous clauses to Group or Ungroup"/>
+
+                                <!-- Nested Group Bracket Indicators -->
+                                <ItemsControl Grid.Column="2" ItemsSource="{Binding GroupBrackets}" VerticalAlignment="Stretch">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:GroupBracketIndicator}">
+                                            <Border Width="6" Margin="1,0" BorderBrush="{DynamicResource AccentBrush}">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="BorderThickness" Value="2,0,0,0"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Part}" Value="Top">
+                                                                <Setter Property="BorderThickness" Value="2,2,0,0"/>
+                                                                <Setter Property="Margin" Value="1,3,1,0"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Part}" Value="Bottom">
+                                                                <Setter Property="BorderThickness" Value="2,0,0,2"/>
+                                                                <Setter Property="Margin" Value="1,0,1,3"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Part}" Value="Single">
+                                                                <Setter Property="BorderThickness" Value="2,2,0,2"/>
+                                                                <Setter Property="Margin" Value="1,3,1,3"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- And / Or -->
+                                <ComboBox Grid.Column="3"
+                                          ItemsSource="{Binding DataContext.AvailableLogicalOperators, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          SelectedItem="{Binding LogicalOperator}"
+                                          Visibility="{Binding IsFirstRow, Converter={StaticResource BoolToHidden}}"
+                                          Height="25"
+                                          Margin="0,0,4,0"/>
+
+                                <!-- Field or ColumnName -->
+                                <Grid Grid.Column="4" Margin="0,0,4,0">
+                                    <ComboBox ItemsSource="{Binding DataContext.AvailableClauseFields, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              SelectedItem="{Binding Field}"
+                                              Height="25"
+                                              Visibility="{Binding IsRecordQueryMode, Converter={StaticResource BoolToCollapsed}}"/>
+                                    <ComboBox ItemsSource="{Binding DataContext.AvailableRecordColumns, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              Text="{Binding ColumnName, UpdateSourceTrigger=PropertyChanged}"
+                                              IsEditable="True"
+                                              Height="25"
+                                              VirtualizingStackPanel.IsVirtualizing="True"
+                                              VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                              Visibility="{Binding IsRecordQueryMode, Converter={StaticResource BoolToVis}}"/>
+                                </Grid>
+
+                                <!-- Operator -->
+                                <ComboBox Grid.Column="5"
+                                          ItemsSource="{Binding DataContext.AvailableComparisonOperators, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          SelectedItem="{Binding Operator}"
+                                          Height="25"
+                                          Margin="0,0,4,0">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <!-- Value (TextBox or Table ComboBox) -->
+                                <Grid Grid.Column="6">
+                                    <ctrl:ClearableTextBox x:Name="ClauseValueBox"
+                                                           Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                           Height="25"
+                                                           Placeholder="Value..."
+                                                           GotFocus="ClauseValue_GotFocus"
+                                                           Visibility="{Binding IsTableField, Converter={StaticResource BoolToCollapsed}}">
+                                        <ctrl:ClearableTextBox.InputBindings>
+                                            <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                        </ctrl:ClearableTextBox.InputBindings>
+                                    </ctrl:ClearableTextBox>
+
+                                    <ComboBox x:Name="ClauseTableValueBox"
+                                              ItemsSource="{Binding DataContext.Tables, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                              IsEditable="True"
+                                              Height="25"
+                                              GotFocus="ClauseValue_GotFocus"
+                                              VirtualizingStackPanel.IsVirtualizing="True"
+                                              VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                              Visibility="{Binding IsTableField, Converter={StaticResource BoolToVis}}">
+                                        <ComboBox.InputBindings>
+                                            <KeyBinding Key="Enter" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                        </ComboBox.InputBindings>
+                                    </ComboBox>
+                                </Grid>
+
+                                <!-- Row History -->
+                                <Button Grid.Column="7"
+                                        Command="{Binding DataContext.ShowClauseHistoryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                                        Margin="4,0,0,0"
+                                        ToolTip="History"
+                                        Style="{StaticResource TransparentIconButtonStyle}">
+                                    <Control Template="{StaticResource Icon_History}" Width="15" Height="15"/>
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Footer Toolbar -->
+                <Grid Grid.Row="3" Margin="0,4,0,0">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Button Content="+ Add clause"
+                                Command="{Binding AddClauseCommand}"
+                                Style="{StaticResource SubtleActionButtonStyle}"
+                                Margin="0,0,6,0"/>
+                        <Button Content="Group"
+                                Command="{Binding GroupSelectedClausesCommand}"
+                                Style="{StaticResource SubtleActionButtonStyle}"
+                                ToolTip="Group selected contiguous clauses"
+                                Margin="0,0,6,0"/>
+                        <Button Content="Ungroup"
+                                Command="{Binding UngroupSelectedClausesCommand}"
+                                Style="{StaticResource SubtleActionButtonStyle}"
+                                ToolTip="Ungroup innermost group containing selected clauses"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <ctrl:SplitButton Text="Save"
+                                          PrimaryCommand="{Binding SaveAdvancedQueryCommand}"
+                                          PrimaryToolTip="Save this Advanced Mode query"
+                                          SecondaryText="Show Saved Queries"
+                                          SecondaryCommand="{Binding ShowSavedQueriesCommand}"
+                                          Margin="0,0,8,0"/>
+                        <Button Command="{Binding BuildSqlCommand}"
+                                CommandParameter="MultiClause"
+                                ToolTip="Build Compound SQL"
+                                Style="{StaticResource TransparentIconButtonStyle}">
+                            <Control Template="{StaticResource Icon_BuildSql}" Width="16" Height="16"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Grid>
+    </ScrollViewer>
 </UserControl>

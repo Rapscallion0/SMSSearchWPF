@@ -59,7 +59,6 @@ namespace SMS_Search.Utils
 
             // Search
             public const string DefaultTab = "DEFAULT_TAB";
-            public const string DefaultTableAction = "DEFAULT_TABLE_ACTION";
             public const string SelectCustomSqlOnBuild = "SELECT_CUSTOM_SQL_ON_BUILD";
             public const string AnyMatchDefault = "ANY_MATCH_DEFAULT";
 
@@ -116,6 +115,7 @@ namespace SMS_Search.Utils
             public const string LastX = "LAST_X";
             public const string LastY = "LAST_Y";
             public const string LastTab = "LAST_TAB";
+            public const string LastSearchMode = "LAST_SEARCH_MODE";
         }
     }
 }

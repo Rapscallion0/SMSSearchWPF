@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using SMS_Search.Data;
 using SMS_Search.Services;
 
@@ -12,6 +13,9 @@ namespace SMS_Search.Views.Windows
     public partial class SavedQueriesWindow : Window
     {
         private const string AllCategoriesLabel = "All Categories";
+        private const string AllTypesLabel = "All";
+        private const string SqlTypeLabel = "SQL";
+        private const string AdvTypeLabel = "ADV";
 
         private readonly ISavedQueriesService _savedQueriesService;
         private readonly IDialogService _dialogService;
@@ -34,6 +38,18 @@ namespace SMS_Search.Views.Windows
             _onLoadSql = onLoadSql;
 
             Activated += (_, _) => UpdateDuplicateBanner();
+
+            _isUpdatingCategories = true;
+            try
+            {
+                FilterTypeCombo.ItemsSource = new[] { AllTypesLabel, SqlTypeLabel, AdvTypeLabel };
+                FilterTypeCombo.SelectedIndex = 0;
+            }
+            finally
+            {
+                _isUpdatingCategories = false;
+            }
+
             LoadItems();
             SuggestNameFromEditor();
             UpdateDuplicateBanner();
@@ -171,8 +187,18 @@ namespace SMS_Search.Views.Windows
         {
             string filter = FilterBox.Text?.Trim() ?? string.Empty;
             string? selectedCategory = FilterCategoryCombo.SelectedItem as string;
+            string? selectedType = FilterTypeCombo.SelectedItem as string;
 
             IEnumerable<SavedQueryItem> filtered = _allItems;
+
+            if (selectedType == SqlTypeLabel)
+            {
+                filtered = filtered.Where(x => !x.IsAdvanced);
+            }
+            else if (selectedType == AdvTypeLabel)
+            {
+                filtered = filtered.Where(x => x.IsAdvanced);
+            }
 
             if (!string.IsNullOrEmpty(selectedCategory) && selectedCategory != AllCategoriesLabel)
             {
@@ -185,6 +211,7 @@ namespace SMS_Search.Views.Windows
                 filtered = filtered.Where(x =>
                     x.Name.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
                     x.Category.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                    x.QueryKindLabel.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
                     x.Sql.Contains(filter, StringComparison.OrdinalIgnoreCase));
             }
 
@@ -221,6 +248,14 @@ namespace SMS_Search.Views.Windows
             ApplyFilter();
         }
 
+        private void FilterTypeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_isUpdatingCategories)
+            {
+                ApplyFilter();
+            }
+        }
+
         private void FilterCategoryCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!_isUpdatingCategories)
@@ -251,7 +286,16 @@ namespace SMS_Search.Views.Windows
         {
             if (QueriesListBox.SelectedItem is not SavedQueryItem item) return;
             _savedQueriesService.MarkUsed(item.Id);
-            _onLoadSql(item.Sql);
+            if (item.IsAdvanced && item.AdvancedQuery != null &&
+                System.Windows.Application.Current?.MainWindow?.DataContext is ViewModels.MainViewModel vm)
+            {
+                vm.SearchVm.LoadAdvancedQueryDefinition(item.AdvancedQuery);
+                WeakReferenceMessenger.Default.Send(new Utils.ShowPanelMessage("SearchCriteria"));
+            }
+            else
+            {
+                _onLoadSql(item.Sql);
+            }
             _dialogService.ShowToast($"Loaded '{item.Name}'", "Saved Queries", ToastType.Info);
         }
 

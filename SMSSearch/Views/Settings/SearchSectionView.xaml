@@ -65,26 +65,6 @@
 
         <GroupBox Header="Behavior" Margin="0,0,0,10">
             <StackPanel Margin="5">
-                <ctrl:SettingControl Header="Default Search Tab" IsSaved="{Binding DefaultSearchTab.IsSaved}">
-                    <ComboBox ItemsSource="{Binding SearchModes}" SelectedItem="{Binding DefaultSearchTab.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                </ctrl:SettingControl>
-
-                <ctrl:SettingControl Header="Default Table Action" IsSaved="{Binding DefaultTableAction.IsSaved}">
-                    <ComboBox ItemsSource="{Binding TableActions}" SelectedItem="{Binding DefaultTableAction.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                </ctrl:SettingControl>
-
                 <ctrl:SettingControl Header="Build SQL Action" IsSaved="{Binding SelectCustomSqlOnBuild.IsSaved}">
                     <CheckBox IsChecked="{Binding SelectCustomSqlOnBuild.Value}" Content="Switch to Custom SQL tab when building query" />
                 </ctrl:SettingControl>

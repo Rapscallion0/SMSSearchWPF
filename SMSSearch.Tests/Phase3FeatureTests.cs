@@ -123,6 +123,71 @@ namespace SMSSearch.Tests
             tab.CloseCommand.Execute(null);
             Assert.True(closedCalled);
         }
+
+        [Fact]
+        public void WorkspaceLayoutService_SavesActiveLayoutAndNamedProfiles()
+        {
+            var stateValues = new Dictionary<(string, string), string?>();
+            var state = new Mock<IStateService>();
+            state.Setup(s => s.GetValue(It.IsAny<string>(), It.IsAny<string>()))
+                 .Returns((string sec, string k) => stateValues.TryGetValue((sec, k), out var v) ? v : null);
+            state.Setup(s => s.SetValue(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                 .Callback((string sec, string k, string v) => stateValues[(sec, k)] = v);
+
+            var service = new WorkspaceLayoutService(state.Object, new Mock<ILoggerService>().Object);
+
+            Assert.Null(service.LoadActiveLayout());
+            service.SaveActiveLayout("<LayoutRoot>active</LayoutRoot>");
+            Assert.Equal("<LayoutRoot>active</LayoutRoot>", service.LoadActiveLayout());
+
+            service.SaveProfile("Multi-Monitor", "<LayoutRoot>multi</LayoutRoot>");
+            service.SaveProfile("Compact", "<LayoutRoot>compact</LayoutRoot>");
+
+            var profiles = service.GetProfiles();
+            Assert.Equal(2, profiles.Count);
+            Assert.Equal("<LayoutRoot>multi</LayoutRoot>", service.GetProfileLayout("multi-monitor"));
+
+            service.DeleteProfile("Compact");
+            Assert.Single(service.GetProfiles());
+            Assert.Null(service.GetProfileLayout("Compact"));
+        }
+
+        [Fact]
+        public void WorkspaceDtoSerializer_RoundTripsPolymorphicLayoutRootDto()
+        {
+            var dto = new AvalonDock.Core.Serialization.Dto.LayoutRootDto
+            {
+                RootPanel = new AvalonDock.Core.Serialization.Dto.LayoutPanelDto
+                {
+                    Orientation = "Horizontal",
+                    Children =
+                    {
+                        new AvalonDock.Core.Serialization.Dto.LayoutAnchorablePaneDto
+                        {
+                            DockWidth = "480",
+                            Children =
+                            {
+                                new AvalonDock.Core.Serialization.Dto.LayoutAnchorableDto
+                                {
+                                    ContentId = "SearchCriteria",
+                                    Title = "Search Criteria"
+                                }
+                            }
+                        },
+                        new AvalonDock.Core.Serialization.Dto.LayoutDocumentPaneDto()
+                    }
+                }
+            };
+
+            string xml = WorkspaceDtoSerializer.SerializeDtoToXml(dto);
+            var roundTripped = WorkspaceDtoSerializer.DeserializeDtoFromXml(xml);
+
+            Assert.NotNull(roundTripped?.RootPanel);
+            Assert.Equal(2, roundTripped!.RootPanel!.Children.Count);
+            var anchorPane = Assert.IsType<AvalonDock.Core.Serialization.Dto.LayoutAnchorablePaneDto>(roundTripped.RootPanel.Children[0]);
+            Assert.Equal("480", anchorPane.DockWidth);
+            Assert.Equal("SearchCriteria", anchorPane.Children[0].ContentId);
+        }
     }
 }
 

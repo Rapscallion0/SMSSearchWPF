@@ -139,23 +139,10 @@ namespace SMS_Search.Views
 
                 var toastsInGroup = group.ToList();
 
-                double targetLeft;
-                double initialBottom;
-                double availableHeight;
-
-                if (ownerWindow != null && ownerWindow.Visibility == Visibility.Visible && ownerWindow.WindowState != WindowState.Minimized)
-                {
-                    targetLeft = ownerWindow.Left + ownerWindow.ActualWidth - toastsInGroup[0].ActualWidth - 20;
-                    initialBottom = ownerWindow.Top + ownerWindow.ActualHeight - 50;
-                    availableHeight = ownerWindow.ActualHeight - 70; // 50px bottom margin + 20px top margin
-                }
-                else
-                {
-                    var workArea = SystemParameters.WorkArea;
-                    targetLeft = workArea.Right - toastsInGroup[0].ActualWidth - 10;
-                    initialBottom = workArea.Bottom - 10;
-                    availableHeight = workArea.Height - 20;
-                }
+                var workArea = SystemParameters.WorkArea;
+                double toastWidth = toastsInGroup[0].ActualWidth > 0 ? toastsInGroup[0].ActualWidth : toastsInGroup[0].Width;
+                double targetLeft = workArea.Right - toastWidth - 16;
+                double initialBottom = workArea.Bottom - 16;
 
                 double currentTop = initialBottom;
 
@@ -168,13 +155,11 @@ namespace SMS_Search.Views
 
                     toast.Left = targetLeft;
 
-                    // Handle layering if it goes too high
+                    // Handle layering if it goes above the work area
                     double targetTop = currentTop;
-                    if (ownerWindow != null && targetTop < ownerWindow.Top + 20)
+                    if (targetTop < workArea.Top + 16)
                     {
-                        // If it goes above the window (plus a small margin), cap it
-                        // This creates an overlapping effect
-                        targetTop = ownerWindow.Top + 20 + (i * 5); // Slight offset for layered effect
+                        targetTop = workArea.Top + 16 + (i * 5); // Slight offset for layered effect
                     }
 
                     if (i == 0 && animateNewest)

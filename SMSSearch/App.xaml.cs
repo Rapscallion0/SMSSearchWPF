@@ -64,6 +64,7 @@ namespace SMS_Search
             services.AddSingleton<IClipboardService, ClipboardService>();
             services.AddSingleton<IHotkeyService, HotkeyService>();
             services.AddSingleton<IThemeService, ThemeService>();
+            services.AddSingleton<IWorkspaceLayoutService, WorkspaceLayoutService>();
 
             services.AddSingleton<HttpClient>(_ => new HttpClient(new SocketsHttpHandler
             {

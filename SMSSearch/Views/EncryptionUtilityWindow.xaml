@@ -6,7 +6,7 @@
         xmlns:vm="clr-namespace:SMS_Search.ViewModels"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:EncryptionUtilityViewModel}"
-        Title="Encryption Utility" Height="250" Width="400"
+        Title="Encryption Utility" Width="600" SizeToContent="Height"
         Background="{DynamicResource AppBackgroundBrush}"
         Foreground="{DynamicResource PrimaryTextBrush}"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
@@ -26,7 +26,7 @@
         <TextBox Grid.Row="1" Text="{Binding DecryptedText, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,5,10"/>
         <Button Grid.Row="1" Grid.Column="1" Content="Encrypt" Command="{Binding EncryptCommand}" Margin="0,5,0,10" Width="75"/>
 
-        <TextBlock Grid.Row="2" Text="Encrypted (Base64):" FontWeight="Bold"/>
+        <TextBlock Grid.Row="2" Text="Encrypted:" FontWeight="Bold"/>
         <TextBox Grid.Row="3" Text="{Binding EncryptedText, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,5,0"/>
         <Button Grid.Row="3" Grid.Column="1" Content="Decrypt" Command="{Binding DecryptCommand}" Margin="0,5,0,0" Width="75"/>
     </Grid>

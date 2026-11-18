@@ -24,6 +24,8 @@ namespace SMS_Search.ViewModels
         private readonly IDataRepository _repository;
         private readonly IConnectionSettingsService _connectionSettingsService;
         private readonly Func<ResultsViewModel> _resultsVmFactory;
+        private readonly IWorkspaceLayoutService? _workspaceLayoutService;
+        private readonly IThemeService? _themeService;
         private bool _isSyncingProfiles;
 
         private System.Windows.Threading.DispatcherTimer? _dateRolloverTimer;
@@ -45,7 +47,9 @@ namespace SMS_Search.ViewModels
             ResultsViewModel resultsViewModel,
             ImportViewModel importViewModel,
             IConnectionSettingsService connectionSettingsService,
-            Func<ResultsViewModel>? resultsVmFactory = null)
+            Func<ResultsViewModel>? resultsVmFactory = null,
+            IWorkspaceLayoutService? workspaceLayoutService = null,
+            IThemeService? themeService = null)
         {
             _repository = repository;
             _config = config;
@@ -54,6 +58,8 @@ namespace SMS_Search.ViewModels
             _historyService = historyService;
             _connectionSettingsService = connectionSettingsService;
             _resultsVmFactory = resultsVmFactory ?? (() => resultsViewModel);
+            _workspaceLayoutService = workspaceLayoutService;
+            _themeService = themeService;
             SearchVm = searchViewModel;
             ImportVm = importViewModel;
 
@@ -98,8 +104,19 @@ namespace SMS_Search.ViewModels
                 HandleFindFieldUsage(m.Value);
             });
 
+            WeakReferenceMessenger.Default.Register<UnlockEncryptionUtilityMessage>(this, (r, m) =>
+            {
+                UnlockEncryptionUtility();
+            });
+
             _connectionSettingsService.ProfilesChanged += OnProfilesChanged;
             RefreshProfiles();
+
+            if (_workspaceLayoutService != null)
+            {
+                _workspaceLayoutService.ProfilesChanged += OnLayoutProfilesChanged;
+                RefreshLayoutProfiles();
+            }
         }
 
         private void HandleFindFieldUsage(string? fieldIdentifier)
@@ -153,6 +170,10 @@ namespace SMS_Search.ViewModels
             ImportVm.ImportCompleted -= OnImportCompletedAsync;
             ImportVm.DatabasesChanged -= OnImportDatabasesChangedAsync;
             _connectionSettingsService.ProfilesChanged -= OnProfilesChanged;
+            if (_workspaceLayoutService != null)
+            {
+                _workspaceLayoutService.ProfilesChanged -= OnLayoutProfilesChanged;
+            }
             WeakReferenceMessenger.Default.UnregisterAll(this);
             if (SearchVm is IDisposable searchDisposable) searchDisposable.Dispose();
             foreach (var tab in ResultTabs)
@@ -467,7 +488,39 @@ namespace SMS_Search.ViewModels
             }
         }
 
-        private void CloseTab(ResultTabViewModel tab)
+        public ObservableCollection<WorkspaceLayoutProfile> LayoutProfiles { get; } = new();
+
+        private void OnLayoutProfilesChanged(object? sender, EventArgs e)
+        {
+            RefreshLayoutProfiles();
+        }
+
+        public void RefreshLayoutProfiles()
+        {
+            if (_workspaceLayoutService == null) return;
+            LayoutProfiles.Clear();
+            foreach (var p in _workspaceLayoutService.GetProfiles())
+            {
+                LayoutProfiles.Add(p);
+            }
+        }
+
+        [RelayCommand]
+        private void SetTheme(string? modeName)
+        {
+            if (_themeService == null || !Enum.TryParse<AppThemeMode>(modeName, true, out var mode)) return;
+            _config.SetValue(AppSettings.Sections.General, AppSettings.Keys.ThemeMode, mode.ToString());
+            _config.Save();
+            _themeService.ApplyTheme(mode);
+        }
+
+        [RelayCommand]
+        private void Exit()
+        {
+            System.Windows.Application.Current?.MainWindow?.Close();
+        }
+
+        public void CloseTab(ResultTabViewModel tab)
         {
             if (ResultTabs.Count <= 1) return;
 
@@ -492,9 +545,32 @@ namespace SMS_Search.ViewModels
             }
         }
 
+        private void AddGroupHistory(SearchMode mode, SearchClauseGroup group)
+        {
+            foreach (var child in group.Children)
+            {
+                if (child is SearchClause clause && clause.Field != SearchFieldTarget.Table && !string.IsNullOrWhiteSpace(clause.Value))
+                {
+                    _historyService.AddQuery($"{mode}_{clause.Field}", clause.Value);
+                }
+                else if (child is SearchClauseGroup subGroup)
+                {
+                    AddGroupHistory(mode, subGroup);
+                }
+            }
+        }
+
         private static string BuildTabTitle(SearchCriteria criteria)
         {
             if (criteria.Type == SearchType.CustomSql) return "Custom SQL";
+            if (criteria.RootGroup != null && criteria.RootGroup.Children.Count > 0)
+            {
+                if (criteria.Mode == SearchMode.Field && !criteria.ShowFields && !string.IsNullOrWhiteSpace(criteria.Value))
+                {
+                    return $"{criteria.Value} (Multi)";
+                }
+                return $"{criteria.Mode} (Multi)";
+            }
             if (criteria.Type == SearchType.Table && !string.IsNullOrWhiteSpace(criteria.Value))
             {
                 return criteria.ShowFields ? $"{criteria.Value} (Fields)" : criteria.Value;
@@ -525,7 +601,11 @@ namespace SMS_Search.ViewModels
              }
 
              // Add to history
-             if (criteria.Type != SearchType.Table && !string.IsNullOrWhiteSpace(criteria.Value))
+             if (criteria.RootGroup != null)
+             {
+                 AddGroupHistory(criteria.Mode, criteria.RootGroup);
+             }
+             else if (criteria.Type != SearchType.Table && !string.IsNullOrWhiteSpace(criteria.Value))
              {
                  _historyService.AddQuery($"{criteria.Mode}_{criteria.Type}", criteria.Value);
              }
@@ -543,9 +623,47 @@ namespace SMS_Search.ViewModels
                  UpdateTabClosableState();
              }
 
-             targetTab.Title = BuildTabTitle(criteria);
+             if (!targetTab.HasCustomTitle)
+             {
+                 targetTab.Title = BuildTabTitle(criteria);
+             }
+             WeakReferenceMessenger.Default.Send(new ShowPanelMessage("Results"));
              await targetTab.ResultsVm.ExecuteSearchAsync(criteria);
              WeakReferenceMessenger.Default.Send(new SearchExecutedMessage(true));
+        }
+
+        [RelayCommand]
+        private async Task ExecuteCustomSql()
+        {
+            var criteria = SearchVm.GetCustomSqlCriteria();
+            if (string.IsNullOrWhiteSpace(criteria.Value))
+            {
+                _dialogService.ShowToast("Please enter a SQL query.", "SQL Editor", ToastType.Warning);
+                return;
+            }
+
+            _historyService.AddQuery("Field_CustomSql", criteria.Value);
+
+            ResultTabViewModel targetTab;
+            if (SelectedResultTab != null && !SelectedResultTab.IsPinned)
+            {
+                targetTab = SelectedResultTab;
+            }
+            else
+            {
+                targetTab = new ResultTabViewModel(_resultsVmFactory(), CloseTab, "Custom SQL");
+                ResultTabs.Add(targetTab);
+                SelectedResultTab = targetTab;
+                UpdateTabClosableState();
+            }
+
+            if (!targetTab.HasCustomTitle)
+            {
+                targetTab.Title = "Custom SQL";
+            }
+            WeakReferenceMessenger.Default.Send(new ShowPanelMessage("Results"));
+            await targetTab.ResultsVm.ExecuteSearchAsync(criteria);
+            WeakReferenceMessenger.Default.Send(new SearchExecutedMessage(true));
         }
 
         [RelayCommand]
@@ -569,14 +687,35 @@ namespace SMS_Search.ViewModels
             RequestOpenGs1Toolkit?.Invoke();
         }
 
+        [ObservableProperty]
+        private bool _isEncryptionUtilityUnlocked;
+
+        [RelayCommand]
+        private void OpenEncryptionUtility()
+        {
+            _logger.LogInfo("Opening Encryption Utility.");
+            RequestOpenEncryptionUtility?.Invoke();
+        }
+
+        [RelayCommand]
+        private void UnlockEncryptionUtility()
+        {
+            if (!IsEncryptionUtilityUnlocked)
+            {
+                IsEncryptionUtilityUnlocked = true;
+                _logger.LogInfo("Encryption Utility unlocked for current session.");
+                _dialogService.ShowToast("Encryption Utility unlocked for this session", "Tools", ToastType.Info);
+            }
+        }
+
         [RelayCommand]
         private void OpenSettings()
         {
             if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control &&
                 (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
             {
-                _logger.LogInfo("Opening Encryption Utility (Hidden Feature).");
-                RequestOpenEncryptionUtility?.Invoke();
+                UnlockEncryptionUtility();
+                OpenEncryptionUtility();
             }
             else
             {
@@ -584,5 +723,10 @@ namespace SMS_Search.ViewModels
                 RequestOpenSettings?.Invoke();
             }
         }
+    }
+
+    public sealed class UnlockEncryptionUtilityMessage : CommunityToolkit.Mvvm.Messaging.Messages.ValueChangedMessage<bool>
+    {
+        public UnlockEncryptionUtilityMessage(bool value) : base(value) { }
     }
 }

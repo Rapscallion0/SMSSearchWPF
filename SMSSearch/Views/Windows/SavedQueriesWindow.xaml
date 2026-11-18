@@ -65,13 +65,19 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="180"/>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="160"/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="Filter:" VerticalAlignment="Center" Margin="0,0,8,0"/>
             <controls:ClearableTextBox Grid.Column="1" x:Name="FilterBox" Placeholder="Search by name, category, or SQL..."
                                        TextChanged="FilterBox_TextChanged" Margin="0,0,10,0"/>
-            <TextBlock Grid.Column="2" Text="Category:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-            <ComboBox Grid.Column="3" x:Name="FilterCategoryCombo" Height="25" VerticalContentAlignment="Center"
+            <TextBlock Grid.Column="2" Text="Type:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <ComboBox Grid.Column="3" x:Name="FilterTypeCombo" Height="25" VerticalContentAlignment="Center" Margin="0,0,10,0"
+                      SelectionChanged="FilterTypeCombo_SelectionChanged"
+                      ToolTip="Filter by query type: All, SQL (SQL Editor queries), or ADV (Advanced Mode queries)"/>
+            <TextBlock Grid.Column="4" Text="Category:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <ComboBox Grid.Column="5" x:Name="FilterCategoryCombo" Height="25" VerticalContentAlignment="Center"
                       SelectionChanged="FilterCategoryCombo_SelectionChanged"/>
         </Grid>
 
@@ -94,6 +100,34 @@
                                     BorderBrush="{DynamicResource BorderBrushKey}" BorderThickness="1"
                                     VerticalAlignment="Center" Margin="6,0,0,0">
                                 <TextBlock Text="{Binding Category}" FontSize="11" Opacity="0.8"/>
+                            </Border>
+                            <Border DockPanel.Dock="Left" Padding="5,1" CornerRadius="3"
+                                    VerticalAlignment="Center" Margin="0,0,6,0">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushKey}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsAdvanced}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding QueryKindLabel}" FontSize="10" FontWeight="Bold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsAdvanced}" Value="True">
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </Border>
                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                         </DockPanel>

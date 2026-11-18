@@ -185,7 +185,28 @@ namespace SMS_Search.Services
             string value = (criteria.Value ?? string.Empty).Trim();
             var rows = new List<(FieldDictionaryEntry Entry, string DctName, string TableName, string Flag)>();
 
-            if (criteria.Type == SearchType.Number)
+            if (criteria.RootGroup != null && criteria.RootGroup.Children.Count > 0)
+            {
+                foreach (var entry in loaded.Entries.Values)
+                {
+                    string primaryDesc = SelectDescription(entry, options.Language);
+                    if (entry.TableFlags.Count == 0)
+                    {
+                        if (MatchesGroup(criteria.RootGroup, entry.Field, primaryDesc, string.Empty, string.Empty))
+                            rows.Add((entry, string.Empty, string.Empty, string.Empty));
+                    }
+                    else
+                    {
+                        foreach (var kvp in entry.TableFlags)
+                        {
+                            string sqlTable = DictionaryTableMapper.GetPrimarySqlTableForDct(kvp.Key);
+                            if (MatchesGroup(criteria.RootGroup, entry.Field, primaryDesc, sqlTable, kvp.Key))
+                                rows.Add((entry, kvp.Key, sqlTable, kvp.Value));
+                        }
+                    }
+                }
+            }
+            else if (criteria.Type == SearchType.Number)
             {
                 string? pattern = string.IsNullOrWhiteSpace(value)
                     ? null
@@ -299,7 +320,12 @@ namespace SMS_Search.Services
                 string dctName = DictionaryTableMapper.GetDctForSqlTable(tableName);
 
                 string primaryDesc = entry != null ? SelectDescription(entry, options.Language) : string.Empty;
-                if (descFilterPattern != null && !MatchesWildcard(primaryDesc, descFilterPattern))
+                if (criteria.RootGroup != null && criteria.RootGroup.Children.Count > 0)
+                {
+                    if (!MatchesGroup(criteria.RootGroup, fieldName, primaryDesc, tableName, dctName))
+                        continue;
+                }
+                else if (descFilterPattern != null && !MatchesWildcard(primaryDesc, descFilterPattern))
                     continue;
 
                 var row = dt.NewRow();
@@ -375,6 +401,29 @@ namespace SMS_Search.Services
 
             string autoPath = System.IO.Path.Combine(_baseDirectory, "Fields.csv");
             return (autoPath, true);
+        }
+
+        public IReadOnlyDictionary<string, FieldDictionaryEntry> GetEntries(string? overrideFieldsCsvPath = null)
+        {
+            if (string.IsNullOrWhiteSpace(overrideFieldsCsvPath))
+            {
+                return EnsureLoaded().Entries;
+            }
+
+            if (!File.Exists(overrideFieldsCsvPath))
+            {
+                return new Dictionary<string, FieldDictionaryEntry>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            string dir = System.IO.Path.GetDirectoryName(overrideFieldsCsvPath) ?? _baseDirectory;
+            string fields2Path = System.IO.Path.Combine(dir, "Fields2.csv");
+            string fieldsEsPath = System.IO.Path.Combine(dir, "Fields.es");
+
+            DateTime t1 = File.GetLastWriteTimeUtc(overrideFieldsCsvPath);
+            DateTime t2 = File.Exists(fields2Path) ? File.GetLastWriteTimeUtc(fields2Path) : DateTime.MinValue;
+            DateTime t3 = File.Exists(fieldsEsPath) ? File.GetLastWriteTimeUtc(fieldsEsPath) : DateTime.MinValue;
+
+            return LoadFromDisk(overrideFieldsCsvPath, t1, fields2Path, t2, fieldsEsPath, t3).Entries;
         }
 
         private LoadedDictionary EnsureLoaded()
@@ -651,6 +700,117 @@ namespace SMS_Search.Services
 
             result.Add(sb.ToString());
             return result;
+        }
+
+        private static bool MatchesGroup(SearchClauseGroup group, string fieldName, string description, string tableName, string dctName)
+        {
+            var results = new List<(SearchLogicalOperator Op, bool Matched)>();
+
+            foreach (var child in group.Children)
+            {
+                if (child is SearchClause clause)
+                {
+                    if (string.IsNullOrWhiteSpace(clause.Value)) continue;
+                    results.Add((child.LogicalOperator, MatchesClause(clause, fieldName, description, tableName, dctName)));
+                }
+                else if (child is SearchClauseGroup subGroup)
+                {
+                    if (!HasNonEmptyClauses(subGroup)) continue;
+                    results.Add((child.LogicalOperator, MatchesGroup(subGroup, fieldName, description, tableName, dctName)));
+                }
+            }
+
+            if (results.Count == 0) return true;
+
+            // Standard SQL precedence: AND binds tighter than OR
+            bool orAcc = false;
+            bool andAcc = results[0].Matched;
+            for (int i = 1; i < results.Count; i++)
+            {
+                if (results[i].Op == SearchLogicalOperator.Or)
+                {
+                    orAcc = orAcc || andAcc;
+                    andAcc = results[i].Matched;
+                }
+                else
+                {
+                    andAcc = andAcc && results[i].Matched;
+                }
+            }
+            return orAcc || andAcc;
+        }
+
+        private static bool HasNonEmptyClauses(SearchClauseGroup group)
+        {
+            foreach (var child in group.Children)
+            {
+                if (child is SearchClause c && !string.IsNullOrWhiteSpace(c.Value)) return true;
+                if (child is SearchClauseGroup g && HasNonEmptyClauses(g)) return true;
+            }
+            return false;
+        }
+
+        private static bool MatchesClause(SearchClause clause, string fieldName, string description, string tableName, string dctName)
+        {
+            string raw = clause.Value.Trim();
+
+            string FormatFieldVal(string v) =>
+                clause.Field == SearchFieldTarget.Number && !v.StartsWith("F", StringComparison.OrdinalIgnoreCase)
+                    ? "F" + v
+                    : v;
+
+            string target = clause.Field switch
+            {
+                SearchFieldTarget.Number => fieldName,
+                SearchFieldTarget.Description => description,
+                SearchFieldTarget.Table => tableName,
+                _ => fieldName
+            };
+
+            bool MatchSingle(string candidate, string pattern)
+            {
+                if (clause.Field == SearchFieldTarget.Table && !string.IsNullOrEmpty(dctName))
+                {
+                    bool matchesSql = clause.Operator switch
+                    {
+                        SearchComparisonOperator.Equals => string.Equals(tableName, pattern, StringComparison.OrdinalIgnoreCase),
+                        SearchComparisonOperator.NotEquals => !string.Equals(tableName, pattern, StringComparison.OrdinalIgnoreCase),
+                        SearchComparisonOperator.Contains => (tableName ?? string.Empty).Contains(pattern, StringComparison.OrdinalIgnoreCase),
+                        SearchComparisonOperator.DoesNotContain => !(tableName ?? string.Empty).Contains(pattern, StringComparison.OrdinalIgnoreCase),
+                        SearchComparisonOperator.Wildcard => MatchesWildcard(tableName ?? string.Empty, pattern),
+                        _ => false
+                    };
+                    if (clause.Operator == SearchComparisonOperator.DoesNotContain)
+                    {
+                        return matchesSql && !(dctName ?? string.Empty).Contains(pattern, StringComparison.OrdinalIgnoreCase);
+                    }
+                    if (matchesSql) return true;
+                }
+
+                return clause.Operator switch
+                {
+                    SearchComparisonOperator.Equals => string.Equals(candidate, pattern, StringComparison.OrdinalIgnoreCase),
+                    SearchComparisonOperator.NotEquals => !string.Equals(candidate, pattern, StringComparison.OrdinalIgnoreCase),
+                    SearchComparisonOperator.Contains => (candidate ?? string.Empty).Contains(pattern, StringComparison.OrdinalIgnoreCase),
+                    SearchComparisonOperator.DoesNotContain => !(candidate ?? string.Empty).Contains(pattern, StringComparison.OrdinalIgnoreCase),
+                    SearchComparisonOperator.Wildcard => MatchesWildcard(candidate ?? string.Empty, pattern),
+                    _ => false
+                };
+            }
+
+            if (clause.Operator == SearchComparisonOperator.In)
+            {
+                var items = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                foreach (var item in items)
+                {
+                    string v = FormatFieldVal(item);
+                    if (string.Equals(target, v, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+                return false;
+            }
+
+            return MatchSingle(target, FormatFieldVal(raw));
         }
 
         private static bool MatchesWildcard(string input, string pattern)

@@ -18,18 +18,26 @@ namespace SMS_Search.ViewModels
         private readonly IDialogService _dialogService;
         private readonly IConfigService _config;
         private readonly IConnectionSettingsService _connectionSettingsService;
+        private readonly IFieldDictionaryService? _fieldDictionaryService;
 
         public event Action? RequestClose;
         public event Func<string, bool, Task>? ImportCompleted;
         public event Func<Task>? DatabasesChanged;
 
-        public ImportViewModel(IDataRepository repository, ILoggerService logger, IDialogService dialogService, IConfigService config, IConnectionSettingsService connectionSettingsService)
+        public ImportViewModel(
+            IDataRepository repository,
+            ILoggerService logger,
+            IDialogService dialogService,
+            IConfigService config,
+            IConnectionSettingsService connectionSettingsService,
+            IFieldDictionaryService? fieldDictionaryService = null)
         {
             _repository = repository;
             _logger = logger;
             _dialogService = dialogService;
             _config = config;
             _connectionSettingsService = connectionSettingsService;
+            _fieldDictionaryService = fieldDictionaryService;
 
             SelectedFiles = new ObservableCollection<string>();
             Databases = new ObservableCollection<string>();
@@ -58,6 +66,101 @@ namespace SMS_Search.ViewModels
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CanSelectTemplateDatabase))]
         private bool _useTemplateDatabase;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanSelectTemplateDatabase))]
+        [NotifyPropertyChangedFor(nameof(IsTemplateSource))]
+        [NotifyPropertyChangedFor(nameof(IsFieldsCsvSource))]
+        [NotifyPropertyChangedFor(nameof(IsInferSource))]
+        private ImportSchemaSource _schemaSource = ImportSchemaSource.TemplateDatabase;
+
+        public bool IsTemplateSource
+        {
+            get => SchemaSource == ImportSchemaSource.TemplateDatabase;
+            set
+            {
+                if (value)
+                {
+                    SchemaSource = ImportSchemaSource.TemplateDatabase;
+                    UseTemplateDatabase = true;
+                }
+            }
+        }
+
+        public bool IsFieldsCsvSource
+        {
+            get => SchemaSource == ImportSchemaSource.FieldsCsv;
+            set
+            {
+                if (value)
+                {
+                    SchemaSource = ImportSchemaSource.FieldsCsv;
+                    UseTemplateDatabase = false;
+                }
+            }
+        }
+
+        public bool IsInferSource
+        {
+            get => SchemaSource == ImportSchemaSource.InferFromSql;
+            set
+            {
+                if (value)
+                {
+                    SchemaSource = ImportSchemaSource.InferFromSql;
+                    UseTemplateDatabase = false;
+                }
+            }
+        }
+
+        partial void OnUseTemplateDatabaseChanged(bool value)
+        {
+            if (value && SchemaSource != ImportSchemaSource.TemplateDatabase)
+            {
+                SchemaSource = ImportSchemaSource.TemplateDatabase;
+            }
+            else if (!value && SchemaSource == ImportSchemaSource.TemplateDatabase)
+            {
+                SchemaSource = ImportSchemaSource.InferFromSql;
+            }
+        }
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ActiveFieldsCsvDisplay))]
+        private string? _customFieldsCsvPath;
+
+        [ObservableProperty]
+        private bool _populateDictionaryTables = true;
+
+        public string ActiveFieldsCsvDisplay
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(CustomFieldsCsvPath))
+                {
+                    return CustomFieldsCsvPath;
+                }
+
+                var status = _fieldDictionaryService?.GetStatus();
+                if (status != null && status.IsCsvAvailable && !string.IsNullOrWhiteSpace(status.ResolvedFieldsCsvPath))
+                {
+                    return status.ResolvedFieldsCsvPath;
+                }
+
+                return "No Fields.csv configured — click Browse to select one";
+            }
+        }
+
+        [RelayCommand]
+        private void BrowseFieldsCsv()
+        {
+            string? path = _dialogService.OpenFileDialog("CSV files (*.csv)|*.csv|All files (*.*)|*.*");
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                CustomFieldsCsvPath = path;
+                IsFieldsCsvSource = true;
+            }
+        }
 
         [ObservableProperty]
         private bool _confirmInferredTypes;
@@ -267,7 +370,26 @@ namespace SMS_Search.ViewModels
                 return;
             }
 
-            string? effectiveTemplateDb = UseTemplateDatabase ? TemplateDatabaseName : null;
+            string? effectiveTemplateDb = IsTemplateSource ? TemplateDatabaseName : null;
+
+            FieldsCsvImportOptions? fieldsCsvOptions = null;
+            if (IsFieldsCsvSource)
+            {
+                if (_fieldDictionaryService == null)
+                {
+                    _dialogService.ShowError("Field dictionary service is unavailable.", "Import");
+                    return;
+                }
+
+                var entries = _fieldDictionaryService.GetEntries(CustomFieldsCsvPath);
+                if (entries.Count == 0)
+                {
+                    _dialogService.ShowMessage("No valid Fields.csv dictionary was found. Please click Browse to select a Fields.csv file.", "Import");
+                    return;
+                }
+
+                fieldsCsvOptions = new FieldsCsvImportOptions(entries, PopulateDictionaryTables);
+            }
 
             IsBusy = true;
             IsProgressIndeterminate = true;
@@ -328,7 +450,8 @@ namespace SMS_Search.ViewModels
                             throw;
                         }
                     },
-                    confirmInferredTypes: !UseTemplateDatabase && ConfirmInferredTypes);
+                    confirmInferredTypes: IsInferSource && ConfirmInferredTypes,
+                    fieldsCsvOptions: fieldsCsvOptions);
 
                 _logger.LogInfo("Import process completed successfully from view model perspective.");
 

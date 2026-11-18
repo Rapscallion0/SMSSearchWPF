@@ -2,19 +2,59 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using CommunityToolkit.Mvvm.Messaging;
+using CommunityToolkit.Mvvm.Messaging.Messages;
 using SMS_Search.Services;
 using SMS_Search.Utils;
 
 namespace SMS_Search.Data
 {
+    public sealed class SavedQueriesChangedMessage : ValueChangedMessage<string>
+    {
+        public SavedQueriesChangedMessage(string value) : base(value) { }
+    }
+
+    public sealed class SavedAdvancedClause
+    {
+        public SearchLogicalOperator LogicalOperator { get; set; } = SearchLogicalOperator.And;
+        public SearchFieldTarget Field { get; set; } = SearchFieldTarget.Description;
+        public string? ColumnName { get; set; }
+        public SearchComparisonOperator Operator { get; set; } = SearchComparisonOperator.Contains;
+        public string Value { get; set; } = string.Empty;
+    }
+
+    public sealed class SavedClauseGroupSpan
+    {
+        public int Start { get; set; }
+        public int End { get; set; }
+    }
+
+    public sealed class SavedAdvancedQueryDefinition
+    {
+        public SearchMode Mode { get; set; }
+        public bool ShowFields { get; set; } = true;
+        public string? SelectedTable { get; set; }
+        public bool LastTransaction { get; set; }
+        public List<SavedAdvancedClause> Clauses { get; set; } = new();
+        public List<SavedClauseGroupSpan> Groups { get; set; } = new();
+    }
+
     public sealed class SavedQueryItem
     {
         public string Id { get; set; } = Guid.NewGuid().ToString("N");
         public string Name { get; set; } = string.Empty;
         public string Category { get; set; } = "General";
         public string Sql { get; set; } = string.Empty;
+        public SavedAdvancedQueryDefinition? AdvancedQuery { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? LastUsedAt { get; set; }
+
+        [JsonIgnore]
+        public bool IsAdvanced => AdvancedQuery != null;
+
+        [JsonIgnore]
+        public string QueryKindLabel => IsAdvanced ? "ADV" : "SQL";
     }
 
     public interface ISavedQueriesService
@@ -23,7 +63,7 @@ namespace SMS_Search.Data
         List<string> GetCategories();
         SavedQueryItem? FindDuplicateByNameAndCategory(string name, string category);
         List<SavedQueryItem> FindDuplicatesBySql(string sql);
-        SavedQueryItem Save(string name, string category, string sql);
+        SavedQueryItem Save(string name, string category, string sql, SavedAdvancedQueryDefinition? advancedQuery = null);
         void Delete(string id);
         void MarkUsed(string id);
     }
@@ -144,7 +184,7 @@ namespace SMS_Search.Data
                 .ToList();
         }
 
-        public SavedQueryItem Save(string name, string category, string sql)
+        public SavedQueryItem Save(string name, string category, string sql, SavedAdvancedQueryDefinition? advancedQuery = null)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Query name is required.", nameof(name));
@@ -162,8 +202,10 @@ namespace SMS_Search.Data
             if (existing != null)
             {
                 existing.Sql = sql;
+                existing.AdvancedQuery = advancedQuery;
                 existing.LastUsedAt = DateTime.UtcNow;
                 Persist(items);
+                WeakReferenceMessenger.Default.Send(new SavedQueriesChangedMessage(existing.Id));
                 return existing;
             }
 
@@ -173,11 +215,13 @@ namespace SMS_Search.Data
                 Name = trimmedName,
                 Category = trimmedCategory,
                 Sql = sql,
+                AdvancedQuery = advancedQuery,
                 CreatedAt = DateTime.UtcNow,
                 LastUsedAt = DateTime.UtcNow
             };
             items.Insert(0, item);
             Persist(items);
+            WeakReferenceMessenger.Default.Send(new SavedQueriesChangedMessage(item.Id));
             return item;
         }
 
@@ -189,6 +233,7 @@ namespace SMS_Search.Data
             if (removed > 0)
             {
                 Persist(items);
+                WeakReferenceMessenger.Default.Send(new SavedQueriesChangedMessage(id));
             }
         }
 

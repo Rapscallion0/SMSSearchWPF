@@ -121,7 +121,8 @@
                     <DataTemplate>
                          <Border Margin="0,0,0,40"> <!-- Spacing between sections -->
                              <StackPanel>
-                                 <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Margin="0,0,0,5" />
+                                 <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Margin="0,0,0,5"
+                                            MouseLeftButtonUp="SectionTitle_MouseLeftButtonUp" />
                                  <Separator Margin="0,0,0,15" />
                                  <ContentPresenter Content="{Binding}" />
                              </StackPanel>

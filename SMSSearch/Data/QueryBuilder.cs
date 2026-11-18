@@ -76,6 +76,11 @@ GROUP BY
             string sql = "";
             string value = criteria.Value ?? "";
 
+            if (criteria.RootGroup != null && criteria.RootGroup.Children.Count > 0 && criteria.Type != SearchType.CustomSql)
+            {
+                return BuildCompound(criteria, hasRbFields);
+            }
+
             if (criteria.Mode == SearchMode.Field)
             {
                 string selectBase = hasRbFields ? FieldSelectBase : FieldSelectBaseNoRbFields;
@@ -218,6 +223,199 @@ GROUP BY
             if (string.IsNullOrEmpty(sql)) sql = "SELECT * FROM SYS_TAB";
 
             return new QueryResult { Sql = sql, Parameters = p };
+        }
+
+        private QueryResult BuildCompound(SearchCriteria criteria, bool hasRbFields)
+        {
+            var p = new DynamicParameters();
+            int paramIndex = 0;
+            bool isRecordQuery = criteria.Mode == SearchMode.Field && criteria.Type == SearchType.Table && !criteria.ShowFields;
+            string? whereClause = BuildGroupSql(criteria.RootGroup!, criteria.Mode, hasRbFields, isRecordQuery, p, ref paramIndex, isRoot: true);
+
+            string sql;
+            if (isRecordQuery)
+            {
+                string tableName = SanitizeIdentifier(criteria.Value);
+                sql = $"SELECT * FROM {tableName}";
+
+                if (criteria.LastTransaction && !string.IsNullOrEmpty(whereClause))
+                {
+                    sql += $" WHERE F1032 = (SELECT DISTINCT TOP 1 F1032 FROM {tableName} ORDER BY F1032 DESC) AND ({whereClause})";
+                }
+                else if (criteria.LastTransaction)
+                {
+                    sql += $" WHERE F1032 = (SELECT DISTINCT TOP 1 F1032 FROM {tableName} ORDER BY F1032 DESC)";
+                }
+                else if (!string.IsNullOrEmpty(whereClause))
+                {
+                    sql += $" WHERE {whereClause}";
+                }
+            }
+            else if (criteria.Mode == SearchMode.Field)
+            {
+                string selectBase = hasRbFields ? FieldSelectBase : FieldSelectBaseNoRbFields;
+                string groupBy = hasRbFields ? FieldSelectGroupBy : FieldSelectGroupByNoRbFields;
+                string rbJoinFilter = hasRbFields ? " AND RBF.F1452 = TAB.name" : "";
+                string wherePart = string.IsNullOrEmpty(whereClause) ? "" : $" WHERE {whereClause}";
+                sql = $"{selectBase}{rbJoinFilter} {FieldSelectJoinPKey}{wherePart} {groupBy}{FieldSelectOrderBy}";
+            }
+            else if (criteria.Mode == SearchMode.Totalizer)
+            {
+                string wherePart = string.IsNullOrEmpty(whereClause) ? "" : $" WHERE {whereClause}";
+                sql = $"SELECT {_tlzFields} FROM TLZ_TAB{wherePart}";
+            }
+            else
+            {
+                string wherePart = string.IsNullOrEmpty(whereClause) ? "" : $" WHERE {whereClause}";
+                sql = $"SELECT {_fctFields} FROM FCT_TAB{wherePart}";
+            }
+
+            return new QueryResult { Sql = sql, Parameters = p };
+        }
+
+        private string? BuildGroupSql(
+            SearchClauseGroup group,
+            SearchMode mode,
+            bool hasRbFields,
+            bool isRecordQuery,
+            DynamicParameters p,
+            ref int paramIndex,
+            bool isRoot)
+        {
+            var parts = new System.Collections.Generic.List<(SearchLogicalOperator Op, string Sql)>();
+
+            foreach (var child in group.Children)
+            {
+                string? childSql = child switch
+                {
+                    SearchClause clause => BuildClauseSql(clause, mode, hasRbFields, isRecordQuery, p, ref paramIndex),
+                    SearchClauseGroup subGroup => BuildGroupSql(subGroup, mode, hasRbFields, isRecordQuery, p, ref paramIndex, isRoot: false),
+                    _ => null
+                };
+
+                if (!string.IsNullOrEmpty(childSql))
+                {
+                    parts.Add((child.LogicalOperator, childSql!));
+                }
+            }
+
+            if (parts.Count == 0) return null;
+            if (parts.Count == 1) return parts[0].Sql;
+
+            var sb = new System.Text.StringBuilder();
+            if (!isRoot) sb.Append('(');
+            sb.Append(parts[0].Sql);
+            for (int i = 1; i < parts.Count; i++)
+            {
+                string opStr = parts[i].Op == SearchLogicalOperator.Or ? " OR " : " AND ";
+                sb.Append(opStr).Append(parts[i].Sql);
+            }
+            if (!isRoot) sb.Append(')');
+            return sb.ToString();
+        }
+
+        private string? BuildClauseSql(
+            SearchClause clause,
+            SearchMode mode,
+            bool hasRbFields,
+            bool isRecordQuery,
+            DynamicParameters p,
+            ref int paramIndex)
+        {
+            string raw = (clause.Value ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(raw)) return null;
+
+            string? column;
+            if (isRecordQuery)
+            {
+                if (string.IsNullOrWhiteSpace(clause.ColumnName)) return null;
+                column = SanitizeIdentifier(clause.ColumnName.Trim());
+            }
+            else
+            {
+                column = ResolveColumn(mode, clause.Field, hasRbFields);
+                if (column == null)
+                {
+                    // e.g., Description on Field mode when RB_FIELDS does not exist
+                    return "1 = 0";
+                }
+            }
+
+            string FormatVal(string v)
+            {
+                if (!isRecordQuery && mode == SearchMode.Field && clause.Field == SearchFieldTarget.Number &&
+                    !v.StartsWith("F", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return "F" + v;
+                }
+                return v;
+            }
+
+            if (clause.Operator == SearchComparisonOperator.In)
+            {
+                var items = raw.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries);
+                if (items.Length == 0) return null;
+
+                var paramNames = new System.Collections.Generic.List<string>();
+                foreach (var item in items)
+                {
+                    string pName = $"p{paramIndex++}";
+                    p.Add(pName, FormatVal(item));
+                    paramNames.Add("@" + pName);
+                }
+                return $"{column} IN ({string.Join(", ", paramNames)})";
+            }
+
+            string paramName = $"p{paramIndex++}";
+            string val = FormatVal(raw);
+
+            switch (clause.Operator)
+            {
+                case SearchComparisonOperator.NotEquals:
+                    p.Add(paramName, val);
+                    return isRecordQuery
+                        ? $"{column} <> @{paramName}"
+                        : $"COALESCE({column}, '') <> @{paramName}";
+
+                case SearchComparisonOperator.Contains:
+                    string containsPattern = $"%{val.Replace("*", "%").Replace("?", "_")}%";
+                    p.Add(paramName, containsPattern);
+                    return $"{column} LIKE @{paramName}";
+
+                case SearchComparisonOperator.DoesNotContain:
+                    string notContainsPattern = $"%{val.Replace("*", "%").Replace("?", "_")}%";
+                    p.Add(paramName, notContainsPattern);
+                    return isRecordQuery
+                        ? $"({column} NOT LIKE @{paramName} OR {column} IS NULL)"
+                        : $"COALESCE({column}, '') NOT LIKE @{paramName}";
+
+                case SearchComparisonOperator.Wildcard:
+                    string wildcardPattern = val.Replace("*", "%").Replace("?", "_");
+                    p.Add(paramName, wildcardPattern);
+                    return $"{column} LIKE @{paramName}";
+
+                case SearchComparisonOperator.Equals:
+                default:
+                    p.Add(paramName, val);
+                    return $"{column} = @{paramName}";
+            }
+        }
+
+        private static string? ResolveColumn(SearchMode mode, SearchFieldTarget field, bool hasRbFields)
+        {
+            return mode switch
+            {
+                SearchMode.Function => field == SearchFieldTarget.Description ? "F1064" : "F1063",
+                SearchMode.Totalizer => field == SearchFieldTarget.Description ? "F1039" : "F1034",
+                SearchMode.Field => field switch
+                {
+                    SearchFieldTarget.Number => "col.name",
+                    SearchFieldTarget.Description => hasRbFields ? "RBF.F1454" : null,
+                    SearchFieldTarget.Table => "TAB.name",
+                    _ => "col.name"
+                },
+                _ => null
+            };
         }
 
         private void HandleWildcards(ref string value, out string op)

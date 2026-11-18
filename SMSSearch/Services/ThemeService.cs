@@ -15,6 +15,7 @@ namespace SMS_Search.Services
         private const string LightThemeUri = "pack://application:,,,/Resources/Themes/LightTheme.xaml";
         private const string DarkThemeUri = "pack://application:,,,/Resources/Themes/DarkTheme.xaml";
         private const int DwmwaUseImmersiveDarkMode = 20;
+        private const int DwmwaBorderColor = 34;
 
         private readonly IConfigService _configService;
         private readonly ILoggerService _logger;
@@ -130,6 +131,10 @@ namespace SMS_Search.Services
 
                 int useDark = isDark ? 1 : 0;
                 _ = DwmSetWindowAttribute(hwnd, DwmwaUseImmersiveDarkMode, ref useDark, sizeof(int));
+
+                // COLORREF format: 0x00BBGGRR
+                int borderColor = isDark ? 0x00463F3F : 0x00D0D0D0;
+                _ = DwmSetWindowAttribute(hwnd, DwmwaBorderColor, ref borderColor, sizeof(int));
             }
             catch
             {

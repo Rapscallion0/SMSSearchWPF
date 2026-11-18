@@ -150,7 +150,6 @@ namespace SMS_Search.Utils
             SetValue(AppSettings.Sections.Search, AppSettings.Keys.SelectCustomSqlOnBuild, "1");
             SetValue(AppSettings.Sections.Search, AppSettings.Keys.AnyMatchDefault, "True");
             SetValue(AppSettings.Sections.Search, AppSettings.Keys.DefaultTab, "Function");
-            SetValue(AppSettings.Sections.Search, AppSettings.Keys.DefaultTableAction, "QueryFields");
 
             // Connection
             SetValue(AppSettings.Sections.Connection, AppSettings.Keys.WindowsAuth, "True");
