@@ -24,6 +24,39 @@ namespace SMS_Search.ViewModels
         private string _title;
 
         [ObservableProperty]
+        private bool _hasCustomTitle;
+
+        [ObservableProperty]
+        private bool _isRenaming;
+
+        [ObservableProperty]
+        private string _editingTitle = string.Empty;
+
+        public void BeginRename()
+        {
+            EditingTitle = Title;
+            IsRenaming = true;
+        }
+
+        public void CommitRename()
+        {
+            if (!IsRenaming) return;
+            string trimmed = EditingTitle?.Trim() ?? string.Empty;
+            if (!string.IsNullOrEmpty(trimmed) && !string.Equals(trimmed, Title, StringComparison.Ordinal))
+            {
+                Title = trimmed;
+                HasCustomTitle = true;
+            }
+            IsRenaming = false;
+        }
+
+        public void CancelRename()
+        {
+            IsRenaming = false;
+            EditingTitle = Title;
+        }
+
+        [ObservableProperty]
         private bool _isPinned;
 
         [ObservableProperty]

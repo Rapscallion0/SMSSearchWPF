@@ -1,0 +1,63 @@
+<UserControl x:Class="SMS_Search.Views.Panels.RowInspectorPanelView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:SMS_Search.Views.Controls"
+             Background="{DynamicResource AppBackgroundBrush}"
+             Foreground="{DynamicResource PrimaryTextBrush}">
+    <UserControl.Resources>
+        <ContextMenu x:Key="InspectorRowContextMenu">
+            <MenuItem Header="Copy Value(s)"
+                      Command="{Binding PlacementTarget.Tag.DataContext.ResultsVm.CopyInspectorValuesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <MenuItem Header="Copy Column Name(s)"
+                      Command="{Binding PlacementTarget.Tag.DataContext.ResultsVm.CopyInspectorColumnsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <MenuItem Header="Copy Description(s)"
+                      Command="{Binding PlacementTarget.Tag.DataContext.ResultsVm.CopyInspectorDescriptionsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+            <Separator/>
+            <MenuItem Header="Copy Row(s) (Column, Description, Value)"
+                      Command="{Binding PlacementTarget.Tag.DataContext.ResultsVm.CopyInspectorRowsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+        </ContextMenu>
+    </UserControl.Resources>
+
+    <Grid Margin="6">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <controls:ClearableTextBox Grid.Row="0" Margin="0,0,0,6"
+                                   Text="{Binding ResultsVm.InspectorFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                   Placeholder="Filter fields or values..."/>
+
+        <DataGrid x:Name="inspectorGrid"
+                  Grid.Row="1"
+                  ItemsSource="{Binding ResultsVm.InspectorFieldsView}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  SelectionMode="Extended"
+                  SelectionUnit="FullRow"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  AlternatingRowBackground="{DynamicResource GridAltRowBackgroundBrush}"
+                  MouseDoubleClick="InspectorGrid_MouseDoubleClick">
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                    <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                    <Setter Property="ContextMenu" Value="{StaticResource InspectorRowContextMenu}"/>
+                    <Setter Property="ToolTip" Value="Double-click to copy value"/>
+                </Style>
+            </DataGrid.RowStyle>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Column" Binding="{Binding ColumnName}" Width="85"/>
+                <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="115"/>
+                <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>
+

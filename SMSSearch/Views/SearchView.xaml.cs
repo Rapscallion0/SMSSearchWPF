@@ -61,6 +61,10 @@ namespace SMS_Search.Views
 
         private string _lastTypedText = "";
         private string? _lastValidTable;
+        private readonly System.Collections.Generic.Dictionary<string, int> _lastFocusedClauseIndexByTab = new();
+
+        private static string GetActiveTabKey(SearchViewModel vm) =>
+            vm.IsRecordsTabActive ? "Records" : vm.SelectedMode.ToString();
 
         private void TypingTimer_Tick(object? sender, EventArgs e)
         {
@@ -149,37 +153,83 @@ namespace SMS_Search.Views
             }
         }
 
-        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ModeRadio_Checked(object sender, System.Windows.RoutedEventArgs e)
         {
-            if (e.OriginalSource == sender)
-            {
-                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(FocusActiveSearchInput));
-            }
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(FocusActiveSearchInput));
         }
 
         private void FocusActiveSearchInput()
         {
             if (DataContext is SearchViewModel vm)
             {
-                if (vm.SelectedMode == SMS_Search.Data.SearchMode.Function)
+                if (vm.IsMultiClauseVisible)
                 {
-                    if (vm.IsFunctionNumber) FocusAndSelect(FunctionNumberBox, force: true);
-                    else if (vm.IsFunctionDescription) FocusAndSelect(FunctionDescriptionBox, force: true);
-                    else if (vm.IsFunctionCustomSql) FocusAndSelectSql(FunctionSqlEditor, force: true, selectAll: false);
+                    FocusLastClauseValueInput(vm);
+                    return;
                 }
-                else if (vm.SelectedMode == SMS_Search.Data.SearchMode.Totalizer)
+
+                if (vm.IsFieldMode && vm.IsFieldTable)
                 {
-                    if (vm.IsTotalizerNumber) FocusAndSelect(TotalizerNumberBox, force: true);
-                    else if (vm.IsTotalizerDescription) FocusAndSelect(TotalizerDescriptionBox, force: true);
-                    else if (vm.IsTotalizerCustomSql) FocusAndSelectSql(TotalizerSqlEditor, force: true, selectAll: false);
+                    FocusTableCombo();
                 }
-                else if (vm.SelectedMode == SMS_Search.Data.SearchMode.Field)
+                else if (vm.IsActiveNumber)
                 {
-                    if (vm.IsFieldNumber) FocusAndSelect(FieldNumberBox, force: true);
-                    else if (vm.IsFieldDescription) FocusAndSelect(FieldDescriptionBox, force: true);
-                    else if (vm.IsFieldCustomSql) FocusAndSelectSql(FieldSqlEditor, force: true, selectAll: false);
-                    else if (vm.IsFieldTable) FocusTableCombo();
+                    FocusAndSelect(SimpleNumberBox, force: true);
                 }
+                else if (vm.IsActiveDescription)
+                {
+                    FocusAndSelect(SimpleDescriptionBox, force: true);
+                }
+            }
+        }
+
+        private void FocusLastClauseValueInput(SearchViewModel vm)
+        {
+            if (ClausesItemsControl == null || vm.Clauses.Count == 0) return;
+
+            string key = GetActiveTabKey(vm);
+            int savedIdx = _lastFocusedClauseIndexByTab.TryGetValue(key, out int idx) ? idx : 0;
+            int targetIdx = Math.Clamp(savedIdx, 0, vm.Clauses.Count - 1);
+            ClausesItemsControl.UpdateLayout();
+
+            if (ClausesItemsControl.ItemContainerGenerator.ContainerFromIndex(targetIdx) is not System.Windows.FrameworkElement container)
+                return;
+
+            var valueBox = FindNamedDescendant<SMS_Search.Views.Controls.ClearableTextBox>(container, "ClauseValueBox");
+            if (valueBox != null && valueBox.Visibility == System.Windows.Visibility.Visible)
+            {
+                FocusAndSelect(valueBox, force: true);
+                return;
+            }
+
+            var tableCombo = FindNamedDescendant<ComboBox>(container, "ClauseTableValueBox");
+            if (tableCombo != null && tableCombo.Visibility == System.Windows.Visibility.Visible)
+            {
+                tableCombo.Focus();
+            }
+        }
+
+        private static T? FindNamedDescendant<T>(System.Windows.DependencyObject parent, string name) where T : System.Windows.FrameworkElement
+        {
+            int count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                if (child is T fe && fe.Name == name) return fe;
+                var match = FindNamedDescendant<T>(child, name);
+                if (match != null) return match;
+            }
+            return null;
+        }
+
+        private void ClauseValue_GotFocus(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (sender is System.Windows.FrameworkElement fe &&
+                fe.DataContext is SearchClauseRowViewModel row &&
+                DataContext is SearchViewModel vm)
+            {
+                int idx = vm.Clauses.IndexOf(row);
+                if (idx >= 0) _lastFocusedClauseIndexByTab[GetActiveTabKey(vm)] = idx;
             }
         }
 
@@ -195,32 +245,12 @@ namespace SMS_Search.Views
         {
             if (sender is System.Windows.Controls.RadioButton rb)
             {
-                // We use Dispatcher to allow the property change to propagate if needed,
-                // but mainly to decouple the event slightly.
                 Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                 {
                     string tag = rb.Tag?.ToString() ?? "";
-                    string group = rb.GroupName;
-
-                    if (group == "FctType")
-                    {
-                        if (tag == "Number") FocusAndSelect(FunctionNumberBox);
-                        else if (tag == "Description") FocusAndSelect(FunctionDescriptionBox);
-                        else if (tag == "CustomSql") FocusAndSelectSql(FunctionSqlEditor);
-                    }
-                    else if (group == "TlzType")
-                    {
-                        if (tag == "Number") FocusAndSelect(TotalizerNumberBox);
-                        else if (tag == "Description") FocusAndSelect(TotalizerDescriptionBox);
-                        else if (tag == "CustomSql") FocusAndSelectSql(TotalizerSqlEditor);
-                    }
-                    else if (group == "FldType")
-                    {
-                        if (tag == "Number") FocusAndSelect(FieldNumberBox);
-                        else if (tag == "Description") FocusAndSelect(FieldDescriptionBox);
-                        else if (tag == "CustomSql") FocusAndSelectSql(FieldSqlEditor);
-                        else if (tag == "Table") FocusTableCombo();
-                    }
+                    if (tag == "Number") FocusAndSelect(SimpleNumberBox);
+                    else if (tag == "Description") FocusAndSelect(SimpleDescriptionBox);
+                    else if (tag == "Table") FocusTableCombo();
                 }));
             }
         }
@@ -255,44 +285,21 @@ namespace SMS_Search.Views
             }
         }
 
-        // Function Tab
-        private void FunctionNumberBox_GotFocus(object sender, System.Windows.RoutedEventArgs e)
+        private void SimpleNumberBox_GotFocus(object sender, System.Windows.RoutedEventArgs e)
         {
-            if (DataContext is SearchViewModel vm && !vm.IsFunctionNumber) vm.IsFunctionNumber = true;
+            if (DataContext is SearchViewModel vm && !vm.IsActiveNumber) vm.IsActiveNumber = true;
         }
 
-        private void FunctionDescriptionBox_GotFocus(object sender, System.Windows.RoutedEventArgs e)
+        private void SimpleDescriptionBox_GotFocus(object sender, System.Windows.RoutedEventArgs e)
         {
-            if (DataContext is SearchViewModel vm && !vm.IsFunctionDescription) vm.IsFunctionDescription = true;
-        }
-
-        // Totalizer Tab
-        private void TotalizerNumberBox_GotFocus(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (DataContext is SearchViewModel vm && !vm.IsTotalizerNumber) vm.IsTotalizerNumber = true;
-        }
-
-        private void TotalizerDescriptionBox_GotFocus(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (DataContext is SearchViewModel vm && !vm.IsTotalizerDescription) vm.IsTotalizerDescription = true;
-        }
-
-        // Fields Tab
-        private void FieldNumberBox_GotFocus(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (DataContext is SearchViewModel vm && !vm.IsFieldNumber) vm.IsFieldNumber = true;
-        }
-
-        private void FieldDescriptionBox_GotFocus(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (DataContext is SearchViewModel vm && !vm.IsFieldDescription) vm.IsFieldDescription = true;
+            if (DataContext is SearchViewModel vm && !vm.IsActiveDescription) vm.IsActiveDescription = true;
         }
 
         private void ComboBox_GotFocus(object sender, System.Windows.RoutedEventArgs e)
         {
              if (DataContext is SearchViewModel vm)
              {
-                 if (!vm.IsFieldTable) vm.IsFieldTable = true;
+                 if (!vm.IsActiveFieldTable) vm.IsActiveFieldTable = true;
                  _lastValidTable = vm.SelectedTable;
              }
 
@@ -337,21 +344,6 @@ namespace SMS_Search.Views
                     _lastValidTable = exactTable ?? text;
                 }
             }
-        }
-
-        private void FunctionSqlEditor_GotFocus(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (DataContext is SearchViewModel vm && !vm.IsFunctionCustomSql) vm.IsFunctionCustomSql = true;
-        }
-
-        private void TotalizerSqlEditor_GotFocus(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (DataContext is SearchViewModel vm && !vm.IsTotalizerCustomSql) vm.IsTotalizerCustomSql = true;
-        }
-
-        private void FieldSqlEditor_GotFocus(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (DataContext is SearchViewModel vm && !vm.IsFieldCustomSql) vm.IsFieldCustomSql = true;
         }
 
         private bool _isDeleting = false;

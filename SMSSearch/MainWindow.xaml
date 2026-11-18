@@ -5,94 +5,170 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SMS_Search"
         xmlns:views="clr-namespace:SMS_Search.Views"
+        xmlns:panels="clr-namespace:SMS_Search.Views.Panels"
         xmlns:controls="clr-namespace:SMS_Search.Views.Controls"
         xmlns:vm="clr-namespace:SMS_Search.ViewModels"
         xmlns:conv="clr-namespace:SMS_Search.Converters"
+        xmlns:utils="clr-namespace:SMS_Search.Utils"
+        xmlns:avalonDock="https://github.com/Dirkster99/AvalonDock"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
-        Title="{Binding Title}" Height="800" Width="800"
+        Title="{Binding Title}" Height="757" Width="1017"
         Background="{DynamicResource AppBackgroundBrush}"
         Foreground="{DynamicResource PrimaryTextBrush}"
-        Icon="pack://application:,,,/Resources/SMS Search.ico" MinWidth="675" MinHeight="600">
+        Icon="pack://application:,,,/Resources/SMS Search.ico" MinWidth="338" MinHeight="95">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <conv:EnumDescriptionConverter x:Key="EnumDescriptionConverter"/>
         <conv:DictionarySourceShortConverter x:Key="DictionarySourceShortConverter"/>
+
+        <utils:WorkspaceLayoutTemplateSelector x:Key="WorkspaceTemplateSelector">
+            <utils:WorkspaceLayoutTemplateSelector.DocumentTemplate>
+                <DataTemplate DataType="{x:Type vm:ResultTabViewModel}">
+                    <views:ResultsView DataContext="{Binding ResultsVm}"/>
+                </DataTemplate>
+            </utils:WorkspaceLayoutTemplateSelector.DocumentTemplate>
+        </utils:WorkspaceLayoutTemplateSelector>
+
+        <utils:WorkspaceLayoutStyleSelector x:Key="WorkspaceStyleSelector">
+            <utils:WorkspaceLayoutStyleSelector.DocumentStyle>
+                <Style TargetType="{x:Type avalonDock:LayoutItem}">
+                    <Setter Property="Title" Value="{Binding Model.Title}"/>
+                    <Setter Property="CanClose" Value="{Binding Model.CanClose}"/>
+                    <Setter Property="CanFloat" Value="True"/>
+                </Style>
+            </utils:WorkspaceLayoutStyleSelector.DocumentStyle>
+        </utils:WorkspaceLayoutStyleSelector>
     </Window.Resources>
     <Window.InputBindings>
         <KeyBinding Key="F5" Command="{Binding SearchCommand}" />
-        <KeyBinding Key="Return" Modifiers="Control" Command="{Binding SearchCommand}" />
+        <KeyBinding Key="Return" Modifiers="Control" Command="{Binding ExecuteCustomSqlCommand}" />
         <KeyBinding Key="T" Modifiers="Control" Command="{Binding NewTabCommand}" />
         <KeyBinding Key="W" Modifiers="Control" Command="{Binding CloseActiveTabCommand}" />
+        <KeyBinding Key="E" Modifiers="Control+Alt+Shift" Command="{Binding UnlockEncryptionUtilityCommand}" />
     </Window.InputBindings>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition x:Name="SearchRow" Height="310" MinHeight="310"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <GroupBox Header="Search Criteria" Margin="10">
-            <views:SearchView DataContext="{Binding SearchVm}" Margin="0,5,0,0"/>
-        </GroupBox>
+        <!-- Top Menu Bar -->
+        <Menu Grid.Row="0" Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource PrimaryTextBrush}"
+              BorderBrush="{DynamicResource BorderBrushKey}" BorderThickness="0,0,0,1" Padding="4,2">
+            <MenuItem Header="_File">
+                <MenuItem Header="New Results Tab" Command="{Binding NewTabCommand}" InputGestureText="Ctrl+T"/>
+                <MenuItem Header="Close Active Tab" Command="{Binding CloseActiveTabCommand}" InputGestureText="Ctrl+W"/>
+                <Separator/>
+                <MenuItem Header="Import Tables..." Command="{Binding OpenImportCommand}"/>
+                <Separator/>
+                <MenuItem Header="Exit" Command="{Binding ExitCommand}" InputGestureText="Alt+F4"/>
+            </MenuItem>
 
-        <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" ResizeBehavior="PreviousAndNext"/>
+            <MenuItem Header="_Search">
+                <MenuItem Header="Run Search Criteria" Command="{Binding SearchCommand}" InputGestureText="F5"/>
+                <MenuItem Header="Execute SQL Editor" Command="{Binding ExecuteCustomSqlCommand}" InputGestureText="Ctrl+Enter"/>
+                <Separator/>
+                <MenuItem Header="Refresh Databases" Command="{Binding RefreshDatabasesCommand}"/>
+                <MenuItem Header="Refresh Tables &amp; IntelliSense" Command="{Binding SearchVm.RefreshTablesCommand}"/>
+            </MenuItem>
 
-        <Grid Grid.Row="2" Margin="10,0,10,10">
-            <TabControl ItemsSource="{Binding ResultTabs}" SelectedItem="{Binding SelectedResultTab, Mode=TwoWay}">
-                <TabControl.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <ToggleButton IsChecked="{Binding IsPinned, Mode=TwoWay}"
-                                          Style="{StaticResource TransparentIconToggleButtonStyle}"
-                                          Width="18" Height="18" Margin="0,0,4,0"
-                                          ToolTip="Pin tab (new searches will open in a new tab)">
-                                <Control Width="12" Height="12">
-                                    <Control.Style>
-                                        <Style TargetType="Control">
-                                            <Setter Property="Template" Value="{StaticResource Icon_Pin_Unpinned}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsPinned}" Value="True">
-                                                    <Setter Property="Template" Value="{StaticResource Icon_Pin_Pinned}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Control.Style>
-                                </Control>
-                            </ToggleButton>
-                            <TextBlock Text="{Binding Title}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <Button Content="&#x00D7;"
-                                    Command="{Binding CloseCommand}"
-                                    Visibility="{Binding CanClose, Converter={StaticResource BoolToVis}}"
-                                    Background="Transparent" BorderThickness="0" Padding="3,0" FontWeight="Bold"
-                                    ToolTip="Close tab (Ctrl+W)"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </TabControl.ItemTemplate>
-                <TabControl.ContentTemplate>
-                    <DataTemplate>
-                        <views:ResultsView DataContext="{Binding ResultsVm}"/>
-                    </DataTemplate>
-                </TabControl.ContentTemplate>
-            </TabControl>
+            <MenuItem Header="_View">
+                <MenuItem Header="Panels" SubmenuOpened="PanelsMenu_SubmenuOpened">
+                    <MenuItem x:Name="MenuPanelSearchCriteria" Header="Search Criteria" IsCheckable="True" Click="TogglePanelMenu_Click" Tag="SearchCriteria"/>
+                    <MenuItem x:Name="MenuPanelSqlEditor" Header="SQL Editor" IsCheckable="True" Click="TogglePanelMenu_Click" Tag="SqlEditor"/>
+                    <MenuItem x:Name="MenuPanelResults" Header="Results" IsCheckable="True" Click="TogglePanelMenu_Click" Tag="Results"/>
+                    <MenuItem x:Name="MenuPanelRowInspector" Header="Row Inspector" IsCheckable="True" Click="TogglePanelMenu_Click" Tag="RowInspector"/>
+                    <MenuItem x:Name="MenuPanelSavedQueries" Header="Saved Queries" IsCheckable="True" Click="TogglePanelMenu_Click" Tag="SavedQueries"/>
+                    <MenuItem x:Name="MenuPanelSelectionStats" Header="Selection Statistics" IsCheckable="True" Click="TogglePanelMenu_Click" Tag="SelectionStats"/>
+                    <MenuItem x:Name="MenuPanelDateConverter" Header="Date Converter" IsCheckable="True" Click="TogglePanelMenu_Click" Tag="DateConverter"/>
+                </MenuItem>
+                <MenuItem Header="Theme">
+                    <MenuItem Header="Light" Command="{Binding SetThemeCommand}" CommandParameter="Light"/>
+                    <MenuItem Header="Dark" Command="{Binding SetThemeCommand}" CommandParameter="Dark"/>
+                    <MenuItem Header="System" Command="{Binding SetThemeCommand}" CommandParameter="System"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Manage Layouts..." Click="ManageLayoutsMenu_Click"/>
+            </MenuItem>
 
-            <Button Content="+" Command="{Binding NewTabCommand}"
-                    HorizontalAlignment="Right" VerticalAlignment="Top"
-                    Width="22" Height="22" Margin="0,2,2,0" Padding="0"
-                    ToolTip="New Results Tab (Ctrl+T)"/>
-        </Grid>
+            <MenuItem Header="_Tools" SubmenuOpened="ToolsMenu_SubmenuOpened">
+                <MenuItem Header="GS1 Toolkit..." Command="{Binding OpenGs1ToolkitCommand}"/>
+                <MenuItem Header="Unarchive Drop Target" IsCheckable="True" IsChecked="{Binding IsUnarchiveTargetVisible, Mode=OneWay}" Command="{Binding OpenUnarchiveCommand}"/>
+                <MenuItem x:Name="MenuEncryptionUtility" Header="Encryption Utility..."
+                          Command="{Binding OpenEncryptionUtilityCommand}"
+                          Visibility="Collapsed"/>
+                <Separator/>
+                <MenuItem Header="Settings..." Command="{Binding OpenSettingsCommand}"/>
+            </MenuItem>
+        </Menu>
 
-        <StatusBar Grid.Row="3" x:Name="MainStatusBar" SizeChanged="MainStatusBar_SizeChanged">
+        <!-- Dockable Workspace -->
+        <avalonDock:DockingManager x:Name="DockManager"
+                                   Grid.Row="1"
+                                   Validation.ErrorTemplate="{x:Null}"
+                                   LayoutChanged="DockManager_LayoutChanged"
+                                   utils:DockingSplitterBehavior.IsolateAdjacentResize="True"
+                                   utils:FloatingWindowSnapBehavior.EnableWindowSnap="True"
+                                   AllowMixedOrientation="True">
+            <avalonDock:DockingManager.AnchorableHeaderTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Title}"
+                               ToolTip="{Binding Title}"
+                               TextTrimming="CharacterEllipsis"/>
+                </DataTemplate>
+            </avalonDock:DockingManager.AnchorableHeaderTemplate>
+            <avalonDock:LayoutRoot>
+                <avalonDock:LayoutPanel Orientation="Horizontal">
+                    <avalonDock:LayoutPanel Orientation="Vertical">
+                        <avalonDock:LayoutAnchorablePaneGroup Orientation="Vertical" DockHeight="1.1500560948067564*" DockMinWidth="665" DockMinHeight="317">
+                            <avalonDock:LayoutAnchorablePane DockHeight="1.1674590678963015*" DockMinWidth="665" DockMinHeight="170">
+                                <avalonDock:LayoutAnchorable x:Name="PaneSearchCriteria" ContentId="SearchCriteria" Title="Search Criteria">
+                                    <views:SearchView DataContext="{Binding SearchVm}" VerticalAlignment="Stretch"/>
+                                </avalonDock:LayoutAnchorable>
+                            </avalonDock:LayoutAnchorablePane>
+                            <avalonDock:LayoutAnchorablePane DockHeight="0.8110994080777051*" DockMinWidth="349" DockMinHeight="142">
+                                <avalonDock:LayoutAnchorable x:Name="PaneSqlEditor" ContentId="SqlEditor" Title="SQL Editor">
+                                    <panels:SqlEditorPanelView/>
+                                </avalonDock:LayoutAnchorable>
+                            </avalonDock:LayoutAnchorablePane>
+                        </avalonDock:LayoutAnchorablePaneGroup>
+
+                        <avalonDock:LayoutAnchorablePane DockHeight="0.8340988075967033*" DockMinWidth="547" DockMinHeight="218">
+                            <avalonDock:LayoutAnchorable x:Name="PaneResults" ContentId="Results" Title="Results" CanClose="False">
+                                <panels:ResultsPanelView/>
+                            </avalonDock:LayoutAnchorable>
+                        </avalonDock:LayoutAnchorablePane>
+                    </avalonDock:LayoutPanel>
+
+                    <avalonDock:LayoutAnchorablePaneGroup Orientation="Vertical" DockWidth="274" DockMinWidth="274" DockMinHeight="503">
+                        <avalonDock:LayoutAnchorablePane DockHeight="1.483671912230985*" DockMinWidth="274" DockMinHeight="397">
+                            <avalonDock:LayoutAnchorable x:Name="PaneRowInspector" ContentId="RowInspector" Title="Row Inspector">
+                                <panels:RowInspectorPanelView/>
+                            </avalonDock:LayoutAnchorable>
+                            <avalonDock:LayoutAnchorable x:Name="PaneSavedQueries" ContentId="SavedQueries" Title="Saved Queries">
+                                <panels:SavedQueriesPanelView/>
+                            </avalonDock:LayoutAnchorable>
+                            <avalonDock:LayoutAnchorable x:Name="PaneSelectionStats" ContentId="SelectionStats" Title="Selection Statistics">
+                                <panels:SelectionStatsPanelView/>
+                            </avalonDock:LayoutAnchorable>
+                        </avalonDock:LayoutAnchorablePane>
+                        <avalonDock:LayoutAnchorablePane DockHeight="0.29095882111828164*" DockMinWidth="229" DockMinHeight="101">
+                            <avalonDock:LayoutAnchorable x:Name="PaneDateConverter" ContentId="DateConverter" Title="Date Converter">
+                                <panels:DateConverterPanelView/>
+                            </avalonDock:LayoutAnchorable>
+                        </avalonDock:LayoutAnchorablePane>
+                    </avalonDock:LayoutAnchorablePaneGroup>
+                </avalonDock:LayoutPanel>
+            </avalonDock:LayoutRoot>
+        </avalonDock:DockingManager>
+
+        <!-- Clean Status Bar -->
+        <StatusBar Grid.Row="2" x:Name="MainStatusBar" SizeChanged="MainStatusBar_SizeChanged"
+                   BorderBrush="{DynamicResource BorderBrushKey}" BorderThickness="0,1,0,0">
             <StatusBarItem>
                 <StackPanel x:Name="LeftStatusPanel" Orientation="Horizontal">
-                    <TextBlock x:Name="JulianLabel" Text="Julian:" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                    <TextBox Text="{Binding JulianDateText, UpdateSourceTrigger=PropertyChanged}" Width="60" MaxLength="7" VerticalContentAlignment="Center"/>
-                    <TextBlock x:Name="GregorianLabel" Text="Gregorian:" Margin="10,0,5,0" VerticalAlignment="Center"/>
-                    <DatePicker SelectedDate="{Binding GregorianDate}" Width="100"/>
-
-                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="10,0,10,0"/>
-
                     <ComboBox ItemsSource="{Binding Profiles}"
                               SelectedItem="{Binding ActiveProfile, Mode=TwoWay}"
                               DisplayMemberPath="Name"
@@ -124,7 +200,7 @@
                     </Border>
 
                     <TextBlock x:Name="DatabaseLabel" Text="Database:" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                    <ComboBox x:Name="DatabaseComboBox" MinWidth="150" Height="22" VerticalAlignment="Center"
+                    <ComboBox x:Name="DatabaseComboBox" MinWidth="160" Height="22" VerticalAlignment="Center"
                               ItemsSource="{Binding Databases}" SelectedItem="{Binding SelectedDatabase}"
                               IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True"
                               VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling"
@@ -175,38 +251,12 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-
-                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="8,0,0,0"/>
-                </StackPanel>
-            </StatusBarItem>
-            <StatusBarItem HorizontalAlignment="Right" x:Name="RightStatusItem">
-                <StackPanel x:Name="RightStatusPanel" Orientation="Horizontal">
-                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="0,0,10,0"/>
-
-                    <Button Command="{Binding OpenSettingsCommand}"
-                            Style="{StaticResource TransparentIconButtonStyle}" ToolTip="Settings" Margin="0,0,10,0">
-                        <Control Template="{StaticResource Icon_Settings}"
-                               Width="16" Height="16"/>
-                    </Button>
-                    <Button Command="{Binding OpenGs1ToolkitCommand}"
-                            Style="{StaticResource TransparentIconButtonStyle}" ToolTip="GS1 Toolkit" Margin="0,0,10,0">
-                        <Control Template="{StaticResource Icon_Gs1_Toolkit}"
-                               Width="16" Height="16"/>
-                    </Button>
-                    <ToggleButton Command="{Binding OpenImportCommand}" IsChecked="{Binding IsImportTargetVisible, Mode=OneWay}" ToolTip="Import Files"
-                                  Style="{StaticResource TransparentIconToggleButtonStyle}" Margin="0,0,10,0">
-                        <Control Template="{StaticResource Icon_Import}" Width="16" Height="16"/>
-                    </ToggleButton>
-                    <ToggleButton Command="{Binding OpenUnarchiveCommand}" IsChecked="{Binding IsUnarchiveTargetVisible, Mode=OneWay}" ToolTip="Unarchive Target"
-                                  Style="{StaticResource TransparentIconToggleButtonStyle}">
-                        <Control Template="{StaticResource Icon_UnarchiveNew}" Width="16" Height="16"/>
-                    </ToggleButton>
                 </StackPanel>
             </StatusBarItem>
         </StatusBar>
 
-        <Grid x:Name="MaskOverlay" Background="#AA000000" Visibility="Collapsed" Grid.RowSpan="4"/>
+        <Grid x:Name="MaskOverlay" Background="#AA000000" Visibility="Collapsed" Grid.RowSpan="3"/>
 
-        <controls:ImportOverlay Grid.RowSpan="4" DataContext="{Binding ImportVm}" Visibility="{Binding DataContext.IsImportTargetVisible, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}" Panel.ZIndex="10"/>
+        <controls:ImportOverlay Grid.RowSpan="3" DataContext="{Binding ImportVm}" Visibility="{Binding DataContext.IsImportTargetVisible, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}" Panel.ZIndex="10"/>
     </Grid>
 </Window>

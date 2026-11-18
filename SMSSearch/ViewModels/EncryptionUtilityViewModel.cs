@@ -36,7 +36,7 @@ namespace SMS_Search.ViewModels
 
             try
             {
-                 string encrypted = GeneralUtils.Encrypt(DecryptedText);
+                 string encrypted = GeneralUtils.EncryptLegacyIni(DecryptedText);
                  EncryptedText = encrypted;
                  if (!string.IsNullOrEmpty(encrypted))
                  {
@@ -59,7 +59,7 @@ namespace SMS_Search.ViewModels
 
             try
             {
-                string decrypted = GeneralUtils.Decrypt(EncryptedText);
+                string decrypted = GeneralUtils.DecryptLegacyIni(EncryptedText);
                 DecryptedText = decrypted;
                 if (!string.IsNullOrEmpty(decrypted))
                 {

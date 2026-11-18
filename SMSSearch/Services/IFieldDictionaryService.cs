@@ -83,6 +83,7 @@ namespace SMS_Search.Services
 
         DataTable SearchOffline(SearchCriteria criteria, DictionaryOptions? options = null);
         DataTable EnrichSqlMetadata(DataTable sqlMetadata, SearchCriteria criteria, DictionaryOptions? options = null);
+        IReadOnlyDictionary<string, FieldDictionaryEntry> GetEntries(string? overrideFieldsCsvPath = null);
 
         void InvalidateCache();
     }

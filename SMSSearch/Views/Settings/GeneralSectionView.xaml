@@ -19,16 +19,17 @@
         <GroupBox Header="Startup">
             <StackPanel Margin="5">
                 <ctrl:SettingControl Header="Application startup location" IsSaved="{Binding MainStartupLocation.IsSaved}">
-                    <StackPanel>
-                        <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding MainStartupLocation.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                        <CheckBox IsChecked="{Binding RememberSize.Value}" Content="Remember size" Margin="0,5,0,0"/>
-                    </StackPanel>
+                    <ComboBox ItemsSource="{Binding StartupLocationModes}" SelectedItem="{Binding MainStartupLocation.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </ctrl:SettingControl>
+
+                <ctrl:SettingControl Header="Workspace layout">
+                    <Button Content="Manage Layouts..." Command="{Binding OpenLayoutManagerCommand}" HorizontalAlignment="Left" Padding="12,4"/>
                 </ctrl:SettingControl>
 
                 <ctrl:SettingControl Header="Target startup location" IsSaved="{Binding UnarchiveStartupLocation.IsSaved}">

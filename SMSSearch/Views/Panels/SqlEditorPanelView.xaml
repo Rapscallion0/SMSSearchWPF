@@ -1,0 +1,44 @@
+<UserControl x:Class="SMS_Search.Views.Panels.SqlEditorPanelView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctrl="clr-namespace:SMS_Search.Views.Controls"
+             Background="{DynamicResource AppBackgroundBrush}"
+             Foreground="{DynamicResource PrimaryTextBrush}">
+    <UserControl.InputBindings>
+        <KeyBinding Key="F5" Command="{Binding ExecuteCustomSqlCommand}"/>
+        <KeyBinding Key="Return" Modifiers="Control" Command="{Binding ExecuteCustomSqlCommand}"/>
+    </UserControl.InputBindings>
+    <Grid Margin="6">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,6">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="Clean SQL" Command="{Binding SearchVm.CleanSqlCommand}" Height="24" Padding="6,0" Margin="0,0,4,0" ToolTip="Clean &amp; Beautify SQL"/>
+                <Button Tag="CustomSql" Command="{Binding SearchVm.ShowHistoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                        Height="24" Width="22" Margin="0,0,4,0" ToolTip="SQL History" Style="{StaticResource TransparentIconButtonStyle}">
+                    <Control Template="{StaticResource Icon_History}" Width="15" Height="15"/>
+                </Button>
+                <ctrl:SplitButton Text="Save"
+                                  PrimaryCommand="{Binding SearchVm.SaveSqlQueryCommand}"
+                                  PrimaryToolTip="Save current SQL Editor query"
+                                  SecondaryText="Show Saved Queries"
+                                  SecondaryCommand="{Binding SearchVm.ShowSavedQueriesCommand}"
+                                  Margin="0,0,4,0"/>
+                <Button Content="Execute SQL" Command="{Binding ExecuteCustomSqlCommand}" Height="24" Padding="8,0" FontWeight="SemiBold"
+                        ToolTip="Execute SQL (or selected SQL) — F5 / Ctrl+Enter"/>
+            </StackPanel>
+            <TextBlock Text="Custom SQL" VerticalAlignment="Center" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,0,6,0" Foreground="{DynamicResource SecondaryTextBrush}"/>
+        </DockPanel>
+
+        <ctrl:SqlEditor Grid.Row="1"
+                        x:Name="MainSqlEditor"
+                        Text="{Binding SearchVm.CustomSqlText, UpdateSourceTrigger=PropertyChanged}"
+                        SelectedText="{Binding SearchVm.CustomSqlSelectedText, Mode=OneWayToSource}"
+                        EditorFontFamily="{Binding SearchVm.SqlFontFamily}"
+                        EditorFontSize="{Binding SearchVm.SqlFontSize}"/>
+    </Grid>
+</UserControl>
+

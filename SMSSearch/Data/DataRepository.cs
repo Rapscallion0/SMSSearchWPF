@@ -828,7 +828,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task PerformImportProcessAsync(string server, string? user, string? pass, string targetDatabase, string? templateDatabase, List<string> sqlFiles, Action<ViewModels.ImportProgressInfo> progressCallback, Func<string, Task<Services.ExistingTableAction>> tableExistsPromptCallback, Func<string, List<Models.MissingColumnInfo>, bool, Task<Models.MissingColumnDialogResult>> missingColumnsPromptCallback, bool confirmInferredTypes = false, CancellationToken cancellationToken = default)
+        public async Task PerformImportProcessAsync(string server, string? user, string? pass, string targetDatabase, string? templateDatabase, List<string> sqlFiles, Action<ViewModels.ImportProgressInfo> progressCallback, Func<string, Task<Services.ExistingTableAction>> tableExistsPromptCallback, Func<string, List<Models.MissingColumnInfo>, bool, Task<Models.MissingColumnDialogResult>> missingColumnsPromptCallback, bool confirmInferredTypes = false, FieldsCsvImportOptions? fieldsCsvOptions = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -872,10 +872,23 @@ namespace SMS_Search.Data
 
                 // 2. Base tables to copy from Template DB to Target DB (only when a template DB is provided)
                 string[] baseTables = hasTemplateDb ? new[] { "RB_FIELDS", "RB_TABLES" } : Array.Empty<string>();
+                bool populateFromFieldsCsv = !hasTemplateDb && fieldsCsvOptions != null && fieldsCsvOptions.PopulateMetadataTables;
 
-                int totalSteps = baseTables.Length + sqlFiles.Count;
+                int totalSteps = baseTables.Length + (populateFromFieldsCsv ? 1 : 0) + sqlFiles.Count;
                 if (totalSteps == 0) totalSteps = 1;
                 int currentStep = 0;
+
+                if (populateFromFieldsCsv && fieldsCsvOptions != null)
+                {
+                    progressCallback(new ViewModels.ImportProgressInfo
+                    {
+                        IsIndeterminate = true,
+                        Percentage = 0,
+                        Message = "Populating RB_FIELDS & RB_TABLES from Fields.csv..."
+                    });
+                    await PopulateMetadataTablesFromDictionaryAsync(server, targetDatabase, user, pass, fieldsCsvOptions.Entries, cancellationToken);
+                    currentStep++;
+                }
 
                 foreach (var table in baseTables)
                 {
@@ -992,7 +1005,7 @@ namespace SMS_Search.Data
                                     await targetConn.ExecuteAsync(new CommandDefinition($"DROP TABLE [{safeTargetDb}].[dbo].[{parsed.TableName}]", cancellationToken: cancellationToken));
 
                                     // Recreate structure
-                                    skippedColumns = await CreateTargetTableStructureAsync(targetConn, safeTargetDb, safeTemplateDb, templateDatabase, parsed, confirmInferredTypes, missingColumnsPromptCallback, cancellationToken);
+                                    skippedColumns = await CreateTargetTableStructureAsync(targetConn, safeTargetDb, safeTemplateDb, templateDatabase, parsed, confirmInferredTypes, fieldsCsvOptions, missingColumnsPromptCallback, cancellationToken);
                                 }
                             }
                             else
@@ -1006,7 +1019,7 @@ namespace SMS_Search.Data
                                         : $"Creating structure for {parsed.TableName}..."
                                 });
 
-                                skippedColumns = await CreateTargetTableStructureAsync(targetConn, safeTargetDb, safeTemplateDb, templateDatabase, parsed, confirmInferredTypes, missingColumnsPromptCallback, cancellationToken);
+                                skippedColumns = await CreateTargetTableStructureAsync(targetConn, safeTargetDb, safeTemplateDb, templateDatabase, parsed, confirmInferredTypes, fieldsCsvOptions, missingColumnsPromptCallback, cancellationToken);
                             }
 
                             if (!skipFileExecution && (hasTemplateDb || tableExists))
@@ -1240,6 +1253,90 @@ namespace SMS_Search.Data
             }
         }
 
+        private async Task PopulateMetadataTablesFromDictionaryAsync(
+            string server,
+            string targetDatabase,
+            string? user,
+            string? pass,
+            IReadOnlyDictionary<string, Services.FieldDictionaryEntry> entries,
+            CancellationToken cancellationToken)
+        {
+            using var targetConn = new SqlConnection(GetConnectionString(server, targetDatabase, user, pass));
+            await targetConn.OpenAsync(cancellationToken);
+
+            bool rbFieldsExists = await targetConn.ExecuteScalarAsync<int>(
+                new CommandDefinition("SELECT COUNT(*) FROM sys.tables WHERE name = 'RB_FIELDS'", cancellationToken: cancellationToken)) > 0;
+            if (!rbFieldsExists)
+            {
+                const string createRbFields = @"
+                    CREATE TABLE [dbo].[RB_FIELDS] (
+                        [F1452] VARCHAR(64) NOT NULL,
+                        [F1453] VARCHAR(64) NOT NULL,
+                        [F1454] VARCHAR(255) NULL,
+                        [F1458] VARCHAR(32) NULL
+                    );";
+                await targetConn.ExecuteAsync(new CommandDefinition(createRbFields, cancellationToken: cancellationToken));
+
+                var dtFields = new DataTable();
+                dtFields.Columns.Add("F1452", typeof(string));
+                dtFields.Columns.Add("F1453", typeof(string));
+                dtFields.Columns.Add("F1454", typeof(string));
+                dtFields.Columns.Add("F1458", typeof(string));
+
+                var distinctTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var entry in entries.Values)
+                {
+                    string rbType = FieldDictionarySqlTypeMapper.MapToRbFieldsType(entry.Type);
+                    string desc = (entry.DescriptionEn ?? string.Empty).Trim();
+                    if (desc.Length > 255) desc = desc.Substring(0, 255);
+
+                    if (entry.TableFlags.Count == 0)
+                    {
+                        dtFields.Rows.Add(string.Empty, entry.Field, desc, rbType);
+                    }
+                    else
+                    {
+                        foreach (var dctName in entry.TableFlags.Keys)
+                        {
+                            string physTable = Services.DictionaryTableMapper.GetPrimarySqlTableForDct(dctName);
+                            if (!string.IsNullOrEmpty(physTable))
+                            {
+                                distinctTables.Add(physTable);
+                                dtFields.Rows.Add(physTable, entry.Field, desc, rbType);
+                            }
+                        }
+                    }
+                }
+
+                using var bulkFields = new SqlBulkCopy(targetConn) { DestinationTableName = "[dbo].[RB_FIELDS]" };
+                await bulkFields.WriteToServerAsync(dtFields, cancellationToken);
+
+                bool rbTablesExists = await targetConn.ExecuteScalarAsync<int>(
+                    new CommandDefinition("SELECT COUNT(*) FROM sys.tables WHERE name = 'RB_TABLES'", cancellationToken: cancellationToken)) > 0;
+                if (!rbTablesExists && distinctTables.Count > 0)
+                {
+                    const string createRbTables = @"
+                        CREATE TABLE [dbo].[RB_TABLES] (
+                            [F1452] VARCHAR(64) NOT NULL,
+                            [F1454] VARCHAR(255) NULL
+                        );";
+                    await targetConn.ExecuteAsync(new CommandDefinition(createRbTables, cancellationToken: cancellationToken));
+
+                    var dtTables = new DataTable();
+                    dtTables.Columns.Add("F1452", typeof(string));
+                    dtTables.Columns.Add("F1454", typeof(string));
+                    foreach (var t in distinctTables.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
+                    {
+                        dtTables.Rows.Add(t, t);
+                    }
+
+                    using var bulkTables = new SqlBulkCopy(targetConn) { DestinationTableName = "[dbo].[RB_TABLES]" };
+                    await bulkTables.WriteToServerAsync(dtTables, cancellationToken);
+                }
+            }
+        }
+
         private async Task<HashSet<string>> CreateTargetTableStructureAsync(
             SqlConnection targetConn,
             string safeTargetDb,
@@ -1247,6 +1344,7 @@ namespace SMS_Search.Data
             string? templateDatabase,
             ParsedSql parsed,
             bool confirmInferredTypes,
+            FieldsCsvImportOptions? fieldsCsvOptions,
             Func<string, List<Models.MissingColumnInfo>, bool, Task<Models.MissingColumnDialogResult>> missingColumnsPromptCallback,
             CancellationToken cancellationToken)
         {
@@ -1263,6 +1361,79 @@ namespace SMS_Search.Data
                 {
                     _logger.LogWarning("Failed to copy structure for {TableName}: {ErrorMessage}", parsed.TableName, ex.Message);
                     throw new Exception($"Could not copy the required structure for table {parsed.TableName} from template database. Ensure the table exists in {templateDatabase}.");
+                }
+            }
+            else if (fieldsCsvOptions != null)
+            {
+                var inferred = SqlImportSchemaInferrer.InferColumns(parsed.Statements);
+                var columnsToCreate = new List<(string Name, string SqlType)>();
+                var missingFromDict = new List<(string Name, string SuggestedType)>();
+
+                foreach (var col in inferred)
+                {
+                    if (fieldsCsvOptions.Entries.TryGetValue(col.Name, out var dictEntry))
+                    {
+                        columnsToCreate.Add((col.Name, FieldDictionarySqlTypeMapper.MapToSqlType(dictEntry)));
+                    }
+                    else
+                    {
+                        string fallbackType = col.ToSqlType();
+                        missingFromDict.Add((col.Name, fallbackType));
+                        columnsToCreate.Add((col.Name, fallbackType));
+                    }
+                }
+
+                // Only prompt if one or more columns are missing from Fields.csv and had to be inferred
+                if (missingFromDict.Count > 0)
+                {
+                    var promptCols = missingFromDict.Select(c => new Models.MissingColumnInfo
+                    {
+                        ColumnName = c.Name,
+                        IsInSource = true,
+                        IsInTarget = false,
+                        ShouldImport = true,
+                        SuggestedDataType = c.SuggestedType
+                    }).ToList();
+
+                    var dialogResult = await missingColumnsPromptCallback(parsed.TableName, promptCols, true);
+                    if (dialogResult.Action == Models.MissingColumnAction.Cancel)
+                    {
+                        _logger.LogWarning("User cancelled import during missing dictionary column confirmation for {TableName}.", parsed.TableName);
+                        throw new Exception("Import cancelled by user during column type confirmation.");
+                    }
+
+                    var resolvedMissing = dialogResult.Columns.ToDictionary(c => c.ColumnName, StringComparer.OrdinalIgnoreCase);
+                    var finalCols = new List<(string Name, string SqlType)>();
+                    foreach (var col in columnsToCreate)
+                    {
+                        if (resolvedMissing.TryGetValue(col.Name, out var userCol))
+                        {
+                            if (userCol.ShouldImport)
+                            {
+                                finalCols.Add((col.Name, userCol.SuggestedDataType));
+                            }
+                            else
+                            {
+                                skippedColumns.Add(col.Name);
+                            }
+                        }
+                        else
+                        {
+                            finalCols.Add(col);
+                        }
+                    }
+                    columnsToCreate = finalCols;
+                }
+
+                try
+                {
+                    string createTableSql = SqlImportSchemaInferrer.BuildCreateTableSql(parsed.TableName, columnsToCreate);
+                    await targetConn.ExecuteAsync(new CommandDefinition(createTableSql, cancellationToken: cancellationToken));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("Failed to create structure from Fields.csv for {TableName}: {ErrorMessage}", parsed.TableName, ex.Message);
+                    throw new Exception($"Could not create structure for table {parsed.TableName} from Fields.csv: {ex.Message}", ex);
                 }
             }
             else

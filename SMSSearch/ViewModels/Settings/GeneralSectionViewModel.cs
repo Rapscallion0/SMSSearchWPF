@@ -61,13 +61,6 @@ namespace SMS_Search.ViewModels.Settings
                 unarchiveStart,
                 v => v.ToString());
 
-            // Remember Size
-            var rememberSizeStr = repository.GetValue(AppSettings.Sections.General, AppSettings.Keys.MainRememberSize);
-            RememberSize = new ObservableSetting<bool>(
-                repository, AppSettings.Sections.General, AppSettings.Keys.MainRememberSize,
-                rememberSizeStr == "1",
-                v => v ? "1" : "0");
-
             // Copy Delimiter
             var copyDelimStr = repository.GetValue(AppSettings.Sections.General, AppSettings.Keys.CopyDelimiter);
             CopyDelimiter = new ObservableSetting<string>(
@@ -130,7 +123,6 @@ namespace SMS_Search.ViewModels.Settings
 
         public ObservableSetting<StartupLocationMode> MainStartupLocation { get; }
         public ObservableSetting<StartupLocationMode> UnarchiveStartupLocation { get; }
-        public ObservableSetting<bool> RememberSize { get; }
         public ObservableSetting<string> CopyDelimiter { get; }
         public ObservableSetting<string> CustomDelimiter { get; }
         public ObservableSetting<int> ToastTimeout { get; }
@@ -149,6 +141,15 @@ namespace SMS_Search.ViewModels.Settings
             "Semicolon (;)",
             "Custom..."
         };
+
+        [RelayCommand]
+        private void OpenLayoutManager()
+        {
+            if (System.Windows.Application.Current.MainWindow is SMS_Search.MainWindow mainWindow)
+            {
+                mainWindow.OpenLayoutManager();
+            }
+        }
 
         private void UpdateVisibility()
         {

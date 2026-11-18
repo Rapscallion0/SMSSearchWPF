@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace SMS_Search.Views
 {
@@ -9,6 +10,8 @@ namespace SMS_Search.Views
     {
         private bool _isSyncingSelection;
         private bool _isSyncingScroll;
+        private int _systemTitleClickCount;
+        private DateTime _lastSystemTitleClickUtc = DateTime.MinValue;
 
         public ModernSettingsWindow(SMS_Search.ViewModels.Settings.ModernSettingsViewModel viewModel)
         {
@@ -30,6 +33,27 @@ namespace SMS_Search.Views
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             ToastWindow.UpdateAllToastPositions(false, this);
+        }
+
+        private void SectionTitle_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is TextBlock tb &&
+                string.Equals(tb.Text, "System", StringComparison.OrdinalIgnoreCase))
+            {
+                var now = DateTime.UtcNow;
+                if ((now - _lastSystemTitleClickUtc).TotalSeconds > 2.0)
+                {
+                    _systemTitleClickCount = 0;
+                }
+                _lastSystemTitleClickUtc = now;
+                _systemTitleClickCount++;
+
+                if (_systemTitleClickCount >= 5)
+                {
+                    _systemTitleClickCount = 0;
+                    WeakReferenceMessenger.Default.Send(new SMS_Search.ViewModels.UnlockEncryptionUtilityMessage(true));
+                }
+            }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
