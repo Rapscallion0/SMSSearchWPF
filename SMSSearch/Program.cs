@@ -11,29 +11,9 @@ namespace SMS_Search
         [STAThread]
         public static void Main(string[] args)
         {
-            // Immediate boot logging to confirm execution start
-            // Use the actual EXE directory to ensure visibility
+            // Immediate boot logging to confirm execution start (bounded to 64 KB)
             string logDir = GetBestLogDir();
-            try
-            {
-                string bootLog = Path.Combine(logDir, "SMSSearch_Boot.log");
-                File.AppendAllText(bootLog, $"[{DateTime.Now}] SMS Search process starting...\n");
-            }
-            catch (Exception ex)
-            {
-                Trace.WriteLine(ex);
-                // Fallback to temp if we can't write to exe dir
-                try
-                {
-                    string bootLog = Path.Combine(Path.GetTempPath(), "SMSSearch_Boot.log");
-                    File.AppendAllText(bootLog, $"[{DateTime.Now}] SMS Search process starting (Temp fallback)...\n");
-                }
-                catch (Exception ex2)
-                {
-                    Trace.WriteLine(ex2);
-                    // Ignore logging failures to ensure the application continues to boot.
-                }
-            }
+            WriteBootLog(logDir, $"[{DateTime.Now}] SMS Search process starting...\n");
 
             // Set up a global exception handler for very early failures before Main body executes fully
             AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
@@ -61,6 +41,36 @@ namespace SMS_Search
             var app = new App();
             app.InitializeComponent();
             app.Run();
+        }
+
+        private static void WriteBootLog(string logDir, string entry)
+        {
+            const long maxBootLogBytes = 64 * 1024;
+            string[] candidates =
+            {
+                Path.Combine(logDir, "SMSSearch_Boot.log"),
+                Path.Combine(Path.GetTempPath(), "SMSSearch_Boot.log")
+            };
+
+            foreach (string bootLog in candidates)
+            {
+                try
+                {
+                    if (File.Exists(bootLog) && new FileInfo(bootLog).Length > maxBootLogBytes)
+                    {
+                        File.WriteAllText(bootLog, entry);
+                    }
+                    else
+                    {
+                        File.AppendAllText(bootLog, entry);
+                    }
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine(ex);
+                }
+            }
         }
 
         private static string GetBestLogDir()
