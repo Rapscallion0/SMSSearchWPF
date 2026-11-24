@@ -3,13 +3,17 @@ using System.ComponentModel;
 
 namespace SMS_Search.Data
 {
-    public class VirtualRow : CustomTypeDescriptor, IEquatable<VirtualRow>
+    public class VirtualRow : CustomTypeDescriptor, IEquatable<VirtualRow>, INotifyPropertyChanged
     {
         private readonly VirtualGridContext _context;
         private readonly int _rowIndex;
         private readonly PropertyDescriptorCollection _properties;
+        private static readonly PropertyChangedEventArgs AllPropertiesChangedArgs = new(string.Empty);
+
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public int RowIndex => _rowIndex;
+        public int DataVersion { get; private set; }
 
         // Expose Context internal for equality check or just use in Equals
         internal VirtualGridContext Context => _context;
@@ -19,6 +23,12 @@ namespace SMS_Search.Data
             _context = context;
             _rowIndex = rowIndex;
             _properties = properties;
+        }
+
+        internal void NotifyValuesChanged()
+        {
+            DataVersion++;
+            PropertyChanged?.Invoke(this, AllPropertiesChangedArgs);
         }
 
         public override PropertyDescriptorCollection GetProperties()

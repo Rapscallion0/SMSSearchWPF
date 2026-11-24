@@ -67,6 +67,7 @@ namespace SMS_Search.ViewModels
             }
 
             _gridContext.DataReady += OnDataReady;
+            _gridContext.PageLoaded += OnPageLoaded;
             _gridContext.LoadError += OnLoadError;
             _fieldDictionaryService.DictionaryChanged += OnDictionaryChanged;
             SyncDictionaryState();
@@ -134,6 +135,7 @@ namespace SMS_Search.ViewModels
         {
             Cancel();
             _gridContext.DataReady -= OnDataReady;
+            _gridContext.PageLoaded -= OnPageLoaded;
             _gridContext.LoadError -= OnLoadError;
             _fieldDictionaryService.DictionaryChanged -= OnDictionaryChanged;
             WeakReferenceMessenger.Default.UnregisterAll(this);
@@ -390,6 +392,34 @@ namespace SMS_Search.ViewModels
         }
 
         private CancellationTokenSource? _refreshCts;
+
+        private void OnPageLoaded(object? sender, PageLoadedEventArgs e)
+        {
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher == null)
+            {
+                if (SearchResults is VirtualizingCollection vc)
+                {
+                    vc.NotifyRangeUpdated(e.StartIndex, e.Count);
+                }
+                return;
+            }
+
+            dispatcher.InvokeAsync(() =>
+            {
+                try
+                {
+                    if (SearchResults is VirtualizingCollection vc)
+                    {
+                        vc.NotifyRangeUpdated(e.StartIndex, e.Count);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Error updating UI after page load", ex);
+                }
+            });
+        }
 
         private void OnDataReady(object? sender, EventArgs e)
         {

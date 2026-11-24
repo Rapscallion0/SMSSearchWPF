@@ -31,6 +31,33 @@ namespace SMS_Search.Data
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
 
+        public void NotifyRangeUpdated(int startIndex, int count)
+        {
+            if (count <= 0 || _rowCache.Count == 0) return;
+
+            int endExclusive = startIndex + count;
+            if (count <= _rowCache.Count)
+            {
+                for (int i = startIndex; i < endExclusive; i++)
+                {
+                    if (_rowCache.TryGetValue(i, out var cachedRow))
+                    {
+                        cachedRow.NotifyValuesChanged();
+                    }
+                }
+            }
+            else
+            {
+                foreach (var kvp in _rowCache)
+                {
+                    if (kvp.Key >= startIndex && kvp.Key < endExclusive)
+                    {
+                        kvp.Value.NotifyValuesChanged();
+                    }
+                }
+            }
+        }
+
         public int Count => _context.TotalCount;
 
         public bool IsFixedSize => true;
