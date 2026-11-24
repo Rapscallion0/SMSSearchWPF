@@ -92,8 +92,19 @@ namespace SMS_Search
 
             this.SizeChanged += MainWindow_SizeChanged;
             this.LocationChanged += MainWindow_LocationChanged;
+            this.StateChanged += MainWindow_StateChanged;
             this.Loaded += MainWindow_Loaded;
             this.Unloaded += MainWindow_Unloaded;
+        }
+
+        private void MainWindow_StateChanged(object? sender, EventArgs e)
+        {
+            if (WindowState == WindowState.Minimized &&
+                _config.GetValue(AppSettings.Sections.General, AppSettings.Keys.ShowInTray) == "1" &&
+                System.Windows.Application.Current is App app)
+            {
+                app.MinimizeMainWindowToTray(this);
+            }
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -440,6 +451,7 @@ namespace SMS_Search
 
             this.SizeChanged -= MainWindow_SizeChanged;
             this.LocationChanged -= MainWindow_LocationChanged;
+            this.StateChanged -= MainWindow_StateChanged;
             this.Loaded -= MainWindow_Loaded;
             this.Unloaded -= MainWindow_Unloaded;
 

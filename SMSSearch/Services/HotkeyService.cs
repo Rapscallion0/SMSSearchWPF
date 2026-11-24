@@ -15,6 +15,8 @@ namespace SMS_Search.Services
         private IntPtr _hwnd;
         private readonly ILoggerService _logger;
 
+        public bool IsRegistered => _isRegistered;
+
         [DllImport("user32.dll")]
         private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
 

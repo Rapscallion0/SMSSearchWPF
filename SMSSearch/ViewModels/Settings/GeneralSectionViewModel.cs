@@ -36,13 +36,6 @@ namespace SMS_Search.ViewModels.Settings
                 alwaysOnTopStr == "1",
                 v => v ? "1" : "0");
 
-            // Show In Tray
-            var showInTrayStr = repository.GetValue(AppSettings.Sections.General, AppSettings.Keys.ShowInTray);
-            ShowInTray = new ObservableSetting<bool>(
-                repository, AppSettings.Sections.General, AppSettings.Keys.ShowInTray,
-                showInTrayStr == "1",
-                v => v ? "1" : "0");
-
             // Main Startup Location
             var mainStartStr = repository.GetValue(AppSettings.Sections.General, AppSettings.Keys.MainStartupLocation);
             StartupLocationMode mainStart;
@@ -119,7 +112,6 @@ namespace SMS_Search.ViewModels.Settings
 
 
         public ObservableSetting<bool> AlwaysOnTop { get; }
-        public ObservableSetting<bool> ShowInTray { get; }
 
         public ObservableSetting<StartupLocationMode> MainStartupLocation { get; }
         public ObservableSetting<StartupLocationMode> UnarchiveStartupLocation { get; }
@@ -163,7 +155,6 @@ namespace SMS_Search.ViewModels.Settings
              if ("Startup".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Location".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Window".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
-             if ("Tray".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Export".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Delimiter".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
              if ("Toast".Contains(query, System.StringComparison.OrdinalIgnoreCase)) return true;
