@@ -123,7 +123,7 @@ namespace SMS_Search.Data
             }
         }
 
-        public async Task<DataTable> GetQueryPageAsync(string server, string database, string? user, string? pass, string sql, object? parameters, int offset, int limit, string? sortCol, string? sortDir, string? filter = null, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<object?[]>> GetQueryPageAsync(string server, string database, string? user, string? pass, string sql, object? parameters, int offset, int limit, string? sortCol, string? sortDir, string? filter = null, CancellationToken cancellationToken = default)
         {
             string finalSql = ApplyFilter(sql, filter);
 
@@ -168,9 +168,15 @@ namespace SMS_Search.Data
 
                 using (reader)
                 {
-                    var dt = new DataTable();
-                    dt.Load(reader);
-                    return dt;
+                    var rows = new List<object?[]>(Math.Min(limit, 1024));
+                    int fieldCount = reader.FieldCount;
+                    while (await reader.ReadAsync(cancellationToken))
+                    {
+                        var values = new object[fieldCount];
+                        reader.GetValues(values);
+                        rows.Add(values);
+                    }
+                    return rows;
                 }
             }
         }

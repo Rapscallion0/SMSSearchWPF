@@ -171,7 +171,7 @@ namespace SMSSearch.Tests
             repoMock.Setup(r => r.GetQueryCountAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<object?>(), It.IsAny<string?>(), It.IsAny<System.Threading.CancellationToken>()))
                     .ReturnsAsync(1);
             repoMock.Setup(r => r.GetQueryPageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<object?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<System.Threading.CancellationToken>()))
-                    .ReturnsAsync(dt);
+                    .ReturnsAsync(new List<object?[]> { new object?[] { "001", "Widget" } });
             repoMock.Setup(r => r.GetColumnDescriptionsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<IEnumerable<string>>(), It.IsAny<System.Threading.CancellationToken>()))
                     .ReturnsAsync(new List<string> { "Item Code", "Description" });
 

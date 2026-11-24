@@ -52,10 +52,6 @@
                     <CheckBox IsChecked="{Binding AlwaysOnTop.Value}" Content="Keep application window on top" />
                 </ctrl:SettingControl>
 
-                <ctrl:SettingControl Header="Minimize to Tray" IsSaved="{Binding ShowInTray.IsSaved}">
-                    <CheckBox IsChecked="{Binding ShowInTray.Value}" Content="Minimize application to system tray" />
-                </ctrl:SettingControl>
-
                 <ctrl:SettingControl Header="Theme" IsSaved="{Binding ThemeMode.IsSaved}">
                     <ComboBox ItemsSource="{Binding ThemeModes}" SelectedItem="{Binding ThemeMode.Value}" PreviewMouseWheel="OnPreviewMouseWheel">
                         <ComboBox.ItemTemplate>

@@ -5,6 +5,7 @@ namespace SMS_Search.Services
 {
     public interface IHotkeyService : IDisposable
     {
+        bool IsRegistered { get; }
         void Register(IntPtr hwnd, Key key, ModifierKeys modifiers, Action action);
         void Unregister();
         IntPtr ProcessMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled);

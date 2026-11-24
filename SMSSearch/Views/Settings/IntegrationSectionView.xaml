@@ -8,47 +8,43 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:IntegrationSectionViewModel}"
              d:DesignHeight="450" d:DesignWidth="800">
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-    </UserControl.Resources>
 
     <StackPanel Margin="0,0,0,20">
 
-        <GroupBox Header="Global Hotkey">
+        <GroupBox Header="System Tray">
             <StackPanel Margin="5">
-                <TextBlock Text="The Listener runs in the background and waits for the configured global hotkey to quickly bring SMSSearch to the foreground." TextWrapping="Wrap" Margin="0,0,0,10" Foreground="Gray"/>
+                <ctrl:SettingControl Header="Minimize to Tray" IsSaved="{Binding ShowInTray.IsSaved}">
+                    <CheckBox IsChecked="{Binding ShowInTray.Value}" Content="Hide window to system tray when minimized (keeps open tabs)" />
+                </ctrl:SettingControl>
+
+                <ctrl:SettingControl Header="Close to Tray" IsSaved="{Binding CloseToTray.IsSaved}">
+                    <CheckBox IsChecked="{Binding CloseToTray.Value}" Content="Close window to system tray (frees memory and keeps hotkey active)" />
+                </ctrl:SettingControl>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Global Hotkey" Margin="0,10,0,0">
+            <StackPanel Margin="5">
+                <TextBlock Text="Press this global hotkey anytime SMS Search is running (open, minimized to tray, or closed to tray) to quickly bring it to the foreground." TextWrapping="Wrap" Margin="0,0,0,10" Foreground="Gray"/>
                 <ctrl:SettingControl Header="Application Hotkey" IsSaved="{Binding StoredHotkey.IsSaved}">
                     <ctrl:ClearableTextBox Text="{Binding HotkeyDisplay, Mode=OneWay}"
                                            IsReadOnly="True"
                                            PreviewKeyDown="Hotkey_PreviewKeyDown"
-                                           ToolTip="Click and press keys to set hotkey (e.g. Ctrl+Space)"
+                                           ToolTip="Click and press keys to set hotkey (default: Ctrl + Shift + `)"
                                            ClearCommand="{Binding ClearHotkeyCommand}" />
                 </ctrl:SettingControl>
 
-                <TextBlock Text="Listener Status" FontWeight="SemiBold" Margin="0,15,0,5" />
-                <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="10">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <Ellipse Width="12" Height="12" Fill="{Binding StatusColor}" Margin="0,0,10,0" />
-                            <TextBlock Text="{Binding ListenerStatusText}" FontWeight="Bold" VerticalAlignment="Center" />
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal">
-                            <Button Content="Start Listener" Command="{Binding StartListenerProcessCommand}" IsEnabled="{Binding CanStartListener}" Width="100" Margin="0,0,10,0" />
-                            <Button Content="Stop Listener" Command="{Binding StopListenerProcessCommand}" IsEnabled="{Binding CanStopListener}" Width="100" />
-                        </StackPanel>
-
-                        <TextBlock Text="Listener is stopped. Hotkey will not work." Foreground="Red" Margin="0,10,0,0"
-                                   Visibility="{Binding ListenerWarningVisibility}" />
-                    </StackPanel>
-                </Border>
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,4">
+                    <Ellipse Width="10" Height="10" Fill="{Binding StatusColor}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding HotkeyStatusText}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
             </StackPanel>
         </GroupBox>
 
         <GroupBox Header="Startup" Margin="0,10,0,0">
             <StackPanel Margin="5">
                 <ctrl:SettingControl Header="Start with Windows" IsSaved="{Binding StartWithWindows.IsSaved}">
-                    <CheckBox IsChecked="{Binding StartWithWindows.Value}" Content="Automatically start the background listener when Windows starts" />
+                    <CheckBox IsChecked="{Binding StartWithWindows.Value}" Content="Launch SMS Search in the system tray when Windows starts" />
                 </ctrl:SettingControl>
             </StackPanel>
         </GroupBox>

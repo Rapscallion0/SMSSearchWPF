@@ -29,8 +29,13 @@ namespace SMS_Search
         private static System.Threading.EventWaitHandle? _showEvent = null;
         private CancellationTokenSource? _shutdownCts = null;
         private HwndSource? _listenerHwndSource = null;
-        public static bool IsListenerRunning { get; private set; } = false;
         private Window? _hiddenWindow = null;
+        private bool _isMinimizedToTray = false;
+        private bool _isRunningInBackgroundOnly = false;
+        private bool _isExplicitExit = false;
+        private bool _trayWired = false;
+
+        public bool IsHotkeyActive => Services.GetService<IHotkeyService>()?.IsRegistered ?? false;
 
 
         public App()
@@ -63,6 +68,7 @@ namespace SMS_Search
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<IClipboardService, ClipboardService>();
             services.AddSingleton<IHotkeyService, HotkeyService>();
+            services.AddSingleton<ITrayIconService, TrayIconService>();
             services.AddSingleton<IThemeService, ThemeService>();
             services.AddSingleton<IWorkspaceLayoutService, WorkspaceLayoutService>();
 
@@ -119,15 +125,41 @@ namespace SMS_Search
         }
 
 
-        public void StartListener()
+        public bool IsCloseToTrayEnabled()
         {
-            if (IsListenerRunning) return;
+            var config = Services.GetRequiredService<IConfigService>();
+            string? closeToTray = config.GetValue(AppSettings.Sections.General, AppSettings.Keys.CloseToTray);
+            if (closeToTray != null)
+            {
+                return closeToTray == "1";
+            }
 
+            // Migrate legacy LISTENER_ENABLED setting if CLOSE_TO_TRAY has not been explicitly set
+            return config.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.ListenerEnabled) == "1";
+        }
+
+        public string GetConfiguredHotkeyRaw()
+        {
+            var config = Services.GetRequiredService<IConfigService>();
+            string? hotkeyStr = config.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.Hotkey);
+            return hotkeyStr ?? AppSettings.Defaults.Hotkey;
+        }
+
+        private string? GetFriendlyHotkeyDisplay()
+        {
+            string hotkeyStr = GetConfiguredHotkeyRaw();
+            if (string.IsNullOrWhiteSpace(hotkeyStr)) return null;
+            var (key, modifiers) = HotkeyUtils.Parse(hotkeyStr);
+            return key != Key.None ? HotkeyUtils.GetFriendlyString(key, modifiers) : null;
+        }
+
+        private void EnsureHotkeyHostWindow()
+        {
             if (_hiddenWindow == null)
             {
                 _hiddenWindow = new Window
                 {
-                    Title = "SMS_Search_Listener_Hidden_Window",
+                    Title = "SMS_Search_Hotkey_Host_Window",
                     Width = 0,
                     Height = 0,
                     WindowStyle = WindowStyle.None,
@@ -138,24 +170,32 @@ namespace SMS_Search
                 _hiddenWindow.Hide();
             }
 
+            if (_listenerHwndSource == null)
+            {
+                var helper = new WindowInteropHelper(_hiddenWindow);
+                _listenerHwndSource = HwndSource.FromHwnd(helper.Handle);
+                var hotkeyService = Services.GetRequiredService<IHotkeyService>();
+                _listenerHwndSource?.AddHook(hotkeyService.ProcessMessage);
+            }
+        }
+
+        public bool ApplyGlobalHotkey()
+        {
             var hotkeyService = Services.GetRequiredService<IHotkeyService>();
-            var config = Services.GetRequiredService<IConfigService>();
             var logger = Services.GetRequiredService<ILoggerService>();
 
-            config.SetValue(AppSettings.Sections.Launcher, AppSettings.Keys.ListenerEnabled, "1");
-            config.Save();
+            hotkeyService.Unregister();
 
-            string? hotkeyStr = config.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.Hotkey);
-            if (!string.IsNullOrEmpty(hotkeyStr))
+            string hotkeyStr = GetConfiguredHotkeyRaw();
+            if (!string.IsNullOrWhiteSpace(hotkeyStr))
             {
                 try
                 {
                     var (key, modifiers) = HotkeyUtils.Parse(hotkeyStr);
                     if (key != Key.None)
                     {
-                        var helper = new WindowInteropHelper(_hiddenWindow);
-                        _listenerHwndSource = HwndSource.FromHwnd(helper.Handle);
-                        _listenerHwndSource?.AddHook(hotkeyService.ProcessMessage);
+                        EnsureHotkeyHostWindow();
+                        var helper = new WindowInteropHelper(_hiddenWindow!);
                         hotkeyService.Register(helper.Handle, key, modifiers, () =>
                         {
                             try
@@ -167,35 +207,139 @@ namespace SMS_Search
                                 logger.LogError("Failed to launch application from hotkey", ex);
                             }
                         });
-                        IsListenerRunning = true;
-                        logger.LogInfo("Listener mode started.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError("Error registering hotkey", ex);
+                    logger.LogError("Error registering global hotkey", ex);
                 }
+            }
+
+            UpdateTrayIconVisibility();
+            return hotkeyService.IsRegistered;
+        }
+
+        public void RefreshTrayAndHotkeyState()
+        {
+            UpdateTrayIconVisibility();
+        }
+
+        private void EnsureTrayIconWired()
+        {
+            if (_trayWired) return;
+            _trayWired = true;
+
+            var trayIcon = Services.GetRequiredService<ITrayIconService>();
+            trayIcon.OpenRequested += () => Dispatcher.InvokeAsync(ShowMainWindow);
+            trayIcon.OpenGs1ToolkitRequested += () => Dispatcher.InvokeAsync(OpenGs1ToolkitFromTray);
+            trayIcon.OpenUnarchiveRequested += () => Dispatcher.InvokeAsync(OpenUnarchiveFromTray);
+            trayIcon.OpenEncryptionUtilityRequested += () => Dispatcher.InvokeAsync(OpenEncryptionUtilityFromTray);
+            trayIcon.OpenSettingsRequested += () => Dispatcher.InvokeAsync(OpenSettingsFromTray);
+            trayIcon.ExitRequested += () => Dispatcher.InvokeAsync(ExitFromTray);
+        }
+
+        public void UpdateTrayIconVisibility()
+        {
+            var trayIcon = Services.GetRequiredService<ITrayIconService>();
+            bool shouldShow = IsCloseToTrayEnabled() || _isMinimizedToTray || _isRunningInBackgroundOnly;
+            if (shouldShow)
+            {
+                EnsureTrayIconWired();
+                TrayIconState state = _isMinimizedToTray
+                    ? TrayIconState.Minimized
+                    : (_isRunningInBackgroundOnly ? TrayIconState.Background : TrayIconState.Open);
+                string? hotkeyDisplay = IsHotkeyActive ? GetFriendlyHotkeyDisplay() : null;
+                trayIcon.Show(state, hotkeyDisplay);
+            }
+            else
+            {
+                trayIcon.Hide();
             }
         }
 
-        public void StopListener()
+        public void MinimizeMainWindowToTray(Window mainWindow)
         {
-            if (!IsListenerRunning) return;
+            _isMinimizedToTray = true;
+            mainWindow.ShowInTaskbar = false;
+            mainWindow.Hide();
+            UpdateTrayIconVisibility();
+        }
 
-            var config = Services.GetRequiredService<IConfigService>();
-            config.SetValue(AppSettings.Sections.Launcher, AppSettings.Keys.ListenerEnabled, "0");
-            config.Save();
+        private void OpenGs1ToolkitFromTray()
+        {
+            var existing = Windows.OfType<Gs1ToolkitWindow>().FirstOrDefault();
+            if (existing != null && existing.IsLoaded)
+            {
+                if (existing.WindowState == WindowState.Minimized) existing.WindowState = WindowState.Normal;
+                existing.Activate();
+                return;
+            }
 
-            var hotkeyService = Services.GetRequiredService<IHotkeyService>();
-            if (_listenerHwndSource != null)
+            var win = Services.GetRequiredService<Func<Gs1ToolkitWindow>>()();
+            win.DataContext = Services.GetRequiredService<Func<Gs1ToolkitViewModel>>()();
+            win.Show();
+            win.Activate();
+        }
+
+        private void OpenUnarchiveFromTray()
+        {
+            var existing = Windows.OfType<UnarchiveWindow>().FirstOrDefault();
+            if (existing != null && existing.IsLoaded)
+            {
+                if (existing.WindowState == WindowState.Minimized) existing.WindowState = WindowState.Normal;
+                existing.Activate();
+                return;
+            }
+
+            var win = Services.GetRequiredService<Func<UnarchiveWindow>>()();
+            win.Show();
+            win.Activate();
+        }
+
+        private void OpenEncryptionUtilityFromTray()
+        {
+            var existing = Windows.OfType<EncryptionUtilityWindow>().FirstOrDefault();
+            if (existing != null && existing.IsLoaded)
+            {
+                if (existing.WindowState == WindowState.Minimized) existing.WindowState = WindowState.Normal;
+                existing.Activate();
+                return;
+            }
+
+            var win = Services.GetRequiredService<Func<EncryptionUtilityWindow>>()();
+            win.DataContext = Services.GetRequiredService<Func<EncryptionUtilityViewModel>>()();
+            win.Show();
+            win.Activate();
+        }
+
+        private void OpenSettingsFromTray()
+        {
+            var existing = Windows.OfType<ModernSettingsWindow>().FirstOrDefault();
+            if (existing != null && existing.IsLoaded)
+            {
+                if (existing.WindowState == WindowState.Minimized) existing.WindowState = WindowState.Normal;
+                existing.Activate();
+                return;
+            }
+
+            var win = Services.GetRequiredService<Func<ModernSettingsWindow>>()();
+            win.Show();
+            win.Activate();
+        }
+
+        private void ExitFromTray()
+        {
+            _isExplicitExit = true;
+            _isMinimizedToTray = false;
+            _isRunningInBackgroundOnly = false;
+
+            var hotkeyService = Services.GetService<IHotkeyService>();
+            if (_listenerHwndSource != null && hotkeyService != null)
             {
                 _listenerHwndSource.RemoveHook(hotkeyService.ProcessMessage);
                 _listenerHwndSource = null;
             }
-            if (hotkeyService is IDisposable disposableHotkey)
-            {
-                disposableHotkey.Dispose();
-            }
+            hotkeyService?.Unregister();
 
             if (_hiddenWindow != null)
             {
@@ -203,34 +347,52 @@ namespace SMS_Search
                 _hiddenWindow = null;
             }
 
-            IsListenerRunning = false;
-            var logger = Services.GetRequiredService<ILoggerService>();
-            logger.LogInfo("Listener mode stopped.");
+            Services.GetService<ITrayIconService>()?.Hide();
+            Shutdown();
         }
 
         public void ShowMainWindow()
         {
             if (this.MainWindow is MainWindow actualMainWindow && actualMainWindow.IsLoaded)
             {
+                _isMinimizedToTray = false;
+                _isRunningInBackgroundOnly = false;
+                actualMainWindow.ShowInTaskbar = true;
+                if (!actualMainWindow.IsVisible)
+                {
+                    actualMainWindow.Show();
+                }
                 if (actualMainWindow.WindowState == WindowState.Minimized)
                 {
                     actualMainWindow.WindowState = WindowState.Normal;
                 }
                 actualMainWindow.Activate();
                 actualMainWindow.Focus();
+                UpdateTrayIconVisibility();
             }
             else
             {
+                _isMinimizedToTray = false;
+                _isRunningInBackgroundOnly = false;
                 var mainWindow = Services.GetRequiredService<MainWindow>();
                 this.MainWindow = mainWindow;
                 mainWindow.Closed += (s, e) =>
                 {
-                    if (!IsListenerRunning)
+                    _isMinimizedToTray = false;
+                    if (!_isExplicitExit && IsCloseToTrayEnabled())
                     {
+                        _isRunningInBackgroundOnly = true;
+                        UpdateTrayIconVisibility();
+                    }
+                    else
+                    {
+                        _isRunningInBackgroundOnly = false;
+                        UpdateTrayIconVisibility();
                         Shutdown();
                     }
                 };
                 mainWindow.Show();
+                UpdateTrayIconVisibility();
 
                 // Update Check
                 var configService = Services.GetRequiredService<IConfigService>();
@@ -279,6 +441,9 @@ namespace SMS_Search
                 var logger = Services.GetService<ILoggerService>();
                 logger?.Dispose();
 
+                var trayIcon = Services.GetService<ITrayIconService>();
+                trayIcon?.Dispose();
+
                 var hotkeyService = Services.GetService<IHotkeyService>();
                 if (hotkeyService is IDisposable disposableHotkey)
                 {
@@ -295,7 +460,7 @@ namespace SMS_Search
             base.OnExit(e);
         }
 
-        protected override async void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
             const string mutexName = "Local\\SMS_Search_App_Mutex";
             const string eventName = "Local\\SMS_Search_Show_Event";
@@ -404,18 +569,16 @@ namespace SMS_Search
 
                 logger.LogInfo("Application starting...");
 
-                string? hotkeyStr = configService.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.Hotkey);
-                string? listenerEnabledStr = configService.GetValue(AppSettings.Sections.Launcher, AppSettings.Keys.ListenerEnabled);
-                bool listenerEnabled = listenerEnabledStr == "1";
+                ApplyGlobalHotkey();
 
-                if (!string.IsNullOrEmpty(hotkeyStr) && listenerEnabled)
-                {
-                    StartListener();
-                }
-
-                // If not started with --listener, show the main window immediately.
+                // If started with --listener (e.g. Windows startup), stay in system tray until summoned.
                 bool isListenerArg = e.Args.Contains("--listener");
-                if (!isListenerArg)
+                if (isListenerArg)
+                {
+                    _isRunningInBackgroundOnly = true;
+                    UpdateTrayIconVisibility();
+                }
+                else
                 {
                     ShowMainWindow();
                 }
@@ -423,7 +586,7 @@ namespace SMS_Search
             }
             catch (Exception ex)
             {
-                // Handle any startup exceptions that occur within the WPF context (Async Void)
+                // Handle any startup exceptions that occur within the WPF context
                 // This ensures we catch DI resolution failures, Window creation failures, etc.
                 SMS_Search.Program.HandleStartupException(ex);
 

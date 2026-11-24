@@ -23,6 +23,7 @@ namespace SMS_Search.Utils
             // General
             public const string AlwaysOnTop = "ALWAYSONTOP";
             public const string ShowInTray = "SHOWINTRAY";
+            public const string CloseToTray = "CLOSE_TO_TRAY";
             public const string MainStartupLocation = "MAIN_STARTUP_LOCATION";
             public const string UnarchiveStartupLocation = "UNARCHIVE_STARTUP_LOCATION";
             public const string MainRememberSize = "MAIN_REMEMBER_SIZE";
@@ -116,6 +117,11 @@ namespace SMS_Search.Utils
             public const string LastY = "LAST_Y";
             public const string LastTab = "LAST_TAB";
             public const string LastSearchMode = "LAST_SEARCH_MODE";
+        }
+
+        public static class Defaults
+        {
+            public const string Hotkey = "Control, Shift+Oem3";
         }
     }
 }

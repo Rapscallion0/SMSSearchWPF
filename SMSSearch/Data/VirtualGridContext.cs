@@ -11,6 +11,18 @@ using SMS_Search.Services;
 
 namespace SMS_Search.Data
 {
+    public sealed class PageLoadedEventArgs : EventArgs
+    {
+        public int StartIndex { get; }
+        public int Count { get; }
+
+        public PageLoadedEventArgs(int startIndex, int count)
+        {
+            StartIndex = startIndex;
+            Count = count;
+        }
+    }
+
     public class VirtualGridContext : IDisposable
     {
         private readonly IDataRepository _repo;
@@ -30,10 +42,12 @@ namespace SMS_Search.Data
 
         public int TotalCount { get; private set; }
         public int UnfilteredCount { get; private set; }
-        private Dictionary<int, DataRow> _cache;
+        private bool _hasLoadedCount;
+        private readonly object _cacheLock = new();
+        private readonly Dictionary<int, object?[]> _cache;
         private readonly Queue<int> _cacheKeys = new Queue<int>();
-        private HashSet<int> _pagesBeingFetched;
-        private Dictionary<int, TaskCompletionSource<bool>> _pageCompletionSources;
+        private readonly HashSet<int> _pagesBeingFetched;
+        private readonly Dictionary<int, TaskCompletionSource<bool>> _pageCompletionSources;
         private const int PageSize = 1000;
         private const int MaxCacheSize = 5000;
         private int _version = 0;
@@ -52,13 +66,14 @@ namespace SMS_Search.Data
         };
 
         public event EventHandler? DataReady;
+        public event EventHandler<PageLoadedEventArgs>? PageLoaded;
         public event EventHandler<Exception>? LoadError;
 
         public VirtualGridContext(IDataRepository repo, IFieldDictionaryService? fieldDictionaryService = null)
         {
             _repo = repo;
             _fieldDictionaryService = fieldDictionaryService;
-            _cache = new Dictionary<int, DataRow>();
+            _cache = new Dictionary<int, object?[]>();
             _pagesBeingFetched = new HashSet<int>();
             _pageCompletionSources = new Dictionary<int, TaskCompletionSource<bool>>();
         }
@@ -92,14 +107,19 @@ namespace SMS_Search.Data
             FilterText = null;
             _rawFilterText = null;
             _filterColumns = null;
-            _cache.Clear();
-            _cacheKeys.Clear();
-            _pagesBeingFetched.Clear();
-            _pageCompletionSources.Clear();
+            lock (_cacheLock)
+            {
+                _cache.Clear();
+                _cacheKeys.Clear();
+                _pagesBeingFetched.Clear();
+                _pageCompletionSources.Clear();
+            }
             _columnSqlTypes.Clear();
+            _hasLoadedCount = false;
 
             RebuildLocalView();
             UnfilteredCount = TotalCount;
+            _hasLoadedCount = true;
             DataReady?.Invoke(this, EventArgs.Empty);
         }
 
@@ -330,17 +350,22 @@ namespace SMS_Search.Data
         public async Task WaitForRowAsync(int rowIndex)
         {
             if (_localTable != null) return;
-            if (_cache.ContainsKey(rowIndex)) return;
+            lock (_cacheLock)
+            {
+                if (_cache.ContainsKey(rowIndex)) return;
+            }
             GetValue(rowIndex, 0); // Trigger fetch
-            if (_cache.ContainsKey(rowIndex)) return;
 
             int pageIndex = rowIndex / PageSize;
             TaskCompletionSource<bool>? tcs;
-
-            if (!_pageCompletionSources.TryGetValue(pageIndex, out tcs))
+            lock (_cacheLock)
             {
-                tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                _pageCompletionSources[pageIndex] = tcs;
+                if (_cache.ContainsKey(rowIndex)) return;
+                if (!_pageCompletionSources.TryGetValue(pageIndex, out tcs))
+                {
+                    tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    _pageCompletionSources[pageIndex] = tcs;
+                }
             }
 
             var timeoutTask = Task.Delay(5000);
@@ -396,19 +421,29 @@ namespace SMS_Search.Data
 
             try
             {
-                _cache.Clear();
-                _cacheKeys.Clear();
-                _pagesBeingFetched.Clear();
-                _pageCompletionSources.Clear();
+                _hasLoadedCount = false;
+                lock (_cacheLock)
+                {
+                    _cache.Clear();
+                    _cacheKeys.Clear();
+                    _pagesBeingFetched.Clear();
+                    foreach (var tcs in _pageCompletionSources.Values)
+                    {
+                        tcs.TrySetResult(false);
+                    }
+                    _pageCompletionSources.Clear();
+                }
 
                 if (_localTable != null)
                 {
                     RebuildLocalView();
+                    _hasLoadedCount = true;
                     DataReady?.Invoke(this, EventArgs.Empty);
                 }
                 else if (_server != null && _database != null && _baseSql != null)
                 {
                     TotalCount = await _repo.GetQueryCountAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, linkedToken);
+                    _hasLoadedCount = true;
                 }
             }
             catch (OperationCanceledException) { }
@@ -448,17 +483,27 @@ namespace SMS_Search.Data
                 int nextPageRowIndex = (pageIndex + 1) * PageSize;
                 if (nextPageRowIndex < TotalCount)
                 {
-                    // Check if the first row of the next page is already loaded
-                    if (!_cache.ContainsKey(nextPageRowIndex))
+                    bool nextCached;
+                    lock (_cacheLock)
+                    {
+                        nextCached = _cache.ContainsKey(nextPageRowIndex);
+                    }
+                    if (!nextCached)
                     {
                         _ = RequestPageAsync(nextPageRowIndex);
                     }
                 }
             }
 
-            if (_cache.TryGetValue(rowIndex, out DataRow? row))
+            object?[]? row;
+            lock (_cacheLock)
             {
-                if (row != null && colIndex >= 0 && colIndex < row.Table.Columns.Count)
+                _cache.TryGetValue(rowIndex, out row);
+            }
+
+            if (row != null)
+            {
+                if (colIndex >= 0 && colIndex < row.Length)
                     return row[colIndex];
                 return "";
             }
@@ -470,12 +515,16 @@ namespace SMS_Search.Data
         private async Task RequestPageAsync(int rowIndex)
         {
             int pageIndex = rowIndex / PageSize;
+            int currentVersion;
+            CancellationToken token;
 
-            if (_pagesBeingFetched.Contains(pageIndex)) return;
-
-            int currentVersion = _version;
-            var token = _queryCts?.Token ?? CancellationToken.None;
-            _pagesBeingFetched.Add(pageIndex);
+            lock (_cacheLock)
+            {
+                if (_pagesBeingFetched.Contains(pageIndex)) return;
+                currentVersion = _version;
+                token = _queryCts?.Token ?? CancellationToken.None;
+                _pagesBeingFetched.Add(pageIndex);
+            }
 
             try
             {
@@ -487,25 +536,28 @@ namespace SMS_Search.Data
 
                 if (_server != null && _database != null && _baseSql != null)
                 {
-                    var dt = await _repo.GetQueryPageAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), offset, PageSize, sortCol, sortDir, filter, token);
+                    var rows = await _repo.GetQueryPageAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), offset, PageSize, sortCol, sortDir, filter, token);
 
-                    if (_version != currentVersion || token.IsCancellationRequested) return;
-
-                    for (int i = 0; i < dt.Rows.Count; i++)
+                    lock (_cacheLock)
                     {
-                        int absIndex = offset + i;
-                        if (!_cache.ContainsKey(absIndex))
+                        if (_version != currentVersion || token.IsCancellationRequested) return;
+
+                        for (int i = 0; i < rows.Count; i++)
                         {
-                            while (_cache.Count >= MaxCacheSize && _cacheKeys.TryDequeue(out int oldestKey))
+                            int absIndex = offset + i;
+                            if (!_cache.ContainsKey(absIndex))
                             {
-                                _cache.Remove(oldestKey);
+                                while (_cache.Count >= MaxCacheSize && _cacheKeys.TryDequeue(out int oldestKey))
+                                {
+                                    _cache.Remove(oldestKey);
+                                }
+                                _cacheKeys.Enqueue(absIndex);
                             }
-                            _cacheKeys.Enqueue(absIndex);
+                            _cache[absIndex] = rows[i];
                         }
-                        _cache[absIndex] = dt.Rows[i];
                     }
 
-                    DataReady?.Invoke(this, EventArgs.Empty);
+                    PageLoaded?.Invoke(this, new PageLoadedEventArgs(offset, rows.Count));
                 }
             }
             catch (OperationCanceledException)
@@ -519,14 +571,17 @@ namespace SMS_Search.Data
             }
             finally
             {
-                if (_version == currentVersion)
+                lock (_cacheLock)
                 {
-                    _pagesBeingFetched.Remove(pageIndex);
-
-                    if (_pageCompletionSources.TryGetValue(pageIndex, out var tcs))
+                    if (_version == currentVersion)
                     {
-                        tcs.TrySetResult(true);
-                        _pageCompletionSources.Remove(pageIndex);
+                        _pagesBeingFetched.Remove(pageIndex);
+
+                        if (_pageCompletionSources.TryGetValue(pageIndex, out var tcs))
+                        {
+                            tcs.TrySetResult(true);
+                            _pageCompletionSources.Remove(pageIndex);
+                        }
                     }
                 }
             }
@@ -590,21 +645,23 @@ namespace SMS_Search.Data
 
              using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, GetEffectiveParameters(), cancellationToken))
              {
+                 var visibleColumns = new List<(int Ordinal, string Header)>(reader.FieldCount);
+                 for (int i = 0; i < reader.FieldCount; i++)
+                 {
+                     string colName = reader.GetName(i);
+                     if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+                     string header = (headerMap != null && headerMap.TryGetValue(colName, out var mapped)) ? mapped : colName;
+                     visibleColumns.Add((i, header));
+                 }
+
                  using (var writer = new StreamWriter(filename))
                  {
                      if (includeHeaders)
                      {
-                         bool first = true;
-                         for (int i = 0; i < reader.FieldCount; i++)
+                         for (int c = 0; c < visibleColumns.Count; c++)
                          {
-                             string colName = reader.GetName(i);
-                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
-
-                             if (!first) await writer.WriteAsync(",");
-                             first = false;
-
-                             string header = (headerMap != null && headerMap.ContainsKey(colName)) ? headerMap[colName] : colName;
-                             WriteCsvCell(writer, header);
+                             if (c > 0) await writer.WriteAsync(",");
+                             WriteCsvCell(writer, visibleColumns[c].Header);
                          }
                          await writer.WriteLineAsync();
                      }
@@ -612,16 +669,10 @@ namespace SMS_Search.Data
                      while (await reader.ReadAsync(cancellationToken))
                      {
                          rowCount++;
-                         bool first = true;
-                         for (int i = 0; i < reader.FieldCount; i++)
+                         for (int c = 0; c < visibleColumns.Count; c++)
                          {
-                             string colName = reader.GetName(i);
-                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
-
-                             if (!first) await writer.WriteAsync(",");
-                             first = false;
-
-                             var val = reader.GetValue(i);
+                             if (c > 0) await writer.WriteAsync(",");
+                             var val = reader.GetValue(visibleColumns[c].Ordinal);
                              string sVal = val == DBNull.Value ? "" : val.ToString() ?? "";
                              WriteCsvCell(writer, sVal);
                          }
@@ -639,13 +690,26 @@ namespace SMS_Search.Data
              int rowCount = 0;
 
              int exportRecordCount = 0;
-             if (_baseSql != null)
+             if (_hasLoadedCount)
+             {
+                 exportRecordCount = TotalCount;
+             }
+             else if (_baseSql != null)
              {
                  exportRecordCount = await _repo.GetQueryCountAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, cancellationToken);
              }
 
              using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, GetEffectiveParameters(), cancellationToken))
              {
+                 var visibleColumns = new List<(int Ordinal, string Header)>(reader.FieldCount);
+                 for (int i = 0; i < reader.FieldCount; i++)
+                 {
+                     string colName = reader.GetName(i);
+                     if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+                     string header = (headerMap != null && headerMap.TryGetValue(colName, out var mapped)) ? mapped : colName;
+                     visibleColumns.Add((i, header));
+                 }
+
                  using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None))
                  using (var writer = new Utf8JsonWriter(fs, new JsonWriterOptions { Indented = true }))
                  {
@@ -687,13 +751,10 @@ namespace SMS_Search.Data
                      {
                          rowCount++;
                          writer.WriteStartObject();
-                         for (int i = 0; i < reader.FieldCount; i++)
+                         for (int c = 0; c < visibleColumns.Count; c++)
                          {
-                             string colName = reader.GetName(i);
-                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
-
-                             string header = (headerMap != null && headerMap.ContainsKey(colName)) ? headerMap[colName] : colName;
-                             var val = reader.GetValue(i);
+                             var (ordinal, header) = visibleColumns[c];
+                             var val = reader.GetValue(ordinal);
 
                              writer.WritePropertyName(header);
 
@@ -719,7 +780,11 @@ namespace SMS_Search.Data
              int rowCount = 0;
 
              int exportRecordCount = 0;
-             if (_baseSql != null)
+             if (_hasLoadedCount)
+             {
+                 exportRecordCount = TotalCount;
+             }
+             else if (_baseSql != null)
              {
                  exportRecordCount = await _repo.GetQueryCountAsync(_server, _database, _user, _pass, _baseSql, GetEffectiveParameters(), FilterText, cancellationToken);
              }
@@ -759,32 +824,29 @@ namespace SMS_Search.Data
 
              using (var reader = await _repo.GetQueryDataReaderAsync(_server, _database, _user, _pass, finalSql, GetEffectiveParameters(), cancellationToken))
              {
+                 var visibleColumns = new List<(int Ordinal, string SafeTag)>(reader.FieldCount);
+                 for (int i = 0; i < reader.FieldCount; i++)
+                 {
+                     string colName = reader.GetName(i);
+                     if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
+                     visibleColumns.Add((i, MakeValidXmlName(colName)));
+                 }
+
                  using (var writer = new StreamWriter(filename))
                  {
                      writer.WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
                      writer.WriteLine($"<{rootElement}{rootAttr}>");
 
-                     List<string> safeColNames = new List<string>();
-                     List<string> actualColNames = new List<string>();
-                     for (int i = 0; i < reader.FieldCount; i++)
-                     {
-                         actualColNames.Add(reader.GetName(i));
-                         safeColNames.Add(MakeValidXmlName(reader.GetName(i)));
-                     }
-
                      while (await reader.ReadAsync(cancellationToken))
                      {
                          rowCount++;
                          await writer.WriteLineAsync("  <Row>");
-                         for (int i = 0; i < reader.FieldCount; i++)
+                         for (int c = 0; c < visibleColumns.Count; c++)
                          {
-                             string colName = actualColNames[i];
-                             if (hiddenColumns != null && hiddenColumns.Contains(colName)) continue;
-
-                             var val = reader.GetValue(i);
+                             var (ordinal, tag) = visibleColumns[c];
+                             var val = reader.GetValue(ordinal);
                              if (val != DBNull.Value)
                              {
-                                 string tag = safeColNames[i];
                                  string? s = val.ToString();
                                  await writer.WriteLineAsync($"    <{tag}>{EscapeXml(s ?? "")}</{tag}>");
                              }
